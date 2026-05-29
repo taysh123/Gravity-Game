@@ -136,11 +136,11 @@ export class GameScene extends Phaser.Scene {
     if (!this.attractor) return;
     const bx = this.ball.body.position.x;
     const by = this.ball.body.position.y;
-    const dist = clamp(
-      distance(bx, by, this.attractor.x, this.attractor.y),
-      PHYSICS.ATTRACTOR_MIN_DIST,
-      Infinity,
-    );
+    const rawDist = distance(bx, by, this.attractor.x, this.attractor.y);
+
+    if (rawDist > PHYSICS.ATTRACTOR_MAX_DIST) return;
+
+    const dist = clamp(rawDist, PHYSICS.ATTRACTOR_MIN_DIST, Infinity);
     const dir = normalize(this.attractor.x - bx, this.attractor.y - by);
     const mag = PHYSICS.ATTRACTOR_STRENGTH / (dist * dist);
 
