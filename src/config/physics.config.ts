@@ -24,4 +24,6 @@ export const PHYSICS = {
   COLOR_ATTRACTOR: 0x7c5cff,
   COLOR_ATTRACTOR_PULSE: 0x00d4ff,
   COLOR_WALL: 0x1a2a3a,
+  COLOR_GOAL: 0x00e676,          // electric green — unique, unmissable
+  COLOR_OBSTACLE: 0x3a4a5c,      // slate — visually heavy, clearly blocking
 } as const;

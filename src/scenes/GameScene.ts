@@ -1,14 +1,25 @@
 import Phaser from 'phaser';
 import { Ball } from '../entities/Ball';
 import { Attractor } from '../entities/Attractor';
+import { Goal } from '../entities/Goal';
+import { Obstacle } from '../entities/Obstacle';
 import { PHYSICS } from '../config/physics.config';
 import { normalize, clamp, distance } from '../utils/MathUtils';
 import { RawMatter } from '../utils/matter';
+import { level1 } from '../config/levels/level1';
+import { level2 } from '../config/levels/level2';
+import { level3 } from '../config/levels/level3';
+import type { LevelConfig } from '../types';
+
+const LEVELS: LevelConfig[] = [level1, level2, level3];
 
 export class GameScene extends Phaser.Scene {
   private ball!: Ball;
+  private goal!: Goal;
   private attractor: Attractor | null = null;
   private restartKey!: Phaser.Input.Keyboard.Key;
+  private currentLevel = 1;
+  private isWon = false;
 
   private get playX(): number {
     return (this.scale.width - PHYSICS.PLAY_WIDTH) / 2;
@@ -23,9 +34,17 @@ export class GameScene extends Phaser.Scene {
   }
 
   create(): void {
+    const data = this.scene.settings.data as { level?: number } | undefined;
+    this.currentLevel = data?.level ?? 1;
+    this.isWon = false;
+
+    const config = LEVELS[this.currentLevel - 1] ?? level1;
+
     this.createWorldBounds();
-    this.createBall();
+    this.createFromConfig(config);
     this.setupInput();
+    this.showLevelLabel();
+
     this.restartKey = this.input.keyboard!.addKey(
       Phaser.Input.Keyboard.KeyCodes.R,
     );
@@ -54,20 +73,34 @@ export class GameScene extends Phaser.Scene {
     g.strokeRect(ox, oy, pw, ph);
   }
 
-  private createBall(): void {
-    const x = this.playX + PHYSICS.PLAY_WIDTH / 2;
-    const y = this.playY + PHYSICS.PLAY_HEIGHT / 2;
-    this.ball = new Ball(this, x, y);
+  private createFromConfig(config: LevelConfig): void {
+    const ox = this.playX;
+    const oy = this.playY;
+    const sv = config.startVelocity ?? { x: 0, y: 0 };
+
+    this.ball = new Ball(this, ox + config.ball.x, oy + config.ball.y, sv);
+
+    this.goal = new Goal(
+      this,
+      ox + config.goal.x,
+      oy + config.goal.y,
+      config.goal.radius,
+    );
+
+    config.obstacles.forEach(
+      (o) => new Obstacle(this, ox + o.x, oy + o.y, o.width, o.height, o.angle),
+    );
   }
 
   private setupInput(): void {
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      if (this.isWon) return;
       this.attractor?.destroy();
       this.attractor = new Attractor(this, pointer.x, pointer.y);
     });
 
     this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
-      if (pointer.isDown) {
+      if (pointer.isDown && !this.isWon) {
         this.attractor?.moveTo(pointer.x, pointer.y);
       }
     });
@@ -78,9 +111,20 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  private showLevelLabel(): void {
+    this.add.text(16, 16, `Level ${this.currentLevel}`, {
+      fontSize: '18px',
+      color: '#ffffff',
+      fontFamily: 'Arial, sans-serif',
+    });
+  }
+
   update(_time: number, _delta: number): void {
+    if (this.isWon) return;
+
     this.ball.update();
     this.applyAttractorForce();
+    this.checkWin();
     this.checkDeath();
 
     if (Phaser.Input.Keyboard.JustDown(this.restartKey)) {
@@ -107,6 +151,59 @@ export class GameScene extends Phaser.Scene {
     );
   }
 
+  private checkWin(): void {
+    const dist = distance(
+      this.ball.body.position.x,
+      this.ball.body.position.y,
+      this.goal.x,
+      this.goal.y,
+    );
+    if (dist < this.goal.radius) {
+      this.triggerWin();
+    }
+  }
+
+  private triggerWin(): void {
+    this.isWon = true;
+    this.attractor?.destroy();
+    this.attractor = null;
+    this.matter.world.pause();
+
+    this.tweens.add({
+      targets: this.ball.graphics,
+      scaleX: 2.5,
+      scaleY: 2.5,
+      alpha: 0,
+      duration: 350,
+      ease: 'Quad.easeOut',
+      onComplete: () => this.showWinOverlay(),
+    });
+
+    const nextLevel = this.currentLevel + 1;
+    this.time.delayedCall(1550, () => {
+      if (nextLevel > LEVELS.length) {
+        this.scene.start('EndScene');
+      } else {
+        this.scene.restart({ level: nextLevel });
+      }
+    });
+  }
+
+  private showWinOverlay(): void {
+    const { width, height } = this.scale;
+    const overlay = this.add.graphics();
+    overlay.fillStyle(0x000000, 0.45);
+    overlay.fillRect(0, 0, width, height);
+
+    this.add
+      .text(width / 2, height / 2, 'Level Complete!', {
+        fontSize: '34px',
+        color: '#00e676',
+        fontFamily: 'Arial, sans-serif',
+      })
+      .setOrigin(0.5);
+  }
+
   private checkDeath(): void {
     const margin = 60;
     const bx = this.ball.body.position.x;
@@ -127,6 +224,6 @@ export class GameScene extends Phaser.Scene {
   private triggerRestart(): void {
     this.attractor?.destroy();
     this.attractor = null;
-    this.scene.restart();
+    this.scene.restart({ level: this.currentLevel });
   }
 }

@@ -1,0 +1,11 @@
+import type { LevelConfig } from '../../types';
+
+// Wall spans play-x 20 to 240 (width 220).
+// Gap on the right: play-x 240 to 360 = 120px — ball fits through.
+export const level2: LevelConfig = {
+  ball:      { x: 80, y: 620 },
+  goal:      { x: 280, y: 140, radius: 38 },
+  obstacles: [
+    { x: 130, y: 390, width: 220, height: 18 },
+  ],
+};

@@ -1,12 +1,13 @@
 import Phaser from 'phaser';
 import { PHYSICS } from '../config/physics.config';
 import { RawMatter } from '../utils/matter';
+import type { Vec2 } from '../types';
 
 export class Ball {
   readonly body: MatterJS.BodyType;
   readonly graphics: Phaser.GameObjects.Graphics;
 
-  constructor(scene: Phaser.Scene, x: number, y: number) {
+  constructor(scene: Phaser.Scene, x: number, y: number, startVelocity: Vec2 = { x: 0, y: 0 }) {
     this.body = scene.matter.add.circle(x, y, PHYSICS.BALL_RADIUS, {
       restitution: PHYSICS.BALL_RESTITUTION,
       friction: PHYSICS.BALL_FRICTION,
@@ -14,10 +15,7 @@ export class Ball {
       label: 'ball',
     });
 
-    RawMatter.Body.setVelocity(this.body, {
-      x: PHYSICS.BALL_START_VX,
-      y: PHYSICS.BALL_START_VY,
-    });
+    RawMatter.Body.setVelocity(this.body, startVelocity);
 
     this.graphics = scene.add.graphics();
     this.draw();
