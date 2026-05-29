@@ -65,25 +65,26 @@ export class GameScene extends Phaser.Scene {
       this.attractor?.destroy();
       this.attractor = new Attractor(this, pointer.x, pointer.y);
     });
+
+    this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+      if (pointer.isDown) {
+        this.attractor?.moveTo(pointer.x, pointer.y);
+      }
+    });
+
+    this.input.on('pointerup', () => {
+      this.attractor?.destroy();
+      this.attractor = null;
+    });
   }
 
-  update(_time: number, delta: number): void {
+  update(_time: number, _delta: number): void {
     this.ball.update();
-    this.tickAttractor(delta);
     this.applyAttractorForce();
     this.checkDeath();
 
     if (Phaser.Input.Keyboard.JustDown(this.restartKey)) {
       this.triggerRestart();
-    }
-  }
-
-  private tickAttractor(deltaMs: number): void {
-    if (!this.attractor) return;
-    this.attractor.update(deltaMs);
-    if (this.attractor.isExpired()) {
-      this.attractor.destroy();
-      this.attractor = null;
     }
   }
 

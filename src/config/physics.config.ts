@@ -1,16 +1,15 @@
 export const PHYSICS = {
   // Attractor — primary tuning surface for game feel
-  ATTRACTOR_STRENGTH: 0.0015,    // Force multiplier. Too high = snaps. Too low = floaty.
-  ATTRACTOR_DURATION_MS: 800,    // How long a tap lasts (ms).
-  ATTRACTOR_MIN_DIST: 30,        // Clamp prevents force spike at very close range.
+  ATTRACTOR_STRENGTH: 0.2,       // Force multiplier. Too high = snaps. Too low = floaty.
+  ATTRACTOR_MIN_DIST: 40,        // Clamp prevents force spike at very close range.
 
   // Ball
   BALL_RADIUS: 16,
   BALL_RESTITUTION: 0.65,        // Bounciness: 0 = no bounce, 1 = perfect elastic.
   BALL_FRICTION: 0.01,           // Surface drag. Keep low — ball should slide.
-  BALL_FRICTION_AIR: 0.005,      // Air damping. Prevents runaway acceleration.
-  BALL_START_VX: 1.5,            // Initial horizontal velocity.
-  BALL_START_VY: 0.5,            // Initial vertical velocity.
+  BALL_FRICTION_AIR: 0.02,       // Air damping. Prevents runaway with continuous hold force.
+  BALL_START_VX: 0,              // Zero initial velocity — evaluate gravity in isolation.
+  BALL_START_VY: 0,
 
   // World bounds
   WALL_THICKNESS: 20,
