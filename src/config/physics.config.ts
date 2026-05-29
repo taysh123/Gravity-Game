@@ -12,11 +12,18 @@ export const PHYSICS = {
   BALL_START_VX: 0,              // Zero initial velocity — evaluate gravity in isolation.
   BALL_START_VY: 0,
 
+  // Trail
+  TRAIL_LENGTH: 8,               // Number of trail segments.
+  TRAIL_MAX_ALPHA: 0.4,          // Opacity of the nearest trail segment.
+
   // World bounds
   WALL_THICKNESS: 20,
   WALL_RESTITUTION: 0.5,
   PLAY_WIDTH: 360,               // Play area width inside 390px canvas.
   PLAY_HEIGHT: 780,              // Play area height inside 844px canvas.
+
+  // Mobile
+  HAPTICS_ENABLED: true,         // Set false to disable navigator.vibrate calls.
 
   // Colors
   COLOR_BACKGROUND: 0x0d0d1a,
