@@ -13,8 +13,8 @@ export const PHYSICS = {
   BALL_START_VY: 0,
 
   // Trail
-  TRAIL_LENGTH: 8,               // Number of trail segments.
-  TRAIL_MAX_ALPHA: 0.4,          // Opacity of the nearest trail segment.
+  TRAIL_LENGTH: 6,               // Number of trail segments. Short = subtle.
+  TRAIL_MAX_ALPHA: 0.25,         // Opacity of the nearest trail segment. Low = elegant.
 
   // World bounds
   WALL_THICKNESS: 20,
