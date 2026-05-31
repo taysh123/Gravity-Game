@@ -16,10 +16,7 @@ export class BootScene extends Phaser.Scene {
   create(): void {
     this.generateSparkTexture();
     this.generateGlowTexture();
-    // NOTE: start target flips to 'CompanySplashScene' once the splash chain
-    // exists and is registered (build-order step 6). Until then, go straight
-    // to the game so the app stays runnable at every commit.
-    this.scene.start('GameScene');
+    this.scene.start('CompanySplashScene');
   }
 
   // Runtime-generated particle texture — keeps the "no image assets" rule.

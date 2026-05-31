@@ -6,3 +6,7 @@ dist/
 # Full-resolution logo originals — source for `npm run optimize:assets`.
 # Only the optimized assets/images/*.png are committed.
 assets/raw/
+
+# Ad-hoc dev screenshotting (not part of the build).
+.shots/
+scripts/shoot.py
