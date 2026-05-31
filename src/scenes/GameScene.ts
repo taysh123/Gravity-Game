@@ -170,7 +170,10 @@ export class GameScene extends Phaser.Scene {
       .setOrigin(1, 0)
       .setInteractive({ useHandCursor: true });
 
-    this.restartButton.on('pointerdown', () => this.triggerRestart());
+    this.restartButton.on('pointerdown', () => {
+      if (this.isWon || this.isDying) return;
+      this.triggerRestart();
+    });
   }
 
   // Onboarding tip near the bottom. Auto-fades, or dismisses on first touch.
