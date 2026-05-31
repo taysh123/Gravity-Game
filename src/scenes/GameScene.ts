@@ -7,12 +7,8 @@ import { PHYSICS } from '../config/physics.config';
 import { normalize, clamp, distance } from '../utils/MathUtils';
 import { RawMatter } from '../utils/matter';
 import { AudioSynth } from '../utils/AudioSynth';
-import { level1 } from '../config/levels/level1';
-import { level2 } from '../config/levels/level2';
-import { level3 } from '../config/levels/level3';
+import { LEVELS } from '../config/levels';
 import type { LevelConfig } from '../types';
-
-const LEVELS: LevelConfig[] = [level1, level2, level3];
 
 export class GameScene extends Phaser.Scene {
   private ball!: Ball;
@@ -63,7 +59,7 @@ export class GameScene extends Phaser.Scene {
     this.isWon = false;
     this.isDying = false;
 
-    const config = LEVELS[this.currentLevel - 1] ?? level1;
+    const config = LEVELS[this.currentLevel - 1] ?? LEVELS[0];
 
     this.createWorldBounds();
     this.createFromConfig(config);

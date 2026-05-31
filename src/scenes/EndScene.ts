@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { LEVELS } from '../config/levels';
 
 export class EndScene extends Phaser.Scene {
   constructor() {
@@ -19,7 +20,7 @@ export class EndScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.add
-      .text(cx, cy - 20, '3 / 3 Levels Complete', {
+      .text(cx, cy - 20, `${LEVELS.length} / ${LEVELS.length} Levels Complete`, {
         fontSize: '20px',
         color: '#aaaaaa',
         fontFamily: 'Arial, sans-serif',
