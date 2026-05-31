@@ -26,6 +26,9 @@ export class SettingsScene extends Phaser.Scene {
 
   create(data: { caller?: string }): void {
     this.caller = data?.caller ?? 'MainMenuScene';
+    // Render above the launching scene regardless of scene-list order
+    // (the list places this before GameScene).
+    this.scene.bringToTop();
     const { width, height } = this.scale;
     const cx = width / 2;
     const cy = height / 2;

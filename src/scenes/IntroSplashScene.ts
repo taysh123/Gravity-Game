@@ -5,7 +5,7 @@ import { SPLASH } from '../config/splash.config';
 import { CosmicBackground } from '../entities/CosmicBackground';
 import { AudioSynth } from '../utils/AudioSynth';
 import { fadeIn, fadeToScene } from '../utils/transitions';
-import { prefersReducedMotion, safeAreaInsetsScaled } from '../utils/a11y';
+import { reducedMotionActive, safeAreaInsetsScaled } from '../utils/a11y';
 
 // Stage 2: cosmic set-piece. The energy sphere (the player ball) crosses the
 // screen, is pulled into the vortex (the gameplay goal), and the swirl reveals
@@ -59,7 +59,7 @@ export class IntroSplashScene extends Phaser.Scene {
     const insets = safeAreaInsetsScaled(sx, sy);
     this.setupSkip(insets);
 
-    if (prefersReducedMotion()) {
+    if (reducedMotionActive()) {
       this.runReducedMotion();
       return;
     }

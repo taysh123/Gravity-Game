@@ -15,10 +15,12 @@ The game targets iOS, Android, and web (web is the primary development and testi
 ## Commands
 
 ```bash
-npm run dev       # Start Vite dev server at http://localhost:5173
-npm test          # Run Vitest unit tests (one-shot, not watch mode)
-npm run build     # TypeScript check + Vite production build
-npx tsc --noEmit  # Type-check only, no output
+npm run dev             # Start Vite dev server at http://localhost:5173
+npm test                # Run Vitest unit tests (one-shot, not watch mode)
+npm run build           # TypeScript check + Vite production build
+npx tsc --noEmit        # Type-check only, no output
+npm run fonts:fetch     # Download self-hosted Orbitron + Exo 2 woff2 into assets/fonts
+npm run optimize:assets # Downscale/quantize raw logos → assets/images (sharp)
 ```
 
 Run a single test file:
@@ -70,10 +72,17 @@ Inverse-square law — physically natural, stronger close, weaker far.
 BootScene → CompanySplashScene → IntroSplashScene → MainMenuScene → GameScene (levels 1–6) → EndScene
                                                           ↘ LevelSelectScene → GameScene { level n }
 ```
-Startup presentation: CompanySplash (True Story logo, ~2s) → IntroSplash (cosmic sphere→vortex→Gravity
-Flow logo reveal, ~3.5s) → MainMenu (PLAY / LEVELS). Both splashes skip on first touch, honor
-prefers-reduced-motion, and respect safe-area insets. GameScene is reused for all levels via
-`scene.restart({ level: n })`. Never destroyed/recreated.
+Startup presentation: CompanySplash (**True Story Labs** text wordmark, ~2s) → IntroSplash (cosmic
+sphere→vortex→Gravity Flow logo reveal, ~3.5s) → MainMenu (PLAY / LEVELS + settings gear). Both
+splashes skip on first touch, honor reduced-motion, and respect safe-area insets. `SettingsScene` is
+an **overlay** launched on top of a paused game/menu (`scene.launch` + `scene.pause`/`resume`), not in
+the linear flow. GameScene is reused for all levels via `scene.restart({ level: n })`. Never destroyed.
+
+**Brand + design system:** Company = **True Story Labs**; game = **GRAVITY FLOW**. Typography is
+self-hosted **Orbitron** (display/wordmarks) + **Exo 2** (body/UI) — `src/styles/fonts.css`, fetched by
+`npm run fonts:fetch`. Cross-cutting look tokens (fonts, Expo easing, radius-16, glass surfaces, text
+colors) live in `src/config/theme.config.ts`; user prefs (sound/music/haptics/reduce-motion) in
+`src/utils/SettingsStore.ts` (localStorage).
 
 **Level system:** `LevelConfig` objects in `src/config/levels/`. `GameScene.create()` reads `this.scene.settings.data.level`, indexes into `LEVELS[]`, and calls `createFromConfig()`. No loader class — inline 3-line lookup.
 
@@ -88,7 +97,9 @@ RawMatter.Body.applyForce(body, position, force);
 RawMatter.Body.setVelocity(body, velocity);
 ```
 
-**Visuals:** All visuals are Phaser `Graphics` generated at runtime. No image files. Swap for real art post-MVP without touching entity logic.
+**Visuals:** Gameplay/UI visuals are Phaser `Graphics`/vector icons generated at runtime. The only
+bundled image is the Gravity Flow logo PNG (`assets/images/`, optimized via `npm run optimize:assets`);
+fonts are bundled woff2. Glassmorphic panels/buttons use the shared `src/ui/glass.ts` + `theme.config`.
 
 ---
 
@@ -96,45 +107,47 @@ RawMatter.Body.setVelocity(body, velocity);
 
 ```
 assets/
-  images/                       ← Optimized logo PNGs (committed). Originals in assets/raw (gitignored).
+  images/                       ← Optimized Gravity Flow logo PNG. Originals in assets/raw (gitignored).
+  fonts/                        ← Self-hosted Orbitron + Exo 2 woff2 (committed).
 scripts/
   optimize-logos.mjs            ← `npm run optimize:assets` — sharp downscale+quantize raw → images.
+  fetch-fonts.mjs               ← `npm run fonts:fetch` — download woff2 (latin) into assets/fonts.
 src/
   config/
     physics.config.ts           ← ALL gameplay constants + colors. Tune here first.
-    splash.config.ts            ← ALL splash/menu constants (timings, polish tokens). Reuses PHYSICS colors.
+    theme.config.ts             ← Design system: fonts, Expo easing, radius, glass + text tokens.
+    splash.config.ts            ← Splash/menu constants (timings, polish tokens). Reuses PHYSICS colors.
     assets.ts                   ← IMAGES map — import-bundled logo URLs (Vite hashes them).
-    levels/
-      index.ts                  ← LEVELS[] — single source of truth (order + count)
-      level1.ts … level6.ts     ← 6 handcrafted levels (play-area coords)
+    levels/                     ← LEVELS[] (index.ts) + level1…level6.ts (play-area coords)
   entities/
-    Ball.ts                     ← Physics circle + Graphics. update() syncs position.
-    Attractor.ts                ← Ring visual. moveTo(x,y) redraws. No lifetime.
-    Goal.ts                     ← Visual ring + x,y,radius data. No physics body.
-    Obstacle.ts                 ← Static Matter.js rect + Graphics visual.
-    CosmicBackground.ts         ← Shared stars + nebula backdrop (intro, menu, level select, end).
+    Ball.ts · Attractor.ts · Goal.ts · Obstacle.ts   ← gameplay entities (Graphics + Matter bodies)
+    CosmicBackground.ts         ← Shared stars + nebula backdrop (intensity param dims it for gameplay).
   ui/
-    Button.ts                   ← Reusable rounded-rect button: pointer states + idle breathing.
+    Button.ts                   ← Rounded-rect button: theme radius/easing, accent glow, optional icon.
+    IconButton.ts               ← Glass icon button (HUD/nav, settings).
+    Toggle.ts                   ← Toggle switch (settings).
+    icons.ts                    ← Vector line icons (home, settings, restart, close, sound, …).
+    glass.ts                    ← drawGlass() frosted-panel helper (HUD chip, overlays, settings).
   scenes/
-    BootScene.ts                ← Preloads logos + glow texture, starts CompanySplashScene.
-    CompanySplashScene.ts       ← Stage 1: True Story logo, fade/scale/glow, ~2s.
+    BootScene.ts                ← Preloads logo + glow texture, awaits fonts, starts CompanySplashScene.
+    CompanySplashScene.ts       ← Stage 1: True Story Labs text wordmark (Orbitron + gold glow), ~2s.
     IntroSplashScene.ts         ← Stage 2: sphere→vortex→Gravity Flow logo reveal + audio, ~3.5s.
-    MainMenuScene.ts            ← PLAY / LEVELS, logo title + tagline, idle bob.
+    MainMenuScene.ts            ← PLAY / LEVELS + settings gear, staggered entrance, ambient pad.
     LevelSelectScene.ts         ← Grid from LEVELS.length → GameScene { level n }.
-    GameScene.ts                ← Level load, input, force, win, death, restart.
+    SettingsScene.ts            ← Overlay: Sound/Music/Haptics/Reduce-Motion toggles (over paused scene).
+    GameScene.ts                ← Level logic + HUD chip + Home/Settings/Restart nav + dim cosmic bg.
     EndScene.ts                 ← GRAVITY FLOW + Play Again / Main Menu.
+  styles/
+    fonts.css                   ← @font-face for the self-hosted fonts (imported in main.ts).
   utils/
-    matter.ts                   ← Typed bridge to Phaser's bundled Matter.js.
-    MathUtils.ts                ← normalize(), clamp(), distance(). TDD-tested.
-    MathUtils.test.ts
-    AudioSynth.ts               ← Web Audio synth: hum, chimes, splash whoosh/thoom/reveal cues.
+    matter.ts · MathUtils.ts(+test)  ← Matter bridge; tested math helpers.
+    AudioSynth.ts               ← Web Audio: SFX (Sound-gated) + ambient pad (Music). sharedAudio() singleton.
+    SettingsStore.ts            ← localStorage prefs: sound, music, haptics, reduceMotion.
     transitions.ts              ← fadeIn / fadeToScene camera helpers.
-    a11y.ts                     ← prefersReducedMotion(), safe-area insets.
-  types/
-    index.ts                    ← Vec2, ObstacleConfig, LevelConfig.
-  vite-env.d.ts                 ← Vite client types (enables *.png imports).
-  main.ts                       ← Phaser.Game bootstrap. Scene list: Boot, CompanySplash,
-                                  IntroSplash, MainMenu, LevelSelect, Game, End.
+    a11y.ts                     ← prefersReducedMotion(), reducedMotionActive(), safe-area insets.
+  types/index.ts · vite-env.d.ts
+  main.ts                       ← Phaser.Game bootstrap + fonts.css. Scenes: Boot, CompanySplash,
+                                  IntroSplash, MainMenu, LevelSelect, Settings, Game, End.
 ```
 
 ---
