@@ -9,4 +9,4 @@ assets/raw/
 
 # Ad-hoc dev screenshotting (not part of the build).
 .shots/
-scripts/shoot.py
+scripts/*.py

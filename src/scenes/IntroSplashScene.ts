@@ -10,8 +10,7 @@ import { prefersReducedMotion, safeAreaInsetsScaled } from '../utils/a11y';
 // Stage 2: cosmic set-piece. The energy sphere (the player ball) crosses the
 // screen, is pulled into the vortex (the gameplay goal), and the swirl reveals
 // the Gravity Flow logo. Teaches "guide the ball into the target" before play.
-// TODO(step 5): NEXT becomes 'MainMenuScene' once that scene exists.
-const NEXT = 'GameScene';
+const NEXT = 'MainMenuScene';
 
 interface SphereState {
   x: number;
