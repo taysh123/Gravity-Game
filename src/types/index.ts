@@ -16,4 +16,5 @@ export interface LevelConfig {
   goal: { x: number; y: number; radius: number };
   obstacles: ObstacleConfig[];
   startVelocity?: { x: number; y: number };
+  hint?: string;   // one-line onboarding tip, shown on level entry
 }

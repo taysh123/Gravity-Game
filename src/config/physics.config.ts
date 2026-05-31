@@ -29,6 +29,11 @@ export const PHYSICS = {
   PLAY_WIDTH: 360,               // Play area width inside 390px canvas.
   PLAY_HEIGHT: 780,              // Play area height inside 844px canvas.
 
+  // Onboarding + feedback
+  HINT_DURATION_MS: 5000,        // Auto-hide a level hint after this long.
+  PULL_LINE_ALPHA: 0.22,         // Faint ball→attractor line while pulling.
+  COLOR_HINT_TEXT: '#aeb8d8',    // Light lavender-grey — high contrast on bg.
+
   // Mobile
   HAPTICS_ENABLED: true,         // Set false to disable navigator.vibrate calls.
   HAPTIC_TAP_MS: 12,             // Buzz length on restart/death.

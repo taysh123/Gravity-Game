@@ -10,4 +10,5 @@ export const level3: LevelConfig = {
     { x: 100, y: 430, width: 140, height: 18 }, // Wall A (lower)
     { x: 260, y: 280, width: 140, height: 18 }, // Wall B (upper)
   ],
+  hint:      'Plan a path through both gaps',
 };
