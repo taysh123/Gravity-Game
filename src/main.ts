@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { BootScene } from './scenes/BootScene';
 import { CompanySplashScene } from './scenes/CompanySplashScene';
+import { IntroSplashScene } from './scenes/IntroSplashScene';
 import { GameScene } from './scenes/GameScene';
 import { EndScene } from './scenes/EndScene';
 
@@ -20,5 +21,5 @@ new Phaser.Game({
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
-  scene: [BootScene, CompanySplashScene, GameScene, EndScene],
+  scene: [BootScene, CompanySplashScene, IntroSplashScene, GameScene, EndScene],
 });

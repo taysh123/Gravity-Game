@@ -6,8 +6,7 @@ import { prefersReducedMotion, safeAreaInsetsScaled } from '../utils/a11y';
 
 // Stage 1 of the startup flow: the True Story Application brand moment.
 // Black → fade-in + scale-up → soft orange glow pulse → fade out. ~1.9s.
-// TODO(step 4): NEXT becomes 'IntroSplashScene' once that scene exists.
-const NEXT = 'GameScene';
+const NEXT = 'IntroSplashScene';
 
 export class CompanySplashScene extends Phaser.Scene {
   private isAdvancing = false;
