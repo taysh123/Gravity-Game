@@ -6,7 +6,7 @@
     <title>Project Gravity</title>
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
-      body {
+      html, body {
         background: #0d0d1a;
         display: flex;
         justify-content: center;
@@ -14,8 +14,13 @@
         width: 100vw;
         height: 100vh;
         overflow: hidden;
+        /* Drag should drive the attractor, never scroll/zoom/select the page. */
+        touch-action: none;
+        -webkit-user-select: none;
+        user-select: none;
+        overscroll-behavior: none;
       }
-      canvas { display: block; }
+      canvas { display: block; touch-action: none; }
     </style>
   </head>
   <body>

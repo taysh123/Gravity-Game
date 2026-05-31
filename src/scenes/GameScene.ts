@@ -20,6 +20,7 @@ export class GameScene extends Phaser.Scene {
   private isDying = false;
   private hintText: Phaser.GameObjects.Text | null = null;
   private pullLine!: Phaser.GameObjects.Graphics;
+  private restartButton!: Phaser.GameObjects.Text;
 
   // One AudioContext for the whole game — recreating it per scene.restart()
   // would leak contexts and browsers cap how many you can open.
@@ -66,6 +67,7 @@ export class GameScene extends Phaser.Scene {
     this.pullLine = this.add.graphics();
     this.setupInput();
     this.showLevelLabel();
+    this.createRestartButton();
     this.hintText = null;
     this.showHint(config.hint);
 
@@ -117,8 +119,13 @@ export class GameScene extends Phaser.Scene {
   }
 
   private setupInput(): void {
+    // Stop the browser context menu on long-press / right-click.
+    this.input.mouse?.disableContextMenu();
+
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       if (this.isWon) return;
+      // Ignore taps on the restart button so they don't also spawn an attractor.
+      if (this.restartButton.getBounds().contains(pointer.x, pointer.y)) return;
       this.dismissHint();
       const audio = this.getAudio();
       audio.resume();
@@ -147,6 +154,23 @@ export class GameScene extends Phaser.Scene {
       color: '#ffffff',
       fontFamily: 'Arial, sans-serif',
     });
+  }
+
+  // On-screen restart for touch devices (keyboard R isn't available there).
+  // Padding sizes the hit area to ≥44×44px per mobile touch-target guidance.
+  private createRestartButton(): void {
+    this.restartButton = this.add
+      .text(this.scale.width - 12, 12, '↺', {
+        fontSize: '24px',
+        color: '#ffffff',
+        fontFamily: 'Arial, sans-serif',
+        backgroundColor: '#7c5cff',
+        padding: { x: 12, y: 8 },
+      })
+      .setOrigin(1, 0)
+      .setInteractive({ useHandCursor: true });
+
+    this.restartButton.on('pointerdown', () => this.triggerRestart());
   }
 
   // Onboarding tip near the bottom. Auto-fades, or dismisses on first touch.
