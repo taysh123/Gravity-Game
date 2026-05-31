@@ -13,9 +13,13 @@ export class CosmicBackground {
   private readonly nebula: Phaser.GameObjects.Image[] = [];
   private readonly objects: Phaser.GameObjects.GameObject[] = [];
   private elapsed = 0;
+  private readonly intensity: number;
 
-  constructor(scene: Phaser.Scene) {
+  // intensity < 1 dims stars + nebula — used behind gameplay so the backdrop
+  // never competes with the ball/goal/obstacles.
+  constructor(scene: Phaser.Scene, intensity = 1) {
     this.scene = scene;
+    this.intensity = intensity;
     const { width, height } = scene.scale;
 
     const fill = scene.add
@@ -30,12 +34,12 @@ export class CosmicBackground {
     this.farStars = scene.add
       .tileSprite(0, 0, width, height, 'stars-far')
       .setOrigin(0)
-      .setAlpha(SPLASH.STAR_FAR_ALPHA)
+      .setAlpha(SPLASH.STAR_FAR_ALPHA * intensity)
       .setDepth(-90);
     this.nearStars = scene.add
       .tileSprite(0, 0, width, height, 'stars-near')
       .setOrigin(0)
-      .setAlpha(SPLASH.STAR_NEAR_ALPHA)
+      .setAlpha(SPLASH.STAR_NEAR_ALPHA * intensity)
       .setDepth(-80);
     this.objects.push(this.farStars, this.nearStars);
 
@@ -49,7 +53,7 @@ export class CosmicBackground {
         .image(nx, ny, 'glow')
         .setBlendMode(Phaser.BlendModes.ADD)
         .setTint(tint)
-        .setAlpha(SPLASH.NEBULA_ALPHA)
+        .setAlpha(SPLASH.NEBULA_ALPHA * intensity)
         .setScale(2.6 + i * 0.6)
         .setDepth(-85);
       this.nebula.push(glow);
@@ -65,7 +69,7 @@ export class CosmicBackground {
     this.nearStars.tilePositionY -= SPLASH.STAR_DRIFT_SPEED * dt;
     this.nebula.forEach((n, i) => {
       n.rotation += 0.00015 * (i + 1);
-      n.setAlpha(SPLASH.NEBULA_ALPHA * (0.85 + 0.15 * Math.sin(this.elapsed * 0.5 + i)));
+      n.setAlpha(SPLASH.NEBULA_ALPHA * this.intensity * (0.85 + 0.15 * Math.sin(this.elapsed * 0.5 + i)));
     });
   }
 

@@ -4,11 +4,19 @@ import { Attractor } from '../entities/Attractor';
 import { Goal } from '../entities/Goal';
 import { Obstacle } from '../entities/Obstacle';
 import { PHYSICS } from '../config/physics.config';
+import { THEME } from '../config/theme.config';
 import { normalize, clamp, distance } from '../utils/MathUtils';
 import { RawMatter } from '../utils/matter';
 import { AudioSynth } from '../utils/AudioSynth';
 import { LEVELS } from '../config/levels';
 import type { LevelConfig } from '../types';
+import { CosmicBackground } from '../entities/CosmicBackground';
+import { IconButton } from '../ui/IconButton';
+import { drawGlass } from '../ui/glass';
+import { fadeToScene } from '../utils/transitions';
+import { safeAreaInsetsScaled } from '../utils/a11y';
+
+const SAFE_PAD = 12; // minimum padding from any screen edge for HUD/nav
 
 export class GameScene extends Phaser.Scene {
   private ball!: Ball;
@@ -20,9 +28,11 @@ export class GameScene extends Phaser.Scene {
   private isDying = false;
   private hintText: Phaser.GameObjects.Text | null = null;
   private pullLine!: Phaser.GameObjects.Graphics;
-  private restartButton!: Phaser.GameObjects.Text;
+  private cosmic!: CosmicBackground;
+  // Interactive HUD/nav regions where a tap must NOT spawn an attractor.
+  private uiBlockers: Phaser.GameObjects.Container[] = [];
 
-  // One AudioContext for the whole game — recreating it per scene.restart()
+  // One AudioContext for the whole game - recreating it per scene.restart()
   // would leak contexts and browsers cap how many you can open.
   private static audio: AudioSynth | null = null;
 
@@ -62,12 +72,14 @@ export class GameScene extends Phaser.Scene {
 
     const config = LEVELS[this.currentLevel - 1] ?? LEVELS[0];
 
+    this.uiBlockers = [];
+    this.cosmic = new CosmicBackground(this, 0.5); // dim atmosphere behind play
     this.createWorldBounds();
     this.createFromConfig(config);
     this.pullLine = this.add.graphics();
     this.setupInput();
-    this.showLevelLabel();
-    this.createRestartButton();
+    this.createHud();
+    this.createNav();
     this.hintText = null;
     this.showHint(config.hint);
 
@@ -124,8 +136,8 @@ export class GameScene extends Phaser.Scene {
 
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       if (this.isWon) return;
-      // Ignore taps on the restart button so they don't also spawn an attractor.
-      if (this.restartButton.getBounds().contains(pointer.x, pointer.y)) return;
+      // Ignore taps on HUD/nav so they don't also spawn an attractor.
+      if (this.isOverUi(pointer)) return;
       this.dismissHint();
       const audio = this.getAudio();
       audio.resume();
@@ -148,32 +160,70 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  private showLevelLabel(): void {
-    this.add.text(16, 16, `Level ${this.currentLevel}`, {
-      fontSize: '18px',
-      color: '#ffffff',
-      fontFamily: 'Arial, sans-serif',
+  private get safeInsets(): { top: number; left: number; right: number; bottom: number } {
+    const sx = this.scale.displaySize.width / this.scale.gameSize.width;
+    const sy = this.scale.displaySize.height / this.scale.gameSize.height;
+    return safeAreaInsetsScaled(sx, sy);
+  }
+
+  // Glass HUD chip showing the current level (top-left, safe-area aware).
+  private createHud(): void {
+    const insets = this.safeInsets;
+    const padX = Math.max(SAFE_PAD, insets.left) + 8;
+    const padY = Math.max(SAFE_PAD, insets.top) + 8;
+
+    const label = this.add
+      .text(0, 0, `LEVEL ${this.currentLevel}`, {
+        fontFamily: THEME.FONT_DISPLAY,
+        fontSize: '14px',
+        color: THEME.TEXT_PRIMARY,
+        fontStyle: '600',
+      })
+      .setOrigin(0.5);
+    label.setLetterSpacing(2);
+
+    const w = label.width + 28;
+    const h = 34;
+    const chip = this.add.graphics();
+    drawGlass(chip, w, h, h / 2);
+
+    const container = this.add.container(padX + w / 2, padY + h / 2, [chip, label]).setDepth(20);
+    this.uiBlockers.push(container);
+  }
+
+  // Top-right nav cluster: Home + Restart (Settings inserted in the settings
+  // milestone). >=44px targets, 8px gaps, safe-area aware.
+  private createNav(): void {
+    const insets = this.safeInsets;
+    const size = 46;
+    const gap = 8;
+    const rightPad = Math.max(SAFE_PAD, insets.right) + 8;
+    const topPad = Math.max(SAFE_PAD, insets.top) + 8;
+
+    const defs: Array<{ icon: 'home' | 'restart'; onClick: () => void }> = [
+      { icon: 'home', onClick: () => this.goHome() },
+      { icon: 'restart', onClick: () => { if (!this.isWon && !this.isDying) this.triggerRestart(); } },
+    ];
+    const total = defs.length * size + (defs.length - 1) * gap;
+    const startX = this.scale.width - rightPad - total + size / 2;
+    const y = topPad + size / 2;
+
+    defs.forEach((d, i) => {
+      const btn = new IconButton(this, startX + i * (size + gap), y, d.icon, d.onClick, { size });
+      btn.container.setDepth(20);
+      this.uiBlockers.push(btn.container);
     });
   }
 
-  // On-screen restart for touch devices (keyboard R isn't available there).
-  // Padding sizes the hit area to ≥44×44px per mobile touch-target guidance.
-  private createRestartButton(): void {
-    this.restartButton = this.add
-      .text(this.scale.width - 12, 12, '↺', {
-        fontSize: '24px',
-        color: '#ffffff',
-        fontFamily: 'Arial, sans-serif',
-        backgroundColor: '#7c5cff',
-        padding: { x: 12, y: 8 },
-      })
-      .setOrigin(1, 0)
-      .setInteractive({ useHandCursor: true });
+  private isOverUi(pointer: Phaser.Input.Pointer): boolean {
+    return this.uiBlockers.some((c) => c.getBounds().contains(pointer.x, pointer.y));
+  }
 
-    this.restartButton.on('pointerdown', () => {
-      if (this.isWon || this.isDying) return;
-      this.triggerRestart();
-    });
+  private goHome(): void {
+    this.getAudio().stopHum();
+    this.attractor?.destroy();
+    this.attractor = null;
+    fadeToScene(this, 'MainMenuScene');
   }
 
   // Onboarding tip near the bottom. Auto-fades, or dismisses on first touch.
@@ -202,7 +252,7 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  // Faint line from the ball to the active attractor — shows the pull at a glance.
+  // Faint line from the ball to the active attractor - shows the pull at a glance.
   private drawPullLine(): void {
     this.pullLine.clear();
     if (!this.attractor) return;
@@ -216,6 +266,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   update(time: number, _delta: number): void {
+    this.cosmic.update();
     if (this.isWon || this.isDying) return;
 
     this.ball.update();
@@ -297,17 +348,39 @@ export class GameScene extends Phaser.Scene {
   private showWinOverlay(): void {
     this.getAudio().playLevelComplete();
     const { width, height } = this.scale;
-    const overlay = this.add.graphics();
-    overlay.fillStyle(0x000000, 0.45);
-    overlay.fillRect(0, 0, width, height);
+    const cx = width / 2;
+    const cy = height / 2;
 
-    this.add
-      .text(width / 2, height / 2, 'Level Complete!', {
-        fontSize: '34px',
+    const scrim = this.add.graphics().setDepth(50);
+    scrim.fillStyle(0x000000, THEME.SCRIM_ALPHA);
+    scrim.fillRect(0, 0, width, height);
+
+    const panelW = Math.min(width * 0.8, 300);
+    const panelH = 120;
+    const panel = this.add.graphics();
+    drawGlass(panel, panelW, panelH, THEME.RADIUS);
+
+    const label = this.add
+      .text(0, -8, 'LEVEL COMPLETE', {
+        fontFamily: THEME.FONT_DISPLAY,
+        fontSize: '22px',
         color: '#00e676',
-        fontFamily: 'Arial, sans-serif',
+        fontStyle: '700',
       })
       .setOrigin(0.5);
+    label.setLetterSpacing(2);
+
+    const sub = this.add
+      .text(0, 26, this.currentLevel >= LEVELS.length ? 'All levels cleared' : 'Next level...', {
+        fontFamily: THEME.FONT_BODY,
+        fontSize: '14px',
+        color: THEME.TEXT_MUTED,
+      })
+      .setOrigin(0.5);
+
+    const card = this.add.container(cx, cy, [panel, label, sub]).setDepth(51);
+    card.setScale(0.8).setAlpha(0);
+    this.tweens.add({ targets: card, scale: 1, alpha: 1, duration: 360, ease: THEME.EASE_POP });
   }
 
   // One-shot particle burst at the goal. Auto-destroys after the burst so
@@ -360,7 +433,7 @@ export class GameScene extends Phaser.Scene {
     );
   }
 
-  // Instant restart (keyboard R) — no death animation.
+  // Instant restart (keyboard R) - no death animation.
   private triggerRestart(): void {
     this.getAudio().stopHum();
     this.attractor?.destroy();
