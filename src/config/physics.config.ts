@@ -33,6 +33,9 @@ export const PHYSICS = {
   HINT_DURATION_MS: 5000,        // Auto-hide a level hint after this long.
   PULL_LINE_ALPHA: 0.22,         // Faint ball→attractor line while pulling.
   COLOR_HINT_TEXT: '#aeb8d8',    // Light lavender-grey — high contrast on bg.
+  ATTRACTOR_INFLUENCE_ALPHA: 0.28, // Persistent reach-boundary ring (teaches range).
+  SPAWN_PULSE_MS: 440,           // "Sonar ping" expanding to the reach on each spawn.
+  SPAWN_PULSE_ALPHA: 0.38,
 
   // Mobile
   HAPTICS_ENABLED: true,         // Set false to disable navigator.vibrate calls.
