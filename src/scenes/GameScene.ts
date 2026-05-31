@@ -6,6 +6,7 @@ import { Obstacle } from '../entities/Obstacle';
 import { PHYSICS } from '../config/physics.config';
 import { normalize, clamp, distance } from '../utils/MathUtils';
 import { RawMatter } from '../utils/matter';
+import { AudioSynth } from '../utils/AudioSynth';
 import { level1 } from '../config/levels/level1';
 import { level2 } from '../config/levels/level2';
 import { level3 } from '../config/levels/level3';
@@ -21,6 +22,10 @@ export class GameScene extends Phaser.Scene {
   private currentLevel = 1;
   private isWon = false;
 
+  // One AudioContext for the whole game — recreating it per scene.restart()
+  // would leak contexts and browsers cap how many you can open.
+  private static audio: AudioSynth | null = null;
+
   private get playX(): number {
     return (this.scale.width - PHYSICS.PLAY_WIDTH) / 2;
   }
@@ -31,6 +36,22 @@ export class GameScene extends Phaser.Scene {
 
   constructor() {
     super({ key: 'GameScene' });
+  }
+
+  private getAudio(): AudioSynth {
+    if (!GameScene.audio) {
+      const Ctx =
+        window.AudioContext ??
+        (window as unknown as { webkitAudioContext: typeof AudioContext })
+          .webkitAudioContext;
+      GameScene.audio = new AudioSynth(new Ctx());
+    }
+    return GameScene.audio;
+  }
+
+  private haptics(ms: number): void {
+    if (!PHYSICS.HAPTICS_ENABLED) return;
+    navigator.vibrate?.(ms);
   }
 
   create(): void {
@@ -95,6 +116,10 @@ export class GameScene extends Phaser.Scene {
   private setupInput(): void {
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       if (this.isWon) return;
+      const audio = this.getAudio();
+      audio.resume();
+      audio.playGravityActivate();
+      audio.startHum();
       this.attractor?.destroy();
       this.attractor = new Attractor(this, pointer.x, pointer.y);
     });
@@ -106,6 +131,7 @@ export class GameScene extends Phaser.Scene {
     });
 
     this.input.on('pointerup', () => {
+      this.getAudio().stopHum();
       this.attractor?.destroy();
       this.attractor = null;
     });
@@ -119,10 +145,12 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  update(_time: number, _delta: number): void {
+  update(time: number, _delta: number): void {
     if (this.isWon) return;
 
     this.ball.update();
+    this.goal.pulse(time / 300);
+    this.attractor?.pulse(time / 150);
     this.applyAttractorForce();
     this.checkWin();
     this.checkDeath();
@@ -165,6 +193,10 @@ export class GameScene extends Phaser.Scene {
 
   private triggerWin(): void {
     this.isWon = true;
+    const audio = this.getAudio();
+    audio.stopHum();
+    audio.playGoalCapture();
+    this.haptics(PHYSICS.HAPTIC_WIN_MS);
     this.attractor?.destroy();
     this.attractor = null;
     this.matter.world.pause();
@@ -190,6 +222,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private showWinOverlay(): void {
+    this.getAudio().playLevelComplete();
     const { width, height } = this.scale;
     const overlay = this.add.graphics();
     overlay.fillStyle(0x000000, 0.45);
@@ -222,6 +255,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   private triggerRestart(): void {
+    this.getAudio().stopHum();
+    this.haptics(PHYSICS.HAPTIC_TAP_MS);
     this.attractor?.destroy();
     this.attractor = null;
     this.scene.restart({ level: this.currentLevel });

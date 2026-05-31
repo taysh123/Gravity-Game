@@ -12,13 +12,21 @@ export class Goal {
     this.y = y;
     this.radius = radius;
     this.graphics = scene.add.graphics();
-    this.draw();
+    this.draw(0);
   }
 
-  private draw(): void {
+  // phase: a continuous value (e.g. time/300). The outer halo breathes gently
+  // so the goal reads as "alive" and draws the eye without being noisy.
+  pulse(phase: number): void {
+    this.draw(Math.sin(phase));
+  }
+
+  private draw(beat: number): void {
+    const haloR = this.radius + 12 + beat * 4; // beat ∈ [-1, 1]
+    const haloA = 0.3 + beat * 0.12;
     this.graphics.clear();
-    this.graphics.lineStyle(2, PHYSICS.COLOR_GOAL, 0.3);
-    this.graphics.strokeCircle(this.x, this.y, this.radius + 12);
+    this.graphics.lineStyle(2, PHYSICS.COLOR_GOAL, haloA);
+    this.graphics.strokeCircle(this.x, this.y, haloR);
     this.graphics.lineStyle(3, PHYSICS.COLOR_GOAL, 0.9);
     this.graphics.strokeCircle(this.x, this.y, this.radius);
     this.graphics.fillStyle(PHYSICS.COLOR_GOAL, 0.15);

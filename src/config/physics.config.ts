@@ -24,6 +24,8 @@ export const PHYSICS = {
 
   // Mobile
   HAPTICS_ENABLED: true,         // Set false to disable navigator.vibrate calls.
+  HAPTIC_TAP_MS: 12,             // Buzz length on restart/death.
+  HAPTIC_WIN_MS: 35,             // Buzz length on reaching the goal.
 
   // Colors
   COLOR_BACKGROUND: 0x0d0d1a,

@@ -2,9 +2,53 @@
 // All tones are soft sine waves at low gain — subtle feedback, not arcade effects.
 export class AudioSynth {
   private readonly ctx: AudioContext;
+  private humOsc: OscillatorNode | null = null;
+  private humGain: GainNode | null = null;
 
   constructor(ctx: AudioContext) {
     this.ctx = ctx;
+  }
+
+  // Browsers suspend audio until a user gesture; call from a pointer handler.
+  resume(): void {
+    if (this.ctx.state === 'suspended') {
+      void this.ctx.resume();
+    }
+  }
+
+  // Sustained low hum while the gravity field is held. Idempotent — calling
+  // again while already humming does nothing, so it's safe per pointerdown.
+  startHum(): void {
+    if (this.humOsc) return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+
+    const t = this.ctx.currentTime;
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(110, t); // low A — felt more than heard
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(0.035, t + 0.12); // gentle fade-in
+
+    osc.start(t);
+    this.humOsc = osc;
+    this.humGain = gain;
+  }
+
+  // Fade the hum to silence and release the oscillator. Safe if not humming.
+  stopHum(): void {
+    if (!this.humOsc || !this.humGain) return;
+    const osc = this.humOsc;
+    const gain = this.humGain;
+    this.humOsc = null;
+    this.humGain = null;
+
+    const t = this.ctx.currentTime;
+    gain.gain.cancelScheduledValues(t);
+    gain.gain.setValueAtTime(Math.max(gain.gain.value, 0.0001), t);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.1);
+    osc.stop(t + 0.12);
   }
 
   // Soft low blip when the gravity field activates.
