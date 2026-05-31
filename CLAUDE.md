@@ -95,9 +95,9 @@ src/
   config/
     physics.config.ts           ← ALL numeric constants + colors. Tune here first.
     levels/
-      level1.ts                 ← LevelConfig: ball, goal, obstacles (play-area coords)
-      level2.ts
-      level3.ts
+      index.ts                  ← LEVELS[] — single source of truth (order + count)
+      level1.ts                 ← LevelConfig: ball, goal, obstacles, optional hint
+      level2.ts … level6.ts     ← 6 handcrafted levels (play-area coords)
   entities/
     Ball.ts                     ← Physics circle + Graphics. update() syncs position.
     Attractor.ts                ← Ring visual. moveTo(x,y) redraws. No lifetime.
@@ -111,6 +111,7 @@ src/
     matter.ts                   ← Typed bridge to Phaser's bundled Matter.js.
     MathUtils.ts                ← normalize(), clamp(), distance(). TDD-tested.
     MathUtils.test.ts
+    AudioSynth.ts               ← Web Audio synth: hold hum, goal + level-complete chimes.
   types/
     index.ts                    ← Vec2, ObstacleConfig, LevelConfig.
   main.ts                       ← Phaser.Game bootstrap. Scene list: Boot, Game, End.
@@ -151,8 +152,8 @@ src/
 | 1 — Gravity Sandbox | ✅ Complete | Ball + attractor + bounds + death + restart |
 | 1.5 — Feel Tuning | ✅ Complete | Hold-to-attract, ATTRACTOR_STRENGTH 0.2, stationary start |
 | 2 — Playable Game | ✅ Complete | 3 levels, Goal, win detection, ball absorption, EndScene |
-| 3 — Polish | Pending | Particles, sounds, screen shake, ball trail, visual polish |
-| 4 — QA + Mobile | Pending | Mobile testing, performance profiling, code review, deploy |
+| 3 — Polish | ✅ Complete | Trail, synth audio + hum, goal/attractor pulse, haptics, particle burst, screen shake, onboarding hints, pull line, 3 more levels (6 total), mobile touch hardening |
+| 4 — QA + Mobile | Pending | Device testing, performance profiling, code review, deploy |
 
 ---
 
