@@ -67,9 +67,13 @@ Inverse-square law — physically natural, stronger close, weaker far.
 
 **Scene flow:**
 ```
-BootScene → GameScene (level 1) → GameScene (level 2) → GameScene (level 3) → EndScene
+BootScene → CompanySplashScene → IntroSplashScene → MainMenuScene → GameScene (levels 1–6) → EndScene
+                                                          ↘ LevelSelectScene → GameScene { level n }
 ```
-GameScene is reused for all 3 levels via `scene.restart({ level: n })`. Never destroyed/recreated.
+Startup presentation: CompanySplash (True Story logo, ~2s) → IntroSplash (cosmic sphere→vortex→Gravity
+Flow logo reveal, ~3.5s) → MainMenu (PLAY / LEVELS). Both splashes skip on first touch, honor
+prefers-reduced-motion, and respect safe-area insets. GameScene is reused for all levels via
+`scene.restart({ level: n })`. Never destroyed/recreated.
 
 **Level system:** `LevelConfig` objects in `src/config/levels/`. `GameScene.create()` reads `this.scene.settings.data.level`, indexes into `LEVELS[]`, and calls `createFromConfig()`. No loader class — inline 3-line lookup.
 
@@ -91,30 +95,46 @@ RawMatter.Body.setVelocity(body, velocity);
 ## Folder Structure
 
 ```
+assets/
+  images/                       ← Optimized logo PNGs (committed). Originals in assets/raw (gitignored).
+scripts/
+  optimize-logos.mjs            ← `npm run optimize:assets` — sharp downscale+quantize raw → images.
 src/
   config/
-    physics.config.ts           ← ALL numeric constants + colors. Tune here first.
+    physics.config.ts           ← ALL gameplay constants + colors. Tune here first.
+    splash.config.ts            ← ALL splash/menu constants (timings, polish tokens). Reuses PHYSICS colors.
+    assets.ts                   ← IMAGES map — import-bundled logo URLs (Vite hashes them).
     levels/
       index.ts                  ← LEVELS[] — single source of truth (order + count)
-      level1.ts                 ← LevelConfig: ball, goal, obstacles, optional hint
-      level2.ts … level6.ts     ← 6 handcrafted levels (play-area coords)
+      level1.ts … level6.ts     ← 6 handcrafted levels (play-area coords)
   entities/
     Ball.ts                     ← Physics circle + Graphics. update() syncs position.
     Attractor.ts                ← Ring visual. moveTo(x,y) redraws. No lifetime.
     Goal.ts                     ← Visual ring + x,y,radius data. No physics body.
     Obstacle.ts                 ← Static Matter.js rect + Graphics visual.
+    CosmicBackground.ts         ← Shared stars + nebula backdrop (intro, menu, level select, end).
+  ui/
+    Button.ts                   ← Reusable rounded-rect button: pointer states + idle breathing.
   scenes/
-    BootScene.ts                ← Immediately starts GameScene.
+    BootScene.ts                ← Preloads logos + glow texture, starts CompanySplashScene.
+    CompanySplashScene.ts       ← Stage 1: True Story logo, fade/scale/glow, ~2s.
+    IntroSplashScene.ts         ← Stage 2: sphere→vortex→Gravity Flow logo reveal + audio, ~3.5s.
+    MainMenuScene.ts            ← PLAY / LEVELS, logo title + tagline, idle bob.
+    LevelSelectScene.ts         ← Grid from LEVELS.length → GameScene { level n }.
     GameScene.ts                ← Level load, input, force, win, death, restart.
-    EndScene.ts                 ← "You did it!" + Play Again button.
+    EndScene.ts                 ← GRAVITY FLOW + Play Again / Main Menu.
   utils/
     matter.ts                   ← Typed bridge to Phaser's bundled Matter.js.
     MathUtils.ts                ← normalize(), clamp(), distance(). TDD-tested.
     MathUtils.test.ts
-    AudioSynth.ts               ← Web Audio synth: hold hum, goal + level-complete chimes.
+    AudioSynth.ts               ← Web Audio synth: hum, chimes, splash whoosh/thoom/reveal cues.
+    transitions.ts              ← fadeIn / fadeToScene camera helpers.
+    a11y.ts                     ← prefersReducedMotion(), safe-area insets.
   types/
     index.ts                    ← Vec2, ObstacleConfig, LevelConfig.
-  main.ts                       ← Phaser.Game bootstrap. Scene list: Boot, Game, End.
+  vite-env.d.ts                 ← Vite client types (enables *.png imports).
+  main.ts                       ← Phaser.Game bootstrap. Scene list: Boot, CompanySplash,
+                                  IntroSplash, MainMenu, LevelSelect, Game, End.
 ```
 
 ---

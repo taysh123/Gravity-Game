@@ -1,7 +1,13 @@
 import Phaser from 'phaser';
 import { LEVELS } from '../config/levels';
+import { SPLASH } from '../config/splash.config';
+import { CosmicBackground } from '../entities/CosmicBackground';
+import { Button } from '../ui/Button';
+import { fadeIn, fadeToScene } from '../utils/transitions';
 
 export class EndScene extends Phaser.Scene {
+  private cosmic!: CosmicBackground;
+
   constructor() {
     super({ key: 'EndScene' });
   }
@@ -11,43 +17,52 @@ export class EndScene extends Phaser.Scene {
     const cx = width / 2;
     const cy = height / 2;
 
+    this.cosmic = new CosmicBackground(this);
+    fadeIn(this);
+
+    const title = this.add
+      .text(cx, cy - 150, SPLASH.GAME_TITLE, {
+        fontFamily: SPLASH.FONT,
+        fontSize: '40px',
+        color: SPLASH.MENU_TEXT,
+        fontStyle: 'bold',
+      })
+      .setOrigin(0.5);
+    title.setLetterSpacing(4);
+
     this.add
-      .text(cx, cy - 80, 'You did it!', {
-        fontSize: '42px',
+      .text(cx, cy - 90, 'You did it!', {
+        fontFamily: SPLASH.FONT,
+        fontSize: '30px',
         color: '#00e676',
-        fontFamily: 'Arial, sans-serif',
+        fontStyle: 'bold',
       })
       .setOrigin(0.5);
 
     this.add
-      .text(cx, cy - 20, `${LEVELS.length} / ${LEVELS.length} Levels Complete`, {
-        fontSize: '20px',
-        color: '#aaaaaa',
-        fontFamily: 'Arial, sans-serif',
+      .text(cx, cy - 50, `${LEVELS.length} / ${LEVELS.length} Levels Complete`, {
+        fontFamily: SPLASH.FONT,
+        fontSize: '18px',
+        color: '#aeb8d8',
       })
       .setOrigin(0.5);
 
-    const btn = this.add
-      .text(cx, cy + 60, 'Play Again', {
-        fontSize: '22px',
-        color: '#ffffff',
-        fontFamily: 'Arial, sans-serif',
-        backgroundColor: '#7c5cff',
-        padding: { x: 28, y: 14 },
-      })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true });
-
-    btn.on('pointerdown', () => {
-      this.scene.start('GameScene', { level: 1 });
+    new Button(this, cx, cy + 40, 'Play Again', () => fadeToScene(this, 'GameScene', { level: 1 }), {
+      fill: SPLASH.MENU_FILL_PRIMARY,
+      textColor: '#0a2417',
     });
 
-    btn.on('pointerover', () => {
-      btn.setStyle({ backgroundColor: '#9b7dff' });
-    });
+    new Button(
+      this,
+      cx,
+      cy + 40 + SPLASH.MENU_BTN_H + SPLASH.MENU_BTN_GAP,
+      'Main Menu',
+      () => fadeToScene(this, 'MainMenuScene'),
+      { fill: SPLASH.MENU_FILL_SECONDARY },
+    );
+  }
 
-    btn.on('pointerout', () => {
-      btn.setStyle({ backgroundColor: '#7c5cff' });
-    });
+  update(): void {
+    this.cosmic.update();
   }
 }
