@@ -1,13 +1,23 @@
 // Accessibility + device helpers for App-Store-quality presentation.
+import { SettingsStore } from './SettingsStore';
 
-// True when the OS requests reduced motion. Splash scenes use this to swap the
-// heavy set-piece for a tasteful fade.
+// True when the OS requests reduced motion.
 export function prefersReducedMotion(): boolean {
   return (
     typeof window !== 'undefined' &&
     typeof window.matchMedia === 'function' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches
   );
+}
+
+// Effective reduced-motion state: the user's explicit setting overrides the OS;
+// 'system' falls back to the OS preference. Scenes call this (not the raw
+// prefersReducedMotion) so the in-app toggle takes effect.
+export function reducedMotionActive(): boolean {
+  const pref = SettingsStore.get().reduceMotion;
+  if (pref === 'on') return true;
+  if (pref === 'off') return false;
+  return prefersReducedMotion();
 }
 
 export interface SafeAreaInsets {

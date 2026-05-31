@@ -6,8 +6,8 @@ export class BootScene extends Phaser.Scene {
     super({ key: 'BootScene' });
   }
 
-  // External image assets load here; preload completes before create() runs,
-  // so the company logo is ready before its splash fade — no pop-in.
+  // External image assets load here; preload completes before create() runs.
+  // (true-story logo removed in M2 when the company splash goes text-only.)
   preload(): void {
     this.load.image(IMAGES.trueStoryLogo.key, IMAGES.trueStoryLogo.url);
     this.load.image(IMAGES.gravityFlowLogo.key, IMAGES.gravityFlowLogo.url);
@@ -16,7 +16,26 @@ export class BootScene extends Phaser.Scene {
   create(): void {
     this.generateSparkTexture();
     this.generateGlowTexture();
-    this.scene.start('CompanySplashScene');
+    // Wait for the custom fonts so the first text rendered to canvas isn't a
+    // fallback (canvas text doesn't re-render on late font load).
+    this.loadFonts().then(() => this.scene.start('CompanySplashScene'));
+  }
+
+  private async loadFonts(): Promise<void> {
+    try {
+      const fonts = (document as Document & { fonts?: FontFaceSet }).fonts;
+      if (!fonts) return;
+      await Promise.all([
+        fonts.load('700 40px "Orbitron"'),
+        fonts.load('600 40px "Orbitron"'),
+        fonts.load('400 16px "Exo 2"'),
+        fonts.load('500 16px "Exo 2"'),
+        fonts.load('600 16px "Exo 2"'),
+      ]);
+      await fonts.ready;
+    } catch {
+      // Fall back to system fonts silently.
+    }
   }
 
   // Runtime-generated particle texture — keeps the "no image assets" rule.

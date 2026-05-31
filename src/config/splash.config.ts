@@ -1,4 +1,5 @@
 import { PHYSICS } from './physics.config';
+import { THEME } from './theme.config';
 
 // All startup-presentation tuning lives here (mirrors physics.config.ts).
 // Timings in ms. Colors reuse PHYSICS.COLOR_* so the splash, menu, and
@@ -7,7 +8,7 @@ export const SPLASH = {
   // ── Brand strings ────────────────────────────────────────────────
   GAME_TITLE: 'GRAVITY FLOW',
   TAGLINE: 'Hold to pull',
-  FONT: 'Arial, sans-serif',
+  FONT: THEME.FONT_BODY, // body/UI font; wordmarks use THEME.FONT_DISPLAY directly
 
   // ── Shared transitions / fade ────────────────────────────────────
   SCENE_FADE_MS: 350,

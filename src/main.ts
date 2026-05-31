@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import './styles/fonts.css';
 import { BootScene } from './scenes/BootScene';
 import { CompanySplashScene } from './scenes/CompanySplashScene';
 import { IntroSplashScene } from './scenes/IntroSplashScene';
