@@ -2,3 +2,7 @@ node_modules/
 dist/
 .DS_Store
 *.local
+
+# Full-resolution logo originals — source for `npm run optimize:assets`.
+# Only the optimized assets/images/*.png are committed.
+assets/raw/
