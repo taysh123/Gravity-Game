@@ -16,6 +16,13 @@ export const PHYSICS = {
   TRAIL_LENGTH: 6,               // Number of trail segments. Short = subtle.
   TRAIL_MAX_ALPHA: 0.25,         // Opacity of the nearest trail segment. Low = elegant.
 
+  // Juice — particle burst + screen shake (kept under the 50-particle ceiling)
+  PARTICLE_COUNT: 24,            // Particles in the goal-capture burst.
+  SHAKE_WIN_MS: 120,             // Subtle celebratory shake on reaching the goal.
+  SHAKE_WIN_INTENSITY: 0.004,
+  SHAKE_DEATH_MS: 180,           // Sharper shake when the ball is lost.
+  SHAKE_DEATH_INTENSITY: 0.008,
+
   // World bounds
   WALL_THICKNESS: 20,
   WALL_RESTITUTION: 0.5,
@@ -35,5 +42,6 @@ export const PHYSICS = {
   COLOR_ATTRACTOR_PULSE: 0x00d4ff,
   COLOR_WALL: 0x1a2a3a,
   COLOR_GOAL: 0x00e676,          // electric green — unique, unmissable
+  COLOR_PARTICLE: 0x00e676,      // burst color — matches the goal
   COLOR_OBSTACLE: 0x3a4a5c,      // slate — visually heavy, clearly blocking
 } as const;

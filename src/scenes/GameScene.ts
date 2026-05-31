@@ -21,6 +21,7 @@ export class GameScene extends Phaser.Scene {
   private restartKey!: Phaser.Input.Keyboard.Key;
   private currentLevel = 1;
   private isWon = false;
+  private isDying = false;
 
   // One AudioContext for the whole game — recreating it per scene.restart()
   // would leak contexts and browsers cap how many you can open.
@@ -58,6 +59,7 @@ export class GameScene extends Phaser.Scene {
     const data = this.scene.settings.data as { level?: number } | undefined;
     this.currentLevel = data?.level ?? 1;
     this.isWon = false;
+    this.isDying = false;
 
     const config = LEVELS[this.currentLevel - 1] ?? level1;
 
@@ -146,7 +148,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   update(time: number, _delta: number): void {
-    if (this.isWon) return;
+    if (this.isWon || this.isDying) return;
 
     this.ball.update();
     this.goal.pulse(time / 300);
@@ -200,6 +202,8 @@ export class GameScene extends Phaser.Scene {
     this.attractor?.destroy();
     this.attractor = null;
     this.matter.world.pause();
+    this.emitGoalBurst();
+    this.cameras.main.shake(PHYSICS.SHAKE_WIN_MS, PHYSICS.SHAKE_WIN_INTENSITY);
 
     this.tweens.add({
       targets: this.ball.graphics,
@@ -237,6 +241,22 @@ export class GameScene extends Phaser.Scene {
       .setOrigin(0.5);
   }
 
+  // One-shot particle burst at the goal. Auto-destroys after the burst so
+  // emitters never accumulate across the scene's lifetime.
+  private emitGoalBurst(): void {
+    const emitter = this.add.particles(this.goal.x, this.goal.y, 'spark', {
+      speed: { min: 40, max: 150 },
+      lifespan: 600,
+      scale: { start: 0.9, end: 0 },
+      alpha: { start: 1, end: 0 },
+      tint: PHYSICS.COLOR_PARTICLE,
+      blendMode: 'ADD',
+      emitting: false,
+    });
+    emitter.explode(PHYSICS.PARTICLE_COUNT);
+    this.time.delayedCall(700, () => emitter.destroy());
+  }
+
   private checkDeath(): void {
     const margin = 60;
     const bx = this.ball.body.position.x;
@@ -250,13 +270,30 @@ export class GameScene extends Phaser.Scene {
       by < oy - margin ||
       by > oy + PHYSICS.PLAY_HEIGHT + margin
     ) {
-      this.triggerRestart();
+      this.triggerDeath();
     }
   }
 
-  private triggerRestart(): void {
+  // Death: shake first so the loss is felt, then restart the current level.
+  private triggerDeath(): void {
+    if (this.isDying) return;
+    this.isDying = true;
     this.getAudio().stopHum();
     this.haptics(PHYSICS.HAPTIC_TAP_MS);
+    this.attractor?.destroy();
+    this.attractor = null;
+    this.cameras.main.shake(
+      PHYSICS.SHAKE_DEATH_MS,
+      PHYSICS.SHAKE_DEATH_INTENSITY,
+    );
+    this.time.delayedCall(PHYSICS.SHAKE_DEATH_MS, () =>
+      this.scene.restart({ level: this.currentLevel }),
+    );
+  }
+
+  // Instant restart (keyboard R) — no death animation.
+  private triggerRestart(): void {
+    this.getAudio().stopHum();
     this.attractor?.destroy();
     this.attractor = null;
     this.scene.restart({ level: this.currentLevel });
