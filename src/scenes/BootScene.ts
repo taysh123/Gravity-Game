@@ -9,6 +9,7 @@ export class BootScene extends Phaser.Scene {
   // External image assets load here; preload completes before create() runs.
   preload(): void {
     this.load.image(IMAGES.gravityFlowLogo.key, IMAGES.gravityFlowLogo.url);
+    this.load.image(IMAGES.trueStoryLabsLogo.key, IMAGES.trueStoryLabsLogo.url);
   }
 
   create(): void {
