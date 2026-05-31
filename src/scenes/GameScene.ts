@@ -7,7 +7,8 @@ import { PHYSICS } from '../config/physics.config';
 import { THEME } from '../config/theme.config';
 import { normalize, clamp, distance } from '../utils/MathUtils';
 import { RawMatter } from '../utils/matter';
-import { AudioSynth } from '../utils/AudioSynth';
+import { sharedAudio } from '../utils/AudioSynth';
+import { SettingsStore } from '../utils/SettingsStore';
 import { LEVELS } from '../config/levels';
 import type { LevelConfig } from '../types';
 import { CosmicBackground } from '../entities/CosmicBackground';
@@ -32,10 +33,6 @@ export class GameScene extends Phaser.Scene {
   // Interactive HUD/nav regions where a tap must NOT spawn an attractor.
   private uiBlockers: Phaser.GameObjects.Container[] = [];
 
-  // One AudioContext for the whole game - recreating it per scene.restart()
-  // would leak contexts and browsers cap how many you can open.
-  private static audio: AudioSynth | null = null;
-
   private get playX(): number {
     return (this.scale.width - PHYSICS.PLAY_WIDTH) / 2;
   }
@@ -48,19 +45,13 @@ export class GameScene extends Phaser.Scene {
     super({ key: 'GameScene' });
   }
 
-  private getAudio(): AudioSynth {
-    if (!GameScene.audio) {
-      const Ctx =
-        window.AudioContext ??
-        (window as unknown as { webkitAudioContext: typeof AudioContext })
-          .webkitAudioContext;
-      GameScene.audio = new AudioSynth(new Ctx());
-    }
-    return GameScene.audio;
+  private getAudio() {
+    return sharedAudio();
   }
 
   private haptics(ms: number): void {
     if (!PHYSICS.HAPTICS_ENABLED) return;
+    if (!SettingsStore.get().haptics) return;
     navigator.vibrate?.(ms);
   }
 
@@ -200,8 +191,9 @@ export class GameScene extends Phaser.Scene {
     const rightPad = Math.max(SAFE_PAD, insets.right) + 8;
     const topPad = Math.max(SAFE_PAD, insets.top) + 8;
 
-    const defs: Array<{ icon: 'home' | 'restart'; onClick: () => void }> = [
+    const defs: Array<{ icon: 'home' | 'settings' | 'restart'; onClick: () => void }> = [
       { icon: 'home', onClick: () => this.goHome() },
+      { icon: 'settings', onClick: () => this.openSettings() },
       { icon: 'restart', onClick: () => { if (!this.isWon && !this.isDying) this.triggerRestart(); } },
     ];
     const total = defs.length * size + (defs.length - 1) * gap;
@@ -224,6 +216,15 @@ export class GameScene extends Phaser.Scene {
     this.attractor?.destroy();
     this.attractor = null;
     fadeToScene(this, 'MainMenuScene');
+  }
+
+  // Pause gameplay and open the settings overlay on top.
+  private openSettings(): void {
+    this.getAudio().stopHum();
+    this.attractor?.destroy();
+    this.attractor = null;
+    this.scene.pause();
+    this.scene.launch('SettingsScene', { caller: 'GameScene' });
   }
 
   // Onboarding tip near the bottom. Auto-fades, or dismisses on first touch.

@@ -4,8 +4,10 @@ import { SPLASH } from '../config/splash.config';
 import { THEME } from '../config/theme.config';
 import { CosmicBackground } from '../entities/CosmicBackground';
 import { Button } from '../ui/Button';
+import { IconButton } from '../ui/IconButton';
 import { fadeIn, fadeToScene } from '../utils/transitions';
 import { reducedMotionActive, safeAreaInsetsScaled } from '../utils/a11y';
+import { sharedAudio } from '../utils/AudioSynth';
 
 // Stage 3: the home screen. Logo title (bobbing) + tagline + PLAY / LEVELS,
 // with a staggered cinematic entrance. Shares the cosmic backdrop with the intro.
@@ -26,6 +28,27 @@ export class MainMenuScene extends Phaser.Scene {
 
     this.cosmic = new CosmicBackground(this);
     fadeIn(this);
+
+    // Settings gear (top-right, safe-area aware).
+    const gearSize = 46;
+    new IconButton(
+      this,
+      width - Math.max(12, insets.right) - 8 - gearSize / 2,
+      Math.max(12, insets.top) + 8 + gearSize / 2,
+      'settings',
+      () => {
+        this.scene.pause();
+        this.scene.launch('SettingsScene', { caller: 'MainMenuScene' });
+      },
+      { size: gearSize },
+    ).container.setDepth(30);
+
+    // Start the ambient music pad on the first gesture (autoplay policy).
+    this.input.once('pointerdown', () => {
+      const audio = sharedAudio();
+      audio.resume();
+      audio.startAmbientPad();
+    });
 
     const titleY = Math.max(height * 0.28, insets.top + height * 0.18);
     const targetW = width * SPLASH.MENU_TITLE_W_RATIO;

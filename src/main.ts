@@ -5,6 +5,7 @@ import { CompanySplashScene } from './scenes/CompanySplashScene';
 import { IntroSplashScene } from './scenes/IntroSplashScene';
 import { MainMenuScene } from './scenes/MainMenuScene';
 import { LevelSelectScene } from './scenes/LevelSelectScene';
+import { SettingsScene } from './scenes/SettingsScene';
 import { GameScene } from './scenes/GameScene';
 import { EndScene } from './scenes/EndScene';
 
@@ -30,6 +31,7 @@ new Phaser.Game({
     IntroSplashScene,
     MainMenuScene,
     LevelSelectScene,
+    SettingsScene,
     GameScene,
     EndScene,
   ],
