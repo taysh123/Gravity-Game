@@ -21,7 +21,6 @@ mkdirSync(outDir, { recursive: true });
 
 // name -> max long-edge px (crisp headroom over the largest rendered size)
 const TARGETS = {
-  'true-story-logo.png': 1024,
   'gravity-flow-logo.png': 896,
 };
 

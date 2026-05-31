@@ -7,9 +7,7 @@ export class BootScene extends Phaser.Scene {
   }
 
   // External image assets load here; preload completes before create() runs.
-  // (true-story logo removed in M2 when the company splash goes text-only.)
   preload(): void {
-    this.load.image(IMAGES.trueStoryLogo.key, IMAGES.trueStoryLogo.url);
     this.load.image(IMAGES.gravityFlowLogo.key, IMAGES.gravityFlowLogo.url);
   }
 
