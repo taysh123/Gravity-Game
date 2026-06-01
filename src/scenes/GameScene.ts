@@ -51,10 +51,10 @@ export class GameScene extends Phaser.Scene {
     return sharedAudio();
   }
 
-  private haptics(ms: number): void {
+  private haptics(pattern: number | number[]): void {
     if (!PHYSICS.HAPTICS_ENABLED) return;
     if (!SettingsStore.get().haptics) return;
-    navigator.vibrate?.(ms);
+    navigator.vibrate?.(pattern);
   }
 
   create(): void {
@@ -345,11 +345,12 @@ export class GameScene extends Phaser.Scene {
     const audio = this.getAudio();
     audio.stopHum();
     audio.playGoalCapture();
-    this.haptics(PHYSICS.HAPTIC_WIN_MS);
+    this.haptics([...PHYSICS.HAPTIC_WIN_PATTERN]);
     this.attractor?.destroy();
     this.attractor = null;
     this.matter.world.pause();
     this.emitGoalBurst();
+    this.winFlash();
     this.cameras.main.shake(PHYSICS.SHAKE_WIN_MS, PHYSICS.SHAKE_WIN_INTENSITY);
 
     this.tweens.add({
@@ -408,6 +409,27 @@ export class GameScene extends Phaser.Scene {
     const card = this.add.container(cx, cy, [panel, label, sub]).setDepth(51);
     card.setScale(0.8).setAlpha(0);
     this.tweens.add({ targets: card, scale: 1, alpha: 1, duration: 360, ease: THEME.EASE_POP });
+  }
+
+  // Soft "absorb" flash at the goal when the ball is captured.
+  private winFlash(): void {
+    const size = this.goal.radius * 4;
+    const flash = this.add
+      .image(this.goal.x, this.goal.y, 'glow')
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(0xc9ffd6)
+      .setDepth(40)
+      .setDisplaySize(size, size)
+      .setAlpha(0.9);
+    const grow = reducedMotionActive() ? 1.15 : 2.1;
+    this.tweens.add({
+      targets: flash,
+      alpha: 0,
+      scale: flash.scale * grow,
+      duration: PHYSICS.WIN_FLASH_MS,
+      ease: 'Cubic.Out',
+      onComplete: () => flash.destroy(),
+    });
   }
 
   // One-shot particle burst at the goal. Auto-destroys after the burst so

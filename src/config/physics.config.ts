@@ -39,8 +39,16 @@ export const PHYSICS = {
 
   // Mobile
   HAPTICS_ENABLED: true,         // Set false to disable navigator.vibrate calls.
-  HAPTIC_TAP_MS: 12,             // Buzz length on restart/death.
-  HAPTIC_WIN_MS: 35,             // Buzz length on reaching the goal.
+  HAPTIC_TAP_MS: 12,             // Buzz length on restart/attractor spawn.
+  HAPTIC_WIN_MS: 35,             // (legacy single buzz; win now uses the pattern)
+  HAPTIC_WIN_PATTERN: [22, 28, 55], // Celebratory buzz-pause-buzz on reaching the goal.
+  HAPTIC_DEATH_PATTERN: [60, 40, 20], // Sharp descending buzz on death.
+
+  // Win / death feedback (elegant, within the <50-particle ceiling)
+  WIN_FLASH_MS: 340,             // Goal "absorb" flash on capture.
+  DEATH_FLASH_MS: 360,           // Red vignette flash on death.
+  DEATH_PUFF_COUNT: 16,          // Ball "puff" particles on death.
+  COLOR_DEATH: 0xff5a6a,         // Fail red — vignette + puff + ball tint.
 
   // Colors
   COLOR_BACKGROUND: 0x0d0d1a,
