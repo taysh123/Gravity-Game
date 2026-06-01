@@ -9,4 +9,5 @@ export const level1: LevelConfig = {
   goal:      { x: 180, y: 305, radius: 64 },
   obstacles: [],
   hint:      'Hold near the ball to pull it toward you',
+  parTimeMs: 9000,
 };

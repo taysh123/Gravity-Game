@@ -6,6 +6,7 @@ import Phaser from 'phaser';
 export const RawMatter = (Phaser.Physics.Matter as any).Matter as {
   Body: {
     setVelocity: (body: MatterJS.BodyType, velocity: { x: number; y: number }) => void;
+    setPosition: (body: MatterJS.BodyType, position: { x: number; y: number }) => void;
     applyForce: (
       body: MatterJS.BodyType,
       position: { x: number; y: number },

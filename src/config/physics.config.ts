@@ -50,6 +50,11 @@ export const PHYSICS = {
   DEATH_PUFF_COUNT: 16,          // Ball "puff" particles on death.
   COLOR_DEATH: 0xff5a6a,         // Fail red — vignette + puff + ball tint.
 
+  // Stars / scoring
+  STAR_PAR_DEFAULT_MS: 12000,    // Fallback efficiency par when a level omits parTimeMs.
+  COLOR_STAR: 0xffd166,          // Filled (earned) star — gold.
+  COLOR_STAR_EMPTY: 0x3a4256,    // Empty star slate.
+
   // Colors
   COLOR_BACKGROUND: 0x0d0d1a,
   COLOR_BALL: 0xf0f0ff,

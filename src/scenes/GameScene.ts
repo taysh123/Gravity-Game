@@ -17,8 +17,14 @@ import { IconButton } from '../ui/IconButton';
 import { drawGlass } from '../ui/glass';
 import { fadeToScene } from '../utils/transitions';
 import { safeAreaInsetsScaled, reducedMotionActive } from '../utils/a11y';
+import { computeStars, type StarResult } from '../utils/scoring';
+import { ProgressStore } from '../utils/ProgressStore';
 
 const SAFE_PAD = 12; // minimum padding from any screen edge for HUD/nav
+
+function fmtTime(ms: number): string {
+  return `${(ms / 1000).toFixed(1)}s`;
+}
 
 export class GameScene extends Phaser.Scene {
   private ball!: Ball;
@@ -34,6 +40,12 @@ export class GameScene extends Phaser.Scene {
   private coachMark: CoachMark | null = null;
   // Interactive HUD/nav regions where a tap must NOT spawn an attractor.
   private uiBlockers: Phaser.GameObjects.Container[] = [];
+  // Scoring (stars)
+  private levelStartMs = 0;
+  private parTimeMs: number = PHYSICS.STAR_PAR_DEFAULT_MS;
+  private gemCollected = false;
+  private winResult: StarResult | null = null;
+  private winTimeMs = 0;
 
   private get playX(): number {
     return (this.scale.width - PHYSICS.PLAY_WIDTH) / 2;
@@ -64,6 +76,10 @@ export class GameScene extends Phaser.Scene {
     this.isDying = false;
 
     const config = LEVELS[this.currentLevel - 1] ?? LEVELS[0];
+    this.levelStartMs = this.time.now;
+    this.parTimeMs = config.parTimeMs ?? PHYSICS.STAR_PAR_DEFAULT_MS;
+    this.gemCollected = false;
+    this.winResult = null;
 
     this.uiBlockers = [];
     this.cosmic = new CosmicBackground(this, 0.5); // dim atmosphere behind play
@@ -343,6 +359,22 @@ export class GameScene extends Phaser.Scene {
 
   private triggerWin(): void {
     this.isWon = true;
+
+    // Score the run and persist the best result.
+    this.winTimeMs = Math.round(this.time.now - this.levelStartMs);
+    this.winResult = computeStars({
+      completed: true,
+      gem: this.gemCollected,
+      timeMs: this.winTimeMs,
+      parMs: this.parTimeMs,
+    });
+    ProgressStore.record(this.currentLevel, {
+      stars: this.winResult.stars,
+      timeMs: this.winTimeMs,
+      gem: this.gemCollected,
+      completed: true,
+    });
+
     const audio = this.getAudio();
     audio.stopHum();
     audio.playGoalCapture();
@@ -390,24 +422,43 @@ export class GameScene extends Phaser.Scene {
     drawGlass(panel, panelW, panelH, THEME.RADIUS);
 
     const label = this.add
-      .text(0, -8, 'LEVEL COMPLETE', {
+      .text(0, -38, 'LEVEL COMPLETE', {
         fontFamily: THEME.FONT_DISPLAY,
-        fontSize: '22px',
+        fontSize: '21px',
         color: '#00e676',
         fontStyle: '700',
       })
       .setOrigin(0.5);
     label.setLetterSpacing(2);
 
+    const card = this.add.container(cx, cy, [panel, label]).setDepth(51);
+
+    // Star row (earned = gold, else slate).
+    const earned = this.winResult?.stars ?? 1;
+    const starGap = 40;
+    for (let i = 0; i < 3; i++) {
+      const star = this.add
+        .text((i - 1) * starGap, 6, '★', {
+          fontFamily: THEME.FONT_BODY,
+          fontSize: '30px',
+          color: i < earned ? '#ffd166' : '#3a4256',
+        })
+        .setOrigin(0.5);
+      card.add(star);
+    }
+
+    const parStr = fmtTime(this.parTimeMs);
+    const timeStr = fmtTime(this.winTimeMs);
+    const underPar = this.winResult?.underPar;
     const sub = this.add
-      .text(0, 26, this.currentLevel >= LEVELS.length ? 'All levels cleared' : 'Next level...', {
+      .text(0, 42, `${timeStr}  ·  par ${parStr}`, {
         fontFamily: THEME.FONT_BODY,
         fontSize: '14px',
-        color: THEME.TEXT_MUTED,
+        color: underPar ? '#ffd166' : THEME.TEXT_MUTED,
       })
       .setOrigin(0.5);
+    card.add(sub);
 
-    const card = this.add.container(cx, cy, [panel, label, sub]).setDepth(51);
     card.setScale(0.8).setAlpha(0);
     this.tweens.add({ targets: card, scale: 1, alpha: 1, duration: 360, ease: THEME.EASE_POP });
   }
