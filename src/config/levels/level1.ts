@@ -8,6 +8,7 @@ export const level1: LevelConfig = {
   ball:      { x: 180, y: 470 },
   goal:      { x: 180, y: 305, radius: 64 },
   obstacles: [],
+  collectible: { x: 180, y: 388 }, // on the ball→goal path for now (M6 moves gems off-route)
   hint:      'Hold near the ball to pull it toward you',
   parTimeMs: 9000,
 };

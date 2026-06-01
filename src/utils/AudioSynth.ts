@@ -177,6 +177,25 @@ export class AudioSynth {
     return src;
   }
 
+  // Bright two-note ping when a gem is collected.
+  playGem(): void {
+    if (!this.sfxOn) return;
+    [880, 1320].forEach((freq, i) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      const t = this.ctx.currentTime + i * 0.07;
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, t);
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.linearRampToValueAtTime(0.06, t + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0008, t + 0.25);
+      osc.start(t);
+      osc.stop(t + 0.26);
+    });
+  }
+
   // Soft descending tone when the ball is lost. Distinct from the rising cues.
   playFail(): void {
     if (!this.sfxOn) return;

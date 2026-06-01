@@ -61,6 +61,11 @@ export const PHYSICS = {
   COLOR_STAR: 0xffd166,          // Filled (earned) star — gold.
   COLOR_STAR_EMPTY: 0x3a4256,    // Empty star slate.
 
+  // Collectible gem (2nd star — optional off-path route)
+  GEM_RADIUS: 13,
+  COLOR_GEM: 0xffd166,           // gold gem (matches the star it grants)
+  COLOR_GEM_GLOW: 0xfff0c0,
+
   // Colors
   COLOR_BACKGROUND: 0x0d0d1a,
   COLOR_BALL: 0xf0f0ff,

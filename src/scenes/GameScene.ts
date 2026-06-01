@@ -15,6 +15,7 @@ import { CosmicBackground } from '../entities/CosmicBackground';
 import { CoachMark } from '../entities/CoachMark';
 import { GravityZone } from '../entities/GravityZone';
 import { MovingPlatform } from '../entities/MovingPlatform';
+import { Collectible } from '../entities/Collectible';
 import { IconButton } from '../ui/IconButton';
 import { drawGlass } from '../ui/glass';
 import { fadeToScene } from '../utils/transitions';
@@ -41,6 +42,7 @@ export class GameScene extends Phaser.Scene {
   private cosmic!: CosmicBackground;
   private coachMark: CoachMark | null = null;
   private zones: GravityZone[] = [];
+  private collectible: Collectible | null = null;
   // Interactive HUD/nav regions where a tap must NOT spawn an attractor.
   private uiBlockers: Phaser.GameObjects.Container[] = [];
   // Scoring (stars)
@@ -146,6 +148,10 @@ export class GameScene extends Phaser.Scene {
     this.zones = (config.gravityZones ?? []).map(
       (z) => new GravityZone(this, ox + z.x, oy + z.y, z),
     );
+
+    this.collectible = config.collectible
+      ? new Collectible(this, ox + config.collectible.x, oy + config.collectible.y)
+      : null;
 
     (config.movingPlatforms ?? []).forEach(
       (p) =>
@@ -350,9 +356,11 @@ export class GameScene extends Phaser.Scene {
     this.goal.pulse(time / 300);
     this.attractor?.pulse(time / 150);
     this.zones.forEach((z) => z.pulse(time / 600));
+    this.collectible?.pulse(time / 300);
     this.drawPullLine();
     this.applyAttractorForce();
     this.applyZoneForces();
+    this.checkGem();
     this.checkWin();
     this.checkDeath();
 
@@ -378,6 +386,17 @@ export class GameScene extends Phaser.Scene {
       this.ball.body.position,
       { x: dir.x * mag, y: dir.y * mag },
     );
+  }
+
+  private checkGem(): void {
+    const gem = this.collectible;
+    if (!gem || gem.collected) return;
+    if (gem.overlaps(this.ball.body.position.x, this.ball.body.position.y, PHYSICS.BALL_RADIUS)) {
+      gem.collect(this);
+      this.gemCollected = true;
+      this.getAudio().playGem();
+      this.haptics(PHYSICS.HAPTIC_TAP_MS);
+    }
   }
 
   private checkWin(): void {
