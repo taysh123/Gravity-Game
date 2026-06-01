@@ -63,6 +63,11 @@ export const PHYSICS = {
   COLOR_STAR: 0xffd166,          // Filled (earned) star — gold.
   COLOR_STAR_EMPTY: 0x3a4256,    // Empty star slate.
 
+  // Countdown timer (hard-fail timed levels)
+  TIMER_WARN_MS: 3000,           // Below this, the countdown turns red + pulses.
+  COLOR_TIMER: '#EDEDF2',
+  COLOR_TIMER_WARN: '#ff5a6a',
+
   // Collectible gem (2nd star — optional off-path route)
   GEM_RADIUS: 13,
   COLOR_GEM: 0xffd166,           // gold gem (matches the star it grants)

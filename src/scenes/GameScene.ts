@@ -50,6 +50,8 @@ export class GameScene extends Phaser.Scene {
   // Scoring (stars)
   private levelStartMs = 0;
   private parTimeMs: number = PHYSICS.STAR_PAR_DEFAULT_MS;
+  private timeLimitMs = 0; // 0 = untimed; >0 = hard countdown
+  private countdown: Phaser.GameObjects.Text | null = null;
   private gemCollected = false;
   private winResult: StarResult | null = null;
   private winTimeMs = 0;
@@ -85,6 +87,8 @@ export class GameScene extends Phaser.Scene {
     const config = LEVELS[this.currentLevel - 1] ?? LEVELS[0];
     this.levelStartMs = this.time.now;
     this.parTimeMs = config.parTimeMs ?? PHYSICS.STAR_PAR_DEFAULT_MS;
+    this.timeLimitMs = config.timeLimitMs ?? 0;
+    this.countdown = null;
     this.gemCollected = false;
     this.winResult = null;
 
@@ -96,6 +100,7 @@ export class GameScene extends Phaser.Scene {
     this.setupInput();
     this.createHud();
     this.createNav();
+    if (this.timeLimitMs > 0) this.createCountdown();
     this.hintText = null;
     this.showHint(config.hint);
     this.coachMark = null;
@@ -247,6 +252,43 @@ export class GameScene extends Phaser.Scene {
     this.uiBlockers.push(container);
   }
 
+  // Top-center countdown chip for hard-fail timed levels.
+  private createCountdown(): void {
+    const insets = this.safeInsets;
+    const padY = Math.max(SAFE_PAD, insets.top) + 8;
+    const w = 80;
+    const h = 36;
+    const chip = this.add.graphics();
+    drawGlass(chip, w, h, h / 2);
+    this.countdown = this.add
+      .text(0, 0, fmtTime(this.timeLimitMs), {
+        fontFamily: THEME.FONT_DISPLAY,
+        fontSize: '17px',
+        color: PHYSICS.COLOR_TIMER,
+        fontStyle: '700',
+      })
+      .setOrigin(0.5);
+    // A second row, centered, clear of the top-left chip and top-right toolbar.
+    const cont = this.add
+      .container(this.scale.width / 2, padY + 56 + h / 2, [chip, this.countdown])
+      .setDepth(20);
+    this.uiBlockers.push(cont);
+  }
+
+  private updateCountdown(time: number): void {
+    if (this.timeLimitMs <= 0 || !this.countdown) return;
+    const remaining = this.timeLimitMs - (time - this.levelStartMs);
+    if (remaining <= 0) {
+      this.countdown.setText('0.0s').setColor(PHYSICS.COLOR_TIMER_WARN);
+      this.triggerDeath(); // time's up — fail
+      return;
+    }
+    this.countdown.setText(fmtTime(remaining));
+    const warn = remaining <= PHYSICS.TIMER_WARN_MS;
+    this.countdown.setColor(warn ? PHYSICS.COLOR_TIMER_WARN : PHYSICS.COLOR_TIMER);
+    this.countdown.setScale(warn ? 1 + 0.08 * Math.sin(time / 110) : 1);
+  }
+
   // Top-right nav as one cohesive glass toolbar (Home / Settings / Restart).
   // Bare icon buttons sit inside a shared glass pill — reads as a finished HUD
   // component, not loose squares. Safe-area aware; generous targets.
@@ -369,6 +411,8 @@ export class GameScene extends Phaser.Scene {
     this.cosmic.update();
     if (this.isWon || this.isDying) return;
 
+    this.updateCountdown(time);
+    if (this.isDying) return; // updateCountdown may have triggered a timeout death
     this.ball.update();
     this.goal.pulse(time / 300);
     this.attractor?.pulse(time / 150);
