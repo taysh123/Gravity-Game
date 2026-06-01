@@ -12,6 +12,7 @@ export const level7: LevelConfig = {
   gravityZones: [
     { x: 160, y: 410, width: 130, height: 480, dir: { x: 0, y: -1 }, strength: PHYSICS.GRAVITY_ZONE_STRENGTH },
   ],
+  collectible: { x: 160, y: 200 },
   hint:      'The current lifts you — steer out to the goal',
   parTimeMs: 11000,
 };

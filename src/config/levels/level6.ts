@@ -10,5 +10,7 @@ export const level6: LevelConfig = {
     { x: 250, y: 360, width: 200, height: 18 }, // B (mid)  — gap on left
     { x: 110, y: 200, width: 200, height: 18 }, // C (high) — gap on right
   ],
+  collectible: { x: 300, y: 440 },
   hint:      'Weave through all three',
+  parTimeMs: 22000,
 };

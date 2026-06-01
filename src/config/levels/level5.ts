@@ -9,5 +9,7 @@ export const level5: LevelConfig = {
     { x: 72,  y: 400, width: 145, height: 18 }, // left wall  (spans 0–145)
     { x: 288, y: 400, width: 145, height: 18 }, // right wall (spans 215–360)
   ],
+  collectible: { x: 180, y: 300 },
   hint:      'Thread the narrow gap',
+  parTimeMs: 17000,
 };

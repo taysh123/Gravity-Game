@@ -1,14 +1,16 @@
 import type { LevelConfig } from '../../types';
+import { PHYSICS } from '../physics.config';
 
-// World 3 — Clockwork · develop: a vertical bar sweeps across the open middle.
-// Send the ball across when the bar is on the far side.
+// World 2 — Currents · develop: a central downdraft pushes back. Power straight
+// up through it, or arc around the sides where the air is still.
 export const level10: LevelConfig = {
-  ball:      { x: 65, y: 640 },
-  goal:      { x: 310, y: 150, radius: 40 },
+  ball:      { x: 180, y: 660 },
+  goal:      { x: 180, y: 110, radius: 38 },
   obstacles: [],
-  movingPlatforms: [
-    { x: 130, y: 400, width: 18, height: 230, to: { x: 290, y: 400 }, durationMs: 1500 },
+  gravityZones: [
+    { x: 180, y: 360, width: 150, height: 260, dir: { x: 0, y: 1 }, strength: PHYSICS.GRAVITY_ZONE_STRENGTH * 0.85 },
   ],
-  hint:      'Slip past the sweeping bar',
-  parTimeMs: 17000,
+  collectible: { x: 180, y: 360 }, // dead centre of the downdraft — the hard line
+  hint:      'Push up through the downdraft — or go around',
+  parTimeMs: 16000,
 };

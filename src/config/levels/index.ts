@@ -9,17 +9,18 @@ import { level7 } from './level7';
 import { level8 } from './level8';
 import { level9 } from './level9';
 import { level10 } from './level10';
+import { level11 } from './level11';
+import { level12 } from './level12';
+import { level13 } from './level13';
+import { level14 } from './level14';
+import { level15 } from './level15';
+import { level16 } from './level16';
 
 // Single source of truth for level order and count (used by GameScene + EndScene).
+// Ordered by world so chapter ranges stay contiguous:
+//   1-6 Foundations · 7-11 Currents · 12-16 Clockwork.
 export const LEVELS: LevelConfig[] = [
-  level1,
-  level2,
-  level3,
-  level4,
-  level5,
-  level6,
-  level7,
-  level8,
-  level9,
-  level10,
+  level1, level2, level3, level4, level5, level6,
+  level7, level8, level9, level10, level11,
+  level12, level13, level14, level15, level16,
 ];

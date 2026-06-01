@@ -8,5 +8,7 @@ export const level2: LevelConfig = {
   obstacles: [
     { x: 130, y: 390, width: 220, height: 18 },
   ],
+  collectible: { x: 300, y: 450 },
   hint:      'Drag to steer the ball around the wall',
+  parTimeMs: 14000,
 };
