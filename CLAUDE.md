@@ -32,17 +32,21 @@ npx vitest run src/utils/MathUtils.test.ts
 
 ## Goals (current)
 
-MVP mechanic validated and expanded into a **skill puzzle game**: **16 levels across 3 worlds**, each
+MVP mechanic validated and expanded into a **skill puzzle game**: **22 levels across 4 worlds**, each
 world introducing one mechanic (teach → develop → twist → combine → master), with a 3-star skill layer.
 
 - **World 1 — Foundations** (L1-6): attractor control + static walls. L1 isolates "hold → pull".
 - **World 2 — Currents** (L7-11): **Gravity Zones** — updrafts, crosswinds, downdrafts (force routing).
 - **World 3 — Clockwork** (L12-16): **Moving Platforms** — closing gaps, sweeping bars (timing).
+- **World 4 — Peril** (L17-22): **Hazards** (touch = fail) + **timed levels** (hard countdown) — real stakes.
 
 **3-star scoring** (per level): ★ complete · ★ optional **gem** (off-route) · ★ **efficiency** (≤ `parTimeMs`).
 Persisted in `ProgressStore` (localStorage); shown on the win overlay + world-select; drives sequential
-unlock. Pure scoring in `utils/scoring.ts` (TDD). No fail state yet (see roadmap). Next mechanics ranked
-in `docs/superpowers/plans/2026-06-01-mechanics-roadmap.md`.
+unlock. Pure scoring in `utils/scoring.ts` (TDD). Remaining mechanics ranked in
+`docs/superpowers/plans/2026-06-01-mechanics-roadmap.md`.
+
+**Gravity feel:** `ATTRACTOR_STRENGTH 2.6`, `MIN_DIST 75`, `MAX_DIST 310` — inverse-square model, tuned
+for stronger medium-range pull without a close-range snap.
 
 ---
 
@@ -63,7 +67,11 @@ Inverse-square law — physically natural, stronger close, weaker far.
 
 **Win condition.** `distance(ball, goal) < goal.radius` → `triggerWin()`. Distance check every frame, same pattern as `checkDeath`.
 
-**Death.** Ball position > 60px outside play area bounds → `scene.restart({ level: currentLevel })`. Death always restarts the current level, never Level 1. ⚠️ **Note:** the play area is fully walled, so death is nearly unreachable in normal play (the ball can't build enough speed to tunnel a wall) — effectively there's no fail state today. Death feedback (red flash + puff + `playFail()` + sharp haptic, in `triggerDeath`) is implemented for when it does occur; making death reachable (open bounds / hazards) is an open design question.
+**Death / fail.** `triggerDeath` (red flash + ball puff + `playFail()` + sharp haptic → restart current level) now fires from real fail states: **hazard contact** (`checkHazards` — touching a `Hazard` fails the run) and **timeout** (`updateCountdown` — a level's `timeLimitMs` countdown reaching 0). Out-of-bounds death still exists but is rare (walled arena). Death always restarts the current level, never Level 1.
+
+**Hazards** (`entities/Hazard.ts`, `LevelConfig.hazards`): deadly circle/rect objects (optionally moving via `to`/`durationMs`). Overlap → `triggerDeath`. The first real route-tension mechanic (World 4).
+
+**Timed levels** (`LevelConfig.timeLimitMs`): a top-center glass countdown chip; red + pulsing under `TIMER_WARN_MS`; reaching 0 → timeout fail. The par-time efficiency star is separate and universal.
 
 **Win feel.** `triggerWin` → goal absorb flash (`winFlash`) + particle burst + screen shake + ball scale-out, then the glass `LEVEL COMPLETE` overlay (scale-pop), `playLevelComplete` chord, and `HAPTIC_WIN_PATTERN`. All juice is elegant/subtle and within the <50-particle ceiling.
 
@@ -129,11 +137,12 @@ src/
     splash.config.ts            ← Splash/menu constants (timings, polish tokens). Reuses PHYSICS colors.
     assets.ts                   ← IMAGES map — import-bundled logo URLs (Vite hashes them).
     worlds.ts                   ← WORLDS chapter metadata (name/theme/level range) over flat LEVELS[].
-    levels/                     ← LEVELS[] (index.ts, ordered by world) + level1…level16.ts
+    levels/                     ← LEVELS[] (index.ts, ordered by world) + level1…level22.ts
   entities/
     Ball.ts · Attractor.ts · Goal.ts · Obstacle.ts   ← gameplay entities (Graphics + Matter bodies)
     GravityZone.ts              ← Directional force field (W2 currents). contains() + force; reuses applyForce.
     MovingPlatform.ts           ← Static barrier slid via setPosition tween (W3 clockwork timing).
+    Hazard.ts                   ← Deadly node/bar (optionally moving); overlap → triggerDeath (W4 peril).
     Collectible.ts              ← Optional gem (2nd star); overlap-collected.
     CoachMark.ts                ← One-time L1 gesture demo.
     CosmicBackground.ts         ← Shared stars + nebula backdrop (intensity param dims it for gameplay).
