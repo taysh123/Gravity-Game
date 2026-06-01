@@ -465,21 +465,55 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  // Death: shake first so the loss is felt, then restart the current level.
+  // Death: a clear-but-tasteful fail cue (red flash + puff + tone + haptic),
+  // then restart the current level.
   private triggerDeath(): void {
     if (this.isDying) return;
     this.isDying = true;
-    this.getAudio().stopHum();
-    this.haptics(PHYSICS.HAPTIC_TAP_MS);
+    const audio = this.getAudio();
+    audio.stopHum();
+    audio.playFail();
+    this.haptics([...PHYSICS.HAPTIC_DEATH_PATTERN]);
     this.attractor?.destroy();
     this.attractor = null;
-    this.cameras.main.shake(
-      PHYSICS.SHAKE_DEATH_MS,
-      PHYSICS.SHAKE_DEATH_INTENSITY,
-    );
-    this.time.delayedCall(PHYSICS.SHAKE_DEATH_MS, () =>
+    this.cameras.main.shake(PHYSICS.SHAKE_DEATH_MS, PHYSICS.SHAKE_DEATH_INTENSITY);
+    this.deathFeedback();
+    this.time.delayedCall(PHYSICS.DEATH_FLASH_MS, () =>
       this.scene.restart({ level: this.currentLevel }),
     );
+  }
+
+  // Red flash/vignette + a puff of fail-colored particles where the ball was lost.
+  private deathFeedback(): void {
+    const { width, height } = this.scale;
+    const reduced = reducedMotionActive();
+
+    const flash = this.add
+      .rectangle(0, 0, width, height, PHYSICS.COLOR_DEATH, 0)
+      .setOrigin(0)
+      .setDepth(45);
+    this.tweens.add({
+      targets: flash,
+      alpha: reduced ? 0.12 : 0.2,
+      duration: 90,
+      yoyo: true,
+      hold: 50,
+      ease: 'Quad.easeOut',
+      onComplete: () => flash.destroy(),
+    });
+
+    const puff = this.add.particles(this.ball.body.position.x, this.ball.body.position.y, 'spark', {
+      speed: { min: 60, max: 180 },
+      lifespan: 360,
+      scale: { start: 0.8, end: 0 },
+      alpha: { start: 1, end: 0 },
+      tint: PHYSICS.COLOR_DEATH,
+      blendMode: 'ADD',
+      emitting: false,
+    });
+    puff.setDepth(44);
+    puff.explode(PHYSICS.DEATH_PUFF_COUNT);
+    this.time.delayedCall(PHYSICS.DEATH_FLASH_MS - 20, () => puff.destroy());
   }
 
   // Instant restart (keyboard R) - no death animation.

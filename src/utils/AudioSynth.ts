@@ -177,6 +177,26 @@ export class AudioSynth {
     return src;
   }
 
+  // Soft descending tone when the ball is lost. Distinct from the rising cues.
+  playFail(): void {
+    if (!this.sfxOn) return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+
+    const t = this.ctx.currentTime;
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(330, t);
+    osc.frequency.exponentialRampToValueAtTime(110, t + 0.3);
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.linearRampToValueAtTime(0.08, t + 0.03);
+    gain.gain.exponentialRampToValueAtTime(0.0008, t + 0.35);
+
+    osc.start(t);
+    osc.stop(t + 0.37);
+  }
+
   // Soft C-E-G ascending chord for level complete. Slow, warm, unobtrusive.
   playLevelComplete(): void {
     if (!this.sfxOn) return;
