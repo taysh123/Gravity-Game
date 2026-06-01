@@ -57,9 +57,13 @@ Inverse-square law — physically natural, stronger close, weaker far.
 
 **Win condition.** `distance(ball, goal) < goal.radius` → `triggerWin()`. Distance check every frame, same pattern as `checkDeath`.
 
-**Death.** Ball position > 60px outside play area bounds → `scene.restart({ level: currentLevel })`. Death always restarts the current level, never Level 1.
+**Death.** Ball position > 60px outside play area bounds → `scene.restart({ level: currentLevel })`. Death always restarts the current level, never Level 1. ⚠️ **Note:** the play area is fully walled, so death is nearly unreachable in normal play (the ball can't build enough speed to tunnel a wall) — effectively there's no fail state today. Death feedback (red flash + puff + `playFail()` + sharp haptic, in `triggerDeath`) is implemented for when it does occur; making death reachable (open bounds / hazards) is an open design question.
 
-**Level progression.** `scene.restart({ level: n })` for same-scene restart. `scene.start('EndScene')` after Level 3.
+**Win feel.** `triggerWin` → goal absorb flash (`winFlash`) + particle burst + screen shake + ball scale-out, then the glass `LEVEL COMPLETE` overlay (scale-pop), `playLevelComplete` chord, and `HAPTIC_WIN_PATTERN`. All juice is elegant/subtle and within the <50-particle ceiling.
+
+**Onboarding (Level 1).** Level 1 is retuned so ball→goal sits within one attractor reach — the first press near the ball pulls it home (teaches "hold → pull" with zero friction). Reinforced by: a one-time animated `CoachMark` (ghost dot ball→goal, persisted via `SettingsStore.seenTutorial`, dismissed on first touch, reduced-motion = static arrow), the action-accurate per-level `hint`, and the attractor **spawn "sonar ping"** (`Attractor`) that visualizes the reach on every press. Levels 2-6 keep the longer, drag-to-steer challenge.
+
+**Level progression.** `scene.restart({ level: n })` for same-scene restart. `scene.start('EndScene')` after the last level (`LEVELS.length`).
 
 ---
 
