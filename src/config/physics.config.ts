@@ -50,6 +50,12 @@ export const PHYSICS = {
   DEATH_PUFF_COUNT: 16,          // Ball "puff" particles on death.
   COLOR_DEATH: 0xff5a6a,         // Fail red — vignette + puff + ball tint.
 
+  // Gravity zones (directional force fields). Strength ≈ a moderate attractor pull.
+  GRAVITY_ZONE_STRENGTH: 0.0006, // Reference per-frame force for authoring level zones.
+  COLOR_ZONE_UP: 0x00d4ff,       // cyan — updraft / upward push
+  COLOR_ZONE_DOWN: 0xffd166,     // gold — downdraft
+  COLOR_ZONE_SIDE: 0x7c5cff,     // violet — sideways current
+
   // Stars / scoring
   STAR_PAR_DEFAULT_MS: 12000,    // Fallback efficiency par when a level omits parTimeMs.
   COLOR_STAR: 0xffd166,          // Filled (earned) star — gold.

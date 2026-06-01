@@ -13,6 +13,7 @@ import { LEVELS } from '../config/levels';
 import type { LevelConfig } from '../types';
 import { CosmicBackground } from '../entities/CosmicBackground';
 import { CoachMark } from '../entities/CoachMark';
+import { GravityZone } from '../entities/GravityZone';
 import { IconButton } from '../ui/IconButton';
 import { drawGlass } from '../ui/glass';
 import { fadeToScene } from '../utils/transitions';
@@ -38,6 +39,7 @@ export class GameScene extends Phaser.Scene {
   private pullLine!: Phaser.GameObjects.Graphics;
   private cosmic!: CosmicBackground;
   private coachMark: CoachMark | null = null;
+  private zones: GravityZone[] = [];
   // Interactive HUD/nav regions where a tap must NOT spawn an attractor.
   private uiBlockers: Phaser.GameObjects.Container[] = [];
   // Scoring (stars)
@@ -139,6 +141,21 @@ export class GameScene extends Phaser.Scene {
     config.obstacles.forEach(
       (o) => new Obstacle(this, ox + o.x, oy + o.y, o.width, o.height, o.angle),
     );
+
+    this.zones = (config.gravityZones ?? []).map(
+      (z) => new GravityZone(this, ox + z.x, oy + z.y, z),
+    );
+  }
+
+  private applyZoneForces(): void {
+    if (!this.zones.length) return;
+    const bx = this.ball.body.position.x;
+    const by = this.ball.body.position.y;
+    for (const z of this.zones) {
+      if (z.contains(bx, by)) {
+        RawMatter.Body.applyForce(this.ball.body, this.ball.body.position, z.force);
+      }
+    }
   }
 
   private setupInput(): void {
@@ -316,8 +333,10 @@ export class GameScene extends Phaser.Scene {
     this.ball.update();
     this.goal.pulse(time / 300);
     this.attractor?.pulse(time / 150);
+    this.zones.forEach((z) => z.pulse(time / 600));
     this.drawPullLine();
     this.applyAttractorForce();
+    this.applyZoneForces();
     this.checkWin();
     this.checkDeath();
 
