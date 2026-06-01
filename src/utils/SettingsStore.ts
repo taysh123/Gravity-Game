@@ -8,6 +8,7 @@ export interface Settings {
   music: boolean; // ambient pad
   haptics: boolean; // vibration
   reduceMotion: MotionPref; // 'system' follows the OS setting
+  seenTutorial: boolean; // first-play coach-mark shown
 }
 
 const KEY = 'gravity-flow:settings';
@@ -17,6 +18,7 @@ const DEFAULTS: Settings = {
   music: true,
   haptics: true,
   reduceMotion: 'system',
+  seenTutorial: false,
 };
 
 let cache: Settings | null = null;

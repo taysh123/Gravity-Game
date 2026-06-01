@@ -12,10 +12,11 @@ import { SettingsStore } from '../utils/SettingsStore';
 import { LEVELS } from '../config/levels';
 import type { LevelConfig } from '../types';
 import { CosmicBackground } from '../entities/CosmicBackground';
+import { CoachMark } from '../entities/CoachMark';
 import { IconButton } from '../ui/IconButton';
 import { drawGlass } from '../ui/glass';
 import { fadeToScene } from '../utils/transitions';
-import { safeAreaInsetsScaled } from '../utils/a11y';
+import { safeAreaInsetsScaled, reducedMotionActive } from '../utils/a11y';
 
 const SAFE_PAD = 12; // minimum padding from any screen edge for HUD/nav
 
@@ -30,6 +31,7 @@ export class GameScene extends Phaser.Scene {
   private hintText: Phaser.GameObjects.Text | null = null;
   private pullLine!: Phaser.GameObjects.Graphics;
   private cosmic!: CosmicBackground;
+  private coachMark: CoachMark | null = null;
   // Interactive HUD/nav regions where a tap must NOT spawn an attractor.
   private uiBlockers: Phaser.GameObjects.Container[] = [];
 
@@ -73,6 +75,8 @@ export class GameScene extends Phaser.Scene {
     this.createNav();
     this.hintText = null;
     this.showHint(config.hint);
+    this.coachMark = null;
+    this.maybeShowCoach();
 
     this.restartKey = this.input.keyboard!.addKey(
       Phaser.Input.Keyboard.KeyCodes.R,
@@ -130,6 +134,7 @@ export class GameScene extends Phaser.Scene {
       // Ignore taps on HUD/nav so they don't also spawn an attractor.
       if (this.isOverUi(pointer)) return;
       this.dismissHint();
+      this.dismissCoach();
       const audio = this.getAudio();
       audio.resume();
       audio.playGravityActivate();
@@ -239,6 +244,27 @@ export class GameScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
     this.time.delayedCall(PHYSICS.HINT_DURATION_MS, () => this.dismissHint());
+  }
+
+  // First-play gesture demo on Level 1 only, shown once (persisted).
+  private maybeShowCoach(): void {
+    if (this.currentLevel !== 1) return;
+    if (SettingsStore.get().seenTutorial) return;
+    this.coachMark = new CoachMark(
+      this,
+      this.ball.body.position.x,
+      this.ball.body.position.y,
+      this.goal.x,
+      this.goal.y,
+      reducedMotionActive(),
+    );
+  }
+
+  private dismissCoach(): void {
+    if (!this.coachMark) return;
+    this.coachMark.destroy();
+    this.coachMark = null;
+    if (!SettingsStore.get().seenTutorial) SettingsStore.set('seenTutorial', true);
   }
 
   private dismissHint(): void {
