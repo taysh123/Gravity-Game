@@ -19,6 +19,10 @@ export const THEME = {
   RADIUS: 16,
   RADIUS_SM: 12,
 
+  // Interaction — hit areas extend past the visible edge so the whole surface
+  // (plus a forgiving margin for finger drift) is tappable.
+  HIT_PADDING: 10,
+
   // Glass surfaces (Phaser fills: color + alpha)
   PANEL_FILL: 0x0c0e1a, // frosted panel base
   PANEL_ALPHA: 0.82,

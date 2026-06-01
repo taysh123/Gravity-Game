@@ -247,7 +247,7 @@ export class GameScene extends Phaser.Scene {
   // milestone). >=44px targets, 8px gaps, safe-area aware.
   private createNav(): void {
     const insets = this.safeInsets;
-    const size = 46;
+    const size = 54;
     const gap = 8;
     const rightPad = Math.max(SAFE_PAD, insets.right) + 8;
     const topPad = Math.max(SAFE_PAD, insets.top) + 8;

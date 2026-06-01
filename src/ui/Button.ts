@@ -77,8 +77,11 @@ export class Button {
 
     this.container = scene.add.container(x, y, children);
     this.container.setSize(this.w, this.h);
+    // Hit area extends past the visible edge so the whole surface + a margin
+    // for finger-drift is tappable (and releases stay inside → onClick fires).
+    const pad = THEME.HIT_PADDING;
     this.container.setInteractive(
-      new Phaser.Geom.Rectangle(-this.w / 2, -this.h / 2, this.w, this.h),
+      new Phaser.Geom.Rectangle(-this.w / 2 - pad, -this.h / 2 - pad, this.w + pad * 2, this.h + pad * 2),
       Phaser.Geom.Rectangle.Contains,
     );
     if (this.container.input) this.container.input.cursor = 'pointer';
@@ -94,11 +97,17 @@ export class Button {
     });
     this.container.on('pointerdown', () => {
       this.breathe?.pause();
+      this.drawBg(true); // immediate visual feedback on press
       this.tweenScale(THEME.PRESS_SCALE);
     });
     this.container.on('pointerup', () => {
+      this.drawBg(false);
       this.tweenScale(1.04);
       onClick();
+    });
+    this.container.on('pointerupoutside', () => {
+      this.drawBg(false);
+      this.tweenScale(1);
     });
   }
 

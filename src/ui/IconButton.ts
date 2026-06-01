@@ -13,6 +13,10 @@ export interface IconButtonOptions {
 export class IconButton {
   readonly container: Phaser.GameObjects.Container;
   private readonly scene: Phaser.Scene;
+  private readonly bg: Phaser.GameObjects.Graphics;
+  private readonly size: number;
+  private readonly radius: number;
+  private readonly iconColor: number;
 
   constructor(
     scene: Phaser.Scene,
@@ -26,32 +30,56 @@ export class IconButton {
     const size = Math.max(44, opts.size ?? 46);
     const radius = opts.round ? size / 2 : THEME.RADIUS_SM;
 
-    const bg = scene.add.graphics();
     const half = size / 2;
-    bg.fillStyle(THEME.PANEL_FILL, THEME.PANEL_ALPHA);
-    bg.fillRoundedRect(-half, -half, size, size, radius);
-    bg.fillStyle(THEME.GLASS_FILL, THEME.GLASS_ALPHA);
-    bg.fillRoundedRect(-half, -half, size, size, radius);
-    bg.lineStyle(1, THEME.HAIRLINE, THEME.HAIRLINE_ALPHA);
-    bg.strokeRoundedRect(-half, -half, size, size, radius);
+    this.radius = radius;
+    this.size = size;
+    this.iconColor = opts.iconColor ?? THEME.ACCENT_CYAN;
+
+    this.bg = scene.add.graphics();
+    this.drawBg(false);
 
     const icon = scene.add.graphics();
-    drawIcon(icon, name, opts.iconSize ?? size * 0.5, opts.iconColor ?? THEME.ACCENT_CYAN);
+    drawIcon(icon, name, opts.iconSize ?? size * 0.5, this.iconColor);
 
-    this.container = scene.add.container(x, y, [bg, icon]);
+    this.container = scene.add.container(x, y, [this.bg, icon]);
     this.container.setSize(size, size);
+    // Hit area extends past the visible square so the full surface + a margin
+    // for finger-drift is tappable.
+    const pad = THEME.HIT_PADDING;
     this.container.setInteractive(
-      new Phaser.Geom.Rectangle(-half, -half, size, size),
+      new Phaser.Geom.Rectangle(-half - pad, -half - pad, size + pad * 2, size + pad * 2),
       Phaser.Geom.Rectangle.Contains,
     );
     if (this.container.input) this.container.input.cursor = 'pointer';
 
-    this.container.on('pointerdown', () => this.press(THEME.PRESS_SCALE));
+    this.container.on('pointerdown', () => {
+      this.drawBg(true);
+      this.press(THEME.PRESS_SCALE);
+    });
     this.container.on('pointerup', () => {
+      this.drawBg(false);
       this.press(1);
       onClick();
     });
-    this.container.on('pointerout', () => this.press(1));
+    this.container.on('pointerout', () => {
+      this.drawBg(false);
+      this.press(1);
+    });
+    this.container.on('pointerupoutside', () => {
+      this.drawBg(false);
+      this.press(1);
+    });
+  }
+
+  private drawBg(pressed: boolean): void {
+    const half = this.size / 2;
+    this.bg.clear();
+    this.bg.fillStyle(THEME.PANEL_FILL, THEME.PANEL_ALPHA);
+    this.bg.fillRoundedRect(-half, -half, this.size, this.size, this.radius);
+    this.bg.fillStyle(pressed ? this.iconColor : THEME.GLASS_FILL, pressed ? 0.14 : THEME.GLASS_ALPHA);
+    this.bg.fillRoundedRect(-half, -half, this.size, this.size, this.radius);
+    this.bg.lineStyle(1, pressed ? this.iconColor : THEME.HAIRLINE, pressed ? 0.5 : THEME.HAIRLINE_ALPHA);
+    this.bg.strokeRoundedRect(-half, -half, this.size, this.size, this.radius);
   }
 
   setPosition(x: number, y: number): this {
