@@ -11,12 +11,13 @@ import { reducedMotionActive, safeAreaInsetsScaled } from '../utils/a11y';
 import { ProgressStore } from '../utils/ProgressStore';
 
 const COLS = 3;
-const CELL_W = 88;
-const CELL_H = 64;
-const GAP_X = 14;
-const GAP_Y = 12;
-const HEADER_H = 30;
-const SECTION_GAP = 16;
+// Compact enough to stack 4 worlds (22 levels) on one screen.
+const CELL_W = 84;
+const CELL_H = 52;
+const GAP_X = 12;
+const GAP_Y = 8;
+const HEADER_H = 26;
+const SECTION_GAP = 10;
 
 // Chapter-grouped level select: stacked world sections, each cell showing its
 // level number + earned stars; locked levels are dimmed (sequential unlock).

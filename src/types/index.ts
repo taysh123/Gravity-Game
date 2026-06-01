@@ -28,6 +28,8 @@ export interface HazardConfig {
   radius?: number; // circular hazard
   width?: number;  // rect hazard
   height?: number;
+  to?: Vec2;       // optional: hazard slides between (x,y) and `to` (yoyo)
+  durationMs?: number;
 }
 
 // A static barrier that slides between two points (yoyo) — opens/closes gaps for timing.

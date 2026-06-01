@@ -156,7 +156,11 @@ export class GameScene extends Phaser.Scene {
       (z) => new GravityZone(this, ox + z.x, oy + z.y, z),
     );
 
-    this.hazards = (config.hazards ?? []).map((hz) => new Hazard(this, ox + hz.x, oy + hz.y, hz));
+    this.hazards = (config.hazards ?? []).map((hz) => {
+      const h = new Hazard(this, ox + hz.x, oy + hz.y, hz);
+      if (hz.to && hz.durationMs) h.startMoving(this, ox + hz.to.x, oy + hz.to.y, hz.durationMs);
+      return h;
+    });
 
     this.collectible = config.collectible
       ? new Collectible(this, ox + config.collectible.x, oy + config.collectible.y)
