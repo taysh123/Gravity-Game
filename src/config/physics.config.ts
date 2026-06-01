@@ -1,8 +1,10 @@
 export const PHYSICS = {
-  // Attractor — primary tuning surface for game feel
-  ATTRACTOR_STRENGTH: 1.5,       // Force multiplier. Too high = snaps. Too low = floaty.
-  ATTRACTOR_MIN_DIST: 55,        // Clamp prevents force spike at very close range.
-  ATTRACTOR_MAX_DIST: 280,       // Force is zero beyond this radius; drives the visible ring.
+  // Attractor — primary tuning surface for game feel.
+  // Strength up + min-dist up: ~1.7× stronger at medium range (the "finicky"
+  // band) while the raised clamp keeps close-range from snapping.
+  ATTRACTOR_STRENGTH: 2.6,       // Force multiplier. Too high = snaps. Too low = floaty.
+  ATTRACTOR_MIN_DIST: 75,        // Clamp prevents force spike at very close range.
+  ATTRACTOR_MAX_DIST: 310,       // Force is zero beyond this radius; drives the visible ring.
 
   // Ball
   BALL_RADIUS: 16,
