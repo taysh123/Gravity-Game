@@ -7,6 +7,8 @@ import { level5 } from './level5';
 import { level6 } from './level6';
 import { level7 } from './level7';
 import { level8 } from './level8';
+import { level9 } from './level9';
+import { level10 } from './level10';
 
 // Single source of truth for level order and count (used by GameScene + EndScene).
 export const LEVELS: LevelConfig[] = [
@@ -18,4 +20,6 @@ export const LEVELS: LevelConfig[] = [
   level6,
   level7,
   level8,
+  level9,
+  level10,
 ];

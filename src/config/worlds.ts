@@ -14,5 +14,6 @@ export interface World {
 export const WORLDS: World[] = [
   { id: 1, name: 'FOUNDATIONS', theme: PHYSICS.COLOR_GOAL, from: 1, to: 6 },
   { id: 2, name: 'CURRENTS', theme: PHYSICS.COLOR_ATTRACTOR_PULSE, from: 7, to: 8 },
-  // World 3 (Clockwork) appended in the content pass; ranges extended in M6.
+  { id: 3, name: 'CLOCKWORK', theme: PHYSICS.COLOR_ATTRACTOR, from: 9, to: 10 },
+  // Ranges extended as more levels are authored in the content pass.
 ];

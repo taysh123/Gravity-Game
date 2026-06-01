@@ -14,6 +14,7 @@ import type { LevelConfig } from '../types';
 import { CosmicBackground } from '../entities/CosmicBackground';
 import { CoachMark } from '../entities/CoachMark';
 import { GravityZone } from '../entities/GravityZone';
+import { MovingPlatform } from '../entities/MovingPlatform';
 import { IconButton } from '../ui/IconButton';
 import { drawGlass } from '../ui/glass';
 import { fadeToScene } from '../utils/transitions';
@@ -144,6 +145,21 @@ export class GameScene extends Phaser.Scene {
 
     this.zones = (config.gravityZones ?? []).map(
       (z) => new GravityZone(this, ox + z.x, oy + z.y, z),
+    );
+
+    (config.movingPlatforms ?? []).forEach(
+      (p) =>
+        new MovingPlatform(
+          this,
+          ox + p.x,
+          oy + p.y,
+          ox + p.to.x,
+          oy + p.to.y,
+          p.width,
+          p.height,
+          p.durationMs,
+          p.angle,
+        ),
     );
   }
 
