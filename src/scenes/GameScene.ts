@@ -243,12 +243,15 @@ export class GameScene extends Phaser.Scene {
     this.uiBlockers.push(container);
   }
 
-  // Top-right nav cluster: Home + Restart (Settings inserted in the settings
-  // milestone). >=44px targets, 8px gaps, safe-area aware.
+  // Top-right nav as one cohesive glass toolbar (Home / Settings / Restart).
+  // Bare icon buttons sit inside a shared glass pill — reads as a finished HUD
+  // component, not loose squares. Safe-area aware; generous targets.
   private createNav(): void {
     const insets = this.safeInsets;
-    const size = 54;
-    const gap = 8;
+    const slot = 48;
+    const gap = 4;
+    const padX = 10;
+    const barH = slot + 8;
     const rightPad = Math.max(SAFE_PAD, insets.right) + 8;
     const topPad = Math.max(SAFE_PAD, insets.top) + 8;
 
@@ -257,14 +260,24 @@ export class GameScene extends Phaser.Scene {
       { icon: 'settings', onClick: () => this.openSettings() },
       { icon: 'restart', onClick: () => { if (!this.isWon && !this.isDying) this.triggerRestart(); } },
     ];
-    const total = defs.length * size + (defs.length - 1) * gap;
-    const startX = this.scale.width - rightPad - total + size / 2;
-    const y = topPad + size / 2;
 
+    const barW = defs.length * slot + (defs.length - 1) * gap + padX * 2;
+    const barX = this.scale.width - rightPad - barW / 2;
+    const barY = topPad + barH / 2;
+
+    const barG = this.add.graphics();
+    drawGlass(barG, barW, barH, barH / 2);
+    const bar = this.add.container(barX, barY, [barG]).setDepth(20);
+    this.uiBlockers.push(bar); // whole toolbar blocks attractor spawns
+
+    const startX = -barW / 2 + padX + slot / 2;
     defs.forEach((d, i) => {
-      const btn = new IconButton(this, startX + i * (size + gap), y, d.icon, d.onClick, { size });
-      btn.container.setDepth(20);
-      this.uiBlockers.push(btn.container);
+      const btn = new IconButton(this, barX + startX + i * (slot + gap), barY, d.icon, d.onClick, {
+        size: slot,
+        bare: true,
+        iconSize: slot * 0.46,
+      });
+      btn.container.setDepth(21);
     });
   }
 

@@ -38,14 +38,15 @@ export function drawIcon(
       break;
     }
     case 'settings': {
-      // Sliders — three tracks with offset knobs.
-      const ys = [-h * 0.55, 0, h * 0.55];
-      const knobX = [h * 0.35, -h * 0.3, h * 0.1];
-      ys.forEach((y, i) => {
-        line(g, -h * 0.8, y, h * 0.8, y);
-        g.fillStyle(color, alpha);
-        g.fillCircle(knobX[i], y, w * 1.3);
-      });
+      // Gear: a ring with eight teeth + a hub.
+      const rRing = h * 0.42;
+      g.strokeCircle(0, 0, rRing);
+      for (let k = 0; k < 8; k++) {
+        const a = (k * Math.PI) / 4;
+        line(g, Math.cos(a) * rRing, Math.sin(a) * rRing, Math.cos(a) * h * 0.62, Math.sin(a) * h * 0.62);
+      }
+      g.fillStyle(color, alpha);
+      g.fillCircle(0, 0, h * 0.13);
       break;
     }
     case 'restart': {
