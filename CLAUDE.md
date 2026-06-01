@@ -30,13 +30,19 @@ npx vitest run src/utils/MathUtils.test.ts
 
 ---
 
-## MVP Goals
+## Goals (current)
 
-3 levels. Mechanic validated. Levels are intentionally simple — each teaches exactly one thing.
+MVP mechanic validated and expanded into a **skill puzzle game**: **16 levels across 3 worlds**, each
+world introducing one mechanic (teach → develop → twist → combine → master), with a 3-star skill layer.
 
-- Level 1: learn that holding pulls the ball
-- Level 2: learn that you must control direction (obstacle present)
-- Level 3: learn that trajectory must be planned (two obstacles, zigzag path)
+- **World 1 — Foundations** (L1-6): attractor control + static walls. L1 isolates "hold → pull".
+- **World 2 — Currents** (L7-11): **Gravity Zones** — updrafts, crosswinds, downdrafts (force routing).
+- **World 3 — Clockwork** (L12-16): **Moving Platforms** — closing gaps, sweeping bars (timing).
+
+**3-star scoring** (per level): ★ complete · ★ optional **gem** (off-route) · ★ **efficiency** (≤ `parTimeMs`).
+Persisted in `ProgressStore` (localStorage); shown on the win overlay + world-select; drives sequential
+unlock. Pure scoring in `utils/scoring.ts` (TDD). No fail state yet (see roadmap). Next mechanics ranked
+in `docs/superpowers/plans/2026-06-01-mechanics-roadmap.md`.
 
 ---
 
@@ -122,9 +128,14 @@ src/
     theme.config.ts             ← Design system: fonts, Expo easing, radius, glass + text tokens.
     splash.config.ts            ← Splash/menu constants (timings, polish tokens). Reuses PHYSICS colors.
     assets.ts                   ← IMAGES map — import-bundled logo URLs (Vite hashes them).
-    levels/                     ← LEVELS[] (index.ts) + level1…level6.ts (play-area coords)
+    worlds.ts                   ← WORLDS chapter metadata (name/theme/level range) over flat LEVELS[].
+    levels/                     ← LEVELS[] (index.ts, ordered by world) + level1…level16.ts
   entities/
     Ball.ts · Attractor.ts · Goal.ts · Obstacle.ts   ← gameplay entities (Graphics + Matter bodies)
+    GravityZone.ts              ← Directional force field (W2 currents). contains() + force; reuses applyForce.
+    MovingPlatform.ts           ← Static barrier slid via setPosition tween (W3 clockwork timing).
+    Collectible.ts              ← Optional gem (2nd star); overlap-collected.
+    CoachMark.ts                ← One-time L1 gesture demo.
     CosmicBackground.ts         ← Shared stars + nebula backdrop (intensity param dims it for gameplay).
   ui/
     Button.ts                   ← Rounded-rect button: theme radius/easing, accent glow, optional icon.
@@ -137,14 +148,16 @@ src/
     CompanySplashScene.ts       ← Stage 1: True Story Labs text wordmark (Orbitron + gold glow), ~2s.
     IntroSplashScene.ts         ← Stage 2: sphere→vortex→Gravity Flow logo reveal + audio, ~3.5s.
     MainMenuScene.ts            ← PLAY / LEVELS + settings gear, staggered entrance, ambient pad.
-    LevelSelectScene.ts         ← Grid from LEVELS.length → GameScene { level n }.
+    LevelSelectScene.ts         ← World-grouped grid (star badges + sequential unlock) → GameScene { level }.
     SettingsScene.ts            ← Overlay: Sound/Music/Haptics/Reduce-Motion toggles (over paused scene).
     GameScene.ts                ← Level logic + HUD chip + Home/Settings/Restart nav + dim cosmic bg.
     EndScene.ts                 ← GRAVITY FLOW + Play Again / Main Menu.
   styles/
     fonts.css                   ← @font-face for the self-hosted fonts (imported in main.ts).
   utils/
-    matter.ts · MathUtils.ts(+test)  ← Matter bridge; tested math helpers.
+    matter.ts · MathUtils.ts(+test)  ← Matter bridge (applyForce/setVelocity/setPosition); tested math.
+    scoring.ts(+test)           ← computeStars() — pure 3-star logic (TDD).
+    ProgressStore.ts            ← Per-level stars/best-time/gem + unlock (localStorage).
     AudioSynth.ts               ← Web Audio: SFX (Sound-gated) + ambient pad (Music). sharedAudio() singleton.
     SettingsStore.ts            ← localStorage prefs: sound, music, haptics, reduceMotion.
     transitions.ts              ← fadeIn / fadeToScene camera helpers.
@@ -162,7 +175,11 @@ src/
 - **TypeScript strict mode.** `noUnusedLocals`, `noUnusedParameters` enabled. `tsc --noEmit` must pass before any commit.
 - **No premature abstraction.** Level routing is inline in `GameScene.create()`. HUD label is inline in `showLevelLabel()`. Extract only when a second caller demands it.
 - **Entity pattern:** Each entity owns its own `Phaser.GameObjects.Graphics`. `destroy()` cleans up graphics. Matter bodies are cleaned up by `scene.restart()` automatically.
-- **`LevelConfig` is the expansion point.** Future mechanics (portals, magnets, wind zones) are optional fields on this interface. Existing levels remain valid (all fields optional except ball + goal).
+- **`LevelConfig` is the expansion point.** Mechanics are optional fields on this interface
+  (`gravityZones`, `movingPlatforms`, `collectible`, `parTimeMs`; future: portals, magnets…). Each maps
+  to **one entity class** spawned in `GameScene.createFromConfig` and updated in `update()`. Existing
+  levels stay valid (only ball + goal required). `LEVELS[]` is the flat source of truth, ordered by
+  world so `config/worlds.ts` chapter ranges stay contiguous. **No managers.**
 
 ---
 
