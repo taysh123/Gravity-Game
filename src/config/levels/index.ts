@@ -15,6 +15,8 @@ import { level13 } from './level13';
 import { level14 } from './level14';
 import { level15 } from './level15';
 import { level16 } from './level16';
+import { level17 } from './level17';
+import { level18 } from './level18';
 
 // Single source of truth for level order and count (used by GameScene + EndScene).
 // Ordered by world so chapter ranges stay contiguous:
@@ -23,4 +25,5 @@ export const LEVELS: LevelConfig[] = [
   level1, level2, level3, level4, level5, level6,
   level7, level8, level9, level10, level11,
   level12, level13, level14, level15, level16,
+  level17, level18,
 ];

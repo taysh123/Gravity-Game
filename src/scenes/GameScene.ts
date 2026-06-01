@@ -16,6 +16,7 @@ import { CoachMark } from '../entities/CoachMark';
 import { GravityZone } from '../entities/GravityZone';
 import { MovingPlatform } from '../entities/MovingPlatform';
 import { Collectible } from '../entities/Collectible';
+import { Hazard } from '../entities/Hazard';
 import { IconButton } from '../ui/IconButton';
 import { drawGlass } from '../ui/glass';
 import { fadeToScene } from '../utils/transitions';
@@ -42,6 +43,7 @@ export class GameScene extends Phaser.Scene {
   private cosmic!: CosmicBackground;
   private coachMark: CoachMark | null = null;
   private zones: GravityZone[] = [];
+  private hazards: Hazard[] = [];
   private collectible: Collectible | null = null;
   // Interactive HUD/nav regions where a tap must NOT spawn an attractor.
   private uiBlockers: Phaser.GameObjects.Container[] = [];
@@ -148,6 +150,8 @@ export class GameScene extends Phaser.Scene {
     this.zones = (config.gravityZones ?? []).map(
       (z) => new GravityZone(this, ox + z.x, oy + z.y, z),
     );
+
+    this.hazards = (config.hazards ?? []).map((hz) => new Hazard(this, ox + hz.x, oy + hz.y, hz));
 
     this.collectible = config.collectible
       ? new Collectible(this, ox + config.collectible.x, oy + config.collectible.y)
@@ -369,11 +373,13 @@ export class GameScene extends Phaser.Scene {
     this.goal.pulse(time / 300);
     this.attractor?.pulse(time / 150);
     this.zones.forEach((z) => z.pulse(time / 600));
+    this.hazards.forEach((h) => h.pulse(time / 300));
     this.collectible?.pulse(time / 300);
     this.drawPullLine();
     this.applyAttractorForce();
     this.applyZoneForces();
     this.checkGem();
+    this.checkHazards();
     this.checkWin();
     this.checkDeath();
 
@@ -409,6 +415,18 @@ export class GameScene extends Phaser.Scene {
       this.gemCollected = true;
       this.getAudio().playGem();
       this.haptics(PHYSICS.HAPTIC_TAP_MS);
+    }
+  }
+
+  private checkHazards(): void {
+    if (this.isDying || this.isWon || !this.hazards.length) return;
+    const bx = this.ball.body.position.x;
+    const by = this.ball.body.position.y;
+    for (const h of this.hazards) {
+      if (h.overlaps(bx, by, PHYSICS.BALL_RADIUS)) {
+        this.triggerDeath();
+        return;
+      }
     }
   }
 
