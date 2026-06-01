@@ -8,6 +8,8 @@ import { IconButton } from '../ui/IconButton';
 import { fadeIn, fadeToScene } from '../utils/transitions';
 import { reducedMotionActive, safeAreaInsetsScaled } from '../utils/a11y';
 import { sharedAudio } from '../utils/AudioSynth';
+import { ProgressStore } from '../utils/ProgressStore';
+import { LEVELS } from '../config/levels';
 
 // Stage 3: the home screen. Logo title (bobbing) + tagline + PLAY / LEVELS,
 // with a staggered cinematic entrance. Shares the cosmic backdrop with the intro.
@@ -73,7 +75,9 @@ export class MainMenuScene extends Phaser.Scene {
     tagline.setLetterSpacing(1);
 
     const btnY = Math.max(height * 0.64, titleY + targetW * 0.5 + 70);
-    const play = new Button(this, cx, btnY, 'PLAY', () => fadeToScene(this, 'GameScene', { level: 1 }), {
+    const resumeLevel = ProgressStore.nextLevel(LEVELS.length);
+    const playLabel = resumeLevel > 1 ? 'CONTINUE' : 'PLAY';
+    const play = new Button(this, cx, btnY, playLabel, () => fadeToScene(this, 'GameScene', { level: resumeLevel }), {
       fill: THEME.ACCENT_PRIMARY,
       textColor: THEME.TEXT_ON_PRIMARY,
       fontFamily: THEME.FONT_DISPLAY,
