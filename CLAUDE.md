@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> 📍 **Single source of truth for project state & resuming work:** [`docs/project-status.md`](docs/project-status.md)
+> (30-second version: [`docs/session-handoff.md`](docs/session-handoff.md)). This CLAUDE.md covers
+> architecture/conventions; the status doc covers current state, sprints, decisions, and what's next.
+
 ---
 
 ## Project Vision
