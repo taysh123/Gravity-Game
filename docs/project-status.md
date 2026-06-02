@@ -34,8 +34,9 @@
 - Full startup presentation: text-only True Story Labs company splash → cosmic intro (energy sphere →
   vortex → GRAVITY FLOW logo reveal, with synth audio) → main menu.
 - Core gameplay: attractor pull (inverse-square), goal/win, restart, dim cosmic background.
-- Mechanics: **gravity zones** (force fields), **moving platforms** (timing barriers), **hazards**
-  (fail-on-touch, static + moving saws), **collectible gems**, **timed levels** (hard countdown).
+- Mechanics: **gravity zones** (force fields), **magnets** (static attract/repel wells), **moving
+  platforms** (timing barriers), **hazards** (fail-on-touch, static + moving saws), **collectible
+  gems**, **timed levels** (hard countdown).
 - Scoring: **3 stars** per level (complete / gem / under-par), persisted in `ProgressStore`
   (localStorage), shown on the win overlay + world-select; **sequential unlock**; menu **Continue**.
 - UI/UX: glassmorphic design system, Orbitron+Exo 2 fonts, in-game glass toolbar (Home/Settings/Restart),
@@ -83,7 +84,20 @@ History lives in `docs/superpowers/plans/`. Summary:
 - **Lessons:** mechanics drop in cleanly via the `LevelConfig` rule; adding levels reflows the
   world-select grid (watch layout); Playwright canvas-button taps are flaky during Vite HMR reloads.
 
-### Sprint D — Tension & Clarity (latest)
+### Sprint E — Validate, then Expand (latest, in progress)
+- **Objective:** shift from polish to a shippable product — add the next mechanic + a retention hook,
+  validating balance first. Confirmed scope: tight (Magnets + Daily Challenge), balance pass first,
+  ship-target (PWA vs Capacitor) deferred as the monetization/release gate.
+- **Delivered (M1):** **Magnets** (`entities/Magnet.ts` + `LevelConfig.magnets` + `applyMagnetForces`,
+  reusing the inverse-square model with signed attract/repel strength); **World 5 — Wells** (levels
+  23-27); level-select compacted for a 5th world (cells stay ≥44px); dev-only `__game`/`__Phaser`
+  Playwright hooks (stripped from prod).
+- **Verified:** isolated attract pull + repel push (Playwright, no player input), World 5 reflow,
+  magnet visuals; `tsc`/16 tests/build green; no console errors.
+- **Open in this sprint:** **M0 balance pass** (awaits human device playtest of W2-5) · **M2 Daily
+  Challenge + streak**.
+
+### Sprint D — Tension & Clarity
 - **Objective:** address playtest feedback (small buttons, weak pull, unfinished HUD, no stakes).
 - **Delivered:** full-surface hit areas + press feedback (`THEME.HIT_PADDING`); **gravity tuning**
   (strength 1.5→2.6, min-dist 55→75); **HUD toolbar** redesign + gear icon; **Hazards** (fail-on-touch,
@@ -103,6 +117,10 @@ History lives in `docs/superpowers/plans/`. Summary:
 - **Gravity zones** (`entities/GravityZone.ts`, `LevelConfig.gravityZones`): rect force fields (dir +
   strength); constant force while the ball is inside (reuses `applyForce`). Tinted by direction
   (cyan up / gold down / violet side) with drifting chevrons.
+- **Magnets** (`entities/Magnet.ts`, `LevelConfig.magnets`): static force wells — `applyMagnetForces()`
+  reuses the inverse-square attractor model with **signed strength** (+ attract / − repel), clamped to
+  `[MAGNET_MIN_DIST, MAGNET_MAX_DIST]`. Cyan `+` well pulls; violet-magenta `−` well pushes; faint
+  influence ring telegraphs reach.
 - **Moving platforms** (`entities/MovingPlatform.ts`, `LevelConfig.movingPlatforms`): static barrier
   slid via `RawMatter.Body.setPosition` along a yoyo tween; a faint track telegraphs the path.
 - **Hazards** (`entities/Hazard.ts`, `LevelConfig.hazards`): deadly red spiked node / striped bar,
@@ -129,11 +147,13 @@ History lives in `docs/superpowers/plans/`. Summary:
 
 ## Current Content
 
-- **4 worlds, 22 levels** (`LEVELS[]` ordered by world so chapter ranges are contiguous):
+- **5 worlds, 27 levels** (`LEVELS[]` ordered by world so chapter ranges are contiguous):
   - **World 1 — Foundations** (L1-6): attractor + static walls. L1 isolates "hold → pull".
   - **World 2 — Currents** (L7-11): gravity zones (updraft / crosswind / downdraft).
   - **World 3 — Clockwork** (L12-16): moving platforms (closing gap / sweeping bar / alternating gates).
   - **World 4 — Peril** (L17-22): hazards + timed levels + moving saws + master capstone.
+  - **World 5 — Wells** (L23-27): magnets — attract well → slingshot → repel obstacle → current+well →
+    both polarities (master). *Balance unverified by device playtest (same caveat as W2-4).*
 - **Progression structure:** sequential unlock (a level opens when the previous is ≥1★); world tally
   shown in the level-select. Every level has a `parTimeMs` and most have a `collectible`.
 - **Difficulty curve:** each world follows **teach → develop → twist → combine → master**; 1★ is always
@@ -175,16 +195,20 @@ History lives in `docs/superpowers/plans/`. Summary:
 
 ## Next Recommended Sprint
 
-**Sprint E — Balance & Validation (then World 5).**
-1. **Human device playtest of Worlds 2-4** → tune `parTimeMs`, `timeLimitMs`, hazard placement, zone
-   strengths, and gem routes from real feedback. *(This is the single most valuable next step — content
-   exists but its balance is unverified.)*
-2. Then begin the next mechanic per the roadmap: **One-way Gates** or **Magnets (World 5 — Wells)** —
-   Magnets are the cheapest/highest-synergy (reuse the attractor force model as a static source).
+**Finish Sprint E (Magnets shipped) → then Daily Challenge → then Portals.**
+1. **M0 — Balance pass (open):** human device playtest of **Worlds 2-5** → tune `parTimeMs`,
+   `timeLimitMs`, hazard placement, zone + **magnet** strengths, and gem routes from real feedback.
+   *(Single most valuable step — newest content's balance is unverified with finger input.)*
+2. **M2 — Daily Challenge + streak:** lightweight retention reusing existing levels — `utils/daily.ts`
+   (TDD'd date→level seeding) + `DailyStore.ts` (streak), a Daily entry on the menu + win-overlay streak.
+3. **Next mechanic — Portals (World 6 — Rifts):** paired teleport + velocity redirect.
 
-**Why next:** the game is feature-rich but its newest content is unvalidated; balancing before adding
-more avoids compounding unfair levels. **Deliverables:** tuned level configs (+ any difficulty fixes),
-a short playtest notes doc, and a green full-flow run.
+**Gate for monetization + release phases:** choose **PWA** vs **Capacitor native wrap** (decides whether
+AdMob rewarded ads + store IAP are possible). Deferred until those phases; recorded here.
+
+**Why this order:** balance before more content avoids compounding unfair levels; retention is high
+value-per-cost; Portals add the next decision axis. **Deliverables:** tuned configs, Daily Challenge,
+green full-flow runs.
 
 ---
 
@@ -206,7 +230,7 @@ Ranked in `docs/superpowers/plans/2026-06-01-mechanics-roadmap.md`. Highlights:
 1. **Read this file first.** It is the single source of truth.
 2. Skim `docs/session-handoff.md` for the 30-second version.
 3. Continue from **[Next Recommended Sprint](#next-recommended-sprint)** (currently: device playtest +
-   balance tuning of Worlds 2-4).
+   balance tuning of Worlds 2-5, then the Daily Challenge).
 4. Working conventions: plan first (`writing-plans` → `docs/superpowers/plans/`), one entity + one
    `LevelConfig` field per mechanic, all constants in config, verify in-browser before "done"
    (`npm run dev` + Playwright `--disable-gpu --use-gl=swiftshader`), keep `tsc`/tests/build green.

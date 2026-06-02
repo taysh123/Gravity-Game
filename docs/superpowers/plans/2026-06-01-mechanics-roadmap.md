@@ -8,8 +8,8 @@ follows the project rule: **one entity class + one optional `LevelConfig` field*
 
 | Rank | Mechanic | Decision axis | Value | Cost | Risk | Notes |
 |------|----------|---------------|-------|------|------|-------|
-| 1 | **Magnets** (static attract/repulse points) | constant forces to use/avoid | Med-High | **Low** | Low | Reuses the attractor force model as an always-on source (`applyForce`, inverse-square). Repulsors add "avoid" routing cheaply. Natural **World 4 — Wells**. |
-| 2 | **Portals** (paired teleport, redirect velocity) | spatial / non-linear routing | High | Med | Med | New `Portal` entity (pair) + overlap + `RawMatter.Body.setPosition` (bridge has it) + a re-entry cooldown + velocity carry/redirect. Iconic. **World 5 — Rifts**. |
+| ✓ | ~~**Magnets** (static attract/repulse points)~~ | constant forces to use/avoid | — | — | — | **SHIPPED** (World 5 — Wells, L23-27): `Magnet` entity + `magnets?` field; `applyMagnetForces()` reuses the inverse-square model (signed strength → attract/repel). |
+| 1 | **Portals** (paired teleport, redirect velocity) | spatial / non-linear routing | High | Med | Med | New `Portal` entity (pair) + overlap + `RawMatter.Body.setPosition` (bridge has it) + a re-entry cooldown + velocity carry/redirect. Iconic. **World 6 — Rifts.** *Next mechanic.* |
 | ✓ | ~~Hazards / timed fail states~~ | risk & tension | — | — | — | **SHIPPED** (World 4 Peril): `Hazard` entity (static + moving) → `triggerDeath`; `timeLimitMs` countdown. |
 | 3 | **One-way Gates** | directional constraint | Med | Med | Med | Pass one way, block the other. Collision filtered by approach side (sensor + manual pass logic). Good routing constraint; fiddly. |
 | 5 | **Rotating Obstacles** | timing / precision | Med-High | Med | **High** | Spinning bars. Kinematic carry/strike in Matter for a rotated static body is janky — needs care or a velocity-imparting approach. |
@@ -21,4 +21,4 @@ follows the project rule: **one entity class + one optional `LevelConfig` field*
 - **Difficulty tuning:** the new Currents/Clockwork levels (7-16) have reasonable geometry but their
   exact solvability/par/gem placement should be **hand-tuned from a device playtest** (precise finger
   input, which automated drag scripts can't reproduce).
-- **Magnets first** is the cheapest, highest-synergy next step (World 4).
+- **Magnets shipped** (World 5 — Wells). **Portals** are the next mechanic (World 6 — Rifts).

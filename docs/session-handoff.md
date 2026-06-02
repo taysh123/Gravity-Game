@@ -6,20 +6,24 @@
 
 ## Current status
 - **Game:** GRAVITY FLOW by **True Story Labs** — mobile cosmic physics puzzler (Phaser 3 + TS + Vite).
-- **Content:** **22 levels / 4 worlds** (Foundations · Currents · Clockwork · Peril).
-- **Systems live:** attractor pull, gravity zones, moving platforms, hazards (fail-on-touch), collectible
-  gems, 3-star scoring + `ProgressStore` unlock, timed levels (countdown fail), full splash→menu→game→
-  settings flow, premium glass UI (Orbitron/Exo 2).
+- **Content:** **27 levels / 5 worlds** (Foundations · Currents · Clockwork · Peril · Wells).
+- **Systems live:** attractor pull, gravity zones, **magnets (attract/repel wells)**, moving platforms,
+  hazards (fail-on-touch), collectible gems, 3-star scoring + `ProgressStore` unlock, timed levels
+  (countdown fail), full splash→menu→game→settings flow, premium glass UI (Orbitron/Exo 2).
 - **Quality:** `tsc` clean · 16 tests pass · build clean · full flow no console errors.
 - **Git/GitHub:** branch `master`, **synced** with `origin` = https://github.com/taysh123/Gravity-Game.git.
 
 ## Last completed sprint
-**Tension & Clarity** — full-surface buttons, stronger gravity, redesigned HUD toolbar, **hazards** +
-**timed levels** (real fail states), **World 4 — Peril** (6 levels).
+**Sprint E (in progress) — Validate, then Expand.** Shipped **Magnets** (attract/repel force wells)
++ **World 5 — Wells** (levels 23-27); level-select compacted for a 5th world; dev-only Playwright hooks.
+Verified: isolated attract/repel force, World 5 reflow, no console errors. *(Prior sprint: Tension &
+Clarity — hazards, timed levels, World 4 Peril.)*
 
 ## Next sprint
-**Balance & Validation:** a **human device playtest of Worlds 2-4** to tune par/time-limits/hazard
-placement/zone strengths (content exists but its balance is unverified), then start **Magnets (World 5)**.
+1. **Milestone 0 still open — human device playtest of Worlds 2-4** (and now World 5) to tune
+   par/time-limits/hazard placement/zone+magnet strengths. Balance is unverified with real finger input.
+2. **Milestone 2 — Daily Challenge + streak** (lightweight retention, reuses existing levels).
+3. Then **Portals (World 6 — Rifts)** as the next mechanic.
 
 ## Important notes
 - ⚠️ **Level balance for Worlds 2-4 is unverified** — automated tests confirm mechanics work but can't
