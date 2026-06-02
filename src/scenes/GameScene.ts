@@ -14,6 +14,7 @@ import type { LevelConfig } from '../types';
 import { CosmicBackground } from '../entities/CosmicBackground';
 import { CoachMark } from '../entities/CoachMark';
 import { GravityZone } from '../entities/GravityZone';
+import { Magnet } from '../entities/Magnet';
 import { MovingPlatform } from '../entities/MovingPlatform';
 import { Collectible } from '../entities/Collectible';
 import { Hazard } from '../entities/Hazard';
@@ -43,6 +44,7 @@ export class GameScene extends Phaser.Scene {
   private cosmic!: CosmicBackground;
   private coachMark: CoachMark | null = null;
   private zones: GravityZone[] = [];
+  private magnets: Magnet[] = [];
   private hazards: Hazard[] = [];
   private collectible: Collectible | null = null;
   // Interactive HUD/nav regions where a tap must NOT spawn an attractor.
@@ -156,6 +158,10 @@ export class GameScene extends Phaser.Scene {
       (z) => new GravityZone(this, ox + z.x, oy + z.y, z),
     );
 
+    this.magnets = (config.magnets ?? []).map(
+      (m) => new Magnet(this, ox + m.x, oy + m.y, m),
+    );
+
     this.hazards = (config.hazards ?? []).map((hz) => {
       const h = new Hazard(this, ox + hz.x, oy + hz.y, hz);
       if (hz.to && hz.durationMs) h.startMoving(this, ox + hz.to.x, oy + hz.to.y, hz.durationMs);
@@ -190,6 +196,26 @@ export class GameScene extends Phaser.Scene {
       if (z.contains(bx, by)) {
         RawMatter.Body.applyForce(this.ball.body, this.ball.body.position, z.force);
       }
+    }
+  }
+
+  // Static wells: same inverse-square model as the attractor, applied per magnet
+  // when the ball is within reach. Signed strength → attract (+) / repel (−).
+  private applyMagnetForces(): void {
+    if (!this.magnets.length) return;
+    const bx = this.ball.body.position.x;
+    const by = this.ball.body.position.y;
+    for (const m of this.magnets) {
+      const rawDist = distance(bx, by, m.x, m.y);
+      if (rawDist > m.maxDist) continue;
+      const dist = clamp(rawDist, PHYSICS.MAGNET_MIN_DIST, Infinity);
+      const dir = normalize(m.x - bx, m.y - by); // unit vector toward the well
+      const mag = m.strength / (dist * dist);
+      RawMatter.Body.applyForce(
+        this.ball.body,
+        this.ball.body.position,
+        { x: dir.x * mag, y: dir.y * mag },
+      );
     }
   }
 
@@ -421,11 +447,13 @@ export class GameScene extends Phaser.Scene {
     this.goal.pulse(time / 300);
     this.attractor?.pulse(time / 150);
     this.zones.forEach((z) => z.pulse(time / 600));
+    this.magnets.forEach((m) => m.pulse(time / 600));
     this.hazards.forEach((h) => h.pulse(time / 300));
     this.collectible?.pulse(time / 300);
     this.drawPullLine();
     this.applyAttractorForce();
     this.applyZoneForces();
+    this.applyMagnetForces();
     this.checkGem();
     this.checkHazards();
     this.checkWin();

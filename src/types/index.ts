@@ -32,6 +32,16 @@ export interface HazardConfig {
   durationMs?: number;
 }
 
+// A static force well — an always-on point source reusing the inverse-square
+// attractor model. `attract` pulls the ball in; `repel` pushes it away.
+export interface MagnetConfig {
+  x: number;        // play-area center x
+  y: number;        // play-area center y
+  polarity?: 'attract' | 'repel'; // default 'attract'
+  strength?: number;  // force multiplier; defaults to PHYSICS.MAGNET_STRENGTH
+  radius?: number;    // influence radius; defaults to PHYSICS.MAGNET_MAX_DIST
+}
+
 // A static barrier that slides between two points (yoyo) — opens/closes gaps for timing.
 export interface MovingPlatformConfig {
   x: number;       // start center (play coords)
@@ -51,6 +61,7 @@ export interface LevelConfig {
   hint?: string;   // one-line onboarding tip, shown on level entry
   // Optional mechanics — existing levels stay valid (all optional).
   gravityZones?: GravityZoneConfig[];
+  magnets?: MagnetConfig[]; // static attract/repel force wells
   movingPlatforms?: MovingPlatformConfig[];
   hazards?: HazardConfig[]; // deadly objects — touching fails the level
   collectible?: Vec2; // optional gem (drives the 2nd star)

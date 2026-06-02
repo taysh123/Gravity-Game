@@ -9,7 +9,7 @@ import { SettingsScene } from './scenes/SettingsScene';
 import { GameScene } from './scenes/GameScene';
 import { EndScene } from './scenes/EndScene';
 
-new Phaser.Game({
+const game = new Phaser.Game({
   type: Phaser.AUTO,
   width: 390,
   height: 844,
@@ -36,3 +36,9 @@ new Phaser.Game({
     EndScene,
   ],
 });
+
+// Dev-only handles for automated verification (Playwright). Stripped from prod builds.
+if (import.meta.env.DEV) {
+  (window as unknown as { __game: Phaser.Game; __Phaser: typeof Phaser }).__game = game;
+  (window as unknown as { __game: Phaser.Game; __Phaser: typeof Phaser }).__Phaser = Phaser;
+}

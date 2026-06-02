@@ -58,6 +58,14 @@ export const PHYSICS = {
   COLOR_ZONE_DOWN: 0xffd166,     // gold — downdraft
   COLOR_ZONE_SIDE: 0x7c5cff,     // violet — sideways current
 
+  // Magnets (static attract/repel wells — reuse the inverse-square attractor model).
+  MAGNET_STRENGTH: 2.2,          // Always-on force; kept under the attractor's 2.6.
+  MAGNET_MIN_DIST: 70,           // Close-range clamp (mirrors the attractor clamp).
+  MAGNET_MAX_DIST: 230,          // Influence radius — a localized well, smaller than attractor reach.
+  MAGNET_CORE_RADIUS: 20,        // Visible core circle.
+  COLOR_MAGNET_ATTRACT: 0x00d4ff,// cyan — pulls the ball in
+  COLOR_MAGNET_REPEL: 0xc04cff,  // violet-magenta — pushes away (distinct from hazard red)
+
   // Stars / scoring
   STAR_PAR_DEFAULT_MS: 12000,    // Fallback efficiency par when a level omits parTimeMs.
   COLOR_STAR: 0xffd166,          // Filled (earned) star — gold.

@@ -11,13 +11,14 @@ import { reducedMotionActive, safeAreaInsetsScaled } from '../utils/a11y';
 import { ProgressStore } from '../utils/ProgressStore';
 
 const COLS = 3;
-// Compact enough to stack 4 worlds (22 levels) on one screen.
+// Compact enough to stack 5 worlds (27 levels) on one screen. CELL_H stays ≥44
+// so each cell remains a valid touch target.
 const CELL_W = 84;
-const CELL_H = 52;
+const CELL_H = 44;
 const GAP_X = 12;
-const GAP_Y = 8;
-const HEADER_H = 26;
-const SECTION_GAP = 10;
+const GAP_Y = 5;
+const HEADER_H = 20;
+const SECTION_GAP = 6;
 
 // Chapter-grouped level select: stacked world sections, each cell showing its
 // level number + earned stars; locked levels are dimmed (sequential unlock).
@@ -120,9 +121,9 @@ export class LevelSelectScene extends Phaser.Scene {
     }
 
     const label = this.add
-      .text(0, unlocked ? -10 : 0, String(level), {
+      .text(0, unlocked ? -8 : 0, String(level), {
         fontFamily: THEME.FONT_DISPLAY,
-        fontSize: '24px',
+        fontSize: '22px',
         color: unlocked ? THEME.TEXT_PRIMARY : THEME.TEXT_MUTED,
         fontStyle: '700',
       })
@@ -134,7 +135,7 @@ export class LevelSelectScene extends Phaser.Scene {
     if (unlocked) {
       for (let s = 0; s < 3; s++) {
         const pip = this.add
-          .text((s - 1) * 16, 18, '★', {
+          .text((s - 1) * 16, 15, '★', {
             fontFamily: THEME.FONT_BODY,
             fontSize: '13px',
             color: s < stars ? '#ffd166' : '#3a4256',
