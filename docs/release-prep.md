@@ -13,7 +13,7 @@
 | **Version / tag** | `v0.2.0` (matches `package.json`) |
 | **Branch** | `master` (synced with `origin`) |
 | **Repository** | https://github.com/taysh123/Gravity-Game |
-| **Live demo (Vercel)** | _set on deploy — see "Vercel deployment" below_ |
+| **Live demo (Vercel)** | **https://gravity-flow-six.vercel.app** (share this) |
 | **Quality gates** | `tsc` clean · **28 tests** pass · `npm run build` clean · live menu has no console errors |
 
 ---
@@ -46,10 +46,13 @@ fully playable; some later levels may feel hard/tight pending that pass.
 
 ### Vercel deployment
 
-- Deployed from the Vercel CLI (account `tayshofer05-7241`): `vercel --prod --yes`.
-- **Production URL:** _paste the URL printed by the deploy here._
+- Deployed from the Vercel CLI (account `tayshofer05-7241`, scope
+  `tays-projects-d5aefd6e`, project `gravity-flow`): `vercel --prod --yes`.
+- **Production URL (share this):** https://gravity-flow-six.vercel.app
+- Deployment-specific URL: https://gravity-flow-anmu7cere-tays-projects-d5aefd6e.vercel.app
+- Verified live: HTTP 200, canvas renders the menu, **no console errors** (`scripts/verify_live.py`).
 - Redeploy after pushing changes: `vercel --prod` (or connect the GitHub repo in the Vercel dashboard
-  for auto-deploy on push to `master`).
+  for auto-deploy on push to `master`). The project is already linked (`.vercel/`, gitignored).
 
 ### GitHub release
 
