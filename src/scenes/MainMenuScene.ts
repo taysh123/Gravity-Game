@@ -9,6 +9,7 @@ import { fadeIn, fadeToScene } from '../utils/transitions';
 import { reducedMotionActive, safeAreaInsetsScaled } from '../utils/a11y';
 import { sharedAudio } from '../utils/AudioSynth';
 import { ProgressStore } from '../utils/ProgressStore';
+import { DailyStore } from '../utils/DailyStore';
 import { LEVELS } from '../config/levels';
 
 // Stage 3: the home screen. Logo title (bobbing) + tagline + PLAY / LEVELS,
@@ -93,12 +94,47 @@ export class MainMenuScene extends Phaser.Scene {
       { fill: SPLASH.MENU_FILL_SECONDARY, fontFamily: THEME.FONT_DISPLAY, fontSize: 20 },
     );
 
+    // Daily Challenge: one seeded level per day + a streak. A gold badge nudges
+    // when today's run is still open.
+    const dailyLevel = DailyStore.levelFor(LEVELS.length);
+    const doneToday = DailyStore.isDoneToday();
+    const streak = DailyStore.currentStreak();
+    const dailyY = btnY + 2 * (SPLASH.MENU_BTN_H + SPLASH.MENU_BTN_GAP);
+    const daily = new Button(
+      this,
+      cx,
+      dailyY,
+      'DAILY',
+      () => fadeToScene(this, 'GameScene', { level: dailyLevel, daily: true }),
+      { fill: SPLASH.MENU_FILL_SECONDARY, fontFamily: THEME.FONT_DISPLAY, fontSize: 20 },
+    );
+    const badge = !doneToday ? this.add.graphics() : null;
+    if (badge) {
+      badge.fillStyle(THEME.ACCENT_GOLD, 1);
+      badge.fillCircle(0, 0, 6);
+      badge.setPosition(cx + SPLASH.MENU_BTN_W / 2 - 6, dailyY - SPLASH.MENU_BTN_H / 2 + 6);
+      badge.setDepth(20);
+    }
+    const capStr = doneToday
+      ? `Done today · streak ${streak}`
+      : streak > 0
+        ? `Streak ${streak} — keep it alive`
+        : 'A fresh challenge each day';
+    const dailyCap = this.add
+      .text(cx, dailyY + SPLASH.MENU_BTN_H / 2 + 13, capStr, {
+        fontFamily: THEME.FONT_BODY,
+        fontSize: '12px',
+        color: THEME.TEXT_MUTED,
+      })
+      .setOrigin(0.5);
+
     if (reduced) {
       logo.setScale(logoScale);
       glow.setAlpha(0.4);
       this.startBob(logo, titleY);
       play.startBreathing();
       levels.startBreathing(SPLASH.IDLE_BREATHE_MS / 2);
+      daily.startBreathing(SPLASH.IDLE_BREATHE_MS / 2);
       return;
     }
 
@@ -107,6 +143,9 @@ export class MainMenuScene extends Phaser.Scene {
     tagline.setAlpha(0).setY(tagline.y + 10);
     play.container.setAlpha(0).setY(play.container.y + 24);
     levels.container.setAlpha(0).setY(levels.container.y + 24);
+    daily.container.setAlpha(0).setY(daily.container.y + 24);
+    dailyCap.setAlpha(0);
+    badge?.setAlpha(0);
 
     this.tweens.add({ targets: glow, alpha: 0.4, duration: 700, ease: THEME.EASE });
     this.tweens.add({
@@ -137,6 +176,17 @@ export class MainMenuScene extends Phaser.Scene {
       ease: THEME.EASE,
       onComplete: () => levels.startBreathing(SPLASH.IDLE_BREATHE_MS / 2),
     });
+    this.tweens.add({
+      targets: daily.container,
+      alpha: 1,
+      y: daily.container.y - 24,
+      delay: 520,
+      duration: 520,
+      ease: THEME.EASE,
+      onComplete: () => daily.startBreathing(SPLASH.IDLE_BREATHE_MS / 2),
+    });
+    const fadeTargets: Phaser.GameObjects.GameObject[] = badge ? [dailyCap, badge] : [dailyCap];
+    this.tweens.add({ targets: fadeTargets, alpha: 1, delay: 620, duration: 420, ease: THEME.EASE });
   }
 
   private startBob(logo: Phaser.GameObjects.Image, baseY: number): void {

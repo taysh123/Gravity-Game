@@ -24,6 +24,7 @@ import { fadeToScene } from '../utils/transitions';
 import { safeAreaInsetsScaled, reducedMotionActive } from '../utils/a11y';
 import { computeStars, type StarResult } from '../utils/scoring';
 import { ProgressStore } from '../utils/ProgressStore';
+import { DailyStore } from '../utils/DailyStore';
 
 const SAFE_PAD = 12; // minimum padding from any screen edge for HUD/nav
 
@@ -57,6 +58,8 @@ export class GameScene extends Phaser.Scene {
   private gemCollected = false;
   private winResult: StarResult | null = null;
   private winTimeMs = 0;
+  private isDaily = false; // launched from the Daily Challenge
+  private dailyStreak = 0; // streak after winning today's daily
 
   private get playX(): number {
     return (this.scale.width - PHYSICS.PLAY_WIDTH) / 2;
@@ -81,8 +84,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   create(): void {
-    const data = this.scene.settings.data as { level?: number } | undefined;
+    const data = this.scene.settings.data as { level?: number; daily?: boolean } | undefined;
     this.currentLevel = data?.level ?? 1;
+    this.isDaily = data?.daily ?? false;
     this.isWon = false;
     this.isDying = false;
 
@@ -535,6 +539,7 @@ export class GameScene extends Phaser.Scene {
       gem: this.gemCollected,
       completed: true,
     });
+    if (this.isDaily) this.dailyStreak = DailyStore.recordWin();
 
     const audio = this.getAudio();
     audio.stopHum();
@@ -559,7 +564,9 @@ export class GameScene extends Phaser.Scene {
 
     const nextLevel = this.currentLevel + 1;
     this.time.delayedCall(1550, () => {
-      if (nextLevel > LEVELS.length) {
+      if (this.isDaily) {
+        this.scene.start('MainMenuScene'); // one daily a day — back to the menu
+      } else if (nextLevel > LEVELS.length) {
         this.scene.start('EndScene');
       } else {
         this.scene.restart({ level: nextLevel });
@@ -583,7 +590,7 @@ export class GameScene extends Phaser.Scene {
     drawGlass(panel, panelW, panelH, THEME.RADIUS);
 
     const label = this.add
-      .text(0, -38, 'LEVEL COMPLETE', {
+      .text(0, -38, this.isDaily ? 'DAILY COMPLETE' : 'LEVEL COMPLETE', {
         fontFamily: THEME.FONT_DISPLAY,
         fontSize: '21px',
         color: '#00e676',
@@ -611,11 +618,14 @@ export class GameScene extends Phaser.Scene {
     const parStr = fmtTime(this.parTimeMs);
     const timeStr = fmtTime(this.winTimeMs);
     const underPar = this.winResult?.underPar;
+    const subStr = this.isDaily
+      ? `STREAK ${this.dailyStreak}  ·  best ${DailyStore.bestStreak()}`
+      : `${timeStr}  ·  par ${parStr}`;
     const sub = this.add
-      .text(0, 42, `${timeStr}  ·  par ${parStr}`, {
+      .text(0, 42, subStr, {
         fontFamily: THEME.FONT_BODY,
         fontSize: '14px',
-        color: underPar ? '#ffd166' : THEME.TEXT_MUTED,
+        color: this.isDaily ? '#ffd166' : underPar ? '#ffd166' : THEME.TEXT_MUTED,
       })
       .setOrigin(0.5);
     card.add(sub);
@@ -692,7 +702,7 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.shake(PHYSICS.SHAKE_DEATH_MS, PHYSICS.SHAKE_DEATH_INTENSITY);
     this.deathFeedback();
     this.time.delayedCall(PHYSICS.DEATH_FLASH_MS, () =>
-      this.scene.restart({ level: this.currentLevel }),
+      this.scene.restart({ level: this.currentLevel, daily: this.isDaily }),
     );
   }
 
@@ -734,6 +744,6 @@ export class GameScene extends Phaser.Scene {
     this.getAudio().stopHum();
     this.attractor?.destroy();
     this.attractor = null;
-    this.scene.restart({ level: this.currentLevel });
+    this.scene.restart({ level: this.currentLevel, daily: this.isDaily });
   }
 }
