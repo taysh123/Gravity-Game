@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>Project Gravity</title>
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -12,7 +12,8 @@
         justify-content: center;
         align-items: center;
         width: 100vw;
-        height: 100vh;
+        height: 100vh;       /* fallback for browsers without dvh */
+        height: 100dvh;      /* visible viewport (excludes mobile address bar) */
         overflow: hidden;
         /* Drag should drive the attractor, never scroll/zoom/select the page. */
         touch-action: none;

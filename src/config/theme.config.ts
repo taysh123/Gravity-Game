@@ -21,7 +21,7 @@ export const THEME = {
 
   // Interaction — hit areas extend past the visible edge so the whole surface
   // (plus a forgiving margin for finger drift) is tappable.
-  HIT_PADDING: 10,
+  HIT_PADDING: 14,
 
   // Glass surfaces (Phaser fills: color + alpha)
   PANEL_FILL: 0x0c0e1a, // frosted panel base

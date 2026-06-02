@@ -24,6 +24,7 @@ const game = new Phaser.Game({
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
+    autoRound: true, // integer canvas sizes — crisper render + no fractional hit-test drift
   },
   scene: [
     BootScene,
