@@ -39,11 +39,13 @@
   gems**, **timed levels** (hard countdown).
 - Scoring: **3 stars** per level (complete / gem / under-par), persisted in `ProgressStore`
   (localStorage), shown on the win overlay + world-select; **sequential unlock**; menu **Continue**.
+- Retention: **Daily Challenge** — a date-seeded level + consecutive-day streak (DAILY menu button,
+  gold badge, `DAILY COMPLETE` overlay), persisted in `DailyStore`.
 - UI/UX: glassmorphic design system, Orbitron+Exo 2 fonts, in-game glass toolbar (Home/Settings/Restart),
   settings overlay (Sound/Music/Haptics/Reduce-Motion), one-time Level-1 coach-mark, win/death feedback,
   full-surface button hit areas + press feedback, safe-area handling.
-- Quality gates green: `npx tsc --noEmit` clean · `npm test` 16 tests pass (MathUtils 10 + scoring 6) ·
-  `npm run build` clean · full flow runs with **no console errors**.
+- Quality gates green: `npx tsc --noEmit` clean · `npm test` 28 tests pass (MathUtils 10 + scoring 6 +
+  daily 12) · `npm run build` clean · full flow runs with **no console errors**.
 
 **Caveat:** automated Playwright scripts verified that mechanics *function* (zone lifts, saw sweeps,
 hazard kills, countdown fails). They **cannot** reproduce precise finger input, so per-level
@@ -92,10 +94,14 @@ History lives in `docs/superpowers/plans/`. Summary:
   reusing the inverse-square model with signed attract/repel strength); **World 5 — Wells** (levels
   23-27); level-select compacted for a 5th world (cells stay ≥44px); dev-only `__game`/`__Phaser`
   Playwright hooks (stripped from prod).
-- **Verified:** isolated attract pull + repel push (Playwright, no player input), World 5 reflow,
-  magnet visuals; `tsc`/16 tests/build green; no console errors.
-- **Open in this sprint:** **M0 balance pass** (awaits human device playtest of W2-5) · **M2 Daily
-  Challenge + streak**.
+- **Delivered (M2):** **Daily Challenge** — pure `utils/daily.ts` (date-seeded level pick + streak math,
+  12 TDD tests) + `DailyStore.ts` (localStorage streak/bestStreak); a **DAILY** menu button with a gold
+  attention badge + streak caption; `GameScene` `daily` flag → records streak on win, shows the
+  `DAILY COMPLETE` overlay + streak, returns to the menu, persists, and survives restart.
+- **Verified:** isolated attract pull + repel push (Playwright, no player input), World 5 reflow + magnet
+  visuals; full daily flow (play→win→streak→persist→missed-day reset→keep-alive); `tsc`/**28 tests**/build
+  green; no console errors.
+- **Open in this sprint:** **M0 balance pass** — awaits human device playtest of W2-5.
 
 ### Sprint D — Tension & Clarity
 - **Objective:** address playtest feedback (small buttons, weak pull, unfinished HUD, no stakes).
@@ -132,6 +138,10 @@ History lives in `docs/superpowers/plans/`. Summary:
 - **Progression** (`utils/ProgressStore.ts`): per-level `{stars, bestTimeMs, gem}` in localStorage;
   `isUnlocked` (sequential), `nextLevel` (menu Continue), `totalStars`.
 - **Worlds** (`config/worlds.ts`): chapter metadata (name/theme/range) over the flat `LEVELS[]`.
+- **Daily Challenge** (`utils/daily.ts` pure + `utils/DailyStore.ts` localStorage): a date-seeded level
+  per day + a consecutive-day streak. Surfaced as a **DAILY** menu button (gold badge until done) and a
+  `DAILY COMPLETE` overlay; a `daily` flag on `GameScene` routes the win to record the streak + return
+  to the menu. Reuses existing levels — no new content to author.
 - **Menus / onboarding:** `MainMenuScene` (PLAY/CONTINUE + LEVELS + settings gear, staggered entrance,
   ambient pad), `LevelSelectScene` (world-grouped, star badges, locks), one-time L1 `CoachMark`,
   per-level `hint`.
@@ -195,13 +205,11 @@ History lives in `docs/superpowers/plans/`. Summary:
 
 ## Next Recommended Sprint
 
-**Finish Sprint E (Magnets shipped) → then Daily Challenge → then Portals.**
-1. **M0 — Balance pass (open):** human device playtest of **Worlds 2-5** → tune `parTimeMs`,
-   `timeLimitMs`, hazard placement, zone + **magnet** strengths, and gem routes from real feedback.
-   *(Single most valuable step — newest content's balance is unverified with finger input.)*
-2. **M2 — Daily Challenge + streak:** lightweight retention reusing existing levels — `utils/daily.ts`
-   (TDD'd date→level seeding) + `DailyStore.ts` (streak), a Daily entry on the menu + win-overlay streak.
-3. **Next mechanic — Portals (World 6 — Rifts):** paired teleport + velocity redirect.
+**Sprint E nearly done (Magnets + Daily shipped) → M0 balance → then Portals.**
+1. **M0 — Balance pass (open, only remaining sprint item):** human device playtest of **Worlds 2-5** →
+   tune `parTimeMs`, `timeLimitMs`, hazard placement, zone + **magnet** strengths, and gem routes from
+   real feedback. *(Single most valuable step — newest content's balance is unverified with finger input.)*
+2. **Next mechanic — Portals (World 6 — Rifts):** paired teleport + velocity redirect.
 
 **Gate for monetization + release phases:** choose **PWA** vs **Capacitor native wrap** (decides whether
 AdMob rewarded ads + store IAP are possible). Deferred until those phases; recorded here.

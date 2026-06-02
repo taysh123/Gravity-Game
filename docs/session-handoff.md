@@ -14,16 +14,17 @@
 - **Git/GitHub:** branch `master`, **synced** with `origin` = https://github.com/taysh123/Gravity-Game.git.
 
 ## Last completed sprint
-**Sprint E (in progress) — Validate, then Expand.** Shipped **Magnets** (attract/repel force wells)
-+ **World 5 — Wells** (levels 23-27); level-select compacted for a 5th world; dev-only Playwright hooks.
-Verified: isolated attract/repel force, World 5 reflow, no console errors. *(Prior sprint: Tension &
-Clarity — hazards, timed levels, World 4 Peril.)*
+**Sprint E — Validate, then Expand.** Shipped **Magnets** (attract/repel force wells) + **World 5 —
+Wells** (levels 23-27) and the **Daily Challenge** (seeded per-day level + streak, menu button/badge,
+DAILY COMPLETE overlay). Level-select compacted for a 5th world; dev-only Playwright hooks. Verified:
+isolated attract/repel force, World 5 reflow, full daily flow (play→win→streak→persist→reset), 28 tests,
+no console errors. *(Prior sprint: Tension & Clarity — hazards, timed levels, World 4 Peril.)*
 
 ## Next sprint
-1. **Milestone 0 still open — human device playtest of Worlds 2-4** (and now World 5) to tune
-   par/time-limits/hazard placement/zone+magnet strengths. Balance is unverified with real finger input.
-2. **Milestone 2 — Daily Challenge + streak** (lightweight retention, reuses existing levels).
-3. Then **Portals (World 6 — Rifts)** as the next mechanic.
+1. **Milestone 0 still open — human device playtest of Worlds 2-5** to tune par/time-limits/hazard
+   placement/zone+magnet strengths. Balance is unverified with real finger input. *(Highest priority.)*
+2. **Portals (World 6 — Rifts):** paired teleport + velocity redirect — the next mechanic.
+3. **Monetization + release** remain gated on the **PWA vs Capacitor** ship-target decision.
 
 ## Important notes
 - ⚠️ **Level balance for Worlds 2-4 is unverified** — automated tests confirm mechanics work but can't
