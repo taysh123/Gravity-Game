@@ -11,7 +11,7 @@
   gems, 3-star scoring + `ProgressStore` unlock, timed levels (countdown fail), full splash→menu→game→
   settings flow, premium glass UI (Orbitron/Exo 2).
 - **Quality:** `tsc` clean · 16 tests pass · build clean · full flow no console errors.
-- **HEAD:** `206ab35` (master). **Git is local-only — no remote configured.**
+- **Git/GitHub:** branch `master`, **synced** with `origin` = https://github.com/taysh123/Gravity-Game.git.
 
 ## Last completed sprint
 **Tension & Clarity** — full-surface buttons, stronger gravity, redesigned HUD toolbar, **hazards** +
@@ -24,8 +24,8 @@ placement/zone strengths (content exists but its balance is unverified), then st
 ## Important notes
 - ⚠️ **Level balance for Worlds 2-4 is unverified** — automated tests confirm mechanics work but can't
   reproduce finger input. Playtest on a device before adding more content.
-- ⚠️ **No GitHub remote.** 51 commits are local-only. To sync: create a repo →
-  `git remote add origin <url>` → `git push -u origin master`.
+- **GitHub:** `origin` = https://github.com/taysh123/Gravity-Game.git, `master` synced. Commit per
+  milestone and `git push` to keep it current (run pushes yourself if auth is needed).
 - Architecture rule: **one entity + one optional `LevelConfig` field per mechanic; no managers.**
 - Verify in-browser (`npm run dev` + Playwright `--disable-gpu --use-gl=swiftshader`) before "done".
 

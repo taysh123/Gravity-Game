@@ -1,7 +1,8 @@
 # Gravity Flow — Project Status (Single Source of Truth)
 
 > **Resume in one line:** Read this file first, then continue from **[Next Recommended Sprint](#next-recommended-sprint)**.
-> Quick version: `docs/session-handoff.md`. Last updated at commit `206ab35` (Tension & Clarity sprint).
+> Quick version: `docs/session-handoff.md`.
+> **Repository:** https://github.com/taysh123/Gravity-Game.git · branch `master` (synced).
 
 ---
 
@@ -168,7 +169,6 @@ History lives in `docs/superpowers/plans/`. Summary:
 - **Gravity values are device-tunable.** STRENGTH 2.6 / MIN_DIST 75 were tuned in-browser; confirm feel
   on a phone.
 - **Out-of-bounds death is rare** (walled arena) — hazards/timeouts are now the real fail paths.
-- **No GitHub remote** — all work is local-only (see Resume Instructions).
 - **Audio "Music"** is a subtle ambient pad only; no real soundtrack yet.
 
 ---
@@ -210,5 +210,6 @@ Ranked in `docs/superpowers/plans/2026-06-01-mechanics-roadmap.md`. Highlights:
 4. Working conventions: plan first (`writing-plans` → `docs/superpowers/plans/`), one entity + one
    `LevelConfig` field per mechanic, all constants in config, verify in-browser before "done"
    (`npm run dev` + Playwright `--disable-gpu --use-gl=swiftshader`), keep `tsc`/tests/build green.
-5. **Git:** local-only (no remote). `git status` should be clean; commit per milestone. To enable
-   GitHub: create an empty repo, then `git remote add origin <url>` and `git push -u origin master`.
+5. **Git/GitHub:** remote `origin` = https://github.com/taysh123/Gravity-Game.git, branch `master`
+   (tracking set up). `git status` should be clean; commit per milestone and `git push` to keep GitHub
+   in sync. (If a push needs auth, run `git push` yourself so the credential prompt works.)
