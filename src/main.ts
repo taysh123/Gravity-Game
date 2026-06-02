@@ -43,3 +43,8 @@ if (import.meta.env.DEV) {
   (window as unknown as { __game: Phaser.Game; __Phaser: typeof Phaser }).__game = game;
   (window as unknown as { __game: Phaser.Game; __Phaser: typeof Phaser }).__Phaser = Phaser;
 }
+
+// Mobile diagnostics overlay — opt-in via ?debug, off for normal players.
+if (new URLSearchParams(window.location.search).has('debug')) {
+  import('./utils/debugOverlay').then((m) => m.mountDebugOverlay(game));
+}
