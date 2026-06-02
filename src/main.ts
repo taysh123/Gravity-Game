@@ -24,6 +24,7 @@ const game = new Phaser.Game({
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
+    parent: 'app',
     autoRound: true, // integer canvas sizes — crisper render + no fractional hit-test drift
   },
   scene: [
@@ -38,13 +39,36 @@ const game = new Phaser.Game({
   ],
 });
 
+// Size the Phaser parent (#app) to the *visible* viewport. iOS Chrome resolves
+// CSS 100dvh to the larger toolbar-hidden layout viewport, so FIT was scaling the
+// canvas taller than the screen and CENTER_BOTH pushed its top off-screen (-66px
+// observed). window.visualViewport reports the truly-visible area (excludes the
+// browser toolbars), so the FIT canvas stays within it with a top >= 0. Re-fit on
+// every viewport change (toolbar show/hide, rotation).
+function syncViewport(): void {
+  const vv = window.visualViewport;
+  const w = Math.round(vv?.width ?? window.innerWidth);
+  const h = Math.round(vv?.height ?? window.innerHeight);
+  const app = document.getElementById('app');
+  if (app) {
+    app.style.width = `${w}px`;
+    app.style.height = `${h}px`;
+    if (vv) app.style.transform = `translateY(${Math.round(vv.offsetTop)}px)`;
+  }
+  game.scale.refresh();
+}
+
+game.events.once(Phaser.Core.Events.READY, syncViewport);
+window.addEventListener('resize', syncViewport);
+window.addEventListener('orientationchange', syncViewport);
+window.visualViewport?.addEventListener('resize', syncViewport);
+window.visualViewport?.addEventListener('scroll', syncViewport);
+// A couple of delayed passes catch iOS Chrome's toolbar settling after first paint.
+setTimeout(syncViewport, 300);
+setTimeout(syncViewport, 1200);
+
 // Dev-only handles for automated verification (Playwright). Stripped from prod builds.
 if (import.meta.env.DEV) {
   (window as unknown as { __game: Phaser.Game; __Phaser: typeof Phaser }).__game = game;
   (window as unknown as { __game: Phaser.Game; __Phaser: typeof Phaser }).__Phaser = Phaser;
-}
-
-// Mobile diagnostics overlay — opt-in via ?debug, off for normal players.
-if (new URLSearchParams(window.location.search).has('debug')) {
-  import('./utils/debugOverlay').then((m) => m.mountDebugOverlay(game));
 }

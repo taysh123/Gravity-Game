@@ -8,12 +8,8 @@
       * { margin: 0; padding: 0; box-sizing: border-box; }
       html, body {
         background: #0d0d1a;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        width: 100vw;
-        height: 100vh;       /* fallback for browsers without dvh */
-        height: 100dvh;      /* visible viewport (excludes mobile address bar) */
+        width: 100%;
+        height: 100%;
         overflow: hidden;
         /* Drag should drive the attractor, never scroll/zoom/select the page. */
         touch-action: none;
@@ -21,10 +17,20 @@
         user-select: none;
         overscroll-behavior: none;
       }
+      /* Phaser parent. JS sizes it to window.visualViewport (the truly-visible
+         area) so the FIT canvas never exceeds the screen — see src/main.ts. */
+      #app {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+      }
       canvas { display: block; touch-action: none; }
     </style>
   </head>
   <body>
+    <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
