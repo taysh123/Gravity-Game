@@ -6,24 +6,25 @@
 
 ## Current status
 - **Game:** GRAVITY FLOW by **True Story Labs** — mobile cosmic physics puzzler (Phaser 3 + TS + Vite).
-- **Content:** **27 levels / 5 worlds** (Foundations · Currents · Clockwork · Peril · Wells).
-- **Systems live:** attractor pull, gravity zones, **magnets (attract/repel wells)**, moving platforms,
-  hazards (fail-on-touch), collectible gems, 3-star scoring + `ProgressStore` unlock, timed levels
-  (countdown fail), full splash→menu→game→settings flow, premium glass UI (Orbitron/Exo 2).
-- **Quality:** `tsc` clean · 16 tests pass · build clean · full flow no console errors.
+- **Content:** **48 levels / 6 worlds** (Foundations · Currents · Clockwork · Peril · Wells · Rifts).
+- **Systems live:** attractor pull, gravity zones, **magnets**, **portals (teleport pairs)**, moving
+  platforms, hazards (fail-on-touch), collectible gems, 3-star scoring + `ProgressStore` unlock, timed
+  levels (countdown fail), **scrollable** world-select, Daily Challenge, full splash→menu→game→settings
+  flow, premium glass UI (Orbitron/Exo 2). Mobile viewport/touch fixed.
+- **Quality:** `tsc` clean · 33 tests pass · build clean · full flow no console errors.
 - **Git/GitHub:** branch `master`, **synced** with `origin` = https://github.com/taysh123/Gravity-Game.git.
 
 ## Last completed sprint
-**Sprint E — Validate, then Expand.** Shipped **Magnets** (attract/repel force wells) + **World 5 —
-Wells** (levels 23-27) and the **Daily Challenge** (seeded per-day level + streak, menu button/badge,
-DAILY COMPLETE overlay). Level-select compacted for a 5th world; dev-only Playwright hooks. Verified:
-isolated attract/repel force, World 5 reflow, full daily flow (play→win→streak→persist→reset), 28 tests,
-no console errors. *(Prior sprint: Tension & Clarity — hazards, timed levels, World 4 Peril.)*
+**Depth & Content (v0.3.0).** Rebalanced all 27 for real difficulty (tighter goals/par, off-route gems);
+expanded Worlds 1–5 to **8 levels each** (+13 combination levels) and made the world-select **scrollable**;
+added the **Portals** mechanic + **World 6 — Rifts** (41–48). 27 → **48 levels / 6 worlds**. Verified:
+33 tests, tsc/build green, all 48 load with no console errors, portals teleport without ping-pong. Full
+rubric + path-to-100 in `docs/superpowers/plans/2026-06-03-content-roadmap-100.md`.
 
 ## Next sprint
-1. **Milestone 0 still open — human device playtest of Worlds 2-5** to tune par/time-limits/hazard
-   placement/zone+magnet strengths. Balance is unverified with real finger input. *(Highest priority.)*
-2. **Portals (World 6 — Rifts):** paired teleport + velocity redirect — the next mechanic.
+1. **Device playtest of the harder curve + Portals** (the real fairness judge) — tune from notes.
+2. **World 7 — One-way Gates** (the last new mechanic), then combination/mastery Worlds 8–10 to reach
+   ~100; backfill W1–6 to 10 each.
 3. **Monetization + release** remain gated on the **PWA vs Capacitor** ship-target decision.
 
 ## Important notes

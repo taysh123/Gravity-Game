@@ -34,9 +34,9 @@
 - Full startup presentation: text-only True Story Labs company splash → cosmic intro (energy sphere →
   vortex → GRAVITY FLOW logo reveal, with synth audio) → main menu.
 - Core gameplay: attractor pull (inverse-square), goal/win, restart, dim cosmic background.
-- Mechanics: **gravity zones** (force fields), **magnets** (static attract/repel wells), **moving
-  platforms** (timing barriers), **hazards** (fail-on-touch, static + moving saws), **collectible
-  gems**, **timed levels** (hard countdown).
+- Mechanics: **gravity zones** (force fields), **magnets** (static attract/repel wells), **portals**
+  (linked teleport pairs, carry velocity), **moving platforms** (timing barriers), **hazards**
+  (fail-on-touch, static + moving saws), **collectible gems**, **timed levels** (hard countdown).
 - Scoring: **3 stars** per level (complete / gem / under-par), persisted in `ProgressStore`
   (localStorage), shown on the win overlay + world-select; **sequential unlock**; menu **Continue**.
 - Retention: **Daily Challenge** — a date-seeded level + consecutive-day streak (DAILY menu button,
@@ -44,8 +44,8 @@
 - UI/UX: glassmorphic design system, Orbitron+Exo 2 fonts, in-game glass toolbar (Home/Settings/Restart),
   settings overlay (Sound/Music/Haptics/Reduce-Motion), one-time Level-1 coach-mark, win/death feedback,
   full-surface button hit areas + press feedback, safe-area handling.
-- Quality gates green: `npx tsc --noEmit` clean · `npm test` 28 tests pass (MathUtils 10 + scoring 6 +
-  daily 12) · `npm run build` clean · full flow runs with **no console errors**.
+- Quality gates green: `npx tsc --noEmit` clean · `npm test` 33 tests pass (MathUtils 10 + scoring 6 +
+  daily 12 + portal 5) · `npm run build` clean · full flow runs with **no console errors**.
 
 **Caveat:** automated Playwright scripts verified that mechanics *function* (zone lifts, saw sweeps,
 hazard kills, countdown fails). They **cannot** reproduce precise finger input, so per-level
@@ -157,13 +157,15 @@ History lives in `docs/superpowers/plans/`. Summary:
 
 ## Current Content
 
-- **5 worlds, 27 levels** (`LEVELS[]` ordered by world so chapter ranges are contiguous):
-  - **World 1 — Foundations** (L1-6): attractor + static walls. L1 isolates "hold → pull".
-  - **World 2 — Currents** (L7-11): gravity zones (updraft / crosswind / downdraft).
-  - **World 3 — Clockwork** (L12-16): moving platforms (closing gap / sweeping bar / alternating gates).
-  - **World 4 — Peril** (L17-22): hazards + timed levels + moving saws + master capstone.
-  - **World 5 — Wells** (L23-27): magnets — attract well → slingshot → repel obstacle → current+well →
-    both polarities (master). *Balance unverified by device playtest (same caveat as W2-4).*
+- **6 worlds, 48 levels** — 8 per world, `LEVELS[]` ordered by world so chapter ranges are contiguous:
+  - **World 1 — Foundations** (1-8): attractor + static walls; precision weaves + narrow channels.
+  - **World 2 — Currents** (9-16): gravity zones — updraft / crosswind / downdraft, opposing lanes.
+  - **World 3 — Clockwork** (17-24): moving platforms — closing gaps / sweeping bars / faster sync.
+  - **World 4 — Peril** (25-32): hazards + timed levels + moving saws + zone combos.
+  - **World 5 — Wells** (33-40): magnets — attract/repel wells, slaloms, gauntlets.
+  - **World 6 — Rifts** (41-48): **portals** — teleport across walls, sealed chambers, two-pair choices,
+    combined with zones/platforms/magnets/hazards.
+  - *Difficulty rebalanced this sprint; the harder curve + Portals await a device playtest for fairness.*
 - **Progression structure:** sequential unlock (a level opens when the previous is ≥1★); world tally
   shown in the level-select. Every level has a `parTimeMs` and most have a `collectible`.
 - **Difficulty curve:** each world follows **teach → develop → twist → combine → master**; 1★ is always
@@ -205,11 +207,13 @@ History lives in `docs/superpowers/plans/`. Summary:
 
 ## Next Recommended Sprint
 
-**Sprint E nearly done (Magnets + Daily shipped) → M0 balance → then Portals.**
-1. **M0 — Balance pass (open, only remaining sprint item):** human device playtest of **Worlds 2-5** →
-   tune `parTimeMs`, `timeLimitMs`, hazard placement, zone + **magnet** strengths, and gem routes from
-   real feedback. *(Single most valuable step — newest content's balance is unverified with finger input.)*
-2. **Next mechanic — Portals (World 6 — Rifts):** paired teleport + velocity redirect.
+**Depth & Content shipped (v0.3.0: 48 levels / 6 worlds incl. Portals). Next: validate, then grow to ~100.**
+1. **Device playtest of the harder curve + Portals (open, highest priority):** the rebalanced goals/par
+   and the new combination/Rifts levels need real finger input to confirm fair-but-real difficulty
+   (1★ always achievable). Tune `parTimeMs`/`timeLimitMs`/geometry from notes.
+2. **World 7 — One-way Gates** (the last new mechanic), then **combination/mastery Worlds 8–10** to reach
+   ~100, and backfill W1–6 to 10 each. Rubric + full roadmap:
+   `docs/superpowers/plans/2026-06-03-content-roadmap-100.md`.
 
 **Gate for monetization + release phases:** choose **PWA** vs **Capacitor native wrap** (decides whether
 AdMob rewarded ads + store IAP are possible). Deferred until those phases; recorded here.
