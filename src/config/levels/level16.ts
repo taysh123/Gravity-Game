@@ -5,7 +5,7 @@ import { PHYSICS } from '../physics.config';
 // current — all at once. Precise multi-step routing.
 export const level16: LevelConfig = {
   ball:      { x: 70, y: 660 },
-  goal:      { x: 300, y: 110, radius: 30 },
+  goal:      { x: 300, y: 110, radius: 26 },
   obstacles: [
     { x: 120, y: 470, width: 220, height: 16 }, // low wall, gap on the right
     { x: 250, y: 300, width: 220, height: 16 }, // mid wall, gap on the left
@@ -18,5 +18,5 @@ export const level16: LevelConfig = {
   ],
   collectible: { x: 70, y: 250 },
   hint:      'Route the maze, time the guard',
-  parTimeMs: 24000,
+  parTimeMs: 19000,
 };

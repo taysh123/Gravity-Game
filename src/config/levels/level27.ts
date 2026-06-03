@@ -5,7 +5,7 @@ import type { LevelConfig } from '../../types';
 // beside the repeller — the greedy line. Both polarities, precise routing.
 export const level27: LevelConfig = {
   ball:      { x: 70, y: 660 },
-  goal:      { x: 300, y: 140, radius: 36 },
+  goal:      { x: 300, y: 140, radius: 28 },
   obstacles: [
     { x: 120, y: 470, width: 200, height: 16 }, // low wall, gap on the right
   ],
@@ -15,5 +15,5 @@ export const level27: LevelConfig = {
   ],
   collectible: { x: 130, y: 300 }, // beside the repeller — greedy line
   hint:      'Past the push, into the pull',
-  parTimeMs: 22000,
+  parTimeMs: 17000,
 };

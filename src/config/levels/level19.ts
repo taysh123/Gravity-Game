@@ -4,7 +4,7 @@ import type { LevelConfig } from '../../types';
 // runs out (it fails the run) — and don't clip the hazard on the way.
 export const level19: LevelConfig = {
   ball:      { x: 180, y: 660 },
-  goal:      { x: 180, y: 120, radius: 44 },
+  goal:      { x: 180, y: 120, radius: 40 },
   obstacles: [],
   hazards: [
     { x: 110, y: 400, radius: 28 },

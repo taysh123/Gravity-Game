@@ -5,7 +5,7 @@ import { PHYSICS } from '../physics.config';
 // Counter the wind to climb past it safely.
 export const level20: LevelConfig = {
   ball:      { x: 180, y: 660 },
-  goal:      { x: 150, y: 110, radius: 42 },
+  goal:      { x: 150, y: 110, radius: 34 },
   obstacles: [],
   gravityZones: [
     { x: 175, y: 400, width: 300, height: 150, dir: { x: 1, y: 0 }, strength: PHYSICS.GRAVITY_ZONE_STRENGTH * 0.7 },
@@ -15,5 +15,5 @@ export const level20: LevelConfig = {
   ],
   collectible: { x: 250, y: 250 },
   hint:      'The wind pushes you toward danger — steer clear',
-  parTimeMs: 16000,
+  parTimeMs: 13000,
 };

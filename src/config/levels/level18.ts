@@ -4,7 +4,7 @@ import type { LevelConfig } from '../../types';
 // the way up. Precise routing under threat.
 export const level18: LevelConfig = {
   ball:      { x: 90, y: 660 },
-  goal:      { x: 180, y: 110, radius: 40 },
+  goal:      { x: 180, y: 110, radius: 34 },
   obstacles: [
     { x: 110, y: 430, width: 200, height: 18 }, // gap on the right (x 210..360)
   ],
@@ -13,5 +13,5 @@ export const level18: LevelConfig = {
   ],
   collectible: { x: 90, y: 250 },
   hint:      'Thread the gap, dodge the hazard',
-  parTimeMs: 17000,
+  parTimeMs: 13000,
 };

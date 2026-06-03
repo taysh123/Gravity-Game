@@ -4,7 +4,7 @@ import type { LevelConfig } from '../../types';
 // the goal, and beat the clock. Everything at once.
 export const level22: LevelConfig = {
   ball:      { x: 70, y: 660 },
-  goal:      { x: 300, y: 120, radius: 32 },
+  goal:      { x: 300, y: 120, radius: 28 },
   obstacles: [
     { x: 130, y: 440, width: 220, height: 16 }, // gap on the right
     { x: 250, y: 290, width: 220, height: 16 }, // gap on the left
@@ -14,6 +14,6 @@ export const level22: LevelConfig = {
   ],
   collectible: { x: 70, y: 250 },
   hint:      'Weave, dodge the saw, beat the clock',
-  parTimeMs: 11000,
+  parTimeMs: 10000,
   timeLimitMs: 16000,
 };

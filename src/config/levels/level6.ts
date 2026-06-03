@@ -4,7 +4,7 @@ import type { LevelConfig } from '../../types';
 // Gap right of A → gap left of B → gap right of C → up to the goal.
 export const level6: LevelConfig = {
   ball:      { x: 180, y: 660 },
-  goal:      { x: 180, y: 110, radius: 26 },
+  goal:      { x: 180, y: 110, radius: 24 },
   obstacles: [
     { x: 110, y: 520, width: 200, height: 18 }, // A (low)  — gap on right
     { x: 250, y: 360, width: 200, height: 18 }, // B (mid)  — gap on left
@@ -12,5 +12,5 @@ export const level6: LevelConfig = {
   ],
   collectible: { x: 300, y: 440 },
   hint:      'Weave through all three',
-  parTimeMs: 22000,
+  parTimeMs: 18000,
 };

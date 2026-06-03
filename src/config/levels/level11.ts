@@ -5,7 +5,7 @@ import { PHYSICS } from '../physics.config';
 // carries you right toward the goal. Two currents chained into one route.
 export const level11: LevelConfig = {
   ball:      { x: 70, y: 650 },
-  goal:      { x: 300, y: 150, radius: 36 },
+  goal:      { x: 300, y: 150, radius: 30 },
   obstacles: [
     { x: 150, y: 250, width: 160, height: 16 }, // ledge: drop onto the crosswind below it
   ],
@@ -15,5 +15,5 @@ export const level11: LevelConfig = {
   ],
   collectible: { x: 70, y: 200 }, // top of the updraft, past the ledge
   hint:      'Updraft up, crosswind across',
-  parTimeMs: 19000,
+  parTimeMs: 15000,
 };

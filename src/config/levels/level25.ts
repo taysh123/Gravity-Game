@@ -5,12 +5,12 @@ import type { LevelConfig } from '../../types';
 // it is the risky line.
 export const level25: LevelConfig = {
   ball:      { x: 180, y: 660 },
-  goal:      { x: 180, y: 130, radius: 44 },
+  goal:      { x: 180, y: 130, radius: 34 },
   obstacles: [],
   magnets: [
     { x: 180, y: 410, polarity: 'repel' },
   ],
   collectible: { x: 180, y: 250 }, // above the repeller — push fights you on the way
   hint:      'Violet wells push — go around it',
-  parTimeMs: 16000,
+  parTimeMs: 13000,
 };

@@ -5,7 +5,7 @@ import { PHYSICS } from '../physics.config';
 // the wall gap to the goal. Current lifts, routing finishes.
 export const level8: LevelConfig = {
   ball:      { x: 80, y: 650 },
-  goal:      { x: 285, y: 150, radius: 40 },
+  goal:      { x: 285, y: 150, radius: 36 },
   obstacles: [
     { x: 110, y: 250, width: 200, height: 18 }, // spans x 10..210; gap on the right
   ],
@@ -14,5 +14,5 @@ export const level8: LevelConfig = {
   ],
   collectible: { x: 285, y: 350 },
   hint:      'Let the current lift you, then steer to the goal',
-  parTimeMs: 14000,
+  parTimeMs: 11000,
 };

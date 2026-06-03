@@ -5,12 +5,12 @@ import type { LevelConfig } from '../../types';
 // Player must zigzag: right through Wall A gap → left through Wall B gap → goal.
 export const level3: LevelConfig = {
   ball:      { x: 180, y: 630 },
-  goal:      { x: 180, y: 130, radius: 30 },
+  goal:      { x: 180, y: 130, radius: 28 },
   obstacles: [
     { x: 100, y: 430, width: 140, height: 18 }, // Wall A (lower)
     { x: 260, y: 280, width: 140, height: 18 }, // Wall B (upper)
   ],
   collectible: { x: 300, y: 330 },
   hint:      'Plan a path through both gaps',
-  parTimeMs: 18000,
+  parTimeMs: 14000,
 };

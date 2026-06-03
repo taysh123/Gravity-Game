@@ -6,9 +6,9 @@ import type { LevelConfig } from '../../types';
 // with zero friction. Later levels add the steering challenge.
 export const level1: LevelConfig = {
   ball:      { x: 180, y: 470 },
-  goal:      { x: 180, y: 305, radius: 64 },
+  goal:      { x: 180, y: 305, radius: 56 },
   obstacles: [],
-  collectible: { x: 180, y: 388 }, // on the ball→goal path for now (M6 moves gems off-route)
+  collectible: { x: 272, y: 400 }, // off-route to the right — a deliberate detour, not on the pull line
   hint:      'Hold near the ball to pull it toward you',
-  parTimeMs: 9000,
+  parTimeMs: 8000,
 };

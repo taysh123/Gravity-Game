@@ -4,12 +4,12 @@ import type { LevelConfig } from '../../types';
 // Send the ball across when the bar is on the far side.
 export const level13: LevelConfig = {
   ball:      { x: 65, y: 640 },
-  goal:      { x: 310, y: 150, radius: 40 },
+  goal:      { x: 310, y: 150, radius: 36 },
   obstacles: [],
   movingPlatforms: [
     { x: 130, y: 400, width: 18, height: 230, to: { x: 290, y: 400 }, durationMs: 1500 },
   ],
   collectible: { x: 200, y: 300 },
   hint:      'Slip past the sweeping bar',
-  parTimeMs: 17000,
+  parTimeMs: 13000,
 };

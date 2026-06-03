@@ -4,7 +4,7 @@ import type { LevelConfig } from '../../types';
 // closing it. Time the ball's run up through the gap while it's open.
 export const level12: LevelConfig = {
   ball:      { x: 180, y: 660 },
-  goal:      { x: 180, y: 110, radius: 46 },
+  goal:      { x: 180, y: 110, radius: 42 },
   obstacles: [
     { x: 70,  y: 390, width: 120, height: 18 }, // left wall  (x 10..130)
     { x: 290, y: 390, width: 120, height: 18 }, // right wall (x 230..350)
@@ -14,5 +14,5 @@ export const level12: LevelConfig = {
   ],
   collectible: { x: 180, y: 250 },
   hint:      'Time your run through the gap',
-  parTimeMs: 16000,
+  parTimeMs: 13000,
 };

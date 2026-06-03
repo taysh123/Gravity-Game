@@ -5,7 +5,7 @@ import { PHYSICS } from '../physics.config';
 // the top. Ride up and time the gate together.
 export const level15: LevelConfig = {
   ball:      { x: 110, y: 650 },
-  goal:      { x: 110, y: 110, radius: 40 },
+  goal:      { x: 110, y: 110, radius: 34 },
   obstacles: [],
   gravityZones: [
     { x: 110, y: 440, width: 120, height: 300, dir: { x: 0, y: -1 }, strength: PHYSICS.GRAVITY_ZONE_STRENGTH },
@@ -15,5 +15,5 @@ export const level15: LevelConfig = {
   ],
   collectible: { x: 110, y: 180 },
   hint:      'Ride the lift, time the gate',
-  parTimeMs: 20000,
+  parTimeMs: 16000,
 };

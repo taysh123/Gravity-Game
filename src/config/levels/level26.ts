@@ -5,7 +5,7 @@ import { PHYSICS } from '../physics.config';
 // on the right then pulls you across to the goal. Current + well chained.
 export const level26: LevelConfig = {
   ball:      { x: 80, y: 650 },
-  goal:      { x: 300, y: 150, radius: 42 },
+  goal:      { x: 300, y: 150, radius: 34 },
   obstacles: [],
   gravityZones: [
     { x: 80, y: 430, width: 120, height: 340, dir: { x: 0, y: -1 }, strength: PHYSICS.GRAVITY_ZONE_STRENGTH },
@@ -15,5 +15,5 @@ export const level26: LevelConfig = {
   ],
   collectible: { x: 80, y: 200 }, // top of the updraft
   hint:      'Ride the lift, let the well pull you across',
-  parTimeMs: 18000,
+  parTimeMs: 14000,
 };
