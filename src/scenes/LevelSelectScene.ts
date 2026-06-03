@@ -11,19 +11,24 @@ import { reducedMotionActive, safeAreaInsetsScaled } from '../utils/a11y';
 import { ProgressStore } from '../utils/ProgressStore';
 
 const COLS = 3;
-// Compact enough to stack 5 worlds (27 levels) on one screen. CELL_H stays ≥44
-// so each cell remains a valid touch target.
 const CELL_W = 84;
-const CELL_H = 44;
+const CELL_H = 44; // >= 44 so each cell stays a valid touch target
 const GAP_X = 12;
-const GAP_Y = 5;
-const HEADER_H = 20;
-const SECTION_GAP = 6;
+const GAP_Y = 6;
+const HEADER_H = 22;
+const SECTION_GAP = 10;
+const DRAG_THRESHOLD = 8; // px of movement before a press counts as a scroll, not a tap
 
-// Chapter-grouped level select: stacked world sections, each cell showing its
-// level number + earned stars; locked levels are dimmed (sequential unlock).
+// Chapter-grouped level select: stacked world sections (level number + earned
+// stars; locked levels dimmed). Vertically scrollable so it scales past one
+// screen as worlds are added (40 -> 100 levels).
 export class LevelSelectScene extends Phaser.Scene {
   private cosmic!: CosmicBackground;
+  private content!: Phaser.GameObjects.Container;
+  private scrollMin = 0; // most-negative content.y (content bottom reached)
+  private scrolled = false; // true once a press has moved past the drag threshold
+  private dragStartY = 0;
+  private contentStartY = 0;
 
   constructor() {
     super({ key: 'LevelSelectScene' });
@@ -41,27 +46,34 @@ export class LevelSelectScene extends Phaser.Scene {
     fadeIn(this);
 
     this.add
-      .text(cx, Math.max(height * 0.08, insets.top + 44), 'SELECT LEVEL', {
+      .text(cx, Math.max(height * 0.07, insets.top + 38), 'SELECT LEVEL', {
         fontFamily: THEME.FONT_DISPLAY,
         fontSize: '22px',
         color: THEME.TEXT_PRIMARY,
         fontStyle: '700',
       })
       .setOrigin(0.5)
-      .setLetterSpacing(3);
+      .setLetterSpacing(3)
+      .setDepth(10);
 
     const gridW = COLS * CELL_W + (COLS - 1) * GAP_X;
     const startX = cx - gridW / 2 + CELL_W / 2;
-    let y = Math.max(height * 0.16, insets.top + 84);
 
+    // Scroll viewport: between the title and the Back button.
+    const viewTop = Math.max(height * 0.14, insets.top + 76);
+    const backY = Math.min(height - Math.max(SPLASH.SAFE_AREA_MIN_PAD, insets.bottom) - 30, height * 0.95);
+    const viewBottom = backY - 38;
+
+    // All sections live in one scrollable container (laid out from y=0).
+    this.content = this.add.container(0, viewTop);
+    let y = 12; // top padding so the first world header isn't clipped by the mask
     for (const world of WORLDS) {
       const levels: number[] = [];
       for (let n = world.from; n <= Math.min(world.to, LEVELS.length); n++) levels.push(n);
       if (levels.length === 0) continue;
 
-      // Section header + star tally.
       const earned = levels.reduce((s, n) => s + ProgressStore.get(n).stars, 0);
-      this.add
+      const header = this.add
         .text(startX - CELL_W / 2, y, world.name, {
           fontFamily: THEME.FONT_DISPLAY,
           fontSize: '15px',
@@ -70,13 +82,14 @@ export class LevelSelectScene extends Phaser.Scene {
         })
         .setOrigin(0, 0.5)
         .setLetterSpacing(2);
-      this.add
+      const tally = this.add
         .text(startX - CELL_W / 2 + gridW, y, `${earned}/${levels.length * 3}★`, {
           fontFamily: THEME.FONT_BODY,
           fontSize: '13px',
           color: THEME.TEXT_MUTED,
         })
         .setOrigin(1, 0.5);
+      this.content.add([header, tally]);
       y += HEADER_H;
 
       levels.forEach((level, i) => {
@@ -91,11 +104,56 @@ export class LevelSelectScene extends Phaser.Scene {
       y += rows * (CELL_H + GAP_Y) + SECTION_GAP;
     }
 
-    const backY = Math.min(height - Math.max(SPLASH.SAFE_AREA_MIN_PAD, insets.bottom) - 32, height * 0.94);
+    // Clip the content to the viewport, and set up scrolling if it overflows.
+    const maskShape = this.make.graphics({});
+    maskShape.fillRect(0, viewTop, width, viewBottom - viewTop);
+    this.content.setMask(maskShape.createGeometryMask());
+
+    const contentH = y;
+    const viewH = viewBottom - viewTop;
+    this.scrollMin = Math.min(0, viewH - contentH); // negative when scrollable
+    this.setupScroll(viewTop, viewBottom);
+
+    if (this.scrollMin < 0) {
+      // Subtle hint that there's more below.
+      this.add
+        .text(cx, viewBottom + 4, '▾ scroll', {
+          fontFamily: THEME.FONT_BODY,
+          fontSize: '11px',
+          color: THEME.TEXT_MUTED,
+        })
+        .setOrigin(0.5)
+        .setDepth(10);
+    }
+
     new Button(this, cx, backY, '← Back', () => fadeToScene(this, 'MainMenuScene'), {
       width: 150,
       height: 46,
       fontSize: 18,
+    }).container.setDepth(10);
+  }
+
+  // Drag-to-scroll (touch + mouse) with clamping; wheel support for desktop.
+  private setupScroll(viewTop: number, viewBottom: number): void {
+    const inView = (py: number) => py >= viewTop && py <= viewBottom;
+
+    this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
+      if (!inView(p.y)) return;
+      this.scrolled = false;
+      this.dragStartY = p.y;
+      this.contentStartY = this.content.y;
+    });
+    this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
+      if (!p.isDown || this.scrollMin === 0) return;
+      const dy = p.y - this.dragStartY;
+      if (Math.abs(dy) > DRAG_THRESHOLD) this.scrolled = true;
+      if (this.scrolled) {
+        this.content.y = Phaser.Math.Clamp(this.contentStartY + dy, this.scrollMin, 0);
+      }
+    });
+    this.input.on('wheel', (_p: Phaser.Input.Pointer, _o: unknown, _dx: number, dy: number) => {
+      if (this.scrollMin === 0) return;
+      this.content.y = Phaser.Math.Clamp(this.content.y - dy, this.scrollMin, 0);
     });
   }
 
@@ -131,7 +189,6 @@ export class LevelSelectScene extends Phaser.Scene {
 
     const children: Phaser.GameObjects.GameObject[] = [bg, label];
 
-    // Three mini star pips at the bottom.
     if (unlocked) {
       for (let s = 0; s < 3; s++) {
         const pip = this.add
@@ -154,10 +211,16 @@ export class LevelSelectScene extends Phaser.Scene {
         Phaser.Geom.Rectangle.Contains,
       );
       if (cell.input) cell.input.cursor = 'pointer';
-      cell.on('pointerup', () => fadeToScene(this, 'GameScene', { level }));
+      // Suppress navigation if the press was a scroll drag.
+      cell.on('pointerup', () => {
+        if (this.scrolled) return;
+        fadeToScene(this, 'GameScene', { level });
+      });
     } else {
       cell.setAlpha(0.6);
     }
+
+    this.content.add(cell);
 
     if (!reduced) {
       cell.setAlpha(0).setScale(0.92);
@@ -165,8 +228,8 @@ export class LevelSelectScene extends Phaser.Scene {
         targets: cell,
         alpha: unlocked ? 1 : 0.6,
         scale: 1,
-        delay: 100 + index * 40,
-        duration: 360,
+        delay: 60 + index * 24,
+        duration: 320,
         ease: THEME.EASE,
       });
     }

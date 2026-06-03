@@ -15,7 +15,9 @@ export interface RecordInput {
   completed: boolean;
 }
 
-const KEY = 'gravity-flow:progress';
+// v2: level numbering changed when Worlds 1-5 expanded to 8 each (27 -> 40), so
+// old per-level keys no longer map to the same level — bump for a clean reset.
+const KEY = 'gravity-flow:progress:v2';
 const EMPTY: LevelProgress = { stars: 0, bestTimeMs: 0, gem: false };
 
 let cache: Record<number, LevelProgress> | null = null;
