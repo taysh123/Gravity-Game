@@ -15,6 +15,8 @@ import { CosmicBackground } from '../entities/CosmicBackground';
 import { CoachMark } from '../entities/CoachMark';
 import { GravityZone } from '../entities/GravityZone';
 import { Magnet } from '../entities/Magnet';
+import { Portal } from '../entities/Portal';
+import { withinMouth, portalExit } from '../utils/portal';
 import { MovingPlatform } from '../entities/MovingPlatform';
 import { Collectible } from '../entities/Collectible';
 import { Hazard } from '../entities/Hazard';
@@ -46,6 +48,7 @@ export class GameScene extends Phaser.Scene {
   private coachMark: CoachMark | null = null;
   private zones: GravityZone[] = [];
   private magnets: Magnet[] = [];
+  private portals: Portal[] = [];
   private hazards: Hazard[] = [];
   private collectible: Collectible | null = null;
   // Interactive HUD/nav regions where a tap must NOT spawn an attractor.
@@ -165,6 +168,8 @@ export class GameScene extends Phaser.Scene {
     this.magnets = (config.magnets ?? []).map(
       (m) => new Magnet(this, ox + m.x, oy + m.y, m),
     );
+
+    this.portals = (config.portals ?? []).map((pc) => new Portal(this, ox, oy, pc));
 
     this.hazards = (config.hazards ?? []).map((hz) => {
       const h = new Hazard(this, ox + hz.x, oy + hz.y, hz);
@@ -452,12 +457,14 @@ export class GameScene extends Phaser.Scene {
     this.attractor?.pulse(time / 150);
     this.zones.forEach((z) => z.pulse(time / 600));
     this.magnets.forEach((m) => m.pulse(time / 600));
+    this.portals.forEach((p) => p.pulse(time / 400));
     this.hazards.forEach((h) => h.pulse(time / 300));
     this.collectible?.pulse(time / 300);
     this.drawPullLine();
     this.applyAttractorForce();
     this.applyZoneForces();
     this.applyMagnetForces();
+    this.checkPortals(time);
     this.checkGem();
     this.checkHazards();
     this.checkWin();
@@ -485,6 +492,27 @@ export class GameScene extends Phaser.Scene {
       this.ball.body.position,
       { x: dir.x * mag, y: dir.y * mag },
     );
+  }
+
+  // Linked teleport pairs: entering a mouth moves the ball to its partner,
+  // carrying velocity, offset clear of the exit. A per-pair cooldown + the exit
+  // offset prevent immediate re-entry / ping-pong.
+  private checkPortals(time: number): void {
+    if (this.isWon || this.isDying || !this.portals.length) return;
+    const bx = this.ball.body.position.x;
+    const by = this.ball.body.position.y;
+    for (const p of this.portals) {
+      if (time - p.lastJumpMs < PHYSICS.PORTAL_COOLDOWN_MS) continue;
+      let exit: { x: number; y: number } | null = null;
+      if (withinMouth(bx, by, p.ax, p.ay, p.radius)) exit = { x: p.bx, y: p.by };
+      else if (withinMouth(bx, by, p.bx, p.by, p.radius)) exit = { x: p.ax, y: p.ay };
+      if (!exit) continue;
+      const dest = portalExit(exit, this.ball.body.velocity, PHYSICS.PORTAL_EXIT_CLEAR);
+      RawMatter.Body.setPosition(this.ball.body, dest);
+      p.lastJumpMs = time;
+      this.haptics(PHYSICS.HAPTIC_TAP_MS);
+      return; // one jump per frame
+    }
   }
 
   private checkGem(): void {

@@ -39,10 +39,18 @@ import { level37 } from './level37';
 import { level38 } from './level38';
 import { level39 } from './level39';
 import { level40 } from './level40';
+import { level41 } from './level41';
+import { level42 } from './level42';
+import { level43 } from './level43';
+import { level44 } from './level44';
+import { level45 } from './level45';
+import { level46 } from './level46';
+import { level47 } from './level47';
+import { level48 } from './level48';
 
 // Single source of truth for level order and count (used by GameScene + EndScene).
 // Ordered by world so chapter ranges stay contiguous (8 levels per world):
-//   1-8 Foundations · 9-16 Currents · 17-24 Clockwork · 25-32 Peril · 33-40 Wells.
+//   1-8 Foundations · 9-16 Currents · 17-24 Clockwork · 25-32 Peril · 33-40 Wells · 41-48 Rifts.
 // (Filenames are arbitrary module names; this array order defines the level number.)
 export const LEVELS: LevelConfig[] = [
   level1, level2, level3, level4, level5, level6, level28, level29,
@@ -50,4 +58,5 @@ export const LEVELS: LevelConfig[] = [
   level12, level13, level14, level15, level16, level33, level34, level35,
   level17, level18, level19, level20, level21, level22, level36, level37,
   level23, level24, level25, level26, level27, level38, level39, level40,
+  level41, level42, level43, level44, level45, level46, level47, level48,
 ];

@@ -66,6 +66,14 @@ export const PHYSICS = {
   COLOR_MAGNET_ATTRACT: 0x00d4ff,// cyan — pulls the ball in
   COLOR_MAGNET_REPEL: 0xc04cff,  // violet-magenta — pushes away (distinct from hazard red)
 
+  // Portals (linked teleport pairs — W6 Rifts). Carry velocity; cooldown + exit
+  // offset prevent immediate re-entry / ping-pong.
+  PORTAL_RADIUS: 26,             // mouth radius (overlap trigger).
+  PORTAL_COOLDOWN_MS: 350,       // ignore re-entry on a pair for this long after a jump.
+  PORTAL_EXIT_CLEAR: 56,         // exit offset along travel dir (ball + mouth + margin).
+  COLOR_PORTAL_A: 0x33e1ff,      // cyan mouth
+  COLOR_PORTAL_B: 0xffa64d,      // amber mouth (the linked partner)
+
   // Stars / scoring
   STAR_PAR_DEFAULT_MS: 12000,    // Fallback efficiency par when a level omits parTimeMs.
   COLOR_STAR: 0xffd166,          // Filled (earned) star — gold.

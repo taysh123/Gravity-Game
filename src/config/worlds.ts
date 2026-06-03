@@ -17,4 +17,5 @@ export const WORLDS: World[] = [
   { id: 3, name: 'CLOCKWORK', theme: PHYSICS.COLOR_ATTRACTOR, from: 17, to: 24 },
   { id: 4, name: 'PERIL', theme: PHYSICS.COLOR_DEATH, from: 25, to: 32 },
   { id: 5, name: 'WELLS', theme: PHYSICS.COLOR_MAGNET_ATTRACT, from: 33, to: 40 },
+  { id: 6, name: 'RIFTS', theme: PHYSICS.COLOR_PORTAL_A, from: 41, to: 48 },
 ];

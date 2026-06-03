@@ -42,6 +42,14 @@ export interface MagnetConfig {
   radius?: number;    // influence radius; defaults to PHYSICS.MAGNET_MAX_DIST
 }
 
+// A linked pair of teleport mouths. Entering one moves the ball to the other,
+// carrying its velocity (offset clear of the exit so it doesn't immediately re-enter).
+export interface PortalConfig {
+  a: Vec2; // mouth A center (play coords)
+  b: Vec2; // mouth B center (play coords)
+  radius?: number; // mouth radius; defaults to PHYSICS.PORTAL_RADIUS
+}
+
 // A static barrier that slides between two points (yoyo) — opens/closes gaps for timing.
 export interface MovingPlatformConfig {
   x: number;       // start center (play coords)
@@ -62,6 +70,7 @@ export interface LevelConfig {
   // Optional mechanics — existing levels stay valid (all optional).
   gravityZones?: GravityZoneConfig[];
   magnets?: MagnetConfig[]; // static attract/repel force wells
+  portals?: PortalConfig[]; // linked teleport pairs
   movingPlatforms?: MovingPlatformConfig[];
   hazards?: HazardConfig[]; // deadly objects — touching fails the level
   collectible?: Vec2; // optional gem (drives the 2nd star)
