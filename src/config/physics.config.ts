@@ -59,9 +59,13 @@ export const PHYSICS = {
   COLOR_ZONE_SIDE: 0x7c5cff,     // violet — sideways current
 
   // Magnets (static attract/repel wells — reuse the inverse-square attractor model).
+  // Clamp raised 70->95 and reach trimmed 230->190 to fix the "inescapable trap":
+  // peak grab (strength/clamp²) drops ~46% so the player's attractor (peak 4.62e-4)
+  // is ~1.9x stronger at close range, while mid-range pull (>=95px) is unchanged —
+  // wells stay strategic but escape is a skill, not a stalemate.
   MAGNET_STRENGTH: 2.2,          // Always-on force; kept under the attractor's 2.6.
-  MAGNET_MIN_DIST: 70,           // Close-range clamp (mirrors the attractor clamp).
-  MAGNET_MAX_DIST: 230,          // Influence radius — a localized well, smaller than attractor reach.
+  MAGNET_MIN_DIST: 95,           // Close-range clamp — caps peak grab below the player's counter-force.
+  MAGNET_MAX_DIST: 190,          // Influence radius — localized + avoidable (was 230).
   MAGNET_CORE_RADIUS: 20,        // Visible core circle.
   COLOR_MAGNET_ATTRACT: 0x00d4ff,// cyan — pulls the ball in
   COLOR_MAGNET_REPEL: 0xc04cff,  // violet-magenta — pushes away (distinct from hazard red)
