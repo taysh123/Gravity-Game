@@ -17,6 +17,8 @@ import { GravityZone } from '../entities/GravityZone';
 import { Magnet } from '../entities/Magnet';
 import { Portal } from '../entities/Portal';
 import { withinMouth, portalExit } from '../utils/portal';
+import { Gate } from '../entities/Gate';
+import { gateOpen } from '../utils/gate';
 import { MovingPlatform } from '../entities/MovingPlatform';
 import { Collectible } from '../entities/Collectible';
 import { Hazard } from '../entities/Hazard';
@@ -49,6 +51,7 @@ export class GameScene extends Phaser.Scene {
   private zones: GravityZone[] = [];
   private magnets: Magnet[] = [];
   private portals: Portal[] = [];
+  private gates: Gate[] = [];
   private hazards: Hazard[] = [];
   private collectible: Collectible | null = null;
   // Interactive HUD/nav regions where a tap must NOT spawn an attractor.
@@ -170,6 +173,10 @@ export class GameScene extends Phaser.Scene {
     );
 
     this.portals = (config.portals ?? []).map((pc) => new Portal(this, ox, oy, pc));
+
+    this.gates = (config.gates ?? []).map(
+      (gc) => new Gate(this, ox + gc.x, oy + gc.y, gc.width, gc.height, gc.dir, gc.angle),
+    );
 
     this.hazards = (config.hazards ?? []).map((hz) => {
       const h = new Hazard(this, ox + hz.x, oy + hz.y, hz);
@@ -458,12 +465,14 @@ export class GameScene extends Phaser.Scene {
     this.zones.forEach((z) => z.pulse(time / 600));
     this.magnets.forEach((m) => m.pulse(time / 600));
     this.portals.forEach((p) => p.pulse(time / 400));
+    this.gates.forEach((g) => g.pulse(time / 300));
     this.hazards.forEach((h) => h.pulse(time / 300));
     this.collectible?.pulse(time / 300);
     this.drawPullLine();
     this.applyAttractorForce();
     this.applyZoneForces();
     this.applyMagnetForces();
+    this.updateGates();
     this.checkPortals(time);
     this.checkGem();
     this.checkHazards();
@@ -492,6 +501,20 @@ export class GameScene extends Phaser.Scene {
       this.ball.body.position,
       { x: dir.x * mag, y: dir.y * mag },
     );
+  }
+
+  // One-way gates: open (passable) while the ball moves along `dir`, else solid.
+  // Hysteresis keeps a gate open while the ball is still passing through it.
+  private updateGates(): void {
+    if (!this.gates.length) return;
+    const v = this.ball.body.velocity;
+    const bx = this.ball.body.position.x;
+    const by = this.ball.body.position.y;
+    for (const g of this.gates) {
+      const moving = gateOpen(v, { x: g.nx, y: g.ny }, PHYSICS.GATE_OPEN_THRESHOLD);
+      const open = moving || (g.isOpen && g.overlaps(bx, by, PHYSICS.BALL_RADIUS + 4));
+      g.setOpen(open);
+    }
   }
 
   // Linked teleport pairs: entering a mouth moves the ball to its partner,

@@ -1,0 +1,18 @@
+import type { LevelConfig } from '../../types';
+
+// World 7 — Gates · twist: two gates in series — pass UP through the first, then
+// RIGHT through the second. Each is one-shot, so commit in the right order.
+export const level54: LevelConfig = {
+  ball:      { x: 120, y: 660 },
+  goal:      { x: 300, y: 150, radius: 30 },
+  obstacles: [
+    { x: 230, y: 560, width: 16, height: 170 }, // wall channelling the lower-left start
+  ],
+  gates: [
+    { x: 120, y: 500, width: 200, height: 16, dir: { x: 0, y: -1 } }, // up-gate (left)
+    { x: 235, y: 320, width: 16, height: 210, dir: { x: 1, y: 0 } },  // right-gate (upper)
+  ],
+  collectible: { x: 60, y: 300 }, // off-route left, above the first gate
+  hint:      'Two gates — commit to each in turn',
+  parTimeMs: 18000,
+};

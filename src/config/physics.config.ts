@@ -78,6 +78,10 @@ export const PHYSICS = {
   COLOR_PORTAL_A: 0x33e1ff,      // cyan mouth
   COLOR_PORTAL_B: 0xffa64d,      // amber mouth (the linked partner)
 
+  // One-way gates (W7 — Gates). Solid, but open while the ball moves along `dir`.
+  GATE_OPEN_THRESHOLD: 0.1,      // min velocity component along dir to open (else solid).
+  COLOR_GATE: 0x2ee6c0,          // teal — arrows show the allowed pass direction
+
   // Stars / scoring
   STAR_PAR_DEFAULT_MS: 12000,    // Fallback efficiency par when a level omits parTimeMs.
   COLOR_STAR: 0xffd166,          // Filled (earned) star — gold.

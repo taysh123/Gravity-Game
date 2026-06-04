@@ -42,6 +42,16 @@ export interface MagnetConfig {
   radius?: number;    // influence radius; defaults to PHYSICS.MAGNET_MAX_DIST
 }
 
+// A one-way gate: solid, but passable while the ball moves along `dir`.
+export interface GateConfig {
+  x: number;       // play-area center x
+  y: number;       // play-area center y
+  width: number;
+  height: number;
+  dir: Vec2;       // allowed pass direction (will be normalized)
+  angle?: number;  // degrees, default 0
+}
+
 // A linked pair of teleport mouths. Entering one moves the ball to the other,
 // carrying its velocity (offset clear of the exit so it doesn't immediately re-enter).
 export interface PortalConfig {
@@ -71,6 +81,7 @@ export interface LevelConfig {
   gravityZones?: GravityZoneConfig[];
   magnets?: MagnetConfig[]; // static attract/repel force wells
   portals?: PortalConfig[]; // linked teleport pairs
+  gates?: GateConfig[]; // one-way gates
   movingPlatforms?: MovingPlatformConfig[];
   hazards?: HazardConfig[]; // deadly objects — touching fails the level
   collectible?: Vec2; // optional gem (drives the 2nd star)
