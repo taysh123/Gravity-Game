@@ -53,8 +53,6 @@ import { level59 } from './level59';
 import { level60 } from './level60';
 import { level61 } from './level61';
 import { level62 } from './level62';
-import { level63 } from './level63';
-import { level64 } from './level64';
 import { level65 } from './level65';
 import { level66 } from './level66';
 import { level67 } from './level67';
@@ -77,13 +75,18 @@ import { level83 } from './level83';
 import { level84 } from './level84';
 import { level85 } from './level85';
 import { level86 } from './level86';
+import { level87 } from './level87';
+import { level88 } from './level88';
+import { level89 } from './level89';
+import { level90 } from './level90';
 
 // Single source of truth for level order and count (used by GameScene + EndScene).
-// Worlds overhauled to 10 levels each, themed to a distinct mental skill, each with
-// >=3 aha puzzles + a signature + a boss (W1 navigation · W2 prediction/flow ·
-// W3 timing/sequencing · W4 reaction/nerve under pressure); later worlds still 8.
+// All 8 worlds overhauled to 10 levels each, themed to a distinct mental skill, each
+// with >=3 aha puzzles + a signature + a boss (W1 navigation · W2 prediction/flow ·
+// W3 timing/sequencing · W4 reaction/nerve · W5 trajectory/orbital · W6 spatial ·
+// W7 planning/commitment · W8 synthesis/improvisation). 80 levels, 10x8.
 //   1-10 Foundations · 11-20 Currents · 21-30 Clockwork · 31-40 Peril · 41-50 Wells ·
-//   51-60 Rifts · 61-70 Gates · 71-78 Convergence.
+//   51-60 Rifts · 61-70 Gates · 71-80 Convergence.
 // (Filenames are arbitrary module names; this array order defines the level number.)
 export const LEVELS: LevelConfig[] = [
   // W1 Foundations (navigation): teach, fork, decision, traverse, puzzle-box, stakes,
@@ -107,5 +110,7 @@ export const LEVELS: LevelConfig[] = [
   // W7 Gates (planning/commitment/ordering): teach, develop, down-gate twist, lock-and-key-aha,
   // gate+zone combine, plan-gem-aha, two-gates twist, signature THE LOCKWORKS, master, boss THE VAULT.
   level49, level50, level51, level83, level52, level84, level54, level85, level56, level86,
-  level57, level58, level59, level60, level61, level62, level63, level64,
+  // W8 Convergence (synthesis/improvisation): 6 distinct combos, fuse-two-mechanics-aha,
+  // improvise-aha, signature THE CONFLUENCE, boss/finale HOMECOMING.
+  level57, level58, level59, level87, level60, level88, level61, level89, level62, level90,
 ];

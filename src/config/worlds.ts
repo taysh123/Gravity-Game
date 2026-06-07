@@ -12,8 +12,8 @@ export interface World {
 }
 
 export const WORLDS: World[] = [
-  // Worlds 1-7 overhauled to 10 levels each (distinct mental skill + signature +
-  // boss + >=3 aha); later worlds still 8 until their overhaul milestone.
+  // All 8 worlds overhauled to 10 levels each (distinct mental skill + signature +
+  // boss + >=3 aha). 80 levels total, 10x8.
   { id: 1, name: 'FOUNDATIONS', theme: PHYSICS.COLOR_GOAL, from: 1, to: 10 },
   { id: 2, name: 'CURRENTS', theme: PHYSICS.COLOR_ATTRACTOR_PULSE, from: 11, to: 20 },
   { id: 3, name: 'CLOCKWORK', theme: PHYSICS.COLOR_ATTRACTOR, from: 21, to: 30 },
@@ -21,5 +21,5 @@ export const WORLDS: World[] = [
   { id: 5, name: 'WELLS', theme: PHYSICS.COLOR_MAGNET_ATTRACT, from: 41, to: 50 },
   { id: 6, name: 'RIFTS', theme: PHYSICS.COLOR_PORTAL_A, from: 51, to: 60 },
   { id: 7, name: 'GATES', theme: PHYSICS.COLOR_GATE, from: 61, to: 70 },
-  { id: 8, name: 'CONVERGENCE', theme: PHYSICS.COLOR_BALL_GLOW, from: 71, to: 78 },
+  { id: 8, name: 'CONVERGENCE', theme: PHYSICS.COLOR_BALL_GLOW, from: 71, to: 80 },
 ];
