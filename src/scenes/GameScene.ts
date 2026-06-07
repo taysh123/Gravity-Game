@@ -32,6 +32,12 @@ import { DailyStore } from '../utils/DailyStore';
 import { StatsStore } from '../utils/StatsStore';
 import { AchievementStore } from '../utils/AchievementStore';
 import type { AchievementDef } from '../utils/achievements';
+import { CurrencyStore } from '../utils/CurrencyStore';
+import { stardustForWin } from '../utils/currency';
+import { streakReward, dateKey, type DailyModifier } from '../utils/daily';
+import { DAILY_LEVELS } from '../config/dailyLevels';
+import { Leaderboard } from '../utils/Leaderboard';
+import { Ads } from '../utils/Ads';
 
 const SAFE_PAD = 12; // minimum padding from any screen edge for HUD/nav
 
@@ -68,8 +74,12 @@ export class GameScene extends Phaser.Scene {
   private winResult: StarResult | null = null;
   private winTimeMs = 0;
   private newAchievements: AchievementDef[] = [];
+  private awardedStardust = 0;
   private isDaily = false; // launched from the Daily Challenge
   private dailyStreak = 0; // streak after winning today's daily
+  private dailyIndex = 0; // which curated daily level
+  private dailyModifier: DailyModifier = 'none';
+  private gemRequired = false; // daily 'gemRush' modifier — must collect the gem to win
 
   private get playX(): number {
     return (this.scale.width - PHYSICS.PLAY_WIDTH) / 2;
@@ -94,16 +104,29 @@ export class GameScene extends Phaser.Scene {
   }
 
   create(): void {
-    const data = this.scene.settings.data as { level?: number; daily?: boolean } | undefined;
+    const data = this.scene.settings.data as
+      | { level?: number; daily?: boolean; dailyIndex?: number; dailyModifier?: DailyModifier }
+      | undefined;
     this.currentLevel = data?.level ?? 1;
     this.isDaily = data?.daily ?? false;
+    this.dailyIndex = data?.dailyIndex ?? 0;
+    this.dailyModifier = data?.dailyModifier ?? 'none';
     this.isWon = false;
     this.isDying = false;
 
-    const config = LEVELS[this.currentLevel - 1] ?? LEVELS[0];
+    const config = this.isDaily
+      ? DAILY_LEVELS[this.dailyIndex] ?? DAILY_LEVELS[0]
+      : LEVELS[this.currentLevel - 1] ?? LEVELS[0];
     this.levelStartMs = this.time.now;
     this.parTimeMs = config.parTimeMs ?? PHYSICS.STAR_PAR_DEFAULT_MS;
     this.timeLimitMs = config.timeLimitMs ?? 0;
+    // Apply the daily modifier.
+    this.gemRequired = false;
+    if (this.isDaily && this.dailyModifier === 'timed') {
+      this.timeLimitMs = (config.parTimeMs ?? 12000) + 3000;
+    } else if (this.isDaily && this.dailyModifier === 'gemRush') {
+      this.gemRequired = true;
+    }
     this.countdown = null;
     this.gemCollected = false;
     this.winResult = null;
@@ -284,7 +307,7 @@ export class GameScene extends Phaser.Scene {
     const padY = Math.max(SAFE_PAD, insets.top) + 8;
 
     const label = this.add
-      .text(0, 0, `LEVEL ${this.currentLevel}`, {
+      .text(0, 0, this.isDaily ? 'DAILY' : `LEVEL ${this.currentLevel}`, {
         fontFamily: THEME.FONT_DISPLAY,
         fontSize: '14px',
         color: THEME.TEXT_PRIMARY,
@@ -574,6 +597,7 @@ export class GameScene extends Phaser.Scene {
       this.goal.y,
     );
     if (dist < this.goal.radius) {
+      if (this.gemRequired && !this.gemCollected) return; // 'gemRush' daily — grab the gem first
       this.triggerWin();
     }
   }
@@ -589,14 +613,31 @@ export class GameScene extends Phaser.Scene {
       timeMs: this.winTimeMs,
       parMs: this.parTimeMs,
     });
-    ProgressStore.record(this.currentLevel, {
-      stars: this.winResult.stars,
-      timeMs: this.winTimeMs,
-      gem: this.gemCollected,
-      completed: true,
-    });
-    if (this.isDaily) this.dailyStreak = DailyStore.recordWin();
-    // Achievements reflect this win (progress already recorded above).
+    // Campaign progress only — the daily isn't a campaign level.
+    if (!this.isDaily) {
+      ProgressStore.record(this.currentLevel, {
+        stars: this.winResult.stars,
+        timeMs: this.winTimeMs,
+        gem: this.gemCollected,
+        completed: true,
+      });
+    }
+    // Award Stardust (soft currency) for the win — spent on cosmetics.
+    this.awardedStardust = stardustForWin(this.winResult.stars, this.isDaily);
+    if (this.isDaily) {
+      this.dailyStreak = DailyStore.recordWin();
+      this.awardedStardust += streakReward(this.dailyStreak); // milestone bonus
+      // Record a structured daily result (leaderboard-ready; local for now).
+      Leaderboard.submitDaily({
+        date: dateKey(new Date()),
+        index: this.dailyIndex,
+        modifier: this.dailyModifier,
+        timeMs: this.winTimeMs,
+        stars: this.winResult.stars,
+      });
+    }
+    CurrencyStore.add(this.awardedStardust);
+    // Achievements reflect this win (progress + daily streak recorded above).
     this.newAchievements = AchievementStore.syncAndGetNew(StatsStore.collectSnapshot());
 
     const audio = this.getAudio();
@@ -627,6 +668,7 @@ export class GameScene extends Phaser.Scene {
       } else if (nextLevel > LEVELS.length) {
         this.scene.start('EndScene');
       } else {
+        void Ads.maybeInterstitial(); // frequency-capped; no-op on web / for premium
         this.scene.restart({ level: nextLevel });
       }
     });
@@ -677,8 +719,8 @@ export class GameScene extends Phaser.Scene {
     const timeStr = fmtTime(this.winTimeMs);
     const underPar = this.winResult?.underPar;
     const subStr = this.isDaily
-      ? `STREAK ${this.dailyStreak}  ·  best ${DailyStore.bestStreak()}`
-      : `${timeStr}  ·  par ${parStr}`;
+      ? `STREAK ${this.dailyStreak}  ·  +${this.awardedStardust} ✦`
+      : `${timeStr}  ·  par ${parStr}  ·  +${this.awardedStardust} ✦`;
     const sub = this.add
       .text(0, 42, subStr, {
         fontFamily: THEME.FONT_BODY,
@@ -782,7 +824,7 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.shake(PHYSICS.SHAKE_DEATH_MS, PHYSICS.SHAKE_DEATH_INTENSITY);
     this.deathFeedback();
     this.time.delayedCall(PHYSICS.DEATH_FLASH_MS, () =>
-      this.scene.restart({ level: this.currentLevel, daily: this.isDaily }),
+      this.scene.restart({ level: this.currentLevel, daily: this.isDaily, dailyIndex: this.dailyIndex, dailyModifier: this.dailyModifier }),
     );
   }
 
@@ -824,6 +866,6 @@ export class GameScene extends Phaser.Scene {
     this.getAudio().stopHum();
     this.attractor?.destroy();
     this.attractor = null;
-    this.scene.restart({ level: this.currentLevel, daily: this.isDaily });
+    this.scene.restart({ level: this.currentLevel, daily: this.isDaily, dailyIndex: this.dailyIndex, dailyModifier: this.dailyModifier });
   }
 }

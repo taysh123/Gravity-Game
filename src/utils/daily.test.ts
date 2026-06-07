@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { dateKey, dailyLevelFor, nextStreak, effectiveStreak } from './daily';
+import { dateKey, dailyLevelFor, nextStreak, effectiveStreak, dailyChallengeFor, streakReward } from './daily';
 
 describe('dateKey', () => {
   it('formats a local date as YYYY-MM-DD', () => {
@@ -48,6 +48,39 @@ describe('nextStreak', () => {
 
   it('resets to 1 when a day was missed', () => {
     expect(nextStreak({ lastPlayedDate: '2026-05-31', streak: 5 }, '2026-06-02')).toBe(1);
+  });
+});
+
+describe('dailyChallengeFor', () => {
+  it('is deterministic and in range for a day', () => {
+    const d = new Date(2026, 5, 2);
+    const a = dailyChallengeFor(d, 10);
+    const b = dailyChallengeFor(d, 10);
+    expect(a).toEqual(b);
+    expect(a.index).toBeGreaterThanOrEqual(0);
+    expect(a.index).toBeLessThan(10);
+    expect(['none', 'timed', 'gemRush']).toContain(a.modifier);
+  });
+  it('varies the level across days', () => {
+    const picks = new Set<number>();
+    for (let day = 1; day <= 25; day++) picks.add(dailyChallengeFor(new Date(2026, 7, day), 10).index);
+    expect(picks.size).toBeGreaterThan(1);
+  });
+  it('handles an empty pool safely', () => {
+    expect(dailyChallengeFor(new Date(2026, 5, 2), 0).index).toBe(0);
+  });
+});
+
+describe('streakReward', () => {
+  it('rewards milestones', () => {
+    expect(streakReward(3)).toBe(10);
+    expect(streakReward(7)).toBe(25);
+    expect(streakReward(14)).toBe(50);
+    expect(streakReward(30)).toBe(100);
+  });
+  it('is zero off-milestone and at zero', () => {
+    expect(streakReward(0)).toBe(0);
+    expect(streakReward(5)).toBe(0);
   });
 });
 

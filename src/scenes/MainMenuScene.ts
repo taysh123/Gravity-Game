@@ -56,6 +56,16 @@ export class MainMenuScene extends Phaser.Scene {
       { size: gearSize },
     ).container.setDepth(30);
 
+    // Cosmetics shop (top-left, next to achievements).
+    new IconButton(
+      this,
+      Math.max(12, insets.left) + 8 + gearSize / 2 + gearSize + 8,
+      Math.max(12, insets.top) + 8 + gearSize / 2,
+      'palette',
+      () => fadeToScene(this, 'CosmeticsScene'),
+      { size: gearSize },
+    ).container.setDepth(30);
+
     // Start the ambient music pad on the first gesture (autoplay policy).
     this.input.once('pointerdown', () => {
       const audio = sharedAudio();
@@ -104,18 +114,23 @@ export class MainMenuScene extends Phaser.Scene {
       { fill: SPLASH.MENU_FILL_SECONDARY, fontFamily: THEME.FONT_DISPLAY, fontSize: 20 },
     );
 
-    // Daily Challenge: one seeded level per day + a streak. A gold badge nudges
-    // when today's run is still open.
-    const dailyLevel = DailyStore.levelFor(LEVELS.length);
+    // Daily Challenge 2.0: a curated daily level + rotating modifier + streak.
+    // A gold badge nudges when today's run is still open.
+    const today = DailyStore.todayChallenge();
     const doneToday = DailyStore.isDoneToday();
     const streak = DailyStore.currentStreak();
+    const modLabel = today.modifier === 'timed'
+      ? 'Time Attack'
+      : today.modifier === 'gemRush'
+        ? 'Gem Rush'
+        : 'Classic';
     const dailyY = btnY + 2 * (SPLASH.MENU_BTN_H + SPLASH.MENU_BTN_GAP);
     const daily = new Button(
       this,
       cx,
       dailyY,
       'DAILY',
-      () => fadeToScene(this, 'GameScene', { level: dailyLevel, daily: true }),
+      () => fadeToScene(this, 'GameScene', { daily: true, dailyIndex: today.index, dailyModifier: today.modifier }),
       { fill: SPLASH.MENU_FILL_SECONDARY, fontFamily: THEME.FONT_DISPLAY, fontSize: 20 },
     );
     const badge = !doneToday ? this.add.graphics() : null;
@@ -127,9 +142,7 @@ export class MainMenuScene extends Phaser.Scene {
     }
     const capStr = doneToday
       ? `Done today · streak ${streak}`
-      : streak > 0
-        ? `Streak ${streak} — keep it alive`
-        : 'A fresh challenge each day';
+      : `Today: ${modLabel}${streak > 0 ? ` · streak ${streak}` : ''}`;
     const dailyCap = this.add
       .text(cx, dailyY + SPLASH.MENU_BTN_H / 2 + 13, capStr, {
         fontFamily: THEME.FONT_BODY,

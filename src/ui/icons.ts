@@ -9,7 +9,8 @@ export type IconName =
   | 'music'
   | 'haptics'
   | 'motion'
-  | 'trophy';
+  | 'trophy'
+  | 'palette';
 
 // Draw a crisp line-style icon centered at (0,0) into a Graphics, sized to fit
 // roughly a `size`×`size` box. Vector-drawn = no icon-font dependency and full
@@ -106,6 +107,15 @@ export function drawIcon(
       arcAt(g, -h * 0.1, 0, h * 0.35, -60, 60);
       arcAt(g, -h * 0.1, 0, h * 0.6, -60, 60);
       arcAt(g, -h * 0.1, 0, h * 0.85, -60, 60);
+      break;
+    }
+    case 'palette': {
+      // A paint-palette blob (ring) with three dabs.
+      g.strokeCircle(0, 0, h * 0.62);
+      g.fillStyle(color, alpha);
+      g.fillCircle(-h * 0.28, -h * 0.18, h * 0.12);
+      g.fillCircle(h * 0.02, -h * 0.32, h * 0.12);
+      g.fillCircle(h * 0.3, -h * 0.02, h * 0.12);
       break;
     }
     case 'trophy': {

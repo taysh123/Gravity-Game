@@ -1,6 +1,7 @@
 // Persisted Daily Challenge state (localStorage). Thin store — mirrors
 // ProgressStore/SettingsStore. All date + streak math lives in `daily.ts`.
-import { dateKey, dailyLevelFor, nextStreak, effectiveStreak, type DailyState } from './daily';
+import { dateKey, dailyLevelFor, dailyChallengeFor, nextStreak, effectiveStreak, type DailyState, type DailyModifier } from './daily';
+import { DAILY_LEVELS } from '../config/dailyLevels';
 
 interface StoredDaily extends DailyState {
   bestStreak: number;
@@ -32,8 +33,14 @@ function persist(): void {
 
 export const DailyStore = {
   // The level number for today (deterministic). `levelCount` = LEVELS.length.
+  // Legacy campaign-pick; the daily now uses todayChallenge() below.
   levelFor(levelCount: number, now: Date = new Date()): number {
     return dailyLevelFor(now, levelCount);
+  },
+
+  // Daily 2.0 — which curated daily level + modifier today.
+  todayChallenge(now: Date = new Date()): { index: number; modifier: DailyModifier } {
+    return dailyChallengeFor(now, DAILY_LEVELS.length);
   },
 
   isDoneToday(now: Date = new Date()): boolean {
