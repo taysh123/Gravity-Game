@@ -38,9 +38,7 @@ import { level40 } from './level40';
 import { level41 } from './level41';
 import { level42 } from './level42';
 import { level43 } from './level43';
-import { level44 } from './level44';
 import { level45 } from './level45';
-import { level46 } from './level46';
 import { level47 } from './level47';
 import { level48 } from './level48';
 import { level49 } from './level49';
@@ -73,13 +71,17 @@ import { level75 } from './level75';
 import { level76 } from './level76';
 import { level77 } from './level77';
 import { level78 } from './level78';
+import { level79 } from './level79';
+import { level80 } from './level80';
+import { level81 } from './level81';
+import { level82 } from './level82';
 
 // Single source of truth for level order and count (used by GameScene + EndScene).
 // Worlds overhauled to 10 levels each, themed to a distinct mental skill, each with
 // >=3 aha puzzles + a signature + a boss (W1 navigation · W2 prediction/flow ·
 // W3 timing/sequencing · W4 reaction/nerve under pressure); later worlds still 8.
 //   1-10 Foundations · 11-20 Currents · 21-30 Clockwork · 31-40 Peril · 41-50 Wells ·
-//   51-58 Rifts · 59-66 Gates · 67-74 Convergence.
+//   51-60 Rifts · 61-68 Gates · 69-76 Convergence.
 // (Filenames are arbitrary module names; this array order defines the level number.)
 export const LEVELS: LevelConfig[] = [
   // W1 Foundations (navigation): teach, fork, decision, traverse, puzzle-box, stakes,
@@ -97,7 +99,9 @@ export const LEVELS: LevelConfig[] = [
   // W5 Wells (trajectory/orbital): teach, slingshot-develop, repel-twist, slingshot-around-aha,
   // slalom, repel-place-aha, lift+well+spike combine, signature THE BINARY STAR, gauntlet, boss THE SINGULARITY.
   level23, level24, level25, level75, level38, level76, level39, level77, level40, level78,
-  level41, level42, level43, level44, level45, level46, level47, level48,
+  // W6 Rifts (spatial/non-linear): teach, develop-sealed, far-mouths-twist, velocity-carry-aha,
+  // portal+gate combine, think-backwards-aha, two-rift decision, signature HALL OF MIRRORS, master, boss THE BREACH.
+  level41, level42, level43, level79, level45, level80, level47, level81, level48, level82,
   level49, level50, level51, level52, level53, level54, level55, level56,
   level57, level58, level59, level60, level61, level62, level63, level64,
 ];
