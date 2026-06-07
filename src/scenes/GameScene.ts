@@ -157,6 +157,10 @@ export class GameScene extends Phaser.Scene {
     if (!this.isDaily && this.worldTheme && isWorldStart(this.currentLevel)) {
       this.showWorldTitleCard();
     }
+    // Per-world music bed (continuous across same-world restarts; boss = tense).
+    const ambientAudio = this.getAudio();
+    ambientAudio.resume();
+    ambientAudio.startWorldTheme(worldOf(this.currentLevel).id, this.isBoss);
 
     this.restartKey = this.input.keyboard!.addKey(
       Phaser.Input.Keyboard.KeyCodes.R,
@@ -454,6 +458,7 @@ export class GameScene extends Phaser.Scene {
 
   private goHome(): void {
     this.getAudio().stopHum();
+    this.getAudio().stopWorldTheme();
     this.attractor?.destroy();
     this.attractor = null;
     fadeToScene(this, 'MainMenuScene');
@@ -724,18 +729,21 @@ export class GameScene extends Phaser.Scene {
     const nextLevel = this.currentLevel + 1;
     this.time.delayedCall(1550, () => {
       if (this.isDaily) {
+        this.getAudio().stopWorldTheme();
         this.scene.start('MainMenuScene'); // one daily a day — back to the menu
       } else if (nextLevel > LEVELS.length) {
+        this.getAudio().stopWorldTheme();
         this.scene.start('EndScene');
       } else {
         void Ads.maybeInterstitial(); // frequency-capped; no-op on web / for premium
-        this.scene.restart({ level: nextLevel });
+        this.scene.restart({ level: nextLevel }); // startWorldTheme keeps same-world music continuous
       }
     });
   }
 
   private showWinOverlay(): void {
-    this.getAudio().playLevelComplete();
+    if (this.isBoss) this.getAudio().playBossClear();
+    else this.getAudio().playLevelComplete();
     const { width, height } = this.scale;
     const cx = width / 2;
     const cy = height / 2;

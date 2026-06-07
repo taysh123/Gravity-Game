@@ -7,6 +7,8 @@ export class AudioSynth {
   private humOsc: OscillatorNode | null = null;
   private humGain: GainNode | null = null;
   private pad: Array<{ osc: OscillatorNode; gain: GainNode }> = [];
+  private worldPad: Array<{ osc: OscillatorNode; gain: GainNode }> = [];
+  private currentThemeKey: string | null = null; // `${worldId}:${boss}` — continuity within a world
 
   constructor(ctx: AudioContext) {
     this.ctx = ctx;
@@ -290,6 +292,78 @@ export class AudioSynth {
       osc.stop(t + 0.7);
     });
     this.pad = [];
+  }
+
+  // ── In-game per-world music bed (Music setting) ───────────────────
+  // A distinct chord/mood per world; idempotent within a world (so it plays
+  // continuously across level restarts). Boss = a tenser minor bed. Procedural
+  // now; a real looping track can replace this behind the same call site later.
+  startWorldTheme(worldId: number, boss = false): void {
+    const key = `${worldId}:${boss}`;
+    if (this.currentThemeKey === key) return; // already playing this world's bed
+    this.stopWorldTheme();
+    this.currentThemeKey = key;
+    if (!SettingsStore.get().music) return;
+
+    // Per-world base note + chord + waveform (mood). Boss overrides to a minor bed.
+    const beds: Record<number, { base: number; ratios: number[]; type: OscillatorType }> = {
+      1: { base: 55, ratios: [1, 1.5, 2], type: 'sine' },        // Foundations — calm A
+      2: { base: 73.4, ratios: [1, 1.5, 2.25], type: 'triangle' }, // Currents — airy D
+      3: { base: 87.3, ratios: [1, 1.5, 2], type: 'triangle' },    // Clockwork — F
+      4: { base: 82.4, ratios: [1, 1.2, 1.5], type: 'sine' },      // Peril — minor, tense E
+      5: { base: 65.4, ratios: [1, 1.5, 2], type: 'sine' },        // Wells — heavy C
+      6: { base: 98, ratios: [1, 1.414, 2], type: 'triangle' },    // Rifts — unstable (tritone) G
+      7: { base: 73.4, ratios: [1, 1.5, 2], type: 'sine' },        // Gates — clean D
+      8: { base: 65.4, ratios: [1, 1.5, 2, 2.5], type: 'triangle' }, // Convergence — warm add9 C
+    };
+    const bed = boss ? { base: 55, ratios: [1, 1.19, 1.5], type: 'sawtooth' as OscillatorType } : (beds[worldId] ?? beds[1]);
+    const t = this.ctx.currentTime;
+    bed.ratios.forEach((r, i) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = bed.type;
+      osc.frequency.value = bed.base * r * (1 + i * 0.0025); // slight detune for warmth/tension
+      const target = (boss ? 0.03 : 0.02) / (i + 1);
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(target, t + 2.2);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(t);
+      this.worldPad.push({ osc, gain });
+    });
+  }
+
+  stopWorldTheme(): void {
+    this.currentThemeKey = null;
+    if (!this.worldPad.length) return;
+    const t = this.ctx.currentTime;
+    this.worldPad.forEach(({ osc, gain }) => {
+      gain.gain.cancelScheduledValues(t);
+      gain.gain.setValueAtTime(Math.max(gain.gain.value, 0.0001), t);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+      osc.stop(t + 0.6);
+    });
+    this.worldPad = [];
+  }
+
+  // Triumphant rising arpeggio when a boss is cleared.
+  playBossClear(): void {
+    if (!this.sfxOn) return;
+    const freqs = [392, 523.25, 659.25, 783.99, 1046.5]; // G4 C5 E5 G5 C6
+    freqs.forEach((f, i) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      const t = this.ctx.currentTime + i * 0.1;
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(f, t);
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.linearRampToValueAtTime(0.09, t + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.0008, t + 0.5);
+      osc.start(t);
+      osc.stop(t + 0.52);
+    });
   }
 }
 
