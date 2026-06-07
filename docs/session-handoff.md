@@ -17,28 +17,34 @@
   pool + rotating modifier + streak rewards), **cosmetics shop** (ball themes, earn with Stardust),
   leaderboard-ready daily records, **Ads/IAP provider seams** (web stubs); **signature/boss level identity**
   (gold/red HUD titles). Premium glass UI; mobile fixed.
-- **Quality:** `tsc` clean · 52 tests pass · build clean · full flow no console errors.
+- **Excitement (v0.7.0):** **per-world visual identity** (8 distinct palettes/atmospheres + world title
+  cards), **per-world in-game music** + boss audio + boss-clear sting, **star-by-star win celebration**
+  (PERFECT! + rising tones), boss **STAR FREED** payoff + red arena wash + camera punches, **signature/boss
+  title cards**, and the hook **"Bring the lost star home."**
+- **Quality:** `tsc` clean · 56 tests pass · build clean · full flow no console errors.
 - **Git/GitHub:** branch `master`, **synced** with `origin` = https://github.com/taysh123/Gravity-Game.git.
 
 ## Last completed sprint
-**Gameplay Overhaul — Worlds 1–3 (v0.6.0).** Paused Sprint 2 to fix the core "too samey / not memorable"
-risk. Each world now teaches a **distinct mental skill** (not just a new obstacle), optimized for **aha
-moments**: W1 navigation/route-finding/discovery, W2 prediction/flow/reading current interactions, W3
-timing/sequencing/rhythm. Each world: ≥3 genuine aha puzzles (e.g., enter-from-the-side box, decoy gap,
-updraft→crosswind curve, "use the downdraft", stage-between-bars, patience slider) + a **signature**
-(THE GAUNTLET / THE EYE / THE GEARWORKS) + a **boss** (THE COLLAPSE / THE MAELSTROM / THE MACHINE) with
-gold/red HUD titles (new optional `LevelConfig.title/boss`). W1–3 → 10 each (renumbered; ProgressStore
-v4). 66 → **70 levels**. Verified: 52 tests, tsc/build green, all 70 load no console errors, signatures +
-bosses render distinct. *(Prior: v0.5.0 Retention Engine.)*
+**Excitement Sprint (v0.7.0).** Turned the polished prototype toward a *memorable* game (no new mechanics):
+EM1 per-world identity (`config/worldThemes.ts` → themed `CosmicBackground` + world title cards;
+`worldOf()` pure helper +4 tests); EM2 game feel (star-by-star reveal + PERFECT, boss STAR FREED banner,
+camera zoom-punches, scaled haptics); EM3 audio (`AudioSynth.startWorldTheme` per-world beds with
+same-world continuity, boss minor bed, boss-clear arpeggio); EM4 signature/boss "events" (entry title
+cards + boss red arena wash); EM5 hook ("Bring the lost star home" tagline + world subtitles). Verified:
+56 tests, tsc/build green, all 70 load no console errors, worlds visibly distinct, celebration + boss
+event captured. Audit: `docs/superpowers/plans/2026-06-07-excitement-audit.md`. *(Prior: v0.6.x Gameplay
+Overhaul + L9/L1 fixes.)*
 
 ## Next sprint
-**Per your call: playtest the first 30 levels (Worlds 1–3) before resuming Sprint 2.** Validate the aha
-beat (pause → discover), the per-world mental skills, signatures + bosses, and 1★ fairness. Then:
-1. **Sprint 2 — Native + Monetization:** Capacitor (Android) wrap; real AdMob + IAP behind the `Ads`/`IAP`
-   seams; analytics + consent/privacy. (Decisions locked: Capacitor → Play first; F2P hybrid, no P2W.)
-2. **Sprint 3 — Polish + Wow + Store assets:** soundtrack, per-world visuals, vector icons (replace emoji),
-   transitions, app icon/screenshots/trailer, ratings prompt → RC.
-3. Later: apply the same per-world overhaul to Worlds 4–8; reach ~100.
+**Device-playtest the Excitement build (v0.7.0)** — do worlds feel distinct? does winning feel good? do
+bosses feel like events? is there a hook? Then, on approval, **Sprint 2 — Native + Monetization** begins:
+1. **Sprint 2 — Native + Monetization (→ Play RC):** Capacitor + Android build pipeline, AdMob (rewarded +
+   interstitial) + IAP (Remove-Ads, cosmetics) behind the `Ads`/`IAP` seams, analytics, crash reporting,
+   Play listing. (Decisions locked: Capacitor → Play first; F2P hybrid, no P2W. Needs from you: Play
+   Console $25, AdMob app/ad-unit IDs.)
+2. **Sprint 3 — Polish + store assets:** real soundtrack tracks (swap behind `startWorldTheme`), vector
+   icons (replace 🔒 emoji), app icon/screenshots/trailer → RC.
+3. Later: apply the per-world overhaul (mental skills + signature + boss + identity) to Worlds 4–8; ~100.
 Full audit + roadmap: see the App Store Readiness plan (in `~/.claude/plans/`).
 
 ## Important notes

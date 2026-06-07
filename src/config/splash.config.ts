@@ -7,7 +7,7 @@ import { THEME } from './theme.config';
 export const SPLASH = {
   // ── Brand strings ────────────────────────────────────────────────
   GAME_TITLE: 'GRAVITY FLOW',
-  TAGLINE: 'Hold to pull',
+  TAGLINE: 'Bring the lost star home', // the hook — an emotional journey, not just a mechanic
   FONT: THEME.FONT_BODY, // body/UI font; wordmarks use THEME.FONT_DISPLAY directly
 
   // ── Shared transitions / fade ────────────────────────────────────
