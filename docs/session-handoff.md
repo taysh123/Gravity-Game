@@ -6,34 +6,39 @@
 
 ## Current status
 - **Game:** GRAVITY FLOW by **True Story Labs** — mobile cosmic physics puzzler (Phaser 3 + TS + Vite).
-- **Content:** **64 levels / 8 worlds** (Foundations · Currents · Clockwork · Peril · Wells · Rifts ·
-  Gates · Convergence).
+- **Content:** **70 levels / 8 worlds** (Foundations · Currents · Clockwork · Peril · Wells · Rifts ·
+  Gates · Convergence). **Worlds 1–3 are overhauled to 10 levels each**, themed to a distinct mental
+  skill (W1 navigation/discovery · W2 prediction/flow · W3 timing/sequencing), each with ≥3 aha puzzles
+  + a **signature** (THE GAUNTLET / THE EYE / THE GEARWORKS) + a **boss** (THE COLLAPSE / THE MAELSTROM
+  / THE MACHINE). Later worlds (4–8) still 8 each, pending the same pass.
 - **Systems live:** attractor pull, gravity zones, **magnets**, **portals**, **one-way gates**, moving
   platforms, hazards, collectible gems, 3-star scoring, timed levels, achievements + stats, scrollable
   world-select; **Retention engine (v0.5.0):** **Stardust** currency, **Daily Challenge 2.0** (curated
   pool + rotating modifier + streak rewards), **cosmetics shop** (ball themes, earn with Stardust),
-  leaderboard-ready daily records, **Ads/IAP provider seams** (web stubs). Premium glass UI; mobile fixed.
+  leaderboard-ready daily records, **Ads/IAP provider seams** (web stubs); **signature/boss level identity**
+  (gold/red HUD titles). Premium glass UI; mobile fixed.
 - **Quality:** `tsc` clean · 52 tests pass · build clean · full flow no console errors.
 - **Git/GitHub:** branch `master`, **synced** with `origin` = https://github.com/taysh123/Gravity-Game.git.
 
 ## Last completed sprint
-**Retention Engine (v0.5.0).** First commercial-phase sprint (web; no native wrap yet): **Stardust** soft
-currency (earned on wins/daily, TDD'd award math); **Daily Challenge 2.0** — a curated daily pool
-(`config/dailyLevels.ts`) + deterministic date→{level,modifier} pick + rotating modifiers (Classic /
-Time Attack / Gem Rush) + streak milestone rewards; **cosmetics shop** (6 ball themes, buy/equip with
-Stardust, applied to the Ball) reachable via a menu palette icon; **leaderboard-ready** daily records;
-**Ads/IAP provider seams** (`utils/Ads.ts`, `IAP.ts`) as web stubs for Sprint 2 to swap for real
-AdMob/IAP. Verified: 52 tests, tsc/build green, daily awards Stardust + records streak, cosmetic equips
-recolor the ball, no console errors. *(Prior: v0.4.1 first-hour pacing fix; v0.4.0 Gates+Convergence.)*
+**Gameplay Overhaul — Worlds 1–3 (v0.6.0).** Paused Sprint 2 to fix the core "too samey / not memorable"
+risk. Each world now teaches a **distinct mental skill** (not just a new obstacle), optimized for **aha
+moments**: W1 navigation/route-finding/discovery, W2 prediction/flow/reading current interactions, W3
+timing/sequencing/rhythm. Each world: ≥3 genuine aha puzzles (e.g., enter-from-the-side box, decoy gap,
+updraft→crosswind curve, "use the downdraft", stage-between-bars, patience slider) + a **signature**
+(THE GAUNTLET / THE EYE / THE GEARWORKS) + a **boss** (THE COLLAPSE / THE MAELSTROM / THE MACHINE) with
+gold/red HUD titles (new optional `LevelConfig.title/boss`). W1–3 → 10 each (renumbered; ProgressStore
+v4). 66 → **70 levels**. Verified: 52 tests, tsc/build green, all 70 load no console errors, signatures +
+bosses render distinct. *(Prior: v0.5.0 Retention Engine.)*
 
 ## Next sprint
-**Commercial roadmap** (decisions locked: Capacitor → Google Play first then iOS; F2P hybrid — rewarded +
-remove-ads + cosmetics, no pay-to-win):
-1. **Sprint 2 — Native + Monetization:** Capacitor (Android) wrap; real AdMob (rewarded + capped
-   interstitial) + IAP (remove-ads, cosmetics) behind the `Ads`/`IAP` seams; analytics + consent/privacy.
-2. **Sprint 3 — Polish + Wow + Store assets:** soundtrack, per-world visuals, 8 boss levels +
-   decision-by-L3, vector icons (replace emoji), transitions, app icon/screenshots/trailer, ratings prompt → RC.
-3. Open: **device playtest** of Worlds 7–8 + magnet feel; reach ~100 (Worlds 9–10 + backfill) later.
+**Per your call: playtest the first 30 levels (Worlds 1–3) before resuming Sprint 2.** Validate the aha
+beat (pause → discover), the per-world mental skills, signatures + bosses, and 1★ fairness. Then:
+1. **Sprint 2 — Native + Monetization:** Capacitor (Android) wrap; real AdMob + IAP behind the `Ads`/`IAP`
+   seams; analytics + consent/privacy. (Decisions locked: Capacitor → Play first; F2P hybrid, no P2W.)
+2. **Sprint 3 — Polish + Wow + Store assets:** soundtrack, per-world visuals, vector icons (replace emoji),
+   transitions, app icon/screenshots/trailer, ratings prompt → RC.
+3. Later: apply the same per-world overhaul to Worlds 4–8; reach ~100.
 Full audit + roadmap: see the App Store Readiness plan (in `~/.claude/plans/`).
 
 ## Important notes

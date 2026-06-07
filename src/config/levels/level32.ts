@@ -1,22 +1,19 @@
 import type { LevelConfig } from '../../types';
 import { PHYSICS } from '../physics.config';
 
-// World 2 — Currents · master: the three-current zig-zag (right → up → left) with
-// a spike near the top transition. Chain the currents to a small goal and round
-// the spike. 1★ achievable; the off-route gem + par are the mastery layer.
+// World 2 · AHA (prediction relay): three currents chain into one route — lift up
+// the left, a crosswind carries you across, a second lift raises you to the goal.
+// Plan the whole flow path before you start.
 export const level32: LevelConfig = {
-  ball:      { x: 180, y: 670 },
-  goal:      { x: 180, y: 110, radius: 28 },
+  ball:      { x: 70, y: 660 },
+  goal:      { x: 300, y: 130, radius: 28 },
   obstacles: [],
   gravityZones: [
-    { x: 90, y: 540, width: 130, height: 180, dir: { x: 1, y: 0 }, strength: PHYSICS.GRAVITY_ZONE_STRENGTH * 0.8 },
-    { x: 280, y: 370, width: 120, height: 220, dir: { x: 0, y: -1 }, strength: PHYSICS.GRAVITY_ZONE_STRENGTH },
-    { x: 160, y: 220, width: 220, height: 90, dir: { x: -1, y: 0 }, strength: PHYSICS.GRAVITY_ZONE_STRENGTH * 0.8 },
+    { x: 70, y: 500, width: 100, height: 260, dir: { x: 0, y: -1 }, strength: PHYSICS.GRAVITY_ZONE_STRENGTH },
+    { x: 185, y: 350, width: 200, height: 80, dir: { x: 1, y: 0 }, strength: PHYSICS.GRAVITY_ZONE_STRENGTH * 0.9 },
+    { x: 300, y: 230, width: 100, height: 200, dir: { x: 0, y: -1 }, strength: PHYSICS.GRAVITY_ZONE_STRENGTH },
   ],
-  hazards: [
-    { x: 285, y: 285, radius: 24 }, // at the updraft → leftward transition
-  ],
-  collectible: { x: 310, y: 180 }, // against the final leftward push — off-route
-  hint:      'Ride the currents: right, up, left — dodge the spike',
+  collectible: { x: 70, y: 200 }, // top of the first lift, off-route
+  hint:      'Plan the relay: up, across, up',
   parTimeMs: 17000,
 };

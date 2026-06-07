@@ -1,19 +1,19 @@
 import type { LevelConfig } from '../../types';
 import { PHYSICS } from '../physics.config';
 
-// World 2 — Currents · master: ride the left updraft, then a high crosswind
-// carries you right toward the goal. Two currents chained into one route.
+// World 2 · AHA (use the current, don't fight it): the goal sits in a pocket under
+// a shelf you can't pull into cleanly. The trick: ride up the right, enter the
+// downdraft, and let it *push you down* through the gap into the pocket.
 export const level11: LevelConfig = {
-  ball:      { x: 70, y: 650 },
-  goal:      { x: 300, y: 150, radius: 30 },
+  ball:      { x: 80, y: 660 },
+  goal:      { x: 310, y: 610, radius: 30 },
   obstacles: [
-    { x: 150, y: 250, width: 160, height: 16 }, // ledge: drop onto the crosswind below it
+    { x: 235, y: 520, width: 150, height: 14 }, // shelf over the pocket (x 160..310); gap on the right (310..360)
   ],
   gravityZones: [
-    { x: 70, y: 430, width: 110, height: 340, dir: { x: 0, y: -1 }, strength: PHYSICS.GRAVITY_ZONE_STRENGTH },
-    { x: 250, y: 320, width: 220, height: 90, dir: { x: 1, y: 0 }, strength: PHYSICS.GRAVITY_ZONE_STRENGTH * 0.9 },
+    { x: 325, y: 360, width: 70, height: 300, dir: { x: 0, y: 1 }, strength: PHYSICS.GRAVITY_ZONE_STRENGTH }, // downdraft funnels into the pocket
   ],
-  collectible: { x: 70, y: 200 }, // top of the updraft, past the ledge
-  hint:      'Updraft up, crosswind across',
-  parTimeMs: 15000,
+  collectible: { x: 80, y: 250 }, // off-route, upper-left
+  hint:      'Let the downdraft drop you in',
+  parTimeMs: 16000,
 };

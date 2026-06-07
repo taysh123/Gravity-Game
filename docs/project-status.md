@@ -208,11 +208,12 @@ History lives in `docs/superpowers/plans/`. Summary:
 
 ## Next Recommended Sprint
 
-**v0.5.0 shipped: Retention Engine (commercial phase 1) — Stardust currency, Daily Challenge 2.0 (curated
-pool + rotating modifiers + streak rewards), cosmetics shop (ball themes), leaderboard-ready daily records,
-Ads/IAP provider seams (web stubs). Decisions locked: Capacitor → Play first; F2P hybrid (no pay-to-win).
-Next: Sprint 2 — native wrap + real ads/IAP + analytics; then polish/wow/store assets → RC. Full App Store
-Readiness audit + roadmap in `~/.claude/plans/`. (Prior: v0.4.1 pacing fix; v0.4.0 Gates + Convergence.)**
+**v0.6.0 shipped: Gameplay Overhaul (Worlds 1–3) — each world now teaches a distinct mental skill
+(W1 navigation · W2 prediction/flow · W3 timing/sequencing), optimized for AHA moments: ≥3 puzzle levels
++ a signature + a boss per world (gold/red HUD titles via LevelConfig.title/boss). W1–3 → 10 each, 70
+levels. NEXT (your call): playtest the first 30 levels, THEN resume Sprint 2 (Capacitor → Play, F2P hybrid)
++ Sprint 3 (polish/audio/store). Full audit + roadmap in `~/.claude/plans/`. (Prior: v0.5.0 Retention
+Engine; v0.4.1 pacing fix.)**
 1. **Device playtest of the harder curve + Portals (open, highest priority):** the rebalanced goals/par
    and the new combination/Rifts levels need real finger input to confirm fair-but-real difficulty
    (1★ always achievable). Tune `parTimeMs`/`timeLimitMs`/geometry from notes.

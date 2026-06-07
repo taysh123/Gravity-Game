@@ -1,21 +1,19 @@
 import type { LevelConfig } from '../../types';
 import { PHYSICS } from '../physics.config';
 
-// World 2 — Currents · combine: ride the left updraft, drop onto a ledge, then a
-// high crosswind carries you right — but a wall waits downwind, so exit upward
-// before it shoves you into it.
+// World 2 · combine (predict drift under threat): a crosswind shoves you toward a
+// spike on the right. Read the drift and counter it as you climb to the goal.
 export const level31: LevelConfig = {
-  ball:      { x: 80, y: 660 },
-  goal:      { x: 300, y: 140, radius: 30 },
-  obstacles: [
-    { x: 150, y: 470, width: 160, height: 16 }, // ledge to drop onto
-    { x: 330, y: 250, width: 16, height: 130 }, // right wall the crosswind pushes you toward
-  ],
+  ball:      { x: 180, y: 660 },
+  goal:      { x: 150, y: 120, radius: 32 },
+  obstacles: [],
   gravityZones: [
-    { x: 80, y: 440, width: 110, height: 340, dir: { x: 0, y: -1 }, strength: PHYSICS.GRAVITY_ZONE_STRENGTH },
-    { x: 240, y: 250, width: 200, height: 90, dir: { x: 1, y: 0 }, strength: PHYSICS.GRAVITY_ZONE_STRENGTH * 0.9 },
+    { x: 180, y: 400, width: 320, height: 200, dir: { x: 1, y: 0 }, strength: PHYSICS.GRAVITY_ZONE_STRENGTH * 0.7 },
   ],
-  collectible: { x: 80, y: 180 }, // top of the updraft, past the ledge
-  hint:      'Updraft up, ride the wind, exit before the wall',
-  parTimeMs: 15000,
+  hazards: [
+    { x: 320, y: 400, radius: 28 }, // downwind — where the current wants to take you
+  ],
+  collectible: { x: 300, y: 250 }, // up-right, past the wind (risk/reward)
+  hint:      'The wind pushes you toward the spike — read it',
+  parTimeMs: 14000,
 };

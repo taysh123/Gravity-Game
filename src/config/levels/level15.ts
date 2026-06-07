@@ -1,19 +1,17 @@
 import type { LevelConfig } from '../../types';
-import { PHYSICS } from '../physics.config';
 
-// World 3 — Clockwork · combine: an updraft lifts you, but a sliding gate guards
-// the top. Ride up and time the gate together.
+// World 3 · AHA (sequencing): two bars share the same phase, so you can't rush
+// straight through both. The trick: pass the lower gap, *stage* in the pocket
+// between, then go when the upper opens. Patience + sequence, not speed.
 export const level15: LevelConfig = {
-  ball:      { x: 110, y: 650 },
-  goal:      { x: 110, y: 110, radius: 34 },
+  ball:      { x: 180, y: 660 },
+  goal:      { x: 180, y: 110, radius: 30 },
   obstacles: [],
-  gravityZones: [
-    { x: 110, y: 440, width: 120, height: 300, dir: { x: 0, y: -1 }, strength: PHYSICS.GRAVITY_ZONE_STRENGTH },
-  ],
   movingPlatforms: [
-    { x: 110, y: 250, width: 130, height: 18, to: { x: 250, y: 250 }, durationMs: 1200 }, // gate at the top of the column
+    { x: 120, y: 470, width: 150, height: 16, to: { x: 240, y: 470 }, durationMs: 1200 }, // lower
+    { x: 120, y: 300, width: 150, height: 16, to: { x: 240, y: 300 }, durationMs: 1200 }, // upper (same phase)
   ],
-  collectible: { x: 110, y: 180 },
-  hint:      'Ride the lift, time the gate',
-  parTimeMs: 16000,
+  collectible: { x: 300, y: 385 }, // in the staging pocket between the bars
+  hint:      "You can't rush both — stage between them",
+  parTimeMs: 17000,
 };

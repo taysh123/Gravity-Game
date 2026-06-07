@@ -1,18 +1,17 @@
 import type { LevelConfig } from '../../types';
 import { PHYSICS } from '../physics.config';
 
-// World 2 — Currents · combine: ride the left updraft, then steer right through
-// the wall gap to the goal. Current lifts, routing finishes.
+// World 2 · flow control: a central downdraft pushes back. Power straight up
+// through it (fast, the gem line), or arc around the still sides (safe). Manage
+// the flow against you.
 export const level8: LevelConfig = {
-  ball:      { x: 80, y: 650 },
-  goal:      { x: 285, y: 150, radius: 36 },
-  obstacles: [
-    { x: 110, y: 250, width: 200, height: 18 }, // spans x 10..210; gap on the right
-  ],
+  ball:      { x: 180, y: 660 },
+  goal:      { x: 180, y: 120, radius: 34 },
+  obstacles: [],
   gravityZones: [
-    { x: 80, y: 430, width: 120, height: 320, dir: { x: 0, y: -1 }, strength: PHYSICS.GRAVITY_ZONE_STRENGTH },
+    { x: 180, y: 380, width: 150, height: 300, dir: { x: 0, y: 1 }, strength: PHYSICS.GRAVITY_ZONE_STRENGTH * 0.85 },
   ],
-  collectible: { x: 285, y: 350 },
-  hint:      'Let the current lift you, then steer to the goal',
-  parTimeMs: 11000,
+  collectible: { x: 180, y: 360 }, // dead centre of the downdraft — the hard line
+  hint:      'Push through the downdraft — or go around',
+  parTimeMs: 14000,
 };
