@@ -6,16 +6,18 @@
 
 ## Current status
 - **Game:** GRAVITY FLOW by **True Story Labs** — mobile cosmic physics puzzler (Phaser 3 + TS + Vite).
-- **Content:** **80 levels / 8 worlds, all overhauled to 10 each** (10×8). Every world has a distinct
-  *mental skill*, ≥3 designed aha puzzles, archetype variety, a named **signature** and a **boss**:
-  W1 Foundations (navigation) · W2 Currents (prediction/flow) · W3 Clockwork (timing/sequencing) ·
-  W4 Peril (reaction/nerve) · W5 Wells (trajectory/orbital) · W6 Rifts (spatial/non-linear) ·
-  W7 Gates (planning/commitment) · W8 Convergence (synthesis/improvisation).
-  Signatures: THE GAUNTLET · THE EYE · THE GEARWORKS · THE FORGE · THE BINARY STAR · HALL OF MIRRORS ·
-  THE LOCKWORKS · THE CONFLUENCE. Bosses: THE COLLAPSE · THE MAELSTROM · THE MACHINE · THE INFERNO ·
-  THE SINGULARITY · THE BREACH · THE VAULT · **HOMECOMING** (finale — the lost star reaches home).
-  World ranges: 1-10 · 11-20 · 21-30 · 31-40 · 41-50 · 51-60 · 61-70 · 71-80. Driven by the Level Design
-  Audit + roadmap in `~/.claude/plans/warm-orbiting-map.md`. **No new mechanics added** — pure design.
+- **Content:** **71 levels / 8 worlds.** **Phase 1 (early-game WOW redesign) done:** Worlds 1-3 trimmed
+  10→7 and rebuilt for *delight/surprise/memorability* — **toys before tests**, front-loaded wonder,
+  multi-goal **"constellation"** toys, spectacle signatures, and **distinct boss archetypes**
+  (W1 COLLAPSE = descent set-piece · W2 MAELSTROM = **chase** · W3 MACHINE = mechanic-turned). Worlds 4-8
+  still 10 each, all overhauled earlier (signatures THE FORGE/BINARY STAR/HALL OF MIRRORS/LOCKWORKS/
+  CONFLUENCE; bosses INFERNO/SINGULARITY/BREACH/VAULT/HOMECOMING) — **pending Phase-2 trim toward ~56**.
+  World ranges: **1-7 · 8-14 · 15-21** · 22-31 · 32-41 · 42-51 · 52-61 · 62-71. Direction +
+  level-by-level verdicts in `~/.claude/plans/warm-orbiting-map.md`.
+- **Engine premium layer (v0.10.0):** per-level **camera intro-zoom reveal** (`LevelConfig.camera`),
+  **moving + expressive "home" goal** (`goal.to/durationMs`; brightens as the ball nears → chase bosses +
+  felt journey), **multi-goal constellation orbs** (`collectibles`/`collectAllToWin`, connect on win),
+  glowing **comet trail**, **instant retry**. One optional `LevelConfig` field each; reduced-motion honored.
 - **Systems live:** attractor pull, gravity zones, **magnets**, **portals**, **one-way gates**, moving
   platforms, hazards, collectible gems, 3-star scoring, timed levels, achievements + stats, scrollable
   world-select; **Retention engine (v0.5.0):** **Stardust** currency, **Daily Challenge 2.0** (curated
@@ -26,11 +28,21 @@
   cards), **per-world in-game music** + boss audio + boss-clear sting, **star-by-star win celebration**
   (PERFECT! + rising tones), boss **STAR FREED** payoff + red arena wash + camera punches, **signature/boss
   title cards**, and the hook **"Bring the lost star home."**
-- **Quality:** `tsc` clean · 57 tests pass · build clean · all 80 levels load no console errors.
-- **Git/GitHub:** branch `master`. **Local is ahead of `origin` by 5 commits (v0.9.0)** — push pending
-  (run `git push origin master`). origin = https://github.com/taysh123/Gravity-Game.git.
+- **Quality:** `tsc` clean · 57 tests pass · build clean · all 71 levels load no console errors
+  (`scripts/verify_p1.py`: 1-21 completable, constellation gate works, chase home drifts, camera reveal runs).
+- **Git/GitHub:** branch `master`. **Local is ahead of `origin` by ~6 commits (v0.10.0)** — push pending
+  (run `git push origin master`, then `vercel --prod --yes`). origin = https://github.com/taysh123/Gravity-Game.git.
 
 ## Last completed sprint
+**Phase 1 — early-game WOW redesign (v0.10.0).** First slice of the campaign redesign (trim-to-~56 +
+front-load wonder). Built the **engine premium layer** (camera reveal, moving/expressive home goal,
+multi-goal constellation orbs, comet trail, instant retry — `commit bc70758`), then rebuilt **Worlds 1-3**
+(7 each): W1 toys (First-Pull arc, Comet, Constellation) + GAUNTLET reveal + COLLAPSE descent boss
+(`73625ab`); W2 Updraft-surf/Drifthome/Whirlpool + EYE + MAELSTROM chase boss (`0566076`); W3 Gearslip/
+Orrery + GEARWORKS + MACHINE mechanic-turned boss + the trim/renumber to 71 + ProgressStore v7 (`bc35b56`).
+New level files: `level91` (Constellation), `level92` (Orrery). Retired 11 filler/duplicate early levels.
+**Next: Phase 2** — trim + re-archetype Worlds 4-8 toward ~56 total. *(Prior roadmap below.)*
+
 **Worlds 4–8 redesign roadmap — COMPLETE (v0.9.0).** Applied the W1–3 treatment to all remaining worlds,
 each grown 8→10 with a distinct mental skill, ≥3 aha, archetype variety, a signature + a boss — **no new
 mechanics**. Per world: kept the 6 strongest, retired 2 redundants, added 4 new (2 aha + signature + boss).
