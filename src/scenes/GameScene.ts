@@ -691,13 +691,25 @@ export class GameScene extends Phaser.Scene {
     const audio = this.getAudio();
     audio.stopHum();
     audio.playGoalCapture();
-    this.haptics([...PHYSICS.HAPTIC_WIN_PATTERN]);
+    // Haptics scale with the achievement: boss > perfect (3★) > normal.
+    const winPattern = this.isBoss
+      ? PHYSICS.HAPTIC_BOSS_PATTERN
+      : this.winResult.stars >= 3
+        ? PHYSICS.HAPTIC_PERFECT_PATTERN
+        : PHYSICS.HAPTIC_WIN_PATTERN;
+    this.haptics([...winPattern]);
     this.attractor?.destroy();
     this.attractor = null;
     this.matter.world.pause();
     this.emitGoalBurst();
     this.winFlash();
-    this.cameras.main.shake(PHYSICS.SHAKE_WIN_MS, PHYSICS.SHAKE_WIN_INTENSITY);
+    // Camera punch — a small zoom kick for impact (bigger for a boss).
+    const punch = this.isBoss ? 1.06 : 1.035;
+    this.tweens.add({ targets: this.cameras.main, zoom: punch, duration: 130, yoyo: true, ease: 'Quad.easeOut' });
+    this.cameras.main.shake(
+      this.isBoss ? PHYSICS.SHAKE_WIN_MS * 1.8 : PHYSICS.SHAKE_WIN_MS,
+      this.isBoss ? PHYSICS.SHAKE_WIN_INTENSITY * 1.8 : PHYSICS.SHAKE_WIN_INTENSITY,
+    );
 
     this.tweens.add({
       targets: this.ball.graphics,
@@ -737,11 +749,13 @@ export class GameScene extends Phaser.Scene {
     const panel = this.add.graphics();
     drawGlass(panel, panelW, panelH, THEME.RADIUS);
 
+    // Boss clears read as "STAR FREED" (the journey hook); else level/daily complete.
+    const completeStr = this.isDaily ? 'DAILY COMPLETE' : this.isBoss ? 'STAR FREED' : 'LEVEL COMPLETE';
     const label = this.add
-      .text(0, -38, this.isDaily ? 'DAILY COMPLETE' : 'LEVEL COMPLETE', {
+      .text(0, -38, completeStr, {
         fontFamily: THEME.FONT_DISPLAY,
         fontSize: '21px',
-        color: '#00e676',
+        color: this.isBoss ? '#ffd166' : '#00e676',
         fontStyle: '700',
       })
       .setOrigin(0.5);
@@ -749,18 +763,36 @@ export class GameScene extends Phaser.Scene {
 
     const card = this.add.container(cx, cy, [panel, label]).setDepth(51);
 
-    // Star row (earned = gold, else slate).
+    // Star row — earned stars pop in one-by-one (gold), with a PERFECT! on 3★.
     const earned = this.winResult?.stars ?? 1;
+    const reduced = reducedMotionActive();
     const starGap = 40;
     for (let i = 0; i < 3; i++) {
+      const on = i < earned;
       const star = this.add
         .text((i - 1) * starGap, 6, '★', {
           fontFamily: THEME.FONT_BODY,
           fontSize: '30px',
-          color: i < earned ? '#ffd166' : '#3a4256',
+          color: on ? '#ffd166' : '#3a4256',
         })
         .setOrigin(0.5);
       card.add(star);
+      if (on && !reduced) {
+        star.setScale(0);
+        this.tweens.add({ targets: star, scale: 1, duration: 300, delay: 420 + i * 220, ease: 'Back.easeOut' });
+        this.time.delayedCall(420 + i * 220, () => this.getAudio().playStarTone(i));
+      }
+    }
+    if (earned >= 3) {
+      const perfect = this.add
+        .text(0, -64, 'PERFECT!', { fontFamily: THEME.FONT_DISPLAY, fontSize: '15px', color: '#ffd166', fontStyle: '700' })
+        .setOrigin(0.5)
+        .setLetterSpacing(2);
+      card.add(perfect);
+      if (!reduced) {
+        perfect.setScale(0).setAlpha(0);
+        this.tweens.add({ targets: perfect, scale: 1, alpha: 1, delay: 420 + 3 * 220, duration: 300, ease: 'Back.easeOut' });
+      }
     }
 
     const parStr = fmtTime(this.parTimeMs);
@@ -870,6 +902,8 @@ export class GameScene extends Phaser.Scene {
     this.attractor?.destroy();
     this.attractor = null;
     this.cameras.main.shake(PHYSICS.SHAKE_DEATH_MS, PHYSICS.SHAKE_DEATH_INTENSITY);
+    // Quick zoom punch for impact on the loss.
+    this.tweens.add({ targets: this.cameras.main, zoom: 1.05, duration: 90, yoyo: true, ease: 'Quad.easeOut' });
     this.deathFeedback();
     this.time.delayedCall(PHYSICS.DEATH_FLASH_MS, () =>
       this.scene.restart({ level: this.currentLevel, daily: this.isDaily, dailyIndex: this.dailyIndex, dailyModifier: this.dailyModifier }),

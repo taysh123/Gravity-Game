@@ -44,6 +44,8 @@ export const PHYSICS = {
   HAPTIC_TAP_MS: 12,             // Buzz length on restart/attractor spawn.
   HAPTIC_WIN_MS: 35,             // (legacy single buzz; win now uses the pattern)
   HAPTIC_WIN_PATTERN: [22, 28, 55], // Celebratory buzz-pause-buzz on reaching the goal.
+  HAPTIC_PERFECT_PATTERN: [18, 24, 18, 24, 70], // 3-star — a rolling celebratory burst.
+  HAPTIC_BOSS_PATTERN: [40, 30, 40, 30, 90], // Boss cleared — a heavier triumphant pattern.
   HAPTIC_DEATH_PATTERN: [60, 40, 20], // Sharp descending buzz on death.
 
   // Win / death feedback (elegant, within the <50-particle ceiling)

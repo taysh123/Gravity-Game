@@ -196,6 +196,26 @@ export class AudioSynth {
     });
   }
 
+  // Rising tone per star in the win celebration (0,1,2 -> higher) — the ascending
+  // "ding-ding-DING" that makes earning stars feel good.
+  playStarTone(index: number): void {
+    if (!this.sfxOn) return;
+    const freqs = [659.25, 830.61, 1046.5]; // E5, G#5, C6
+    const f = freqs[Math.min(Math.max(0, index), freqs.length - 1)];
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    const t = this.ctx.currentTime;
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(f, t);
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.linearRampToValueAtTime(0.08, t + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0008, t + 0.3);
+    osc.start(t);
+    osc.stop(t + 0.32);
+  }
+
   // Soft descending tone when the ball is lost. Distinct from the rising cues.
   playFail(): void {
     if (!this.sfxOn) return;
