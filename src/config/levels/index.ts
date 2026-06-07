@@ -18,9 +18,7 @@ import { level16 } from './level16';
 import { level17 } from './level17';
 import { level18 } from './level18';
 import { level19 } from './level19';
-import { level20 } from './level20';
 import { level21 } from './level21';
-import { level22 } from './level22';
 import { level23 } from './level23';
 import { level24 } from './level24';
 import { level25 } from './level25';
@@ -69,13 +67,17 @@ import { level67 } from './level67';
 import { level68 } from './level68';
 import { level69 } from './level69';
 import { level70 } from './level70';
+import { level71 } from './level71';
+import { level72 } from './level72';
+import { level73 } from './level73';
+import { level74 } from './level74';
 
 // Single source of truth for level order and count (used by GameScene + EndScene).
-// Worlds 1-3 overhauled to 10 levels each, themed to a distinct mental skill
-// (W1 navigation/discovery · W2 prediction/flow · W3 timing/sequencing), each with
-// >=3 aha puzzles + a signature + a boss; later worlds 8.
-//   1-10 Foundations · 11-20 Currents · 21-30 Clockwork · 31-38 Peril · 39-46 Wells ·
-//   47-54 Rifts · 55-62 Gates · 63-70 Convergence.
+// Worlds overhauled to 10 levels each, themed to a distinct mental skill, each with
+// >=3 aha puzzles + a signature + a boss (W1 navigation · W2 prediction/flow ·
+// W3 timing/sequencing · W4 reaction/nerve under pressure); later worlds still 8.
+//   1-10 Foundations · 11-20 Currents · 21-30 Clockwork · 31-40 Peril · 41-48 Wells ·
+//   49-56 Rifts · 57-64 Gates · 65-72 Convergence.
 // (Filenames are arbitrary module names; this array order defines the level number.)
 export const LEVELS: LevelConfig[] = [
   // W1 Foundations (navigation): teach, fork, decision, traverse, puzzle-box, stakes,
@@ -87,7 +89,9 @@ export const LEVELS: LevelConfig[] = [
   // W3 Clockwork (timing/sequencing): teach, rhythm, timing-decision, stage-aha,
   // alt-rhythm, patience-aha, combine, signature THE GEARWORKS, sequence-aha, boss THE MACHINE.
   level12, level13, level14, level15, level16, level33, level34, level69, level35, level70,
-  level17, level18, level19, level20, level21, level22, level36, level37,
+  // W4 Peril (reaction/nerve): teach, develop, timed-twist, safe-window-aha,
+  // saw-develop, decoy-aha, combine, signature THE FORGE, timed-combine, boss THE INFERNO.
+  level17, level18, level19, level71, level21, level72, level36, level73, level37, level74,
   level23, level24, level25, level26, level27, level38, level39, level40,
   level41, level42, level43, level44, level45, level46, level47, level48,
   level49, level50, level51, level52, level53, level54, level55, level56,

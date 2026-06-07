@@ -15,9 +15,9 @@ export interface RecordInput {
   completed: boolean;
 }
 
-// v4: the Gameplay Overhaul expanded Worlds 1-3 to 10 levels each (renumbering
-// everything after), so reset progress cleanly. (v3 = first-hour pacing pass.)
-const KEY = 'gravity-flow:progress:v4';
+// v5: World 4 (Peril) overhauled to 10 levels (renumbering Worlds 5-8 after it),
+// so reset progress cleanly. (v4 = Worlds 1-3 expanded to 10 each.)
+const KEY = 'gravity-flow:progress:v5';
 const EMPTY: LevelProgress = { stars: 0, bestTimeMs: 0, gem: false };
 
 let cache: Record<number, LevelProgress> | null = null;

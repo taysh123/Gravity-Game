@@ -7,7 +7,10 @@ describe('worldOf', () => {
     expect(worldOf(10).name).toBe('FOUNDATIONS');
     expect(worldOf(11).name).toBe('CURRENTS');
     expect(worldOf(21).name).toBe('CLOCKWORK');
-    expect(worldOf(70).name).toBe('CONVERGENCE');
+    expect(worldOf(31).name).toBe('PERIL');
+    expect(worldOf(40).name).toBe('PERIL');
+    expect(worldOf(41).name).toBe('WELLS');
+    expect(worldOf(72).name).toBe('CONVERGENCE');
   });
   it('falls back to the first world out of range', () => {
     expect(worldOf(0).id).toBe(1);
@@ -19,7 +22,8 @@ describe('worldIndexOf', () => {
   it('returns the world id', () => {
     expect(worldIndexOf(1)).toBe(1);
     expect(worldIndexOf(11)).toBe(2);
-    expect(worldIndexOf(63)).toBe(8);
+    expect(worldIndexOf(31)).toBe(4);
+    expect(worldIndexOf(65)).toBe(8);
   });
 });
 
