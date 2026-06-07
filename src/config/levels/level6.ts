@@ -1,16 +1,17 @@
 import type { LevelConfig } from '../../types';
 
-// Capstone: three staggered walls form a weave, with a small goal to finish.
-// Gap right of A → gap left of B → gap right of C → up to the goal.
+// World 1 — Foundations · FIRST STAKES (optional risk): a lone spike guards the
+// gem off to the right. The straight path up the centre to a generous goal is
+// completely clear, so 1★ never touches red — this teaches "red = fail" safely
+// (learn → risk → recover → improve), with the gem as the opt-in challenge.
 export const level6: LevelConfig = {
   ball:      { x: 180, y: 660 },
-  goal:      { x: 180, y: 110, radius: 24 },
-  obstacles: [
-    { x: 110, y: 520, width: 200, height: 18 }, // A (low)  — gap on right
-    { x: 250, y: 360, width: 200, height: 18 }, // B (mid)  — gap on left
-    { x: 110, y: 200, width: 200, height: 18 }, // C (high) — gap on right
+  goal:      { x: 180, y: 160, radius: 46 }, // generous — the centre lane is open
+  obstacles: [],
+  hazards: [
+    { x: 300, y: 420, radius: 30 }, // off to the right, away from the ball→goal line
   ],
-  collectible: { x: 300, y: 440 },
-  hint:      'Weave through all three',
-  parTimeMs: 18000,
+  collectible: { x: 300, y: 300 }, // the gem sits past the spike — optional risk/reward
+  hint:      'Red is dangerous — the gem past it is optional',
+  parTimeMs: 12000,
 };

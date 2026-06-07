@@ -1,16 +1,20 @@
 import type { LevelConfig } from '../../types';
 import { PHYSICS } from '../physics.config';
 
-// World 2 — Currents · develop: a central downdraft pushes back. Power straight
-// up through it, or arc around the sides where the air is still.
+// World 2 — Currents · combine (zone + hazard): a rightward crosswind nudges you
+// toward a spike on the right. Counter the wind and climb left to the goal — the
+// spike is only a threat if you let the wind carry you. 1★ = counter-steer.
 export const level10: LevelConfig = {
   ball:      { x: 180, y: 660 },
-  goal:      { x: 180, y: 110, radius: 36 },
+  goal:      { x: 150, y: 120, radius: 36 },
   obstacles: [],
   gravityZones: [
-    { x: 180, y: 360, width: 150, height: 260, dir: { x: 0, y: 1 }, strength: PHYSICS.GRAVITY_ZONE_STRENGTH * 0.85 },
+    { x: 180, y: 400, width: 320, height: 200, dir: { x: 1, y: 0 }, strength: PHYSICS.GRAVITY_ZONE_STRENGTH * 0.7 },
   ],
-  collectible: { x: 180, y: 360 }, // dead centre of the downdraft — the hard line
-  hint:      'Push up through the downdraft — or go around',
-  parTimeMs: 13000,
+  hazards: [
+    { x: 320, y: 400, radius: 28 }, // downwind — where the current wants to take you
+  ],
+  collectible: { x: 300, y: 250 }, // up-right, past the wind (risk/reward)
+  hint:      'The wind pushes you toward the spike — counter it',
+  parTimeMs: 14000,
 };

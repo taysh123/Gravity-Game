@@ -17,12 +17,13 @@
 - **Git/GitHub:** branch `master`, **synced** with `origin` = https://github.com/taysh123/Gravity-Game.git.
 
 ## Last completed sprint
-**Gates, Progression & Magnet Fix (v0.4.0).** Fixed the magnet "inescapable trap" (clamp 70→95, reach
-230→190 — escape now a skill, mid-range unchanged); added **One-Way Gates** + **World 7 Gates** (49–56);
-added a **stats + achievements** system (14 achievements, trophy menu view, win-overlay toast); added
-**World 8 — Convergence** (57–64, all-mechanic mastery levels). 48 → **64 levels / 8 worlds**. Verified:
-44 tests, tsc/build green, magnet escapability + gate pass/block (no tunnel) + achievement unlock all
-confirmed in-browser, all 64 load with no console errors.
+**First-Hour Pacing Fix (v0.4.1).** Worlds 1–3 redesign (config-only, no new mechanics): the first
+fail-state moved **L25 → L6**, with early hazards as *optional* risk/reward (a spike guards the gem; the
+direct route to goal stays clear so **1★ never touches red**) and recurring through L6–24 (6,7,8,12,14,16,
+19,22,24); mechanic combinations begin ~L12. Difficulty now rises mainly via decisions/routing/timing/
+combos, not death (learn → risk → recover → improve). ProgressStore key → v3 (clean reset). Verified:
+pacing assertion (first fail = L6), all 64 load no console errors, first hazard reads clearly with an
+open 1★ route. *(Prior: v0.4.0 — One-Way Gates + World 7, achievements, World 8 Convergence, magnet fix.)*
 
 ## Next sprint
 1. **Device playtest** of Worlds 7–8 + the magnet feel (the real fairness judge) — tune from notes.

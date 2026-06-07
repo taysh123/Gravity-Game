@@ -1,8 +1,9 @@
 import type { LevelConfig } from '../../types';
 import { PHYSICS } from '../physics.config';
 
-// World 3 — Clockwork · master: a maze gap, a current, and a sweeping guard at the
-// top — all at once, into a small goal. The clockwork capstone.
+// World 3 — Clockwork · master capstone: a maze gap, a current, a sweeping guard,
+// AND a spike on the mid route — all at once, into a small goal. The full
+// clockwork test. 1★ achievable with a careful line; gem + par are mastery.
 export const level35: LevelConfig = {
   ball:      { x: 70, y: 660 },
   goal:      { x: 300, y: 110, radius: 26 },
@@ -16,7 +17,10 @@ export const level35: LevelConfig = {
   movingPlatforms: [
     { x: 180, y: 185, width: 16, height: 150, to: { x: 320, y: 185 }, durationMs: 1200 }, // sweeping guard near the goal
   ],
+  hazards: [
+    { x: 150, y: 250, radius: 22 }, // spike on the mid-left route
+  ],
   collectible: { x: 70, y: 250 }, // off-route, far left
-  hint:      'Route the maze, time the guard',
+  hint:      'Route the maze, time the guard, mind the spike',
   parTimeMs: 20000,
 };

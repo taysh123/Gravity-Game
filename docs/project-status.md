@@ -208,8 +208,10 @@ History lives in `docs/superpowers/plans/`. Summary:
 
 ## Next Recommended Sprint
 
-**v0.4.0 shipped: 64 levels / 8 worlds (Gates + Convergence), magnet trap fixed, achievements added.
-Next: validate, then grow to ~100 (Worlds 9–10 + backfill).**
+**v0.4.1 shipped: first-hour pacing fix — first fail-state L25→L6, early hazards as optional risk/reward
+(1★ never forced to touch red), combos from ~L12. Difficulty now from decisions/routing/timing/combos.
+Next: validate, then grow to ~100 (Worlds 9–10 + backfill). v0.4.0 added Gates + Convergence + achievements
++ the magnet fix.**
 1. **Device playtest of the harder curve + Portals (open, highest priority):** the rebalanced goals/par
    and the new combination/Rifts levels need real finger input to confirm fair-but-real difficulty
    (1★ always achievable). Tune `parTimeMs`/`timeLimitMs`/geometry from notes.
