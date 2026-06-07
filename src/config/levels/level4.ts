@@ -1,16 +1,14 @@
 import type { LevelConfig } from '../../types';
 
-// World 1 · L4 — new shape: a horizontal traverse. Ball on the left, goal on the
-// right; weave the pillars (under one, over the next) across the screen. Breaks
-// the "always climb upward" expectation.
+// World 1 · L2 — TOY/CLIP "Comet": a wide-open horizontal lane. Fling the star and
+// it streaks across the whole screen on a glowing comet trail into a big home. No
+// walls, no fail — pure satisfying motion. The first shareable moment, and it
+// breaks the "climb upward" silhouette immediately.
 export const level4: LevelConfig = {
   ball:      { x: 40, y: 400 },
-  goal:      { x: 330, y: 400, radius: 36 },
-  obstacles: [
-    { x: 130, y: 300, width: 16, height: 220 }, // pass under (y 190..410)
-    { x: 240, y: 480, width: 16, height: 220 }, // pass over  (y 370..590)
-  ],
-  collectible: { x: 185, y: 650 }, // off the traverse line, low
-  hint:      'Cross to the right — weave the pillars',
-  parTimeMs: 14000,
+  goal:      { x: 330, y: 400, radius: 46 },
+  obstacles: [],
+  collectible: { x: 185, y: 400 }, // on the streak line — caught in passing
+  hint:      'Fling the star — watch it streak home',
+  parTimeMs: 12000,
 };
