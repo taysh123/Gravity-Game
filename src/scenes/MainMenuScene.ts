@@ -46,6 +46,16 @@ export class MainMenuScene extends Phaser.Scene {
       { size: gearSize },
     ).container.setDepth(30);
 
+    // Achievements (top-left, mirrors the gear).
+    new IconButton(
+      this,
+      Math.max(12, insets.left) + 8 + gearSize / 2,
+      Math.max(12, insets.top) + 8 + gearSize / 2,
+      'trophy',
+      () => fadeToScene(this, 'AchievementsScene'),
+      { size: gearSize },
+    ).container.setDepth(30);
+
     // Start the ambient music pad on the first gesture (autoplay policy).
     this.input.once('pointerdown', () => {
       const audio = sharedAudio();

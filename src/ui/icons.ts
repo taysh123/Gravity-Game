@@ -8,7 +8,8 @@ export type IconName =
   | 'sound'
   | 'music'
   | 'haptics'
-  | 'motion';
+  | 'motion'
+  | 'trophy';
 
 // Draw a crisp line-style icon centered at (0,0) into a Graphics, sized to fit
 // roughly a `size`×`size` box. Vector-drawn = no icon-font dependency and full
@@ -105,6 +106,21 @@ export function drawIcon(
       arcAt(g, -h * 0.1, 0, h * 0.35, -60, 60);
       arcAt(g, -h * 0.1, 0, h * 0.6, -60, 60);
       arcAt(g, -h * 0.1, 0, h * 0.85, -60, 60);
+      break;
+    }
+    case 'trophy': {
+      // Cup bowl + stem + base.
+      stroke(g, [
+        [-h * 0.42, -h * 0.5],
+        [-h * 0.34, 0],
+        [0, h * 0.18],
+        [h * 0.34, 0],
+        [h * 0.42, -h * 0.5],
+        [-h * 0.42, -h * 0.5],
+      ]);
+      line(g, 0, h * 0.18, 0, h * 0.4);
+      line(g, -h * 0.16, h * 0.4, h * 0.16, h * 0.4);
+      line(g, -h * 0.28, h * 0.55, h * 0.28, h * 0.55);
       break;
     }
   }

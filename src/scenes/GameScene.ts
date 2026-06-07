@@ -29,6 +29,9 @@ import { safeAreaInsetsScaled, reducedMotionActive } from '../utils/a11y';
 import { computeStars, type StarResult } from '../utils/scoring';
 import { ProgressStore } from '../utils/ProgressStore';
 import { DailyStore } from '../utils/DailyStore';
+import { StatsStore } from '../utils/StatsStore';
+import { AchievementStore } from '../utils/AchievementStore';
+import type { AchievementDef } from '../utils/achievements';
 
 const SAFE_PAD = 12; // minimum padding from any screen edge for HUD/nav
 
@@ -64,6 +67,7 @@ export class GameScene extends Phaser.Scene {
   private gemCollected = false;
   private winResult: StarResult | null = null;
   private winTimeMs = 0;
+  private newAchievements: AchievementDef[] = [];
   private isDaily = false; // launched from the Daily Challenge
   private dailyStreak = 0; // streak after winning today's daily
 
@@ -533,6 +537,7 @@ export class GameScene extends Phaser.Scene {
       const dest = portalExit(exit, this.ball.body.velocity, PHYSICS.PORTAL_EXIT_CLEAR);
       RawMatter.Body.setPosition(this.ball.body, dest);
       p.lastJumpMs = time;
+      StatsStore.recordPortalJump();
       this.haptics(PHYSICS.HAPTIC_TAP_MS);
       return; // one jump per frame
     }
@@ -591,6 +596,8 @@ export class GameScene extends Phaser.Scene {
       completed: true,
     });
     if (this.isDaily) this.dailyStreak = DailyStore.recordWin();
+    // Achievements reflect this win (progress already recorded above).
+    this.newAchievements = AchievementStore.syncAndGetNew(StatsStore.collectSnapshot());
 
     const audio = this.getAudio();
     audio.stopHum();
@@ -683,6 +690,27 @@ export class GameScene extends Phaser.Scene {
 
     card.setScale(0.8).setAlpha(0);
     this.tweens.add({ targets: card, scale: 1, alpha: 1, duration: 360, ease: THEME.EASE_POP });
+
+    // Newly-unlocked achievement(s) → a glass toast below the panel.
+    if (this.newAchievements.length) {
+      const a = this.newAchievements[0];
+      const extra = this.newAchievements.length - 1;
+      const nameStr = extra > 0 ? `${a.name}  +${extra} more` : a.name;
+      const tw = Math.min(width * 0.82, 280);
+      const th = 44;
+      const tg = this.add.graphics();
+      drawGlass(tg, tw, th, th / 2);
+      const head = this.add
+        .text(0, -8, '★ ACHIEVEMENT', { fontFamily: THEME.FONT_BODY, fontSize: '10px', color: '#ffd166' })
+        .setOrigin(0.5)
+        .setLetterSpacing(2);
+      const nm = this.add
+        .text(0, 8, nameStr, { fontFamily: THEME.FONT_DISPLAY, fontSize: '14px', color: THEME.TEXT_PRIMARY, fontStyle: '600' })
+        .setOrigin(0.5);
+      const toast = this.add.container(cx, cy + panelH / 2 + 40, [tg, head, nm]).setDepth(51);
+      toast.setScale(0.85).setAlpha(0);
+      this.tweens.add({ targets: toast, scale: 1, alpha: 1, delay: 360, duration: 320, ease: THEME.EASE_POP });
+    }
   }
 
   // Soft "absorb" flash at the goal when the ball is captured.
@@ -744,6 +772,7 @@ export class GameScene extends Phaser.Scene {
   private triggerDeath(): void {
     if (this.isDying) return;
     this.isDying = true;
+    StatsStore.recordDeath();
     const audio = this.getAudio();
     audio.stopHum();
     audio.playFail();
