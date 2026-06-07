@@ -44,8 +44,8 @@
 - UI/UX: glassmorphic design system, Orbitron+Exo 2 fonts, in-game glass toolbar (Home/Settings/Restart),
   settings overlay (Sound/Music/Haptics/Reduce-Motion), one-time Level-1 coach-mark, win/death feedback,
   full-surface button hit areas + press feedback, safe-area handling.
-- Quality gates green: `npx tsc --noEmit` clean · `npm test` 33 tests pass (MathUtils 10 + scoring 6 +
-  daily 12 + portal 5) · `npm run build` clean · full flow runs with **no console errors**.
+- Quality gates green: `npx tsc --noEmit` clean · `npm test` 44 tests pass (MathUtils 10 + scoring 6 +
+  daily 12 + portal 5 + gate 5 + achievements 6) · `npm run build` clean · full flow **no console errors**.
 
 **Caveat:** automated Playwright scripts verified that mechanics *function* (zone lifts, saw sweeps,
 hazard kills, countdown fails). They **cannot** reproduce precise finger input, so per-level
@@ -157,15 +157,16 @@ History lives in `docs/superpowers/plans/`. Summary:
 
 ## Current Content
 
-- **6 worlds, 48 levels** — 8 per world, `LEVELS[]` ordered by world so chapter ranges are contiguous:
+- **8 worlds, 64 levels** — 8 per world, `LEVELS[]` ordered by world so chapter ranges are contiguous:
   - **World 1 — Foundations** (1-8): attractor + static walls; precision weaves + narrow channels.
   - **World 2 — Currents** (9-16): gravity zones — updraft / crosswind / downdraft, opposing lanes.
   - **World 3 — Clockwork** (17-24): moving platforms — closing gaps / sweeping bars / faster sync.
   - **World 4 — Peril** (25-32): hazards + timed levels + moving saws + zone combos.
   - **World 5 — Wells** (33-40): magnets — attract/repel wells, slaloms, gauntlets.
-  - **World 6 — Rifts** (41-48): **portals** — teleport across walls, sealed chambers, two-pair choices,
-    combined with zones/platforms/magnets/hazards.
-  - *Difficulty rebalanced this sprint; the harder curve + Portals await a device playtest for fairness.*
+  - **World 6 — Rifts** (41-48): **portals** — teleport across walls, sealed chambers, two-pair choices.
+  - **World 7 — Gates** (49-56): **one-way gates** — commit/sequencing, combined with prior mechanics.
+  - **World 8 — Convergence** (57-64): all-mechanic mastery levels; small goals + tight par (3★ = mastery).
+  - *Difficulty rebalanced; the harder curve + new mechanics await a device playtest for fairness.*
 - **Progression structure:** sequential unlock (a level opens when the previous is ≥1★); world tally
   shown in the level-select. Every level has a `parTimeMs` and most have a `collectible`.
 - **Difficulty curve:** each world follows **teach → develop → twist → combine → master**; 1★ is always
@@ -207,7 +208,8 @@ History lives in `docs/superpowers/plans/`. Summary:
 
 ## Next Recommended Sprint
 
-**Depth & Content shipped (v0.3.0: 48 levels / 6 worlds incl. Portals). Next: validate, then grow to ~100.**
+**v0.4.0 shipped: 64 levels / 8 worlds (Gates + Convergence), magnet trap fixed, achievements added.
+Next: validate, then grow to ~100 (Worlds 9–10 + backfill).**
 1. **Device playtest of the harder curve + Portals (open, highest priority):** the rebalanced goals/par
    and the new combination/Rifts levels need real finger input to confirm fair-but-real difficulty
    (1★ always achievable). Tune `parTimeMs`/`timeLimitMs`/geometry from notes.

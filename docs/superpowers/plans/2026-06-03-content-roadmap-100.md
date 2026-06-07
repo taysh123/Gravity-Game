@@ -29,11 +29,15 @@ The anti-easy / anti-repetition lever is **combination**: mid/late levels in a w
 | 3 | Clockwork | moving platforms | **8** → 10 |
 | 4 | Peril | hazards + timed | **8** → 10 |
 | 5 | Wells | magnets | **8** → 10 |
-| 6 | **Rifts** | **Portals** (NEW this sprint) | **8** → 10 |
-| 7 | Gates | One-way gates (NEW) | next sprint |
-| 8 | Convergence | combination (no new mechanic) | later |
-| 9 | Gauntlet | combination + tension | later |
-| 10 | Singularity | mastery capstone (everything) | later |
+| 6 | **Rifts** | **Portals** | **8** → 10 |
+| 7 | **Gates** | **One-way gates** (NEW, v0.4.0) | **8** → 10 |
+| 8 | **Convergence** | combination/mastery (all mechanics, v0.4.0) | **8** → 10 |
+| 9 | Gauntlet | combination + tension | next sprint |
+| 10 | Singularity | mastery capstone (everything) | next sprint |
+
+**v0.4.0 also:** fixed the magnet trap (clamp 70→95, reach 230→190) and added a stats + achievements
+system (14 achievements). Now **64 levels / 8 worlds**. To ~100: Worlds 9–10 (no new engine code) +
+backfill Worlds 1–8 toward 10 each.
 
 **Scaling without bloat:** only **one** more new mechanic remains (One-way Gates, W7). Worlds 8–10 are
 pure-design *combination/mastery* worlds reusing the existing 7 mechanics — no new engine code — which is

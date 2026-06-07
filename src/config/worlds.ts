@@ -19,4 +19,5 @@ export const WORLDS: World[] = [
   { id: 5, name: 'WELLS', theme: PHYSICS.COLOR_MAGNET_ATTRACT, from: 33, to: 40 },
   { id: 6, name: 'RIFTS', theme: PHYSICS.COLOR_PORTAL_A, from: 41, to: 48 },
   { id: 7, name: 'GATES', theme: PHYSICS.COLOR_GATE, from: 49, to: 56 },
+  { id: 8, name: 'CONVERGENCE', theme: PHYSICS.COLOR_BALL_GLOW, from: 57, to: 64 },
 ];
