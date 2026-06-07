@@ -36,6 +36,8 @@ import { CurrencyStore } from '../utils/CurrencyStore';
 import { stardustForWin } from '../utils/currency';
 import { streakReward, dateKey, type DailyModifier } from '../utils/daily';
 import { DAILY_LEVELS } from '../config/dailyLevels';
+import { worldOf, isWorldStart } from '../utils/world';
+import { themeForWorld, type WorldTheme } from '../config/worldThemes';
 import { Leaderboard } from '../utils/Leaderboard';
 import { Ads } from '../utils/Ads';
 
@@ -82,6 +84,7 @@ export class GameScene extends Phaser.Scene {
   private gemRequired = false; // daily 'gemRush' modifier — must collect the gem to win
   private levelTitle = ''; // signature-level name shown in the HUD
   private isBoss = false; // boss level — HUD shows a BOSS identity
+  private worldTheme: WorldTheme | undefined; // per-world palette (undefined for daily)
 
   private get playX(): number {
     return (this.scale.width - PHYSICS.PLAY_WIDTH) / 2;
@@ -136,7 +139,9 @@ export class GameScene extends Phaser.Scene {
     this.winResult = null;
 
     this.uiBlockers = [];
-    this.cosmic = new CosmicBackground(this, 0.5); // dim atmosphere behind play
+    // Per-world visual identity (campaign only; daily keeps the neutral cosmos).
+    this.worldTheme = this.isDaily ? undefined : themeForWorld(worldOf(this.currentLevel).id);
+    this.cosmic = new CosmicBackground(this, 0.5, this.worldTheme); // dim atmosphere behind play
     this.createWorldBounds();
     this.createFromConfig(config);
     this.pullLine = this.add.graphics();
@@ -148,6 +153,10 @@ export class GameScene extends Phaser.Scene {
     this.showHint(config.hint);
     this.coachMark = null;
     this.maybeShowCoach();
+    // A brief world title card when entering a new world — identity + anticipation.
+    if (!this.isDaily && this.worldTheme && isWorldStart(this.currentLevel)) {
+      this.showWorldTitleCard();
+    }
 
     this.restartKey = this.input.keyboard!.addKey(
       Phaser.Input.Keyboard.KeyCodes.R,
@@ -407,6 +416,35 @@ export class GameScene extends Phaser.Scene {
         iconSize: slot * 0.46,
       });
       btn.container.setDepth(21);
+    });
+  }
+
+  // Brief world title card on entering a new world (roman numeral + name + journey
+  // subtitle in the world accent). Fades out; respects reduced-motion.
+  private showWorldTitleCard(): void {
+    const t = this.worldTheme;
+    if (!t) return;
+    const w = worldOf(this.currentLevel);
+    const { width, height } = this.scale;
+    const cx = width / 2;
+    const cy = height * 0.42;
+    const accent = Phaser.Display.Color.IntegerToColor(t.accent).rgba;
+    const roman = this.add.text(cx, cy - 24, t.roman, { fontFamily: THEME.FONT_DISPLAY, fontSize: '34px', color: accent, fontStyle: '700' }).setOrigin(0.5).setDepth(60).setLetterSpacing(4);
+    const name = this.add.text(cx, cy + 12, w.name, { fontFamily: THEME.FONT_DISPLAY, fontSize: '22px', color: THEME.TEXT_PRIMARY, fontStyle: '700' }).setOrigin(0.5).setDepth(60).setLetterSpacing(3);
+    const sub = this.add.text(cx, cy + 40, t.subtitle, { fontFamily: THEME.FONT_BODY, fontSize: '13px', color: THEME.TEXT_MUTED }).setOrigin(0.5).setDepth(60);
+    const group = [roman, name, sub];
+    if (reducedMotionActive()) {
+      this.time.delayedCall(1500, () => group.forEach((g) => g.destroy()));
+      return;
+    }
+    group.forEach((g) => g.setAlpha(0));
+    group.forEach((g, i) => {
+      this.tweens.add({
+        targets: g, alpha: 1, y: g.y - 8, delay: 120 + i * 90, duration: 420, ease: THEME.EASE,
+        onComplete: i === group.length - 1
+          ? () => this.time.delayedCall(950, () => this.tweens.add({ targets: group, alpha: 0, duration: 500, onComplete: () => group.forEach((x) => x.destroy()) }))
+          : undefined,
+      });
     });
   }
 

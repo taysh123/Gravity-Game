@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { PHYSICS } from '../config/physics.config';
 import { SPLASH } from '../config/splash.config';
+import type { WorldTheme } from '../config/worldThemes';
 
 // Shared cosmic backdrop: a deep-space fill, two parallax star layers, and a
 // few additive nebula glows. Reused by the intro splash, main menu, and level
@@ -16,14 +17,17 @@ export class CosmicBackground {
   private readonly intensity: number;
 
   // intensity < 1 dims stars + nebula — used behind gameplay so the backdrop
-  // never competes with the ball/goal/obstacles.
-  constructor(scene: Phaser.Scene, intensity = 1) {
+  // never competes with the ball/goal/obstacles. An optional WorldTheme gives each
+  // world a distinct palette (fill / nebula / star tint).
+  constructor(scene: Phaser.Scene, intensity = 1, theme?: WorldTheme) {
     this.scene = scene;
     this.intensity = intensity;
     const { width, height } = scene.scale;
+    const starAlphaMul = theme?.starAlpha ?? 1;
+    const nebulaTints = theme?.nebulaTints ?? SPLASH.NEBULA_TINTS;
 
     const fill = scene.add
-      .rectangle(0, 0, width, height, PHYSICS.COLOR_BACKGROUND)
+      .rectangle(0, 0, width, height, theme?.bgColor ?? PHYSICS.COLOR_BACKGROUND)
       .setOrigin(0)
       .setDepth(-100);
     this.objects.push(fill);
@@ -34,13 +38,17 @@ export class CosmicBackground {
     this.farStars = scene.add
       .tileSprite(0, 0, width, height, 'stars-far')
       .setOrigin(0)
-      .setAlpha(SPLASH.STAR_FAR_ALPHA * intensity)
+      .setAlpha(SPLASH.STAR_FAR_ALPHA * intensity * starAlphaMul)
       .setDepth(-90);
     this.nearStars = scene.add
       .tileSprite(0, 0, width, height, 'stars-near')
       .setOrigin(0)
-      .setAlpha(SPLASH.STAR_NEAR_ALPHA * intensity)
+      .setAlpha(SPLASH.STAR_NEAR_ALPHA * intensity * starAlphaMul)
       .setDepth(-80);
+    if (theme?.starTint !== undefined) {
+      this.farStars.setTint(theme.starTint);
+      this.nearStars.setTint(theme.starTint);
+    }
     this.objects.push(this.farStars, this.nearStars);
 
     // Nebula glows spread across the screen, additive + low alpha so they read
@@ -48,7 +56,7 @@ export class CosmicBackground {
     for (let i = 0; i < SPLASH.NEBULA_COUNT; i++) {
       const nx = width * (0.2 + 0.3 * i);
       const ny = height * (0.25 + 0.22 * i);
-      const tint = SPLASH.NEBULA_TINTS[i % SPLASH.NEBULA_TINTS.length];
+      const tint = nebulaTints[i % nebulaTints.length];
       const glow = scene.add
         .image(nx, ny, 'glow')
         .setBlendMode(Phaser.BlendModes.ADD)
