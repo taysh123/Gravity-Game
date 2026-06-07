@@ -161,6 +161,9 @@ export class GameScene extends Phaser.Scene {
     const ambientAudio = this.getAudio();
     ambientAudio.resume();
     ambientAudio.startWorldTheme(worldOf(this.currentLevel).id, this.isBoss);
+    // Signature/boss levels announce themselves (boss arenas also get a red wash).
+    if (this.isBoss) this.addBossArenaTint();
+    if (this.levelTitle && !this.isDaily) this.showLevelTitleCard();
 
     this.restartKey = this.input.keyboard!.addKey(
       Phaser.Input.Keyboard.KeyCodes.R,
@@ -450,6 +453,45 @@ export class GameScene extends Phaser.Scene {
           : undefined,
       });
     });
+  }
+
+  // Signature/boss level announcement card on entry — a named "event" beat.
+  private showLevelTitleCard(): void {
+    const { width, height } = this.scale;
+    const cx = width / 2;
+    const cy = height * 0.4;
+    const accentNum = this.isBoss ? 0xff5a6a : 0xffd166;
+    const accent = Phaser.Display.Color.IntegerToColor(accentNum).rgba;
+    const tag = this.add
+      .text(cx, cy - 26, this.isBoss ? '▲ BOSS' : 'SIGNATURE', { fontFamily: THEME.FONT_BODY, fontSize: '12px', color: accent })
+      .setOrigin(0.5).setDepth(60).setLetterSpacing(3);
+    const name = this.add
+      .text(cx, cy + 6, this.levelTitle, { fontFamily: THEME.FONT_DISPLAY, fontSize: '28px', color: accent, fontStyle: '700' })
+      .setOrigin(0.5).setDepth(60).setLetterSpacing(2);
+    const group = [tag, name];
+    if (reducedMotionActive()) {
+      this.time.delayedCall(1500, () => group.forEach((g) => g.destroy()));
+      return;
+    }
+    group.forEach((g) => g.setAlpha(0));
+    group.forEach((g, i) => {
+      this.tweens.add({
+        targets: g, alpha: 1, y: g.y - 8, delay: 120 + i * 100, duration: 420, ease: THEME.EASE,
+        onComplete: i === group.length - 1
+          ? () => this.time.delayedCall(950, () => this.tweens.add({ targets: group, alpha: 0, duration: 500, onComplete: () => group.forEach((x) => x.destroy()) }))
+          : undefined,
+      });
+    });
+  }
+
+  // Faint red wash over a boss arena — signals danger/escalation at a glance.
+  private addBossArenaTint(): void {
+    const { width, height } = this.scale;
+    this.add
+      .rectangle(0, 0, width, height, 0xff2a3a, 0.05)
+      .setOrigin(0)
+      .setDepth(-70)
+      .setBlendMode(Phaser.BlendModes.ADD);
   }
 
   private isOverUi(pointer: Phaser.Input.Pointer): boolean {
