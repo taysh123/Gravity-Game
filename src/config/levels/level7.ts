@@ -1,18 +1,17 @@
 import type { LevelConfig } from '../../types';
 import { PHYSICS } from '../physics.config';
 
-// World 2 — Currents · teach: the ball starts inside an updraft column, so the
-// current visibly lifts it from the first moment. The goal is offset, so the
-// player still steers out of the current near the top. Aha: "use the current to
-// travel further than one pull could."
+// World 2 · L8 — TOY "Updraft Surf": the star starts in a tall current and the
+// first touch sends it surfing up the column in a swoosh to a big, generous home.
+// A delightful, unloseable introduction to currents — feel the flow before any test.
 export const level7: LevelConfig = {
-  ball:      { x: 160, y: 640 },
-  goal:      { x: 255, y: 120, radius: 44 },
+  ball:      { x: 180, y: 650 },
+  goal:      { x: 180, y: 140, radius: 46 },
   obstacles: [],
   gravityZones: [
-    { x: 160, y: 410, width: 130, height: 480, dir: { x: 0, y: -1 }, strength: PHYSICS.GRAVITY_ZONE_STRENGTH },
+    { x: 180, y: 400, width: 150, height: 520, dir: { x: 0, y: -1 }, strength: PHYSICS.GRAVITY_ZONE_STRENGTH },
   ],
-  collectible: { x: 160, y: 200 },
-  hint:      'The current lifts you — steer out to the goal',
+  collectible: { x: 180, y: 300 }, // on the surf line
+  hint:      'Surf the current straight up',
   parTimeMs: 9000,
 };
