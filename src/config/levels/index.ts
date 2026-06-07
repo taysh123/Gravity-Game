@@ -45,9 +45,7 @@ import { level49 } from './level49';
 import { level50 } from './level50';
 import { level51 } from './level51';
 import { level52 } from './level52';
-import { level53 } from './level53';
 import { level54 } from './level54';
-import { level55 } from './level55';
 import { level56 } from './level56';
 import { level57 } from './level57';
 import { level58 } from './level58';
@@ -75,13 +73,17 @@ import { level79 } from './level79';
 import { level80 } from './level80';
 import { level81 } from './level81';
 import { level82 } from './level82';
+import { level83 } from './level83';
+import { level84 } from './level84';
+import { level85 } from './level85';
+import { level86 } from './level86';
 
 // Single source of truth for level order and count (used by GameScene + EndScene).
 // Worlds overhauled to 10 levels each, themed to a distinct mental skill, each with
 // >=3 aha puzzles + a signature + a boss (W1 navigation · W2 prediction/flow ·
 // W3 timing/sequencing · W4 reaction/nerve under pressure); later worlds still 8.
 //   1-10 Foundations · 11-20 Currents · 21-30 Clockwork · 31-40 Peril · 41-50 Wells ·
-//   51-60 Rifts · 61-68 Gates · 69-76 Convergence.
+//   51-60 Rifts · 61-70 Gates · 71-78 Convergence.
 // (Filenames are arbitrary module names; this array order defines the level number.)
 export const LEVELS: LevelConfig[] = [
   // W1 Foundations (navigation): teach, fork, decision, traverse, puzzle-box, stakes,
@@ -102,6 +104,8 @@ export const LEVELS: LevelConfig[] = [
   // W6 Rifts (spatial/non-linear): teach, develop-sealed, far-mouths-twist, velocity-carry-aha,
   // portal+gate combine, think-backwards-aha, two-rift decision, signature HALL OF MIRRORS, master, boss THE BREACH.
   level41, level42, level43, level79, level45, level80, level47, level81, level48, level82,
-  level49, level50, level51, level52, level53, level54, level55, level56,
+  // W7 Gates (planning/commitment/ordering): teach, develop, down-gate twist, lock-and-key-aha,
+  // gate+zone combine, plan-gem-aha, two-gates twist, signature THE LOCKWORKS, master, boss THE VAULT.
+  level49, level50, level51, level83, level52, level84, level54, level85, level56, level86,
   level57, level58, level59, level60, level61, level62, level63, level64,
 ];
