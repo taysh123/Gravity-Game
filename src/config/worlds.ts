@@ -12,12 +12,13 @@ export interface World {
 }
 
 export const WORLDS: World[] = [
-  { id: 1, name: 'FOUNDATIONS', theme: PHYSICS.COLOR_GOAL, from: 1, to: 8 },
-  { id: 2, name: 'CURRENTS', theme: PHYSICS.COLOR_ATTRACTOR_PULSE, from: 9, to: 16 },
-  { id: 3, name: 'CLOCKWORK', theme: PHYSICS.COLOR_ATTRACTOR, from: 17, to: 24 },
-  { id: 4, name: 'PERIL', theme: PHYSICS.COLOR_DEATH, from: 25, to: 32 },
-  { id: 5, name: 'WELLS', theme: PHYSICS.COLOR_MAGNET_ATTRACT, from: 33, to: 40 },
-  { id: 6, name: 'RIFTS', theme: PHYSICS.COLOR_PORTAL_A, from: 41, to: 48 },
-  { id: 7, name: 'GATES', theme: PHYSICS.COLOR_GATE, from: 49, to: 56 },
-  { id: 8, name: 'CONVERGENCE', theme: PHYSICS.COLOR_BALL_GLOW, from: 57, to: 64 },
+  // Worlds 1-3 overhauled to 10 levels each (Gameplay Overhaul Sprint); later worlds 8.
+  { id: 1, name: 'FOUNDATIONS', theme: PHYSICS.COLOR_GOAL, from: 1, to: 10 },
+  { id: 2, name: 'CURRENTS', theme: PHYSICS.COLOR_ATTRACTOR_PULSE, from: 11, to: 18 },
+  { id: 3, name: 'CLOCKWORK', theme: PHYSICS.COLOR_ATTRACTOR, from: 19, to: 26 },
+  { id: 4, name: 'PERIL', theme: PHYSICS.COLOR_DEATH, from: 27, to: 34 },
+  { id: 5, name: 'WELLS', theme: PHYSICS.COLOR_MAGNET_ATTRACT, from: 35, to: 42 },
+  { id: 6, name: 'RIFTS', theme: PHYSICS.COLOR_PORTAL_A, from: 43, to: 50 },
+  { id: 7, name: 'GATES', theme: PHYSICS.COLOR_GATE, from: 51, to: 58 },
+  { id: 8, name: 'CONVERGENCE', theme: PHYSICS.COLOR_BALL_GLOW, from: 59, to: 66 },
 ];

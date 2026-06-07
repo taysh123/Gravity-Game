@@ -1,16 +1,16 @@
 import type { LevelConfig } from '../../types';
 
-// Wall A spans play-x 30 to 170. Gap right: 170 to 360.
-// Wall B spans play-x 190 to 330. Gap left: 0 to 190.
-// Player must zigzag: right through Wall A gap → left through Wall B gap → goal.
+// World 1 · L3 — a real decision: a tight central channel is the fast line (and
+// holds the gem + makes par), while the open sides are a slow, safe go-around.
+// Speed/risk vs safety — a genuine tradeoff this early.
 export const level3: LevelConfig = {
-  ball:      { x: 180, y: 630 },
-  goal:      { x: 180, y: 130, radius: 28 },
+  ball:      { x: 180, y: 660 },
+  goal:      { x: 180, y: 140, radius: 36 },
   obstacles: [
-    { x: 100, y: 430, width: 140, height: 18 }, // Wall A (lower)
-    { x: 260, y: 280, width: 140, height: 18 }, // Wall B (upper)
+    { x: 150, y: 400, width: 14, height: 280 }, // channel left wall  (x ~143..157, y 260..540)
+    { x: 210, y: 400, width: 14, height: 280 }, // channel right wall (x ~203..217) — slot ~46px
   ],
-  collectible: { x: 300, y: 330 },
-  hint:      'Plan a path through both gaps',
-  parTimeMs: 14000,
+  collectible: { x: 180, y: 400 }, // inside the channel — reward for the brave line
+  hint:      'Thread the channel for speed, or take the slow sides',
+  parTimeMs: 12000,
 };

@@ -15,9 +15,9 @@ export interface RecordInput {
   completed: boolean;
 }
 
-// v3: the first-hour pacing pass materially changed early levels (hazards/risk
-// added to L6-24), so reset progress cleanly. (v2 was the 27->40 renumber.)
-const KEY = 'gravity-flow:progress:v3';
+// v4: the Gameplay Overhaul expanded Worlds 1-3 to 10 levels each (renumbering
+// everything after), so reset progress cleanly. (v3 = first-hour pacing pass.)
+const KEY = 'gravity-flow:progress:v4';
 const EMPTY: LevelProgress = { stars: 0, bestTimeMs: 0, gem: false };
 
 let cache: Record<number, LevelProgress> | null = null;

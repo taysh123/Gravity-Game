@@ -80,6 +80,8 @@ export class GameScene extends Phaser.Scene {
   private dailyIndex = 0; // which curated daily level
   private dailyModifier: DailyModifier = 'none';
   private gemRequired = false; // daily 'gemRush' modifier — must collect the gem to win
+  private levelTitle = ''; // signature-level name shown in the HUD
+  private isBoss = false; // boss level — HUD shows a BOSS identity
 
   private get playX(): number {
     return (this.scale.width - PHYSICS.PLAY_WIDTH) / 2;
@@ -127,6 +129,8 @@ export class GameScene extends Phaser.Scene {
     } else if (this.isDaily && this.dailyModifier === 'gemRush') {
       this.gemRequired = true;
     }
+    this.levelTitle = config.title ?? '';
+    this.isBoss = config.boss ?? false;
     this.countdown = null;
     this.gemCollected = false;
     this.winResult = null;
@@ -306,11 +310,17 @@ export class GameScene extends Phaser.Scene {
     const padX = Math.max(SAFE_PAD, insets.left) + 8;
     const padY = Math.max(SAFE_PAD, insets.top) + 8;
 
+    // HUD title: BOSS / signature name / DAILY / LEVEL N — bosses + signatures
+    // get a gold accent so they read as special.
+    // Signature levels show a gold title; bosses a red one — kept short so the
+    // chip stays clear of the top-right toolbar.
+    const labelStr = this.isDaily ? 'DAILY' : this.levelTitle || `LEVEL ${this.currentLevel}`;
+    const labelColor = this.isBoss ? '#ff5a6a' : this.levelTitle ? '#ffd166' : THEME.TEXT_PRIMARY;
     const label = this.add
-      .text(0, 0, this.isDaily ? 'DAILY' : `LEVEL ${this.currentLevel}`, {
+      .text(0, 0, labelStr, {
         fontFamily: THEME.FONT_DISPLAY,
         fontSize: '14px',
-        color: THEME.TEXT_PRIMARY,
+        color: labelColor,
         fontStyle: '600',
       })
       .setOrigin(0.5);

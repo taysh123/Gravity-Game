@@ -77,6 +77,8 @@ export interface LevelConfig {
   obstacles: ObstacleConfig[];
   startVelocity?: { x: number; y: number };
   hint?: string;   // one-line onboarding tip, shown on level entry
+  title?: string;  // memorable name (signature levels) — shown in the HUD chip
+  boss?: boolean;  // multi-phase capstone — HUD shows a BOSS identity
   // Optional mechanics — existing levels stay valid (all optional).
   gravityZones?: GravityZoneConfig[];
   magnets?: MagnetConfig[]; // static attract/repel force wells
