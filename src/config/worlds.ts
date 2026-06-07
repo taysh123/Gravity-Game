@@ -12,14 +12,14 @@ export interface World {
 }
 
 export const WORLDS: World[] = [
-  // All 8 worlds overhauled to 10 levels each (distinct mental skill + signature +
-  // boss + >=3 aha). 80 levels total, 10x8.
-  { id: 1, name: 'FOUNDATIONS', theme: PHYSICS.COLOR_GOAL, from: 1, to: 10 },
-  { id: 2, name: 'CURRENTS', theme: PHYSICS.COLOR_ATTRACTOR_PULSE, from: 11, to: 20 },
-  { id: 3, name: 'CLOCKWORK', theme: PHYSICS.COLOR_ATTRACTOR, from: 21, to: 30 },
-  { id: 4, name: 'PERIL', theme: PHYSICS.COLOR_DEATH, from: 31, to: 40 },
-  { id: 5, name: 'WELLS', theme: PHYSICS.COLOR_MAGNET_ATTRACT, from: 41, to: 50 },
-  { id: 6, name: 'RIFTS', theme: PHYSICS.COLOR_PORTAL_A, from: 51, to: 60 },
-  { id: 7, name: 'GATES', theme: PHYSICS.COLOR_GATE, from: 61, to: 70 },
-  { id: 8, name: 'CONVERGENCE', theme: PHYSICS.COLOR_BALL_GLOW, from: 71, to: 80 },
+  // Phase 1: Worlds 1-3 trimmed to 7 each (WOW redesign); Worlds 4-8 still 10 each
+  // (pending Phase-2 trim). Total 71. Ranges stay contiguous.
+  { id: 1, name: 'FOUNDATIONS', theme: PHYSICS.COLOR_GOAL, from: 1, to: 7 },
+  { id: 2, name: 'CURRENTS', theme: PHYSICS.COLOR_ATTRACTOR_PULSE, from: 8, to: 14 },
+  { id: 3, name: 'CLOCKWORK', theme: PHYSICS.COLOR_ATTRACTOR, from: 15, to: 21 },
+  { id: 4, name: 'PERIL', theme: PHYSICS.COLOR_DEATH, from: 22, to: 31 },
+  { id: 5, name: 'WELLS', theme: PHYSICS.COLOR_MAGNET_ATTRACT, from: 32, to: 41 },
+  { id: 6, name: 'RIFTS', theme: PHYSICS.COLOR_PORTAL_A, from: 42, to: 51 },
+  { id: 7, name: 'GATES', theme: PHYSICS.COLOR_GATE, from: 52, to: 61 },
+  { id: 8, name: 'CONVERGENCE', theme: PHYSICS.COLOR_BALL_GLOW, from: 62, to: 71 },
 ];

@@ -13,6 +13,7 @@ export const level69: LevelConfig = {
     { x: 100, y: 300, width: 130, height: 14, to: { x: 260, y: 300 }, durationMs: 1000 },
     { x: 260, y: 190, width: 130, height: 14, to: { x: 100, y: 190 }, durationMs: 1000 },
   ],
+  camera:    { introZoom: 1.55 }, // reveal the machine in motion
   collectible: { x: 300, y: 495 }, // off to the side in the machine
   title:     'THE GEARWORKS',
   hint:      'Time the machine',

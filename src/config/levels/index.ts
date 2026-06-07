@@ -1,20 +1,14 @@
 import type { LevelConfig } from '../../types';
 import { level1 } from './level1';
-import { level2 } from './level2';
-import { level3 } from './level3';
 import { level4 } from './level4';
 import { level5 } from './level5';
-import { level6 } from './level6';
 import { level7 } from './level7';
 import { level8 } from './level8';
-import { level9 } from './level9';
 import { level10 } from './level10';
 import { level11 } from './level11';
 import { level12 } from './level12';
-import { level13 } from './level13';
 import { level14 } from './level14';
 import { level15 } from './level15';
-import { level16 } from './level16';
 import { level17 } from './level17';
 import { level18 } from './level18';
 import { level19 } from './level19';
@@ -22,14 +16,9 @@ import { level21 } from './level21';
 import { level23 } from './level23';
 import { level24 } from './level24';
 import { level25 } from './level25';
-import { level28 } from './level28';
 import { level29 } from './level29';
 import { level30 } from './level30';
-import { level31 } from './level31';
-import { level32 } from './level32';
 import { level33 } from './level33';
-import { level34 } from './level34';
-import { level35 } from './level35';
 import { level36 } from './level36';
 import { level37 } from './level37';
 import { level38 } from './level38';
@@ -79,25 +68,29 @@ import { level87 } from './level87';
 import { level88 } from './level88';
 import { level89 } from './level89';
 import { level90 } from './level90';
+import { level91 } from './level91';
+import { level92 } from './level92';
 
 // Single source of truth for level order and count (used by GameScene + EndScene).
-// All 8 worlds overhauled to 10 levels each, themed to a distinct mental skill, each
-// with >=3 aha puzzles + a signature + a boss (W1 navigation · W2 prediction/flow ·
-// W3 timing/sequencing · W4 reaction/nerve · W5 trajectory/orbital · W6 spatial ·
-// W7 planning/commitment · W8 synthesis/improvisation). 80 levels, 10x8.
-//   1-10 Foundations · 11-20 Currents · 21-30 Clockwork · 31-40 Peril · 41-50 Wells ·
-//   51-60 Rifts · 61-70 Gates · 71-80 Convergence.
+// PHASE 1 (early-game redesign): Worlds 1-3 trimmed 10->7 and rebuilt for WOW —
+// toys before tests, front-loaded wonder, multi-goal "constellation" toys, spectacle
+// signatures, and distinct boss archetypes (W1 COLLAPSE = descent set-piece;
+// W2 MAELSTROM = chase; W3 MACHINE = mechanic-turned). Worlds 4-8 still 10 each,
+// pending their Phase-2 trim. Current total: 71 (target ~56 after Phase 2).
+//   1-7 Foundations · 8-14 Currents · 15-21 Clockwork · 22-31 Peril · 32-41 Wells ·
+//   42-51 Rifts · 52-61 Gates · 62-71 Convergence.
 // (Filenames are arbitrary module names; this array order defines the level number.)
 export const LEVELS: LevelConfig[] = [
-  // W1 Foundations (navigation): teach, fork, decision, traverse, puzzle-box, stakes,
-  // signature THE GAUNTLET, descent, decoy-aha, boss THE COLLAPSE.
-  level1, level2, level3, level4, level5, level6, level65, level28, level29, level66,
-  // W2 Currents (prediction/flow): teach, flow, predict-decision, read-aha, downdraft,
-  // use-current-aha, combine, signature THE EYE, relay-aha, boss THE MAELSTROM.
-  level7, level9, level30, level10, level8, level11, level31, level67, level32, level68,
-  // W3 Clockwork (timing/sequencing): teach, rhythm, timing-decision, stage-aha,
-  // alt-rhythm, patience-aha, combine, signature THE GEARWORKS, sequence-aha, boss THE MACHINE.
-  level12, level13, level14, level15, level16, level33, level34, level69, level35, level70,
+  // W1 Foundations (navigation/discovery): TOY First-Pull, TOY/CLIP Comet,
+  // TOY/SHOT Constellation, puzzle-box, SIGNATURE THE GAUNTLET(+reveal), decoy,
+  // BOSS THE COLLAPSE (descent set-piece).
+  level1, level4, level91, level5, level65, level29, level66,
+  // W2 Currents (prediction/flow): TOY Updraft-surf, REST Drifthome, prediction,
+  // relay-curve, SPECTACLE Whirlpool, SIGNATURE THE EYE, BOSS THE MAELSTROM (chase).
+  level7, level11, level30, level10, level8, level67, level68,
+  // W3 Clockwork (timing/sequencing): TOY Gearslip, timing-decision, sequencing,
+  // TOY/SHOT Orrery, patience, SIGNATURE THE GEARWORKS, BOSS THE MACHINE (mechanic-turned).
+  level12, level14, level15, level92, level33, level69, level70,
   // W4 Peril (reaction/nerve): teach, develop, timed-twist, safe-window-aha,
   // saw-develop, decoy-aha, combine, signature THE FORGE, timed-combine, boss THE INFERNO.
   level17, level18, level19, level71, level21, level72, level36, level73, level37, level74,
