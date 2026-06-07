@@ -22,8 +22,6 @@ import { level21 } from './level21';
 import { level23 } from './level23';
 import { level24 } from './level24';
 import { level25 } from './level25';
-import { level26 } from './level26';
-import { level27 } from './level27';
 import { level28 } from './level28';
 import { level29 } from './level29';
 import { level30 } from './level30';
@@ -71,13 +69,17 @@ import { level71 } from './level71';
 import { level72 } from './level72';
 import { level73 } from './level73';
 import { level74 } from './level74';
+import { level75 } from './level75';
+import { level76 } from './level76';
+import { level77 } from './level77';
+import { level78 } from './level78';
 
 // Single source of truth for level order and count (used by GameScene + EndScene).
 // Worlds overhauled to 10 levels each, themed to a distinct mental skill, each with
 // >=3 aha puzzles + a signature + a boss (W1 navigation · W2 prediction/flow ·
 // W3 timing/sequencing · W4 reaction/nerve under pressure); later worlds still 8.
-//   1-10 Foundations · 11-20 Currents · 21-30 Clockwork · 31-40 Peril · 41-48 Wells ·
-//   49-56 Rifts · 57-64 Gates · 65-72 Convergence.
+//   1-10 Foundations · 11-20 Currents · 21-30 Clockwork · 31-40 Peril · 41-50 Wells ·
+//   51-58 Rifts · 59-66 Gates · 67-74 Convergence.
 // (Filenames are arbitrary module names; this array order defines the level number.)
 export const LEVELS: LevelConfig[] = [
   // W1 Foundations (navigation): teach, fork, decision, traverse, puzzle-box, stakes,
@@ -92,7 +94,9 @@ export const LEVELS: LevelConfig[] = [
   // W4 Peril (reaction/nerve): teach, develop, timed-twist, safe-window-aha,
   // saw-develop, decoy-aha, combine, signature THE FORGE, timed-combine, boss THE INFERNO.
   level17, level18, level19, level71, level21, level72, level36, level73, level37, level74,
-  level23, level24, level25, level26, level27, level38, level39, level40,
+  // W5 Wells (trajectory/orbital): teach, slingshot-develop, repel-twist, slingshot-around-aha,
+  // slalom, repel-place-aha, lift+well+spike combine, signature THE BINARY STAR, gauntlet, boss THE SINGULARITY.
+  level23, level24, level25, level75, level38, level76, level39, level77, level40, level78,
   level41, level42, level43, level44, level45, level46, level47, level48,
   level49, level50, level51, level52, level53, level54, level55, level56,
   level57, level58, level59, level60, level61, level62, level63, level64,
