@@ -28,8 +28,9 @@ export class Ball {
       y: startVelocity.y || PHYSICS.BALL_START_VY,
     });
 
-    // Trail is drawn beneath the ball (added to scene first).
-    this.trailGraphics = scene.add.graphics();
+    // Trail is drawn beneath the ball (added to scene first). Additive blend +
+    // the longer trail give the star a glowing "comet" tail (esp. on fast moves).
+    this.trailGraphics = scene.add.graphics().setBlendMode(Phaser.BlendModes.ADD);
     this.graphics = scene.add.graphics();
     this.draw();
   }

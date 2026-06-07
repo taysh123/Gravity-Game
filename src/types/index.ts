@@ -73,12 +73,22 @@ export interface MovingPlatformConfig {
 
 export interface LevelConfig {
   ball: { x: number; y: number };
-  goal: { x: number; y: number; radius: number };
+  // Goal = the lost star's "home". Optional to/durationMs make it drift (yoyo) —
+  // used by chase bosses and the felt journey. radius is the capture distance.
+  goal: { x: number; y: number; radius: number; to?: Vec2; durationMs?: number };
   obstacles: ObstacleConfig[];
   startVelocity?: { x: number; y: number };
   hint?: string;   // one-line onboarding tip, shown on level entry
   title?: string;  // memorable name (signature levels) — shown in the HUD chip
   boss?: boolean;  // multi-phase capstone — HUD shows a BOSS identity
+  // Cinematic intro: start the camera at this zoom and settle to 1.0 on entry
+  // (a "reveal" beat). >1 zooms in then pulls back; honors reduced-motion.
+  camera?: { introZoom?: number };
+  // Multi-goal "constellation" toy: collect these orbs (any order). With
+  // collectAllToWin, gathering them all IS the win and they connect into a
+  // constellation. Distinct from the single `collectible` (which grants a star).
+  collectibles?: Vec2[];
+  collectAllToWin?: boolean;
   // Optional mechanics — existing levels stay valid (all optional).
   gravityZones?: GravityZoneConfig[];
   magnets?: MagnetConfig[]; // static attract/repel force wells

@@ -14,9 +14,10 @@ export const PHYSICS = {
   BALL_START_VX: 0,              // Zero initial velocity — evaluate gravity in isolation.
   BALL_START_VY: 0,
 
-  // Trail
-  TRAIL_LENGTH: 6,               // Number of trail segments. Short = subtle.
-  TRAIL_MAX_ALPHA: 0.25,         // Opacity of the nearest trail segment. Low = elegant.
+  // Trail — a glowing "comet" tail (additive). Longer than before for drama on
+  // fast moves while staying cheap (vector graphics, not particles).
+  TRAIL_LENGTH: 10,              // Number of trail segments.
+  TRAIL_MAX_ALPHA: 0.28,         // Opacity of the nearest trail segment.
 
   // Juice — particle burst + screen shake (kept under the 50-particle ceiling)
   PARTICLE_COUNT: 24,            // Particles in the goal-capture burst.
@@ -98,6 +99,20 @@ export const PHYSICS = {
   GEM_RADIUS: 13,
   COLOR_GEM: 0xffd166,           // gold gem (matches the star it grants)
   COLOR_GEM_GLOW: 0xfff0c0,
+
+  // Multi-goal "constellation" toy — collect orbs that connect on win.
+  ORB_RADIUS: 12,
+  COLOR_ORB: 0xcfe8ff,           // pale star-blue orbs
+  COLOR_CONSTELLATION: 0xfff0c0, // warm lines drawn between collected orbs
+  CONSTELLATION_ALPHA: 0.55,
+  GOAL_NEAR_DIST: 150,           // within this range the home goal brightens (px)
+
+  // Cinematic camera (per-level intro reveal)
+  CAMERA_TWEEN_MS: 650,          // settle from introZoom back to 1.0
+  CAMERA_INTRO_ZOOM_MAX: 2.2,    // clamp for LevelConfig.camera.introZoom
+
+  // Instant retry — snappy re-spawn on death (premium flow, less dead time).
+  RESTART_DELAY_MS: 240,
 
   // Colors
   COLOR_BACKGROUND: 0x0d0d1a,

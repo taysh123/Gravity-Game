@@ -21,6 +21,7 @@ import { Gate } from '../entities/Gate';
 import { gateOpen } from '../utils/gate';
 import { MovingPlatform } from '../entities/MovingPlatform';
 import { Collectible } from '../entities/Collectible';
+import { Orb } from '../entities/Orb';
 import { Hazard } from '../entities/Hazard';
 import { IconButton } from '../ui/IconButton';
 import { drawGlass } from '../ui/glass';
@@ -65,6 +66,13 @@ export class GameScene extends Phaser.Scene {
   private gates: Gate[] = [];
   private hazards: Hazard[] = [];
   private collectible: Collectible | null = null;
+  // Multi-goal "constellation" toy.
+  private orbs: Orb[] = [];
+  private collectAllToWin = false;
+  // Moving "home" goal (drift/chase levels). All world coords.
+  private goalStart = { x: 0, y: 0 };
+  private goalTo: { x: number; y: number } | null = null;
+  private goalDurMs = 0;
   // Interactive HUD/nav regions where a tap must NOT spawn an attractor.
   private uiBlockers: Phaser.GameObjects.Container[] = [];
   // Scoring (stars)
@@ -137,6 +145,10 @@ export class GameScene extends Phaser.Scene {
     this.countdown = null;
     this.gemCollected = false;
     this.winResult = null;
+    this.orbs = [];
+    this.collectAllToWin = false;
+    this.goalTo = null;
+    this.goalDurMs = 0;
 
     this.uiBlockers = [];
     // Per-world visual identity (campaign only; daily keeps the neutral cosmos).
@@ -144,6 +156,7 @@ export class GameScene extends Phaser.Scene {
     this.cosmic = new CosmicBackground(this, 0.5, this.worldTheme); // dim atmosphere behind play
     this.createWorldBounds();
     this.createFromConfig(config);
+    this.applyCameraIntro(config);
     this.pullLine = this.add.graphics();
     this.setupInput();
     this.createHud();
@@ -235,6 +248,17 @@ export class GameScene extends Phaser.Scene {
       ? new Collectible(this, ox + config.collectible.x, oy + config.collectible.y)
       : null;
 
+    // Multi-goal "constellation" orbs (collect-all toy).
+    this.orbs = (config.collectibles ?? []).map((c) => new Orb(this, ox + c.x, oy + c.y));
+    this.collectAllToWin = config.collectAllToWin ?? false;
+
+    // Moving "home" goal (drift/chase): store world-space endpoints for the yoyo.
+    this.goalStart = { x: ox + config.goal.x, y: oy + config.goal.y };
+    if (config.goal.to && config.goal.durationMs) {
+      this.goalTo = { x: ox + config.goal.to.x, y: oy + config.goal.to.y };
+      this.goalDurMs = config.goal.durationMs;
+    }
+
     (config.movingPlatforms ?? []).forEach(
       (p) =>
         new MovingPlatform(
@@ -249,6 +273,59 @@ export class GameScene extends Phaser.Scene {
           p.angle,
         ),
     );
+  }
+
+  // Cinematic intro: start zoomed (in/out) and settle to 1.0 — a "reveal" beat.
+  private applyCameraIntro(config: LevelConfig): void {
+    const z = config.camera?.introZoom;
+    if (!z) return;
+    const from = clamp(z, 0.5, PHYSICS.CAMERA_INTRO_ZOOM_MAX);
+    const cam = this.cameras.main;
+    if (reducedMotionActive()) { cam.setZoom(1); return; }
+    cam.setZoom(from);
+    this.tweens.add({ targets: cam, zoom: 1, duration: PHYSICS.CAMERA_TWEEN_MS, ease: 'Cubic.easeOut' });
+  }
+
+  // Drift the "home" goal along its yoyo (chase/journey levels).
+  private updateGoalMotion(time: number): void {
+    if (!this.goalTo || this.goalDurMs <= 0) return;
+    const cycle = (time / this.goalDurMs) % 2;          // 0..2
+    const t = cycle <= 1 ? cycle : 2 - cycle;           // ping-pong 0..1..0
+    this.goal.setPosition(
+      this.goalStart.x + (this.goalTo.x - this.goalStart.x) * t,
+      this.goalStart.y + (this.goalTo.y - this.goalStart.y) * t,
+    );
+  }
+
+  // Multi-goal toy: gather constellation orbs; collecting all can BE the win.
+  private checkOrbs(): void {
+    if (!this.orbs.length) return;
+    const bx = this.ball.body.position.x;
+    const by = this.ball.body.position.y;
+    for (const o of this.orbs) {
+      if (o.overlaps(bx, by, PHYSICS.BALL_RADIUS)) {
+        o.collect(this);
+        this.getAudio().playGem();
+        this.haptics(PHYSICS.HAPTIC_TAP_MS);
+      }
+    }
+  }
+
+  private allOrbsCollected(): boolean {
+    return this.orbs.length > 0 && this.orbs.every((o) => o.collected);
+  }
+
+  // Connect the gathered orbs (+ the home goal) into a constellation on win.
+  private drawConstellation(): void {
+    if (!this.orbs.length) return;
+    const g = this.add.graphics().setDepth(40).setBlendMode(Phaser.BlendModes.ADD);
+    g.lineStyle(2, PHYSICS.COLOR_CONSTELLATION, PHYSICS.CONSTELLATION_ALPHA);
+    const pts = [...this.orbs.map((o) => ({ x: o.x, y: o.y })), { x: this.goal.x, y: this.goal.y }];
+    g.beginPath();
+    g.moveTo(pts[0].x, pts[0].y);
+    pts.slice(1).forEach((p) => g.lineTo(p.x, p.y));
+    g.strokePath();
+    pts.forEach((p) => { g.fillStyle(PHYSICS.COLOR_CONSTELLATION, 0.9); g.fillCircle(p.x, p.y, 3); });
   }
 
   private applyZoneForces(): void {
@@ -582,7 +659,14 @@ export class GameScene extends Phaser.Scene {
     this.updateCountdown(time);
     if (this.isDying) return; // updateCountdown may have triggered a timeout death
     this.ball.update();
-    this.goal.pulse(time / 300);
+    this.updateGoalMotion(time);
+    const nearT = clamp(
+      1 - distance(this.ball.body.position.x, this.ball.body.position.y, this.goal.x, this.goal.y) / PHYSICS.GOAL_NEAR_DIST,
+      0,
+      1,
+    );
+    this.goal.pulse(time / 300, nearT);
+    this.orbs.forEach((o) => o.pulse(time / 300));
     this.attractor?.pulse(time / 150);
     this.zones.forEach((z) => z.pulse(time / 600));
     this.magnets.forEach((m) => m.pulse(time / 600));
@@ -597,6 +681,7 @@ export class GameScene extends Phaser.Scene {
     this.updateGates();
     this.checkPortals(time);
     this.checkGem();
+    this.checkOrbs();
     this.checkHazards();
     this.checkWin();
     this.checkDeath();
@@ -693,6 +778,7 @@ export class GameScene extends Phaser.Scene {
     );
     if (dist < this.goal.radius) {
       if (this.gemRequired && !this.gemCollected) return; // 'gemRush' daily — grab the gem first
+      if (this.collectAllToWin && !this.allOrbsCollected()) return; // gather the constellation first
       this.triggerWin();
     }
   }
@@ -748,6 +834,7 @@ export class GameScene extends Phaser.Scene {
     this.attractor?.destroy();
     this.attractor = null;
     this.matter.world.pause();
+    this.drawConstellation();
     this.emitGoalBurst();
     this.winFlash();
     // Camera punch — a small zoom kick for impact (bigger for a boss).
@@ -955,7 +1042,8 @@ export class GameScene extends Phaser.Scene {
     // Quick zoom punch for impact on the loss.
     this.tweens.add({ targets: this.cameras.main, zoom: 1.05, duration: 90, yoyo: true, ease: 'Quad.easeOut' });
     this.deathFeedback();
-    this.time.delayedCall(PHYSICS.DEATH_FLASH_MS, () =>
+    // Instant retry: snappy re-spawn (less dead time) so failure keeps flow.
+    this.time.delayedCall(PHYSICS.RESTART_DELAY_MS, () =>
       this.scene.restart({ level: this.currentLevel, daily: this.isDaily, dailyIndex: this.dailyIndex, dailyModifier: this.dailyModifier }),
     );
   }
