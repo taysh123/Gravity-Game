@@ -27,8 +27,8 @@
   (PERFECT! + rising tones), boss **STAR FREED** payoff + red arena wash + camera punches, **signature/boss
   title cards**, and the hook **"Bring the lost star home."**
 - **Quality:** `tsc` clean · 57 tests pass · build clean · all 80 levels load no console errors.
-- **Git/GitHub:** branch `master`. **Local is ahead of `origin` by 6 commits (v0.8.0→v0.9.0)** — push
-  pending (run `git push origin master`). origin = https://github.com/taysh123/Gravity-Game.git.
+- **Git/GitHub:** branch `master`. **Local is ahead of `origin` by 5 commits (v0.9.0)** — push pending
+  (run `git push origin master`). origin = https://github.com/taysh123/Gravity-Game.git.
 
 ## Last completed sprint
 **Worlds 4–8 redesign roadmap — COMPLETE (v0.9.0).** Applied the W1–3 treatment to all remaining worlds,
@@ -75,8 +75,8 @@ Full audit + roadmap: `~/.claude/plans/warm-orbiting-map.md`.
   confirm every route is *physically solvable* and clean, but can't reproduce finger input or judge
   *fun/fairness*. Playtest the new aha levels + boss clocks before Sprint 2; tune constants in the level
   files (no code changes needed). Per-world verifiers: `scripts/verify_w4.py`…`verify_w8.py`.
-- **GitHub:** `origin` = https://github.com/taysh123/Gravity-Game.git. **`master` is ahead by 6 unpushed
-  commits** (v0.8.0→v0.9.0) — push/deploy are blocked from auto-run, so run them yourself per milestone.
+- **GitHub:** `origin` = https://github.com/taysh123/Gravity-Game.git. **`master` is ahead by 5 unpushed
+  commits** (v0.9.0) — push/deploy are blocked from auto-run, so run them yourself.
 - Architecture rule: **one entity + one optional `LevelConfig` field per mechanic; no managers.**
 - Verify in-browser (`npm run dev` + Playwright `--disable-gpu --use-gl=swiftshader`) before "done".
 
