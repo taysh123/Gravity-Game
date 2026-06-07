@@ -12,5 +12,5 @@ export const level3: LevelConfig = {
   ],
   collectible: { x: 180, y: 400 }, // inside the channel — reward for the brave line
   hint:      'Thread the channel for speed, or take the slow sides',
-  parTimeMs: 12000,
+  parTimeMs: 15000,
 };

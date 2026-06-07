@@ -11,5 +11,5 @@ export const level2: LevelConfig = {
   ],
   collectible: { x: 335, y: 250 }, // up past the right gap — the detour
   hint:      'Two gaps — the gem is past the right one',
-  parTimeMs: 11000,
+  parTimeMs: 14000, // early world: keep 3★ reachable even with the gem detour
 };
