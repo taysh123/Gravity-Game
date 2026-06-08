@@ -94,10 +94,19 @@ export class CosmeticsScene extends Phaser.Scene {
 
     const listC = this.add.container(cx, contentTop);
     const cards = this.tab === 'bundle'
-      ? BUNDLES.map((b, i) => this.bundleCard(b, rowW, i))
+      ? [this.removeAdsCard(rowW, 0), ...BUNDLES.map((b, i) => this.bundleCard(b, rowW, i + 1))]
       : cosmeticsByCategory(this.tab as Category).map((c, i) => this.itemCard(c, rowW, i));
     let yy = CARD_H / 2;
     cards.forEach((card) => { card.y = yy; listC.add(card); yy += card.height + CARD_GAP; });
+    // Restore-purchases link (store requirement) on the Bundles tab.
+    if (this.tab === 'bundle') {
+      const restore = this.add.text(0, yy + 4, 'Restore Purchases', {
+        fontFamily: THEME.FONT_BODY, fontSize: '13px', color: THEME.TEXT_MUTED, fontStyle: '600',
+      }).setOrigin(0.5);
+      restore.setInteractive({ useHandCursor: true });
+      restore.on('pointerup', async () => { if (this.dragging) return; await IAP.restorePurchases(); this.scene.restart({ tab: 'bundle' }); });
+      listC.add(restore); yy += 36;
+    }
     const totalH = yy;
 
     // Mask the content to the viewport so cards don't bleed over header/back.
@@ -174,6 +183,38 @@ export class CosmeticsScene extends Phaser.Scene {
         const result = CosmeticStore.buyOrEquip(c.id);
         if (result === 'cantAfford' || result === 'locked') this.cameras.main.shake(110, 0.004);
         else { Analytics.track(cosmeticEquip(c.id)); this.scene.restart({ tab: this.tab }); }
+      });
+    }
+    this.entrance(card, i);
+    return card;
+  }
+
+  // Standalone Remove-Ads card (premium upsell, separate from the bundles).
+  private removeAdsCard(w: number, i: number): Phaser.GameObjects.Container {
+    const premium = IAP.isPremium();
+    const h = CARD_H + 22;
+    const bg = this.add.graphics();
+    drawGlass(bg, w, h, THEME.RADIUS_SM);
+    bg.lineStyle(2, premium ? 0x7affb0 : THEME.ACCENT_GOLD, 0.6);
+    bg.strokeRoundedRect(-w / 2, -h / 2, w, h, THEME.RADIUS_SM);
+    const name = this.add.text(-w / 2 + 18, -h / 2 + 16, 'Remove Ads', {
+      fontFamily: THEME.FONT_DISPLAY, fontSize: '16px', color: STARDUST, fontStyle: '700',
+    }).setOrigin(0, 0.5);
+    const blurb = this.add.text(-w / 2 + 18, 6, premium ? 'Ads removed — thank you!' : 'No interstitials, ever. Rewarded ads stay optional.', {
+      fontFamily: THEME.FONT_BODY, fontSize: '12px', color: THEME.TEXT_MUTED, wordWrap: { width: w - 120 },
+    }).setOrigin(0, 0.5);
+    const price = this.add.text(w / 2 - 18, -h / 2 + 18, premium ? 'OWNED' : '$1.99', {
+      fontFamily: THEME.FONT_DISPLAY, fontSize: '15px', color: premium ? THEME.TEXT_MUTED : '#7affb0', fontStyle: '700',
+    }).setOrigin(1, 0.5);
+    const card = this.add.container(0, 0, [bg, name, blurb, price]);
+    card.setSize(w, h);
+    if (!premium) {
+      card.setInteractive(new Phaser.Geom.Rectangle(-w / 2, -h / 2, w, h), Phaser.Geom.Rectangle.Contains);
+      card.on('pointerup', async () => {
+        if (this.dragging) return;
+        const ok = await IAP.buyRemoveAds();
+        if (ok) this.scene.restart({ tab: 'bundle' });
+        else this.cameras.main.shake(110, 0.004);
       });
     }
     this.entrance(card, i);
