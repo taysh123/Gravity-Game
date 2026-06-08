@@ -10,7 +10,10 @@ export const level38: LevelConfig = {
     { x: 110, y: 480, polarity: 'repel' },
     { x: 250, y: 320, polarity: 'repel' },
   ],
-  collectible: { x: 180, y: 400 }, // in the squeeze between the two repellers
-  hint:      'Slalom between the pushes',
+  hazards: [
+    { x: 180, y: 444, radius: 16 }, // a spike under the gem — overshoot the squeeze and you're gone
+  ],
+  collectible: { x: 180, y: 400 }, // in the squeeze, just above the spike — the greedy line now bites
+  hint:      'Slalom between the pushes — the centre squeeze hides a spike',
   parTimeMs: 14000,
 };

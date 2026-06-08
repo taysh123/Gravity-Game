@@ -14,9 +14,10 @@ export const level73: LevelConfig = {
     { x: 60,  y: 250, radius: 24, to: { x: 300, y: 250 }, durationMs: 950 },  // L→R
     { x: 300, y: 410, radius: 24, to: { x: 60,  y: 410 }, durationMs: 950 },  // R→L (opposite phase)
     { x: 60,  y: 560, radius: 24, to: { x: 300, y: 560 }, durationMs: 950 },  // L→R
+    { x: 300, y: 480, width: 16, height: 120, pulseMs: 1500 }, // an ember beam guarding the gem pocket
   ],
-  collectible: { x: 310, y: 480 }, // right pocket — grab it when piston 2 is far left
+  collectible: { x: 335, y: 480 }, // deep right pocket, behind the ember beam — time it on the dark beat
   title:     'THE FORGE',
-  hint:      'Descend the forge — time the pistons',
+  hint:      'Descend the forge — time the pistons (and the ember beam for the gem)',
   parTimeMs: 15000,
 };

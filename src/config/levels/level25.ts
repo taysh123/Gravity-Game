@@ -10,7 +10,10 @@ export const level25: LevelConfig = {
   magnets: [
     { x: 180, y: 410, polarity: 'repel' },
   ],
+  hazards: [
+    { x: 300, y: 410, radius: 22 }, // the right side is deadly — the push must route you LEFT
+  ],
   collectible: { x: 180, y: 250 }, // above the repeller — push fights you on the way
-  hint:      'Violet wells push — go around it',
+  hint:      'Violet wells push — commit left, the right side bites',
   parTimeMs: 13000,
 };

@@ -12,8 +12,15 @@ export const level77: LevelConfig = {
     { x: 90,  y: 380, polarity: 'attract' },
     { x: 270, y: 380, polarity: 'attract' },
   ],
-  collectible: { x: 180, y: 380 }, // dead centre — the heart of the binary
+  hazards: [
+    // Each star has a burning core — drift off the neutral line, get captured, and
+    // you fall into a spike. Capture now COSTS something; the 1-star route is the
+    // clean centre thread.
+    { x: 90,  y: 380, radius: 20 },
+    { x: 270, y: 380, radius: 20 },
+  ],
+  collectible: { x: 180, y: 380 }, // dead centre — the safe heart of the binary
   title:     'THE BINARY STAR',
-  hint:      'Thread the neutral line — straight through the heart',
+  hint:      'Thread the neutral line — drift and a star will pull you onto its core',
   parTimeMs: 15000,
 };

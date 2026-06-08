@@ -15,10 +15,11 @@ export const level78: LevelConfig = {
   hazards: [
     { x: 95,  y: 300, radius: 22 }, // accretion-disk spikes flanking the well
     { x: 265, y: 300, radius: 22 },
+    { x: 180, y: 280, radius: 18, pivot: { x: 180, y: 410 }, durationMs: 3200 }, // the accretion disk, slowly spinning
   ],
   collectible: { x: 180, y: 410 }, // the core — dip in and escape (greediest line)
   boss:      true,
   title:     'THE SINGULARITY',
-  hint:      'No clock — orbit the rim, thread the spikes, release at the apex',
+  hint:      'No clock — orbit the rim, time the spinning disk, release at the apex',
   parTimeMs: 15000,
 };
