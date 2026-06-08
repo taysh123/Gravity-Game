@@ -43,6 +43,13 @@
   gold badge, `DAILY COMPLETE` overlay), persisted in `DailyStore`.
 - Mastery feedback (P3): live **par chip** + personal-best **ghost trail** (`GhostStore`); two new "alive"
   hazard archetypes — **rotating arm** + **pulsing laser** (`utils/hazardMotion`) — distributed across all worlds.
+- Economy + Store (Sprint 2.5, v0.14.0; **web-verified**): **28 cosmetics** across skins/trails/arrival
+  effects (5 rarities, 6 collections); **dual currency** (Stardust + **Cosmic Fragments**, `FragmentStore`);
+  tabbed **premium store** (`CosmeticsScene` — rarity badges, locked previews, owned/equipped, scroll);
+  **bundles + Remove-Ads + Restore** (`IAP.buyBundle`); **rewarded loops** (2x Stardust on win, daily free
+  Fragments, `RewardStore`); **retention rewards** (achievements/collections/star-milestones grant currency,
+  `utils/Rewards`). Skins render style/accent; trails + arrival effects customize the ball trail + win burst.
+  No P2W. Audit + reviews: `docs/store/monetization-review.md`.
 - Native + Monetization (Sprint 2, v0.13.0; **code-complete, web-verified**): **Capacitor** Android wrap;
   **AdMob** (`Ads.ts`), **RevenueCat** Remove-Ads (`IAP.ts`), **Firebase Analytics** funnel + **Crashlytics**
   (`Analytics.ts`/`Crash.ts`) — all native plugins reached by-name via `registerPlugin` (`utils/native/*`),

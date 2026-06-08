@@ -44,12 +44,31 @@
   ids** default in `config/monetization.config.ts`. CI (`.github/workflows/ci.yml`), Android **runbook**
   (`docs/release-android.md`), Play **listing** + **ASO** drafts (`docs/store/`). *The native build / signing
   / store upload + the accounts/ids are user gates (see below).*
-- **Quality:** `tsc` clean · 73 tests pass · build clean (firebase/admob/RC **not** in the web bundle) · all
-  56 levels load no console errors (`scripts/verify_p3.py`).
-- **Git/GitHub:** branch `master`. **Local is ahead of `origin` (v0.13.0, Phase 3 + Sprint 2)** — push
+- **Economy + Store (v0.14.0, Sprint 2.5 — web-verified):** generalized cosmetics into **28 items** across
+  **skins / trails / arrival effects** (5 rarities, 6 collections); **dual currency** — Stardust +
+  **Cosmic Fragments** (`FragmentStore`); a tabbed **premium store** (`CosmeticsScene` redesign: rarity
+  badges, locked previews, owned/equipped, scroll); **bundles + Remove-Ads + Restore** (`IAP.buyBundle`);
+  **rewarded loops** (2x-Stardust on win, daily free-Fragments via `RewardStore`); **retention** —
+  achievements/collections/star-milestones now grant currency (`utils/Rewards`) + a "N/28 unlocked"
+  progress. Skins read style/accent + trails/arrivals customize the ball trail + win burst. Full audit +
+  5 completion reviews in `docs/store/monetization-review.md`.
+- **Quality:** `tsc` clean · 79 tests pass · build clean (firebase/admob/RC **not** in the web bundle) · all
+  56 levels load + store/economy flows web-verified, no console errors (`scripts/verify_p3.py` + ad-hoc).
+- **Git/GitHub:** branch `master`. **Local is ahead of `origin` (v0.14.0, Phase 3 + Sprints 2 & 2.5)** — push
   pending (`git push origin master`, then `vercel --prod --yes`). origin = https://github.com/taysh123/Gravity-Game.git.
 
 ## Last completed sprint
+**Sprint 2.5 — Monetization Expansion + Premium Store (v0.14.0, web-verified).** The Sprint-2 infrastructure
+had no content/loops; this fills them. **M1** generalized cosmetic model + `CosmeticStore` v2 (multi-category,
+v1→v2 migration) + `FragmentStore` + audit (`c476760`); **M2** premium skin rendering (void/animated/dualtone/
+ringed) (`069cf1c`); **M3** trail system (fire/ice/lightning/galaxy/void) (`59394ba`); **M4** goal arrival
+effects (burst/implode/nova/bolt/bloom) (`7a01da2`); **M5** tabbed store redesign (`2b07d61`); **M6** bundles +
+Remove-Ads + Restore (`0d027b9`); **M7** rewarded loops — 2x Stardust + free Fragments (`b960b85`); **M8**
+retention rewards (achievements/collections/milestones) (`7f6efb7`); **M9** v0.14.0 docs + reviews. All
+web-verifiable; the real product/ad ids + purchases remain the user's native gates. **Deferred (next sprint):
+in-level Hint + extra-daily-attempt rewarded loops; animated store previews + a Featured surface.**
+
+## Prior sprint
 **Sprint 2 — Native + Monetization (v0.13.0, code-complete; web-verified).** Wrapped the game with Capacitor
 for Android and wired monetization + telemetry **behind guarded seams** so the web build is unaffected:
 **M1** Capacitor scaffold (`9ba9fdf`); **M2** Analytics + Crashlytics seams + funnel instrumentation, native
