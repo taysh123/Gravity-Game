@@ -41,6 +41,14 @@
   (localStorage), shown on the win overlay + world-select; **sequential unlock**; menu **Continue**.
 - Retention: **Daily Challenge** — a date-seeded level + consecutive-day streak (DAILY menu button,
   gold badge, `DAILY COMPLETE` overlay), persisted in `DailyStore`.
+- Mastery feedback (P3): live **par chip** + personal-best **ghost trail** (`GhostStore`); two new "alive"
+  hazard archetypes — **rotating arm** + **pulsing laser** (`utils/hazardMotion`) — distributed across all worlds.
+- Native + Monetization (Sprint 2, v0.13.0; **code-complete, web-verified**): **Capacitor** Android wrap;
+  **AdMob** (`Ads.ts`), **RevenueCat** Remove-Ads (`IAP.ts`), **Firebase Analytics** funnel + **Crashlytics**
+  (`Analytics.ts`/`Crash.ts`) — all native plugins reached by-name via `registerPlugin` (`utils/native/*`),
+  dynamic-import **guarded by `isNativePlatform()`** so the web build never bundles them. Ids in
+  `config/monetization.config.ts` (AdMob test ids default). CI + `docs/release-android.md` + `docs/store/`
+  (listing + ASO). *Native build / signing / store upload + accounts/ids are user gates.*
 - UI/UX: glassmorphic design system, Orbitron+Exo 2 fonts, in-game glass toolbar (Home/Settings/Restart),
   settings overlay (Sound/Music/Haptics/Reduce-Motion), one-time Level-1 coach-mark, win/death feedback,
   full-surface button hit areas + press feedback, safe-area handling.

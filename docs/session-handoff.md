@@ -35,12 +35,49 @@
   cards), **per-world in-game music** + boss audio + boss-clear sting, **star-by-star win celebration**
   (PERFECT! + rising tones), boss **STAR FREED** payoff + red arena wash + camera punches, **signature/boss
   title cards**, and the hook **"Bring the lost star home."**
-- **Quality:** `tsc` clean · 67 tests pass · build clean · all 56 levels load no console errors
-  (`scripts/verify_p3.py`: 1-56 load + completable, rotating arm orbits + laser beam toggles in-engine).
-- **Git/GitHub:** branch `master`. **Local is ahead of `origin` by 7 commits (v0.12.0, Phase 3)** — Phase 2
-  is already on origin; push pending (run `git push origin master`, then `vercel --prod --yes`). origin = https://github.com/taysh123/Gravity-Game.git.
+- **Native + Monetization (v0.13.0, Sprint 2 — code-complete, web-verified):** **Capacitor** Android wrap
+  (`capacitor.config.ts`, `base:'./'`); **AdMob** (rewarded + capped interstitials) behind `utils/Ads.ts`,
+  **RevenueCat** Remove-Ads/premium behind `utils/IAP.ts` (sync `isPremium()` via cached entitlement),
+  **Firebase Analytics** funnel + **Crashlytics** behind new `utils/Analytics.ts`/`Crash.ts` — all native
+  plugins reached **by name via `registerPlugin`** (`utils/native/*`) + dynamic-import **guarded by
+  `isNativePlatform()`**, so the **web build never bundles them** and stays the dev/test target. AdMob **test
+  ids** default in `config/monetization.config.ts`. CI (`.github/workflows/ci.yml`), Android **runbook**
+  (`docs/release-android.md`), Play **listing** + **ASO** drafts (`docs/store/`). *The native build / signing
+  / store upload + the accounts/ids are user gates (see below).*
+- **Quality:** `tsc` clean · 73 tests pass · build clean (firebase/admob/RC **not** in the web bundle) · all
+  56 levels load no console errors (`scripts/verify_p3.py`).
+- **Git/GitHub:** branch `master`. **Local is ahead of `origin` (v0.13.0, Phase 3 + Sprint 2)** — push
+  pending (`git push origin master`, then `vercel --prod --yes`). origin = https://github.com/taysh123/Gravity-Game.git.
 
 ## Last completed sprint
+**Sprint 2 — Native + Monetization (v0.13.0, code-complete; web-verified).** Wrapped the game with Capacitor
+for Android and wired monetization + telemetry **behind guarded seams** so the web build is unaffected:
+**M1** Capacitor scaffold (`9ba9fdf`); **M2** Analytics + Crashlytics seams + funnel instrumentation, native
+plugins reached by-name so the firebase SDK is never bundled (`1c5073d`); **M3** AdMob rewarded/interstitial
+(`b1ab565`); **M4** RevenueCat Remove-Ads with a cached sync entitlement (`234d470`); **M5** CI + Android
+runbook + Play listing + ASO (`26afabf`); **M6** v0.13.0 docs. **Disk on the build machine was full**, so the
+native plugin packages (AdMob, RevenueCat) are in `package.json` but **not installed/locked here** — the
+user's `npm install` reconciles the lockfile (CI uses `npm install`, not `npm ci`, until then).
+**USER GATES before a Play release** (none of which can run here): create **Play Console** ($25), **AdMob**
+(app + 2 ad-unit ids), **RevenueCat** (key + product/entitlement), **Firebase** (`google-services.json`)
+accounts; install the **Android toolchain**; `npm install` → `npx cap add/sync android`; set real ids in
+`config/monetization.config.ts`; create a **keystore** + signed **AAB**; **device-test** (incl. the Phase-3
+1★ fairness playtest); upload to **internal testing**. Full steps: `docs/release-android.md`.
+
+## Prior sprint
+**Phase 3 — Challenge & Excitement Pass (v0.12.0).** Playtest verdict was "improved but too empty/safe/
+passive." A 56-level audit confirmed it: moving hazards in only 8/56 levels, ~35/56 with no threat near the
+route, only ~27% creating real tension. Fix (no difficulty inflation, verb kept pure): **M1** two new "alive"
+hazard archetypes on the existing Hazard entity — **rotating arm** (`pivot`) + **pulsing laser** (`pulseMs/
+phaseMs`, telegraphed), pure math TDD'd in `utils/hazardMotion` (`14810e9`); **M2** mastery feedback — live
+par chip + PB **ghost trail** (new `GhostStore`, `utils/ghost` TDD'd) (`c327810`); **M3** W1-3 — debut the
+archetypes in the timing world (GEARWORKS spinning gear, patience laser) + risky gems, W1/W2 stay an
+unloseable on-ramp (`4097aa1`); **M4** W4-5 — Peril variety (rotating/laser) + Wells hybrid threat
+(capture-cost spikes) (`a6378b7`); **M5** W6-7 — the biggest lift: real route-hazards + signature motion
+(HALL OF MIRRORS arm, LOCKWORKS laser) on the emptiest worlds (`1cdda95`); **M6** W8 finale — fuse dangers
+into synthesis, stakes on both improv routes, CONFLUENCE spinning flourish (`429319f`). New verifier
+`scripts/verify_p3.py` proves the archetypes behave in-engine. Threat is now distributed, every world feels
+alive, 1★ kept fair (pending device confirmation).
 **Phase 3 — Challenge & Excitement Pass (v0.12.0).** Playtest verdict was "improved but too empty/safe/
 passive." A 56-level audit confirmed it: moving hazards in only 8/56 levels, ~35/56 with no threat near the
 route, only ~27% creating real tension. Fix (no difficulty inflation, verb kept pure): **M1** two new "alive"
@@ -92,20 +129,21 @@ event captured. Audit: `docs/superpowers/plans/2026-06-07-excitement-audit.md`. 
 Overhaul + L9/L1 fixes.)*
 
 ## Next sprint
-**Push + deploy v0.12.0, then device-playtest all 56 levels — focus on threat fairness.** First:
-`git push origin master` then `vercel --prod --yes` (both blocked from auto-run; run yourself). The Phase-3
-threat additions are the **highest playtest priority**: automated tests prove every level loads + the win
-condition fires, but **cannot confirm the 1★ route stays fair around the new hazards** (rotating arms,
-laser beams, route saws, capture-cost spikes). Play each touched level and confirm 1★ is reachable; tune
-`parTimeMs`/saw-`durationMs`/`pulseMs`/hazard positions in the level files from notes (no code changes
-needed). Also judge the new **toy openers** and **re-archetyped bosses** for feel. Then **Sprint 2 —
-Native + Monetization** begins:
-1. **Sprint 2 — Native + Monetization (→ Play RC):** Capacitor + Android build pipeline, AdMob (rewarded +
-   interstitial) + IAP (Remove-Ads, cosmetics) behind the `Ads`/`IAP` seams, analytics, crash reporting,
-   Play listing. (Decisions locked: Capacitor → Play first; F2P hybrid, no P2W. Needs from you: Play
-   Console $25, AdMob app/ad-unit IDs.)
-2. **Sprint 3 — Polish + store assets:** real soundtrack tracks (swap behind `startWorldTheme`), vector
-   icons (replace 🔒 emoji), app icon/screenshots/trailer → RC.
+**Push v0.13.0, then YOUR native gates + the device playtest.** First: `git push origin master` then
+`vercel --prod --yes` (both blocked from auto-run; run yourself). Sprint 2 (Native + Monetization) is
+**code-complete and web-verified**; the remaining work needs your accounts + Android toolchain (this build
+machine has neither, and disk was full):
+1. **Take it native (you):** follow `docs/release-android.md` — `npm install` (reconciles the lockfile +
+   installs the AdMob/RevenueCat/Firebase plugins) → create the Play/AdMob/RevenueCat/Firebase accounts →
+   `npx cap add/sync android` → set real ids in `config/monetization.config.ts` + `google-services.json` →
+   keystore + signed **AAB** → **internal-testing** upload. Store text + ASO are drafted in `docs/store/`.
+2. **Device playtest (highest gameplay priority, parallel):** automated tests prove every level loads + the
+   win fires, but **cannot confirm the 1★ route stays fair around the Phase-3 hazards** (rotating arms,
+   laser beams, route saws, capture-cost spikes). Play each touched level, confirm 1★ is reachable, and tune
+   `parTimeMs`/saw-`durationMs`/`pulseMs`/positions in the level files from notes (no code changes). Also
+   confirm rewarded/interstitial/Remove-Ads/restore + analytics(DebugView)/Crashlytics on device.
+3. **Sprint 3 — Polish + store assets:** real soundtrack tracks (swap behind `startWorldTheme`), vector
+   icons (replace 🔒 emoji), produce the actual app icon/feature-graphic/screenshots from the ASO plan → RC.
 Full audit + roadmap: `~/.claude/plans/warm-orbiting-map.md`.
 
 ## Important notes
