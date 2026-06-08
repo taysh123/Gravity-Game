@@ -35,4 +35,8 @@ export const RewardStore = {
     load()[key] = todayKey(now);
     persist();
   },
+  // Permanent one-time claims (collection / milestone rewards): presence = claimed.
+  claimedEver(key: string): boolean {
+    return key in load();
+  },
 };

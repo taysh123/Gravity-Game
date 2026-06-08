@@ -8,8 +8,9 @@ import { Button } from '../ui/Button';
 import { drawGlass } from '../ui/glass';
 import { fadeIn, fadeToScene } from '../utils/transitions';
 import { reducedMotionActive, safeAreaInsetsScaled } from '../utils/a11y';
-import { cosmeticsByCategory, type Cosmetic, type Category } from '../utils/cosmetics';
+import { cosmeticsByCategory, cosmeticById, COSMETICS, type Cosmetic, type Category } from '../utils/cosmetics';
 import { purchaseCost } from '../utils/cosmeticsLogic';
+import { claimCollectionRewards } from '../utils/Rewards';
 import { CosmeticStore } from '../utils/CosmeticStore';
 import { CurrencyStore } from '../utils/CurrencyStore';
 import { FragmentStore } from '../utils/FragmentStore';
@@ -68,6 +69,11 @@ export class CosmeticsScene extends Phaser.Scene {
     }).setOrigin(0.5).setLetterSpacing(3);
     this.add.text(cx, topY + 26, `${CurrencyStore.balance()} ${SD}    ${FragmentStore.balance()} ${FR}`, {
       fontFamily: THEME.FONT_BODY, fontSize: '15px', color: '#cfe0ff', fontStyle: '600',
+    }).setOrigin(0.5);
+    // Collection progress (retention): total cosmetics unlocked.
+    const unlocked = CosmeticStore.ownedIds().filter((id) => cosmeticById(id)).length;
+    this.add.text(cx, topY + 44, `${unlocked} / ${COSMETICS.length} unlocked`, {
+      fontFamily: THEME.FONT_BODY, fontSize: '11px', color: THEME.TEXT_MUTED,
     }).setOrigin(0.5);
 
     // Tabs.
@@ -186,7 +192,7 @@ export class CosmeticsScene extends Phaser.Scene {
         if (this.dragging) return;
         const result = CosmeticStore.buyOrEquip(c.id);
         if (result === 'cantAfford' || result === 'locked') this.cameras.main.shake(110, 0.004);
-        else { Analytics.track(cosmeticEquip(c.id)); this.scene.restart({ tab: this.tab }); }
+        else { Analytics.track(cosmeticEquip(c.id)); claimCollectionRewards(); this.scene.restart({ tab: this.tab }); }
       });
     }
     this.entrance(card, i);
@@ -288,7 +294,7 @@ export class CosmeticsScene extends Phaser.Scene {
       card.on('pointerup', async () => {
         if (this.dragging) return;
         const ok = await IAP.buyBundle(b.id);
-        if (ok) this.scene.restart({ tab: 'bundle' });
+        if (ok) { claimCollectionRewards(); this.scene.restart({ tab: 'bundle' }); }
         else this.cameras.main.shake(110, 0.004);
       });
     }

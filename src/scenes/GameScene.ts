@@ -39,6 +39,7 @@ import { levelStart, levelComplete, levelFail, retry as retryEvent, worldStart, 
 import { DailyStore } from '../utils/DailyStore';
 import { StatsStore } from '../utils/StatsStore';
 import { AchievementStore } from '../utils/AchievementStore';
+import { grantAchievementRewards, claimMilestoneRewards, claimCollectionRewards } from '../utils/Rewards';
 import type { AchievementDef } from '../utils/achievements';
 import { CurrencyStore } from '../utils/CurrencyStore';
 import { stardustForWin } from '../utils/currency';
@@ -916,6 +917,11 @@ export class GameScene extends Phaser.Scene {
     CurrencyStore.add(this.awardedStardust);
     // Achievements reflect this win (progress + daily streak recorded above).
     this.newAchievements = AchievementStore.syncAndGetNew(StatsStore.collectSnapshot());
+    // Retention rewards: achievements grant currency; star-milestones + completed
+    // collections grant one-time Fragment bonuses (all cosmetic economy).
+    grantAchievementRewards(this.newAchievements.map((a) => a.id));
+    claimMilestoneRewards(ProgressStore.totalStars());
+    claimCollectionRewards();
 
     const audio = this.getAudio();
     audio.stopHum();
