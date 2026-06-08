@@ -157,16 +157,18 @@ History lives in `docs/superpowers/plans/`. Summary:
 
 ## Current Content
 
-- **8 worlds, 64 levels** — 8 per world, `LEVELS[]` ordered by world so chapter ranges are contiguous:
-  - **World 1 — Foundations** (1-8): attractor + static walls; precision weaves + narrow channels.
-  - **World 2 — Currents** (9-16): gravity zones — updraft / crosswind / downdraft, opposing lanes.
-  - **World 3 — Clockwork** (17-24): moving platforms — closing gaps / sweeping bars / faster sync.
-  - **World 4 — Peril** (25-32): hazards + timed levels + moving saws + zone combos.
-  - **World 5 — Wells** (33-40): magnets — attract/repel wells, slaloms, gauntlets.
-  - **World 6 — Rifts** (41-48): **portals** — teleport across walls, sealed chambers, two-pair choices.
-  - **World 7 — Gates** (49-56): **one-way gates** — commit/sequencing, combined with prior mechanics.
-  - **World 8 — Convergence** (57-64): all-mechanic mastery levels; small goals + tight par (3★ = mastery).
-  - *Difficulty rebalanced; the harder curve + new mechanics await a device playtest for fairness.*
+- **8 worlds, 56 levels (8×7)** — `LEVELS[]` ordered by world so chapter ranges are contiguous. The whole
+  campaign was trimmed to its strongest levels (Phase 1 = W1-3, Phase 2 = W4-8) with toys-before-tests,
+  cut filler combine-stacks, and a fully rotated set of distinct boss archetypes:
+  - **World 1 — Foundations** (1-7): attractor + static walls; toy First-Pull/Comet/Constellation; BOSS THE COLLAPSE (descent set-piece).
+  - **World 2 — Currents** (8-14): gravity zones; toy Updraft-surf/Drifthome; signature THE EYE; BOSS THE MAELSTROM (chase).
+  - **World 3 — Clockwork** (15-21): moving platforms; toy Gearslip/Orrery; signature THE GEARWORKS; BOSS THE MACHINE (mechanic-turned).
+  - **World 4 — Peril** (22-28): hazards + timed; toy Sparkweave; signature THE FORGE; BOSS THE INFERNO (endurance, no clock).
+  - **World 5 — Wells** (29-35): magnets; toy Swingby; signature THE BINARY STAR; BOSS THE SINGULARITY (orbit).
+  - **World 6 — Rifts** (36-42): **portals**; toy Blink; signature HALL OF MIRRORS; BOSS THE BREACH (puzzle-boss, no clock).
+  - **World 7 — Gates** (43-49): **one-way gates**; toy One-Way Door; signature THE LOCKWORKS; BOSS THE VAULT (lock-and-key, no clock).
+  - **World 8 — Convergence** (50-56): all-mechanic synthesis/improvisation; signature THE CONFLUENCE; BOSS/FINALE HOMECOMING (the only timed boss).
+  - *Retired levels stay on disk (un-imported) as future "Expert" packs. Balance awaits a device playtest for fairness.*
 - **Progression structure:** sequential unlock (a level opens when the previous is ≥1★); world tally
   shown in the level-select. Every level has a `parTimeMs` and most have a `collectible`.
 - **Difficulty curve:** each world follows **teach → develop → twist → combine → master**; 1★ is always
