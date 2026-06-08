@@ -13,7 +13,13 @@ export const level33: LevelConfig = {
   movingPlatforms: [
     { x: 180, y: 400, width: 130, height: 16, to: { x: 70, y: 400 }, durationMs: 1400 }, // slides aside to open the centre
   ],
-  collectible: { x: 300, y: 300 }, // above the right, off-route
-  hint:      'Patience — wait for the opening',
+  hazards: [
+    // A pulsing laser across the right pocket — a *timed* opening, echoing the
+    // patience theme. Off-route from the 1-star climb; cross it on the dark beat to
+    // reach the gem. (World 3's debut of the beam.)
+    { x: 300, y: 340, width: 116, height: 12, pulseMs: 1900 },
+  ],
+  collectible: { x: 300, y: 262 }, // in the right pocket, above the timed beam
+  hint:      'Patience — wait for the opening (and time the beam for the gem)',
   parTimeMs: 17000,
 };

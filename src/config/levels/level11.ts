@@ -12,7 +12,7 @@ export const level11: LevelConfig = {
   gravityZones: [
     { x: 200, y: 360, width: 360, height: 220, dir: { x: 1, y: -0.25 }, strength: PHYSICS.GRAVITY_ZONE_STRENGTH * 0.5 },
   ],
-  collectible: { x: 320, y: 560 }, // gentle dip below home
+  collectible: { x: 55, y: 250 }, // upwind corner — drift back against the breeze to earn it
   hint:      'Let the breeze carry the star home',
   parTimeMs: 14000,
 };
