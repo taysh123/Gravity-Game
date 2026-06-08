@@ -9,6 +9,8 @@ import { reducedMotionActive, safeAreaInsetsScaled } from '../utils/a11y';
 import { COSMETICS } from '../utils/cosmetics';
 import { CosmeticStore } from '../utils/CosmeticStore';
 import { CurrencyStore } from '../utils/CurrencyStore';
+import { Analytics } from '../utils/Analytics';
+import { shopOpen, cosmeticEquip } from '../utils/analyticsEvents';
 
 const ROW_H = 58;
 const ROW_GAP = 10;
@@ -23,6 +25,7 @@ export class CosmeticsScene extends Phaser.Scene {
   }
 
   create(): void {
+    Analytics.track(shopOpen());
     const { width, height } = this.scale;
     const cx = width / 2;
     const sx = this.scale.displaySize.width / this.scale.gameSize.width;
@@ -92,6 +95,7 @@ export class CosmeticsScene extends Phaser.Scene {
           if (result === 'cantAfford') {
             this.cameras.main.shake(120, 0.004); // can't afford — small nudge
           } else {
+            Analytics.track(cosmeticEquip(c.id));
             this.scene.restart(); // refresh state (and the equipped ball updates next game)
           }
         });

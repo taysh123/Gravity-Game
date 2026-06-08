@@ -10,6 +10,10 @@ import { CosmeticsScene } from './scenes/CosmeticsScene';
 import { SettingsScene } from './scenes/SettingsScene';
 import { GameScene } from './scenes/GameScene';
 import { EndScene } from './scenes/EndScene';
+import { Crash } from './utils/Crash';
+
+// Crash reporting (Crashlytics on native; global error bridge everywhere).
+Crash.init();
 
 const game = new Phaser.Game({
   type: Phaser.AUTO,

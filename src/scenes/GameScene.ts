@@ -31,6 +31,9 @@ import { computeStars, type StarResult } from '../utils/scoring';
 import { ProgressStore } from '../utils/ProgressStore';
 import { GhostStore } from '../utils/GhostStore';
 import { downsamplePath } from '../utils/ghost';
+import { Analytics } from '../utils/Analytics';
+import { Crash } from '../utils/Crash';
+import { levelStart, levelComplete, levelFail, retry as retryEvent, worldStart, dailyComplete } from '../utils/analyticsEvents';
 import { DailyStore } from '../utils/DailyStore';
 import { StatsStore } from '../utils/StatsStore';
 import { AchievementStore } from '../utils/AchievementStore';
@@ -184,6 +187,13 @@ export class GameScene extends Phaser.Scene {
     if (!this.isDaily && this.worldTheme && isWorldStart(this.currentLevel)) {
       this.showWorldTitleCard();
     }
+    // Telemetry: level-entry funnel (campaign only; daily is tracked on completion).
+    if (!this.isDaily) {
+      const wid = worldOf(this.currentLevel).id;
+      Analytics.track(levelStart(this.currentLevel, wid));
+      if (isWorldStart(this.currentLevel)) Analytics.track(worldStart(wid));
+    }
+    Crash.log(`level_start ${this.isDaily ? 'daily' : this.currentLevel}`);
     // Per-world music bed (continuous across same-world restarts; boss = tense).
     const ambientAudio = this.getAudio();
     ambientAudio.resume();
@@ -471,7 +481,7 @@ export class GameScene extends Phaser.Scene {
     const remaining = this.timeLimitMs - (time - this.levelStartMs);
     if (remaining <= 0) {
       this.countdown.setText('0.0s').setColor(PHYSICS.COLOR_TIMER_WARN);
-      this.triggerDeath(); // time's up — fail
+      this.triggerDeath('timeout'); // time's up — fail
       return;
     }
     this.countdown.setText(fmtTime(remaining));
@@ -881,11 +891,13 @@ export class GameScene extends Phaser.Scene {
         gem: this.gemCollected,
         completed: true,
       });
+      Analytics.track(levelComplete(this.currentLevel, this.winResult.stars, this.winTimeMs));
     }
     // Award Stardust (soft currency) for the win — spent on cosmetics.
     this.awardedStardust = stardustForWin(this.winResult.stars, this.isDaily);
     if (this.isDaily) {
       this.dailyStreak = DailyStore.recordWin();
+      Analytics.track(dailyComplete(this.dailyStreak));
       this.awardedStardust += streakReward(this.dailyStreak); // milestone bonus
       // Record a structured daily result (leaderboard-ready; local for now).
       Leaderboard.submitDaily({
@@ -1101,16 +1113,17 @@ export class GameScene extends Phaser.Scene {
       by < oy - margin ||
       by > oy + PHYSICS.PLAY_HEIGHT + margin
     ) {
-      this.triggerDeath();
+      this.triggerDeath('oob');
     }
   }
 
   // Death: a clear-but-tasteful fail cue (red flash + puff + tone + haptic),
   // then restart the current level.
-  private triggerDeath(): void {
+  private triggerDeath(cause: 'hazard' | 'timeout' | 'oob' = 'hazard'): void {
     if (this.isDying) return;
     this.isDying = true;
     StatsStore.recordDeath();
+    Analytics.track(levelFail(this.isDaily ? 0 : this.currentLevel, cause));
     const audio = this.getAudio();
     audio.stopHum();
     audio.playFail();
@@ -1162,6 +1175,7 @@ export class GameScene extends Phaser.Scene {
 
   // Instant restart (keyboard R) - no death animation.
   private triggerRestart(): void {
+    Analytics.track(retryEvent(this.isDaily ? 0 : this.currentLevel));
     this.getAudio().stopHum();
     this.attractor?.destroy();
     this.attractor = null;

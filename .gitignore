@@ -7,8 +7,9 @@ dist/
 # Only the optimized assets/images/*.png are committed.
 assets/raw/
 
-# Ad-hoc dev screenshotting (not part of the build).
+# Ad-hoc dev screenshotting + verification (not part of the build).
 .shots/
 scripts/*.py
+scripts/*.png
 
 .vercel
