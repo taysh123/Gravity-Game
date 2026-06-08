@@ -19,6 +19,7 @@
     "@capacitor-firebase/crashlytics": "^8.3.0",
     "@capacitor/android": "^8.4.0",
     "@capacitor/core": "^8.4.0",
+    "@revenuecat/purchases-capacitor": "^13.1.5",
     "phaser": "^3.80.1"
   },
   "devDependencies": {

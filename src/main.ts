@@ -11,9 +11,12 @@ import { SettingsScene } from './scenes/SettingsScene';
 import { GameScene } from './scenes/GameScene';
 import { EndScene } from './scenes/EndScene';
 import { Crash } from './utils/Crash';
+import { IAP } from './utils/IAP';
 
 // Crash reporting (Crashlytics on native; global error bridge everywhere).
 Crash.init();
+// Configure RevenueCat + refresh the cached premium entitlement (native only).
+void IAP.initNative();
 
 const game = new Phaser.Game({
   type: Phaser.AUTO,
