@@ -15,9 +15,9 @@ export interface RecordInput {
   completed: boolean;
 }
 
-// v7: Phase-1 early-game WOW redesign — Worlds 1-3 trimmed 10->7 (renumbering
-// everything after), so reset progress cleanly. (v6 = Worlds 4-8 to 10 each.)
-const KEY = 'gravity-flow:progress:v7';
+// v8: Phase-2 back-half redesign — Worlds 4-8 trimmed 10->7 each (renumbering
+// everything from level 22 on), so reset progress cleanly. (v7 = Phase-1 W1-3 trim.)
+const KEY = 'gravity-flow:progress:v8';
 const EMPTY: LevelProgress = { stars: 0, bestTimeMs: 0, gem: false };
 
 let cache: Record<number, LevelProgress> | null = null;

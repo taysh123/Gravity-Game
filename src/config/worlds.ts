@@ -12,14 +12,14 @@ export interface World {
 }
 
 export const WORLDS: World[] = [
-  // Phase 1: Worlds 1-3 trimmed to 7 each (WOW redesign); Worlds 4-8 still 10 each
-  // (pending Phase-2 trim). Total 71. Ranges stay contiguous.
+  // Phase 1 + Phase 2: all 8 worlds trimmed to 7 each (WOW redesign). Total 56 (8x7).
+  // Ranges stay contiguous.
   { id: 1, name: 'FOUNDATIONS', theme: PHYSICS.COLOR_GOAL, from: 1, to: 7 },
   { id: 2, name: 'CURRENTS', theme: PHYSICS.COLOR_ATTRACTOR_PULSE, from: 8, to: 14 },
   { id: 3, name: 'CLOCKWORK', theme: PHYSICS.COLOR_ATTRACTOR, from: 15, to: 21 },
-  { id: 4, name: 'PERIL', theme: PHYSICS.COLOR_DEATH, from: 22, to: 31 },
-  { id: 5, name: 'WELLS', theme: PHYSICS.COLOR_MAGNET_ATTRACT, from: 32, to: 41 },
-  { id: 6, name: 'RIFTS', theme: PHYSICS.COLOR_PORTAL_A, from: 42, to: 51 },
-  { id: 7, name: 'GATES', theme: PHYSICS.COLOR_GATE, from: 52, to: 61 },
-  { id: 8, name: 'CONVERGENCE', theme: PHYSICS.COLOR_BALL_GLOW, from: 62, to: 71 },
+  { id: 4, name: 'PERIL', theme: PHYSICS.COLOR_DEATH, from: 22, to: 28 },
+  { id: 5, name: 'WELLS', theme: PHYSICS.COLOR_MAGNET_ATTRACT, from: 29, to: 35 },
+  { id: 6, name: 'RIFTS', theme: PHYSICS.COLOR_PORTAL_A, from: 36, to: 42 },
+  { id: 7, name: 'GATES', theme: PHYSICS.COLOR_GATE, from: 43, to: 49 },
+  { id: 8, name: 'CONVERGENCE', theme: PHYSICS.COLOR_BALL_GLOW, from: 50, to: 56 },
 ];
