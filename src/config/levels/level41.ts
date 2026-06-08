@@ -1,17 +1,19 @@
 import type { LevelConfig } from '../../types';
 
-// World 6 — Rifts · teach: a solid wall seals the arena. The only way up is the
-// rift — pull the ball into the lower mouth and it reappears at the upper one.
+// World 6 — Rifts · TOY opener "Blink": the playful first taste of a rift. A tall
+// pillar splits the arena; dive into the left mouth and *blink* — you reappear on
+// the far side, right by the goal. The swoosh across is the wonder. Forgiving (you
+// can even loop over the pillar), big goal, no hazards. Aha: "I appeared across!"
 export const level41: LevelConfig = {
-  ball:      { x: 180, y: 670 },
-  goal:      { x: 180, y: 120, radius: 44 },
+  ball:      { x: 80, y: 660 },
+  goal:      { x: 300, y: 180, radius: 44 },
   obstacles: [
-    { x: 180, y: 400, width: 360, height: 18 }, // full-width wall — no way around
+    { x: 180, y: 430, width: 16, height: 360 }, // central pillar — the rift skips it
   ],
   portals: [
-    { a: { x: 180, y: 530 }, b: { x: 180, y: 270 } }, // below the wall <-> above it
+    { a: { x: 90, y: 430 }, b: { x: 300, y: 360 } }, // left mid <-> right, by the goal
   ],
-  collectible: { x: 300, y: 600 }, // off to the side, below
-  hint:      'Enter the rift, appear across',
+  collectible: { x: 90, y: 250 }, // upper-left, off the blink
+  hint:      'Dive into the rift — blink across to the far side',
   parTimeMs: 12000,
 };
