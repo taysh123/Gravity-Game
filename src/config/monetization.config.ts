@@ -18,3 +18,27 @@ export const REVENUECAT = {
   removeAdsProductId: 'remove_ads',
   premiumEntitlementId: 'premium',
 } as const;
+
+// Premium bundles (IAP). `grants` = cosmetic ids unlocked; `premium` = also grants
+// Remove-Ads. `productId` is the Play Console / RevenueCat product. Purchase logic
+// is in utils/IAP.buyBundle (web stub grants); the store surfaces these. No P2W —
+// everything granted is purely cosmetic (plus the optional Remove-Ads convenience).
+export interface BundleDef {
+  id: string;
+  name: string;
+  productId: string;
+  priceLabel: string; // display only — real price comes from the store at runtime
+  grants: string[];
+  premium: boolean;
+  blurb: string;
+}
+
+export const BUNDLES: BundleDef[] = [
+  { id: 'starter', name: 'Starter Pack', productId: 'starter_pack', priceLabel: '$2.99', premium: true, grants: ['trail_galaxy'], blurb: 'Remove Ads + the exclusive Galaxy Trail' },
+  { id: 'premium_collection', name: 'Premium Collection', productId: 'premium_collection_pack', priceLabel: '$4.99', premium: false, grants: ['cosmic_blackhole', 'arrival_bolt'], blurb: 'Black Hole skin + Lightning Strike arrival' },
+  { id: 'founders', name: "Founder's Pack", productId: 'founders_pack', priceLabel: '$7.99', premium: true, grants: ['mythic_phoenix', 'mythic_dragon'], blurb: 'Remove Ads + two exclusive Mythic skins: Phoenix Core & Dragon Heart' },
+];
+
+export function bundleById(id: string): BundleDef | undefined {
+  return BUNDLES.find((b) => b.id === id);
+}

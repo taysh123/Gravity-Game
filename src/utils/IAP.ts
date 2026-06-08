@@ -5,9 +5,10 @@
 // entitlement to localStorage (refreshed on init / purchase / restore), so callers
 // (e.g. Ads.maybeInterstitial) are unchanged.
 import { Capacitor } from '@capacitor/core';
-import { REVENUECAT } from '../config/monetization.config';
+import { REVENUECAT, bundleById } from '../config/monetization.config';
 import { Analytics } from './Analytics';
 import { purchase as purchaseEvent, restore as restoreEvent } from './analyticsEvents';
+import { CosmeticStore } from './CosmeticStore';
 import type { PurchasesPlugin } from './native/revenueCat';
 
 const PREMIUM_KEY = 'gravity-flow:premium';
@@ -81,6 +82,32 @@ export const IAP = {
       return ok;
     } catch {
       return false; // user cancelled or purchase failed
+    }
+  },
+
+  // Buy a premium bundle: grants its cosmetics (+ premium if included). Web stub
+  // grants immediately. Returns true on success. Cosmetic-only — no pay-to-win.
+  async buyBundle(id: string): Promise<boolean> {
+    const bundle = bundleById(id);
+    if (!bundle) return false;
+    Analytics.track(purchaseEvent(bundle.productId));
+    if (!Capacitor.isNativePlatform()) {
+      CosmeticStore.grant(bundle.grants);
+      if (bundle.premium) setCachedPremium(true);
+      return true;
+    }
+    const p = await ensureRC();
+    if (!p) return false;
+    try {
+      const offerings = await p.getOfferings();
+      const pkg = offerings.current?.availablePackages.find((a) => a.product.identifier === bundle.productId);
+      if (!pkg) return false;
+      const result = await p.purchasePackage({ aPackage: pkg });
+      CosmeticStore.grant(bundle.grants); // entitlement also gates re-grant on restore
+      if (bundle.premium) setCachedPremium(hasEntitlement(result) || true);
+      return true;
+    } catch {
+      return false;
     }
   },
 
