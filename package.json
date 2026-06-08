@@ -9,12 +9,17 @@
     "preview": "vite preview",
     "test": "vitest run",
     "optimize:assets": "node scripts/optimize-logos.mjs",
-    "fonts:fetch": "node scripts/fetch-fonts.mjs"
+    "fonts:fetch": "node scripts/fetch-fonts.mjs",
+    "cap:sync": "npm run build && cap sync",
+    "cap:open:android": "cap open android"
   },
   "dependencies": {
+    "@capacitor/android": "^8.4.0",
+    "@capacitor/core": "^8.4.0",
     "phaser": "^3.80.1"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.4.0",
     "sharp": "^0.34.5",
     "typescript": "^5.4.5",
     "vite": "^5.2.11",
