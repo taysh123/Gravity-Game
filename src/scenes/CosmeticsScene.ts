@@ -6,7 +6,8 @@ import { Button } from '../ui/Button';
 import { drawGlass } from '../ui/glass';
 import { fadeIn, fadeToScene } from '../utils/transitions';
 import { reducedMotionActive, safeAreaInsetsScaled } from '../utils/a11y';
-import { COSMETICS } from '../utils/cosmetics';
+import { cosmeticsByCategory } from '../utils/cosmetics';
+import { purchaseCost } from '../utils/cosmeticsLogic';
 import { CosmeticStore } from '../utils/CosmeticStore';
 import { CurrencyStore } from '../utils/CurrencyStore';
 import { Analytics } from '../utils/Analytics';
@@ -51,9 +52,10 @@ export class CosmeticsScene extends Phaser.Scene {
 
     const rowW = Math.min(width * 0.88, 320);
     let y = Math.max(height * 0.18, insets.top + 92) + ROW_H / 2;
-    const equippedId = CosmeticStore.equippedId();
+    const equippedId = CosmeticStore.equippedId('skin');
 
-    COSMETICS.forEach((c, i) => {
+    // Interim shop (skins only) until the full multi-section redesign (M5).
+    cosmeticsByCategory('skin').forEach((c, i) => {
       const owned = CosmeticStore.isOwned(c.id);
       const equipped = equippedId === c.id;
 
@@ -66,9 +68,9 @@ export class CosmeticsScene extends Phaser.Scene {
 
       // Swatch — the actual ball theme (fill + glow ring).
       const sw = this.add.graphics();
-      sw.lineStyle(3, c.glow, 0.6);
+      sw.lineStyle(3, c.glow ?? 0xffffff, 0.6);
       sw.strokeCircle(-rowW / 2 + 34, 0, 17);
-      sw.fillStyle(c.fill, 1);
+      sw.fillStyle(c.fill ?? 0xffffff, 1);
       sw.fillCircle(-rowW / 2 + 34, 0, 13);
 
       const name = this.add
@@ -77,8 +79,10 @@ export class CosmeticsScene extends Phaser.Scene {
         })
         .setOrigin(0, 0.5);
 
-      const tagStr = equipped ? 'EQUIPPED' : owned ? 'EQUIP' : `${c.cost} ✦`;
-      const tagColor = equipped ? '#ffd166' : owned ? THEME.TEXT_PRIMARY : '#9ad0ff';
+      const price = purchaseCost(c);
+      const priceStr = price ? `${price.cost} ${price.currency === 'fragments' ? '◆' : '✦'}` : 'LOCKED';
+      const tagStr = equipped ? 'EQUIPPED' : owned ? 'EQUIP' : priceStr;
+      const tagColor = equipped ? '#ffd166' : owned ? THEME.TEXT_PRIMARY : price?.currency === 'fragments' ? '#c9a8ff' : '#9ad0ff';
       const tag = this.add
         .text(rowW / 2 - 18, 0, tagStr, {
           fontFamily: THEME.FONT_BODY, fontSize: '14px', color: tagColor, fontStyle: '600',
@@ -92,8 +96,8 @@ export class CosmeticsScene extends Phaser.Scene {
         if (row.input) row.input.cursor = 'pointer';
         row.on('pointerup', () => {
           const result = CosmeticStore.buyOrEquip(c.id);
-          if (result === 'cantAfford') {
-            this.cameras.main.shake(120, 0.004); // can't afford — small nudge
+          if (result === 'cantAfford' || result === 'locked') {
+            this.cameras.main.shake(120, 0.004); // can't afford / locked — small nudge
           } else {
             Analytics.track(cosmeticEquip(c.id));
             this.scene.restart(); // refresh state (and the equipped ball updates next game)

@@ -13,9 +13,9 @@ export class Ball {
   private readonly glow: number;
 
   constructor(scene: Phaser.Scene, x: number, y: number, startVelocity: Vec2 = { x: 0, y: 0 }) {
-    const skin = CosmeticStore.equipped();
-    this.fill = skin.fill;
-    this.glow = skin.glow;
+    const skin = CosmeticStore.equipped('skin');
+    this.fill = skin.fill ?? PHYSICS.COLOR_BALL;
+    this.glow = skin.glow ?? PHYSICS.COLOR_BALL_GLOW;
     this.body = scene.matter.add.circle(x, y, PHYSICS.BALL_RADIUS, {
       restitution: PHYSICS.BALL_RESTITUTION,
       friction: PHYSICS.BALL_FRICTION,
