@@ -240,7 +240,8 @@ export class GameScene extends Phaser.Scene {
 
     this.hazards = (config.hazards ?? []).map((hz) => {
       const h = new Hazard(this, ox + hz.x, oy + hz.y, hz);
-      if (hz.to && hz.durationMs) h.startMoving(this, ox + hz.to.x, oy + hz.to.y, hz.durationMs);
+      if (hz.pivot && hz.durationMs) h.startOrbiting(this, ox + hz.pivot.x, oy + hz.pivot.y, hz.durationMs);
+      else if (hz.to && hz.durationMs) h.startMoving(this, ox + hz.to.x, oy + hz.to.y, hz.durationMs);
       return h;
     });
 
@@ -672,7 +673,7 @@ export class GameScene extends Phaser.Scene {
     this.magnets.forEach((m) => m.pulse(time / 600));
     this.portals.forEach((p) => p.pulse(time / 400));
     this.gates.forEach((g) => g.pulse(time / 300));
-    this.hazards.forEach((h) => h.pulse(time / 300));
+    this.hazards.forEach((h) => h.pulse(time));
     this.collectible?.pulse(time / 300);
     this.drawPullLine();
     this.applyAttractorForce();

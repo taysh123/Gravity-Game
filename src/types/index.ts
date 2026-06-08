@@ -22,6 +22,9 @@ export interface GravityZoneConfig {
 }
 
 // A deadly object — touching it fails the level. Circle (radius) or rect (width/height).
+// Motion is optional and mutually-exclusive: `to` = linear sweep, `pivot` = rotating
+// arm (orbits the pivot, reusing durationMs as the revolution time). `pulseMs` turns
+// a rect into a telegraphed laser beam (deadly only part of each cycle).
 export interface HazardConfig {
   x: number;       // play-area center x
   y: number;       // play-area center y
@@ -29,7 +32,10 @@ export interface HazardConfig {
   width?: number;  // rect hazard
   height?: number;
   to?: Vec2;       // optional: hazard slides between (x,y) and `to` (yoyo)
-  durationMs?: number;
+  durationMs?: number; // travel time (linear sweep) OR one revolution (rotating arm)
+  pivot?: Vec2;    // optional: rotating arm — the hazard orbits this point (with durationMs)
+  pulseMs?: number;  // optional: laser beam — full on+off cycle length (deadly part = duty)
+  phaseMs?: number;  // optional: beam cycle offset (choreographed alternation), default 0
 }
 
 // A static force well — an always-on point source reusing the inverse-square

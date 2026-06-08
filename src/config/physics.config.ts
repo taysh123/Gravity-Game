@@ -55,6 +55,14 @@ export const PHYSICS = {
   DEATH_PUFF_COUNT: 16,          // Ball "puff" particles on death.
   COLOR_DEATH: 0xff5a6a,         // Fail red — vignette + puff + ball tint.
 
+  // Hazards — "alive" danger archetypes (P3). Rotating arm orbits a pivot; laser
+  // beam toggles deadly on a telegraphed rhythm.
+  HAZARD_ARM_ALPHA: 0.3,         // faint arm drawn pivot->saw on a rotating hazard.
+  BEAM_DUTY: 0.45,               // fraction of each pulse the beam is firing (deadly).
+  BEAM_CHARGE_FRAC: 0.25,        // last fraction before firing shows a charging telegraph.
+  BEAM_ALPHA_ACTIVE: 0.85,       // beam opacity while firing (deadly).
+  BEAM_ALPHA_IDLE: 0.12,         // dim "rail" opacity while safe.
+
   // Gravity zones (directional force fields). Strength ≈ a moderate attractor pull.
   GRAVITY_ZONE_STRENGTH: 0.0006, // Reference per-frame force for authoring level zones.
   COLOR_ZONE_UP: 0x00d4ff,       // cyan — updraft / upward push
