@@ -37,8 +37,8 @@
   title cards**, and the hook **"Bring the lost star home."**
 - **Quality:** `tsc` clean · 67 tests pass · build clean · all 56 levels load no console errors
   (`scripts/verify_p3.py`: 1-56 load + completable, rotating arm orbits + laser beam toggles in-engine).
-- **Git/GitHub:** branch `master`. **Local is ahead of `origin` by ~13 commits (v0.12.0, Phases 2+3)** —
-  push pending (run `git push origin master`, then `vercel --prod --yes`). origin = https://github.com/taysh123/Gravity-Game.git.
+- **Git/GitHub:** branch `master`. **Local is ahead of `origin` by 7 commits (v0.12.0, Phase 3)** — Phase 2
+  is already on origin; push pending (run `git push origin master`, then `vercel --prod --yes`). origin = https://github.com/taysh123/Gravity-Game.git.
 
 ## Last completed sprint
 **Phase 3 — Challenge & Excitement Pass (v0.12.0).** Playtest verdict was "improved but too empty/safe/
@@ -113,8 +113,8 @@ Full audit + roadmap: `~/.claude/plans/warm-orbiting-map.md`.
   (`scripts/verify_p2.py`) confirm every level loads clean and is *physically solvable*, but can't
   reproduce finger input or judge *fun/fairness*. Playtest the toy openers + re-archetyped bosses before
   Sprint 2; tune constants in the level files (no code changes needed).
-- **GitHub:** `origin` = https://github.com/taysh123/Gravity-Game.git. **`master` is ahead by ~13 unpushed
-  commits** (v0.12.0, Phases 2+3) — push/deploy are blocked from auto-run, so run them yourself.
+- **GitHub:** `origin` = https://github.com/taysh123/Gravity-Game.git. **`master` is ahead by 7 unpushed
+  commits** (v0.12.0, Phase 3; Phase 2 already pushed) — push/deploy are blocked from auto-run, run yourself.
 - Architecture rule: **one entity + one optional `LevelConfig` field per mechanic; no managers.**
 - Verify in-browser (`npm run dev` + Playwright `--disable-gpu --use-gl=swiftshader`) before "done".
 
