@@ -13,7 +13,10 @@ export const level87: LevelConfig = {
   portals: [
     { a: { x: 180, y: 300 }, b: { x: 300, y: 210 } }, // mouth above the repeller -> by the goal
   ],
+  hazards: [
+    { x: 300, y: 175, width: 80, height: 12, pulseMs: 1500 }, // a beam guards the landing — time the fused launch
+  ],
   collectible: { x: 70, y: 250 }, // off-route, far left
-  hint:      'Let the push throw you into the rift',
-  parTimeMs: 17000,
+  hint:      'Let the push throw you into the rift — then time the beam to home',
+  parTimeMs: 15000,
 };

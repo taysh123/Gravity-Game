@@ -16,7 +16,11 @@ export const level88: LevelConfig = {
   portals: [
     { a: { x: 310, y: 560 }, b: { x: 180, y: 250 } }, // right route: rift to near the goal
   ],
+  hazards: [
+    { x: 30,  y: 250, radius: 16, to: { x: 130, y: 250 }, durationMs: 1100 }, // left route: a saw in the lift
+    { x: 250, y: 600, radius: 16, to: { x: 350, y: 600 }, durationMs: 1100 }, // right route: a saw guarding the rift mouth
+  ],
   collectible: { x: 50, y: 200 }, // top of the updraft (left-route reward)
-  hint:      'More than one way up — pick yours',
-  parTimeMs: 17000,
+  hint:      'More than one way up — and each way bites. Pick yours',
+  parTimeMs: 15000,
 };

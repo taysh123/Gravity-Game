@@ -14,7 +14,10 @@ export const level58: LevelConfig = {
   portals: [
     { a: { x: 90, y: 560 }, b: { x: 300, y: 300 } },
   ],
+  hazards: [
+    { x: 300, y: 230, radius: 18, to: { x: 220, y: 230 }, durationMs: 1100 }, // a saw on the climb after the rift
+  ],
   collectible: { x: 90, y: 300 }, // off-route, upper-left
-  hint:      'Rift past the push to the goal',
+  hint:      'Rift past the push — then time the saw to the goal',
   parTimeMs: 17000,
 };

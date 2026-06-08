@@ -17,8 +17,13 @@ export const level89: LevelConfig = {
   portals: [
     { a: { x: 180, y: 420 }, b: { x: 180, y: 200 } }, // the confluence -> near the goal
   ],
+  hazards: [
+    // A spinning arm guards the final rise after the confluence rift — the finale
+    // signature's memorable moment of motion. Emerge, read the spin, slip home.
+    { x: 180, y: 150, radius: 16, pivot: { x: 180, y: 205 }, durationMs: 2600 },
+  ],
   collectible: { x: 300, y: 430 }, // far edge of the right current, off-route
   title:     'THE CONFLUENCE',
-  hint:      'Where the currents meet, the rift waits',
+  hint:      'Where the currents meet the rift waits — then time the spinning arm home',
   parTimeMs: 18000,
 };
