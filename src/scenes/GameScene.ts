@@ -33,6 +33,8 @@ import { GhostStore } from '../utils/GhostStore';
 import { downsamplePath } from '../utils/ghost';
 import { Analytics } from '../utils/Analytics';
 import { Crash } from '../utils/Crash';
+import { CosmeticStore } from '../utils/CosmeticStore';
+import type { ArrivalStyle } from '../utils/cosmetics';
 import { levelStart, levelComplete, levelFail, retry as retryEvent, worldStart, dailyComplete } from '../utils/analyticsEvents';
 import { DailyStore } from '../utils/DailyStore';
 import { StatsStore } from '../utils/StatsStore';
@@ -926,8 +928,9 @@ export class GameScene extends Phaser.Scene {
     this.attractor = null;
     this.matter.world.pause();
     this.drawConstellation();
-    this.emitGoalBurst();
-    this.winFlash();
+    const arrival = CosmeticStore.equipped('arrival').arrival;
+    this.emitGoalBurst(arrival);
+    this.winFlash(arrival?.flash);
     // Camera punch — a small zoom kick for impact (bigger for a boss).
     const punch = this.isBoss ? 1.06 : 1.035;
     this.tweens.add({ targets: this.cameras.main, zoom: punch, duration: 130, yoyo: true, ease: 'Quad.easeOut' });
@@ -1064,12 +1067,12 @@ export class GameScene extends Phaser.Scene {
   }
 
   // Soft "absorb" flash at the goal when the ball is captured.
-  private winFlash(): void {
+  private winFlash(flashColor: number = 0xc9ffd6): void {
     const size = this.goal.radius * 4;
     const flash = this.add
       .image(this.goal.x, this.goal.y, 'glow')
       .setBlendMode(Phaser.BlendModes.ADD)
-      .setTint(0xc9ffd6)
+      .setTint(flashColor)
       .setDepth(40)
       .setDisplaySize(size, size)
       .setAlpha(0.9);
@@ -1084,20 +1087,36 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  // One-shot particle burst at the goal. Auto-destroys after the burst so
-  // emitters never accumulate across the scene's lifetime.
-  private emitGoalBurst(): void {
-    const emitter = this.add.particles(this.goal.x, this.goal.y, 'spark', {
-      speed: { min: 40, max: 150 },
-      lifespan: 600,
-      scale: { start: 0.9, end: 0 },
-      alpha: { start: 1, end: 0 },
-      tint: PHYSICS.COLOR_PARTICLE,
-      blendMode: 'ADD',
-      emitting: false,
-    });
-    emitter.explode(PHYSICS.PARTICLE_COUNT);
-    this.time.delayedCall(700, () => emitter.destroy());
+  // One-shot particle burst at the goal, shaped by the equipped Arrival cosmetic
+  // (pattern + colors + count). Auto-destroys so emitters never accumulate.
+  private emitGoalBurst(arrival?: ArrivalStyle): void {
+    const a: ArrivalStyle = arrival ?? {
+      particle: PHYSICS.COLOR_PARTICLE, flash: 0xc9ffd6, count: PHYSICS.PARTICLE_COUNT, pattern: 'burst',
+    };
+    const count = Math.min(a.count, 44); // stay under the <50-particle ceiling
+    const common = { alpha: { start: 1, end: 0 }, tint: a.particle, blendMode: 'ADD' as const, emitting: false };
+    let cfg: Phaser.Types.GameObjects.Particles.ParticleEmitterConfig;
+    switch (a.pattern) {
+      case 'implode': // Portal Collapse — particles spawn on a ring and converge inward
+        cfg = { ...common, lifespan: 520, scale: { start: 0.85, end: 0 },
+          emitZone: { type: 'edge', source: new Phaser.Geom.Circle(0, 0, 46), quantity: count },
+          moveToX: this.goal.x, moveToY: this.goal.y };
+        break;
+      case 'nova': // big fast explosion
+        cfg = { ...common, speed: { min: 90, max: 280 }, lifespan: 720, scale: { start: 1.1, end: 0 } };
+        break;
+      case 'bolt': // Lightning Strike — fast, mostly-vertical streaks
+        cfg = { ...common, speed: { min: 130, max: 330 }, lifespan: 380, angle: { min: 250, max: 290 }, scale: { start: 0.7, end: 0 } };
+        break;
+      case 'bloom': // Cosmic Bloom — slow, large, lingering flower
+        cfg = { ...common, speed: { min: 20, max: 95 }, lifespan: 900, scale: { start: 1.25, end: 0 }, alpha: { start: 0.9, end: 0 } };
+        break;
+      default: // burst
+        cfg = { ...common, speed: { min: 40, max: 150 }, lifespan: 600, scale: { start: 0.9, end: 0 } };
+    }
+    const emitter = this.add.particles(this.goal.x, this.goal.y, 'spark', cfg);
+    emitter.explode(count);
+    this.time.delayedCall(950, () => emitter.destroy());
   }
 
   private checkDeath(): void {
