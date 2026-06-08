@@ -14,8 +14,12 @@ import { CosmeticStore } from '../utils/CosmeticStore';
 import { CurrencyStore } from '../utils/CurrencyStore';
 import { FragmentStore } from '../utils/FragmentStore';
 import { IAP } from '../utils/IAP';
+import { Ads } from '../utils/Ads';
+import { RewardStore } from '../utils/RewardStore';
 import { Analytics } from '../utils/Analytics';
-import { shopOpen, cosmeticEquip } from '../utils/analyticsEvents';
+import { shopOpen, cosmeticEquip, fragmentEarned } from '../utils/analyticsEvents';
+
+const FREE_FRAGMENTS = 5; // daily rewarded grant
 
 type Tab = 'skin' | 'trail' | 'arrival' | 'bundle';
 const TABS: { key: Tab; label: string }[] = [
@@ -94,7 +98,7 @@ export class CosmeticsScene extends Phaser.Scene {
 
     const listC = this.add.container(cx, contentTop);
     const cards = this.tab === 'bundle'
-      ? [this.removeAdsCard(rowW, 0), ...BUNDLES.map((b, i) => this.bundleCard(b, rowW, i + 1))]
+      ? [this.freeFragmentsCard(rowW, 0), this.removeAdsCard(rowW, 1), ...BUNDLES.map((b, i) => this.bundleCard(b, rowW, i + 2))]
       : cosmeticsByCategory(this.tab as Category).map((c, i) => this.itemCard(c, rowW, i));
     let yy = CARD_H / 2;
     cards.forEach((card) => { card.y = yy; listC.add(card); yy += card.height + CARD_GAP; });
@@ -183,6 +187,42 @@ export class CosmeticsScene extends Phaser.Scene {
         const result = CosmeticStore.buyOrEquip(c.id);
         if (result === 'cantAfford' || result === 'locked') this.cameras.main.shake(110, 0.004);
         else { Analytics.track(cosmeticEquip(c.id)); this.scene.restart({ tab: this.tab }); }
+      });
+    }
+    this.entrance(card, i);
+    return card;
+  }
+
+  // Free Fragments — an optional, daily-capped rewarded ad (never required).
+  private freeFragmentsCard(w: number, i: number): Phaser.GameObjects.Container {
+    const claimed = RewardStore.claimedToday('free_fragments');
+    const h = CARD_H;
+    const bg = this.add.graphics();
+    drawGlass(bg, w, h, THEME.RADIUS_SM);
+    bg.lineStyle(2, claimed ? 0x8a8f98 : 0xc9a8ff, 0.5);
+    bg.strokeRoundedRect(-w / 2, -h / 2, w, h, THEME.RADIUS_SM);
+    const name = this.add.text(-w / 2 + 18, -9, 'Free Fragments', {
+      fontFamily: THEME.FONT_DISPLAY, fontSize: '15px', color: FRAGMENT, fontStyle: '700',
+    }).setOrigin(0, 0.5);
+    const blurb = this.add.text(-w / 2 + 18, 11, claimed ? 'Claimed — come back tomorrow' : 'Watch a short ad (optional)', {
+      fontFamily: THEME.FONT_BODY, fontSize: '11px', color: THEME.TEXT_MUTED,
+    }).setOrigin(0, 0.5);
+    const tag = this.add.text(w / 2 - 16, 0, claimed ? 'DONE' : `▶ +${FREE_FRAGMENTS} ◆`, {
+      fontFamily: THEME.FONT_BODY, fontSize: '13px', color: claimed ? THEME.TEXT_MUTED : '#7affb0', fontStyle: '700',
+    }).setOrigin(1, 0.5);
+    const card = this.add.container(0, 0, [bg, name, blurb, tag]);
+    card.setSize(w, h);
+    if (!claimed) {
+      card.setInteractive(new Phaser.Geom.Rectangle(-w / 2, -h / 2, w, h), Phaser.Geom.Rectangle.Contains);
+      card.on('pointerup', async () => {
+        if (this.dragging) return;
+        const earned = await Ads.showRewarded();
+        if (earned) {
+          FragmentStore.add(FREE_FRAGMENTS);
+          RewardStore.claim('free_fragments');
+          Analytics.track(fragmentEarned(FREE_FRAGMENTS, 'rewarded'));
+          this.scene.restart({ tab: 'bundle' });
+        }
       });
     }
     this.entrance(card, i);

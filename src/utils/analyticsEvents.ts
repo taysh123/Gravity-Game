@@ -45,3 +45,9 @@ export const restore = (): AnalyticsEvent => ({ name: 'restore', params: {} });
 export const rewardedShown = (): AnalyticsEvent => ({ name: 'rewarded_shown', params: {} });
 export const rewardedEarned = (): AnalyticsEvent => ({ name: 'rewarded_earned', params: {} });
 export const interstitialShown = (): AnalyticsEvent => ({ name: 'interstitial_shown', params: {} });
+
+// --- Rewarded loops -------------------------------------------------------
+export const fragmentEarned = (amount: number, source: string): AnalyticsEvent => ({ name: 'fragment_earned', params: sanitizeParams({ amount, source }) });
+export const hintUsed = (level: number): AnalyticsEvent => ({ name: 'hint_used', params: { level } });
+export const rewardDoubleStardust = (amount: number): AnalyticsEvent => ({ name: 'reward_double_stardust', params: { amount } });
+export const collectionComplete = (collection: string): AnalyticsEvent => ({ name: 'collection_complete', params: sanitizeParams({ collection }) });

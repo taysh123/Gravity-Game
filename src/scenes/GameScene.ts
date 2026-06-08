@@ -35,7 +35,7 @@ import { Analytics } from '../utils/Analytics';
 import { Crash } from '../utils/Crash';
 import { CosmeticStore } from '../utils/CosmeticStore';
 import type { ArrivalStyle } from '../utils/cosmetics';
-import { levelStart, levelComplete, levelFail, retry as retryEvent, worldStart, dailyComplete } from '../utils/analyticsEvents';
+import { levelStart, levelComplete, levelFail, retry as retryEvent, worldStart, dailyComplete, rewardDoubleStardust } from '../utils/analyticsEvents';
 import { DailyStore } from '../utils/DailyStore';
 import { StatsStore } from '../utils/StatsStore';
 import { AchievementStore } from '../utils/AchievementStore';
@@ -97,6 +97,8 @@ export class GameScene extends Phaser.Scene {
   private ghostLastSampleMs = 0;
   private newAchievements: AchievementDef[] = [];
   private awardedStardust = 0;
+  private advanceTimer?: Phaser.Time.TimerEvent; // post-win auto-advance (cancellable by the 2x offer)
+  private advanceConsumed = false;
   private isDaily = false; // launched from the Daily Challenge
   private dailyStreak = 0; // streak after winning today's daily
   private dailyIndex = 0; // which curated daily level
@@ -138,6 +140,7 @@ export class GameScene extends Phaser.Scene {
     this.dailyModifier = data?.dailyModifier ?? 'none';
     this.isWon = false;
     this.isDying = false;
+    this.advanceConsumed = false;
 
     const config = this.isDaily
       ? DAILY_LEVELS[this.dailyIndex] ?? DAILY_LEVELS[0]
@@ -949,19 +952,27 @@ export class GameScene extends Phaser.Scene {
       onComplete: () => this.showWinOverlay(),
     });
 
+    // Campaign wins linger a little so the optional 2x-Stardust offer is tappable;
+    // the daily returns to the menu snappily.
+    this.advanceTimer = this.time.delayedCall(this.isDaily ? 1550 : 2800, () => this.advanceAfterWin());
+  }
+
+  // Advance after a win (next level / end / menu). Extracted so the optional
+  // "2x Stardust" offer can cancel the auto-advance, run the ad, then advance.
+  private advanceAfterWin(): void {
+    if (this.advanceConsumed) return;
+    this.advanceConsumed = true;
     const nextLevel = this.currentLevel + 1;
-    this.time.delayedCall(1550, () => {
-      if (this.isDaily) {
-        this.getAudio().stopWorldTheme();
-        this.scene.start('MainMenuScene'); // one daily a day — back to the menu
-      } else if (nextLevel > LEVELS.length) {
-        this.getAudio().stopWorldTheme();
-        this.scene.start('EndScene');
-      } else {
-        void Ads.maybeInterstitial(); // frequency-capped; no-op on web / for premium
-        this.scene.restart({ level: nextLevel }); // startWorldTheme keeps same-world music continuous
-      }
-    });
+    if (this.isDaily) {
+      this.getAudio().stopWorldTheme();
+      this.scene.start('MainMenuScene'); // one daily a day — back to the menu
+    } else if (nextLevel > LEVELS.length) {
+      this.getAudio().stopWorldTheme();
+      this.scene.start('EndScene');
+    } else {
+      void Ads.maybeInterstitial(); // frequency-capped; no-op on web / for premium
+      this.scene.restart({ level: nextLevel }); // startWorldTheme keeps same-world music continuous
+    }
   }
 
   private showWinOverlay(): void {
@@ -1044,6 +1055,37 @@ export class GameScene extends Phaser.Scene {
     card.setScale(0.8).setAlpha(0);
     this.tweens.add({ targets: card, scale: 1, alpha: 1, duration: 360, ease: THEME.EASE_POP });
 
+    // Optional "2x Stardust" rewarded offer (campaign wins) — cancels the
+    // auto-advance, runs an ad, doubles the reward. Always opt-in.
+    const showDouble = !this.isDaily && this.awardedStardust > 0;
+    if (showDouble) {
+      const bw = 190, bh = 42;
+      const bbg = this.add.graphics();
+      drawGlass(bbg, bw, bh, bh / 2);
+      bbg.lineStyle(2, 0x7affb0, 0.6);
+      bbg.strokeRoundedRect(-bw / 2, -bh / 2, bw, bh, bh / 2);
+      const btxt = this.add.text(0, 0, `▶  2×  +${this.awardedStardust} ✦`, {
+        fontFamily: THEME.FONT_DISPLAY, fontSize: '15px', color: '#7affb0', fontStyle: '700',
+      }).setOrigin(0.5);
+      const btn = this.add.container(cx, cy + panelH / 2 + 34, [bbg, btxt]).setDepth(51);
+      btn.setSize(bw, bh);
+      btn.setInteractive(new Phaser.Geom.Rectangle(-bw / 2, -bh / 2, bw, bh), Phaser.Geom.Rectangle.Contains);
+      btn.once('pointerup', async () => {
+        btn.disableInteractive();
+        this.advanceTimer?.remove();
+        const earned = await Ads.showRewarded();
+        if (earned) {
+          CurrencyStore.add(this.awardedStardust);
+          Analytics.track(rewardDoubleStardust(this.awardedStardust));
+          btxt.setText(`+${this.awardedStardust} ✦  ×2!`);
+          this.time.delayedCall(900, () => this.advanceAfterWin());
+        } else {
+          this.advanceAfterWin();
+        }
+      });
+      if (!reduced) { btn.setScale(0.85).setAlpha(0); this.tweens.add({ targets: btn, scale: 1, alpha: 1, delay: 500, duration: 300, ease: THEME.EASE_POP }); }
+    }
+
     // Newly-unlocked achievement(s) → a glass toast below the panel.
     if (this.newAchievements.length) {
       const a = this.newAchievements[0];
@@ -1060,7 +1102,7 @@ export class GameScene extends Phaser.Scene {
       const nm = this.add
         .text(0, 8, nameStr, { fontFamily: THEME.FONT_DISPLAY, fontSize: '14px', color: THEME.TEXT_PRIMARY, fontStyle: '600' })
         .setOrigin(0.5);
-      const toast = this.add.container(cx, cy + panelH / 2 + 40, [tg, head, nm]).setDepth(51);
+      const toast = this.add.container(cx, cy + panelH / 2 + 40 + (showDouble ? 54 : 0), [tg, head, nm]).setDepth(51);
       toast.setScale(0.85).setAlpha(0);
       this.tweens.add({ targets: toast, scale: 1, alpha: 1, delay: 360, duration: 320, ease: THEME.EASE_POP });
     }
