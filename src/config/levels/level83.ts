@@ -14,7 +14,10 @@ export const level83: LevelConfig = {
   gates: [
     { x: 180, y: 560, width: 140, height: 16, dir: { x: 0, y: 1 } }, // roof: down-only entry
   ],
+  hazards: [
+    { x: 60, y: 470, radius: 22, to: { x: 300, y: 470 }, durationMs: 1300 }, // a saw sweeps the high lane — time the line-up over the pit
+  ],
   collectible: { x: 70, y: 250 }, // off-route, up the left climb
-  hint:      'The only door is on top — climb up, then drop in',
+  hint:      'Climb up to drop in — and time the saw on the high lane',
   parTimeMs: 16000,
 };

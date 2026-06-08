@@ -13,7 +13,10 @@ export const level47: LevelConfig = {
     { a: { x: 90, y: 540 }, b: { x: 90, y: 300 } },   // left rift -> under the ledge (dead end)
     { a: { x: 280, y: 540 }, b: { x: 290, y: 300 } }, // right rift -> open to the goal
   ],
-  collectible: { x: 90, y: 350 }, // off-route, by the dead-end exit (greedy)
-  hint:      'Two rifts — only one leads up',
+  hazards: [
+    { x: 90, y: 335, radius: 20 }, // a spike under the ledge — the WRONG rift now bites, not just stalls
+  ],
+  collectible: { x: 90, y: 360 }, // by the dead-end spike — the greedy, risky grab
+  hint:      'Two rifts — pick wrong and the left one drops you on a spike',
   parTimeMs: 17000,
 };

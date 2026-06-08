@@ -16,8 +16,13 @@ export const level81: LevelConfig = {
     { a: { x: 90,  y: 400 }, b: { x: 300, y: 300 } }, // c2 (left) -> c3 (right)
     { a: { x: 90,  y: 250 }, b: { x: 180, y: 130 } }, // c3 (left) -> top, by the goal
   ],
+  hazards: [
+    // A spinning arm patrols the middle chamber — the signature gets a memorable
+    // moment of motion. Hop along the chamber edges, around the sweep.
+    { x: 180, y: 495, radius: 16, pivot: { x: 180, y: 440 }, durationMs: 2800 },
+  ],
   collectible: { x: 300, y: 250 }, // tucked in c3, off the direct hop
   title:     'HALL OF MIRRORS',
-  hint:      'Hop the rifts, chamber by chamber',
+  hint:      'Hop the rifts, chamber by chamber — mind the spinning arm',
   parTimeMs: 20000,
 };

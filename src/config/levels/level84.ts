@@ -12,7 +12,10 @@ export const level84: LevelConfig = {
     { x: 235, y: 560, width: 16, height: 200, dir: { x: 1, y: 0 } },  // right-gate to the gem (no return)
     { x: 290, y: 430, width: 140, height: 16, dir: { x: 0, y: -1 } }, // up-gate back out of the right side
   ],
-  collectible: { x: 315, y: 560 }, // behind the right-gate — the expensive star
-  hint:      'The gem costs a one-way detour — plan it before you climb',
+  hazards: [
+    { x: 315, y: 495, radius: 18 }, // a spike in the detour — the expensive gem is now also dangerous
+  ],
+  collectible: { x: 315, y: 560 }, // behind the right-gate, past the spike — the expensive star
+  hint:      'The gem costs a one-way detour past a spike — plan it before you climb',
   parTimeMs: 17000,
 };

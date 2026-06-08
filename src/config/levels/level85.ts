@@ -18,8 +18,13 @@ export const level85: LevelConfig = {
     { x: 270, y: 370, width: 170, height: 14, dir: { x: 0, y: -1 } }, // band 2 up-gate (right, x 185..355)
     { x: 180, y: 200, width: 170, height: 14, dir: { x: 0, y: -1 } }, // band 3 up-gate (centre, x 95..265)
   ],
-  collectible: { x: 310, y: 460 }, // tucked right, between bands 1 and 2
+  hazards: [
+    // A pulsing laser across the left-to-right crossing between bands 1 and 2 —
+    // the gateworks now ticks. Cross on the dark beat. (Signature motion moment.)
+    { x: 180, y: 455, width: 120, height: 12, pulseMs: 1700 },
+  ],
+  collectible: { x: 310, y: 460 }, // tucked right, between bands 1 and 2 (past the beam)
   title:     'THE LOCKWORKS',
-  hint:      'Thread the gateworks — each door, one way',
+  hint:      'Thread the gateworks — each door one way, and time the beam',
   parTimeMs: 19000,
 };

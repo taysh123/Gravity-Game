@@ -12,7 +12,10 @@ export const level54: LevelConfig = {
     { x: 120, y: 500, width: 200, height: 16, dir: { x: 0, y: -1 } }, // up-gate (left)
     { x: 235, y: 320, width: 16, height: 210, dir: { x: 1, y: 0 } },  // right-gate (upper)
   ],
+  hazards: [
+    { x: 120, y: 410, radius: 20, to: { x: 230, y: 410 }, durationMs: 1200 }, // a saw patrols between the two commits
+  ],
   collectible: { x: 60, y: 300 }, // off-route left, above the first gate
-  hint:      'Two gates — commit to each in turn',
+  hint:      'Two gates — commit in turn, and time the saw between them',
   parTimeMs: 18000,
 };
