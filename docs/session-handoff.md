@@ -6,9 +6,13 @@
 
 ## Current status
 - **Game:** GRAVITY FLOW by **True Story Labs** — mobile cosmic physics puzzler (Phaser 3 + TS + Vite).
-- **Content:** **56 levels / 8 worlds (8×7).** **Phase 1 + Phase 2 redesign DONE** — the whole campaign
-  trimmed to its strongest levels and rebuilt for *delight/surprise/memorability*: **toys before tests**,
-  front-loaded wonder, multi-goal **"constellation"** toys, spectacle signatures, cut filler combine-stacks,
+- **Content:** **56 levels / 8 worlds (8×7).** **Phases 1–3 redesign DONE.** Phases 1–2 trimmed the
+  campaign to its strongest levels and rebuilt it for *delight/surprise/memorability*; **Phase 3 (Challenge
+  & Excitement Pass)** then fixed the playtest verdict "too empty/safe/passive" — distributed **threat**
+  (new **rotating-arm** + **pulsing-laser** hazard archetypes, plus reused saws/spikes), **risk/reward**
+  (gems moved onto risky/skill lines), and **live mastery feedback** (par chip + PB **ghost trail**), all
+  keeping the 1★ route fair. Hallmarks: **toys before tests**, front-loaded wonder, multi-goal
+  **"constellation"** toys, spectacle signatures (now with *moving* set-pieces), cut filler combine-stacks,
   and — the headline — **a fully rotated set of distinct boss archetypes** (no two alike):
   **W1 COLLAPSE = descent set-piece · W2 MAELSTROM = chase · W3 MACHINE = mechanic-turned ·
   W4 INFERNO = endurance (no clock) · W5 SINGULARITY = orbit · W6 BREACH = puzzle-boss · W7 VAULT =
@@ -31,12 +35,28 @@
   cards), **per-world in-game music** + boss audio + boss-clear sting, **star-by-star win celebration**
   (PERFECT! + rising tones), boss **STAR FREED** payoff + red arena wash + camera punches, **signature/boss
   title cards**, and the hook **"Bring the lost star home."**
-- **Quality:** `tsc` clean · 57 tests pass · build clean · all 56 levels load no console errors
-  (`scripts/verify_p2.py`: 1-56 load + completable, only HOMECOMING carries a clock among the bosses).
-- **Git/GitHub:** branch `master`. **Local is ahead of `origin` by ~6 commits (v0.11.0, Phase 2)** — push
-  pending (run `git push origin master`, then `vercel --prod --yes`). origin = https://github.com/taysh123/Gravity-Game.git.
+- **Quality:** `tsc` clean · 67 tests pass · build clean · all 56 levels load no console errors
+  (`scripts/verify_p3.py`: 1-56 load + completable, rotating arm orbits + laser beam toggles in-engine).
+- **Git/GitHub:** branch `master`. **Local is ahead of `origin` by ~13 commits (v0.12.0, Phases 2+3)** —
+  push pending (run `git push origin master`, then `vercel --prod --yes`). origin = https://github.com/taysh123/Gravity-Game.git.
 
 ## Last completed sprint
+**Phase 3 — Challenge & Excitement Pass (v0.12.0).** Playtest verdict was "improved but too empty/safe/
+passive." A 56-level audit confirmed it: moving hazards in only 8/56 levels, ~35/56 with no threat near the
+route, only ~27% creating real tension. Fix (no difficulty inflation, verb kept pure): **M1** two new "alive"
+hazard archetypes on the existing Hazard entity — **rotating arm** (`pivot`) + **pulsing laser** (`pulseMs/
+phaseMs`, telegraphed), pure math TDD'd in `utils/hazardMotion` (`14810e9`); **M2** mastery feedback — live
+par chip + PB **ghost trail** (new `GhostStore`, `utils/ghost` TDD'd) (`c327810`); **M3** W1-3 — debut the
+archetypes in the timing world (GEARWORKS spinning gear, patience laser) + risky gems, W1/W2 stay an
+unloseable on-ramp (`4097aa1`); **M4** W4-5 — Peril variety (rotating/laser) + Wells hybrid threat
+(capture-cost spikes) (`a6378b7`); **M5** W6-7 — the biggest lift: real route-hazards + signature motion
+(HALL OF MIRRORS arm, LOCKWORKS laser) on the emptiest worlds (`1cdda95`); **M6** W8 finale — fuse dangers
+into synthesis, stakes on both improv routes, CONFLUENCE spinning flourish (`429319f`). New verifier
+`scripts/verify_p3.py` proves the archetypes behave in-engine. Threat is now distributed, every world feels
+alive, 1★ kept fair (pending device confirmation). **Next: device-playtest, then Sprint 2 — Native +
+Monetization.**
+
+## Prior sprint
 **Phase 2 — back-half redesign (v0.11.0).** Trimmed **Worlds 4-8 from 10→7 each** (campaign 71→**56**, 8×7)
 and applied the W1-3 WOW treatment: cut 15 filler combine-stacks / duplicate teaches (un-imported, kept on
 disk for Expert packs), gave each world a **toy opener**, and **rotated every boss archetype** so none feel
@@ -72,12 +92,13 @@ event captured. Audit: `docs/superpowers/plans/2026-06-07-excitement-audit.md`. 
 Overhaul + L9/L1 fixes.)*
 
 ## Next sprint
-**Push + deploy v0.11.0, then device-playtest all 56 levels.** First: `git push origin master` then
-`vercel --prod --yes` (both blocked from auto-run; run yourself). Then playtest the trimmed campaign —
-especially the new **toy openers** (Sparkweave/Swingby/Blink/One-Way Door — do they delight in the first
-seconds of each world?) and the **re-archetyped bosses** (INFERNO endurance, SINGULARITY orbit, BREACH
-puzzle, VAULT lock-and-key — do they feel distinct, fair, and replayable for 3★?). Tune
-`parTimeMs`/geometry/well-strength/saw-speeds from notes (no code changes needed). Then **Sprint 2 —
+**Push + deploy v0.12.0, then device-playtest all 56 levels — focus on threat fairness.** First:
+`git push origin master` then `vercel --prod --yes` (both blocked from auto-run; run yourself). The Phase-3
+threat additions are the **highest playtest priority**: automated tests prove every level loads + the win
+condition fires, but **cannot confirm the 1★ route stays fair around the new hazards** (rotating arms,
+laser beams, route saws, capture-cost spikes). Play each touched level and confirm 1★ is reachable; tune
+`parTimeMs`/saw-`durationMs`/`pulseMs`/hazard positions in the level files from notes (no code changes
+needed). Also judge the new **toy openers** and **re-archetyped bosses** for feel. Then **Sprint 2 —
 Native + Monetization** begins:
 1. **Sprint 2 — Native + Monetization (→ Play RC):** Capacitor + Android build pipeline, AdMob (rewarded +
    interstitial) + IAP (Remove-Ads, cosmetics) behind the `Ads`/`IAP` seams, analytics, crash reporting,
@@ -92,8 +113,8 @@ Full audit + roadmap: `~/.claude/plans/warm-orbiting-map.md`.
   (`scripts/verify_p2.py`) confirm every level loads clean and is *physically solvable*, but can't
   reproduce finger input or judge *fun/fairness*. Playtest the toy openers + re-archetyped bosses before
   Sprint 2; tune constants in the level files (no code changes needed).
-- **GitHub:** `origin` = https://github.com/taysh123/Gravity-Game.git. **`master` is ahead by ~6 unpushed
-  commits** (v0.11.0, Phase 2) — push/deploy are blocked from auto-run, so run them yourself.
+- **GitHub:** `origin` = https://github.com/taysh123/Gravity-Game.git. **`master` is ahead by ~13 unpushed
+  commits** (v0.12.0, Phases 2+3) — push/deploy are blocked from auto-run, so run them yourself.
 - Architecture rule: **one entity + one optional `LevelConfig` field per mechanic; no managers.**
 - Verify in-browser (`npm run dev` + Playwright `--disable-gpu --use-gl=swiftshader`) before "done".
 

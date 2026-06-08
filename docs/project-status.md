@@ -129,10 +129,17 @@ History lives in `docs/superpowers/plans/`. Summary:
   influence ring telegraphs reach.
 - **Moving platforms** (`entities/MovingPlatform.ts`, `LevelConfig.movingPlatforms`): static barrier
   slid via `RawMatter.Body.setPosition` along a yoyo tween; a faint track telegraphs the path.
-- **Hazards** (`entities/Hazard.ts`, `LevelConfig.hazards`): deadly red spiked node / striped bar,
-  optionally moving (`to`/`durationMs` → `startMoving`). Overlap with the ball → `triggerDeath`.
+- **Hazards** (`entities/Hazard.ts`, `LevelConfig.hazards`): deadly red spiked node / striped bar.
+  Four motions: static · linear sweep (`to`/`durationMs`) · **rotating arm** (`pivot` + `durationMs`,
+  orbits a point — drawn with a spoke) · **pulsing laser beam** (`pulseMs`/`phaseMs` — a rect deadly only
+  during its firing window, telegraphed dim-rail→charging→fire; `overlaps` gates on state). Overlap → fail.
+  Pure motion math (on/off, orbit point) in `utils/hazardMotion` (TDD). *(Phase 3 added rotating + laser.)*
+- **Mastery feedback** (P3): a live **par chip** (untimed levels — elapsed time, gold while under
+  `parTimeMs`) and a faint **PB ghost trail** — `GameScene` records the ball path, saves a downsampled
+  best run to `utils/GhostStore` (localStorage; `utils/ghost.downsamplePath` TDD'd), repainted on entry.
+  Honors reduced-motion. Fuels the 3★ / "one more try" loop.
 - **Collectibles** (`entities/Collectible.ts`, `LevelConfig.collectible`): optional gold gem; overlap →
-  collected + chime; grants the 2nd star.
+  collected + chime; grants the 2nd star. *(Phase 3 moved many gems onto risky/skill lines — risk/reward.)*
 - **Stars / scoring** (`utils/scoring.ts` TDD): ★ complete · ★ gem · ★ under `parTimeMs`. Computed in
   `triggerWin`, persisted via `ProgressStore`.
 - **Progression** (`utils/ProgressStore.ts`): per-level `{stars, bestTimeMs, gem}` in localStorage;
