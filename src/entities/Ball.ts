@@ -3,8 +3,18 @@ import { PHYSICS } from '../config/physics.config';
 import { RawMatter } from '../utils/matter';
 import { CosmeticStore } from '../utils/CosmeticStore';
 import { reducedMotionActive } from '../utils/a11y';
-import type { SkinStyle } from '../utils/cosmetics';
+import type { SkinStyle, TrailStyleName } from '../utils/cosmetics';
 import type { Vec2 } from '../types';
+
+// Linear interpolate two 0xRRGGBB colors (no Phaser dependency).
+function lerpColor(a: number, b: number, t: number): number {
+  const ar = (a >> 16) & 255, ag = (a >> 8) & 255, ab = a & 255;
+  const br = (b >> 16) & 255, bg = (b >> 8) & 255, bb = b & 255;
+  const r = Math.round(ar + (br - ar) * t);
+  const g = Math.round(ag + (bg - ag) * t);
+  const bl = Math.round(ab + (bb - ab) * t);
+  return (r << 16) | (g << 8) | bl;
+}
 
 export class Ball {
   readonly body: MatterJS.BodyType;
@@ -16,6 +26,8 @@ export class Ball {
   private readonly accent: number;
   private readonly skinStyle: SkinStyle;
   private readonly animated: boolean; // animated/void styles redraw each frame
+  private readonly trailStyle: TrailStyleName;
+  private readonly trailColors: number[]; // resolved palette (>=1 color)
   private phase = 0;
 
   constructor(scene: Phaser.Scene, x: number, y: number, startVelocity: Vec2 = { x: 0, y: 0 }) {
@@ -25,6 +37,9 @@ export class Ball {
     this.accent = skin.accent ?? this.glow;
     this.skinStyle = skin.skinStyle ?? 'solid';
     this.animated = (this.skinStyle === 'animated' || this.skinStyle === 'void') && !reducedMotionActive();
+    const trailCfg = CosmeticStore.equipped('trail').trail;
+    this.trailStyle = trailCfg?.style ?? 'comet';
+    this.trailColors = trailCfg && trailCfg.colors.length ? trailCfg.colors : [this.glow];
     this.body = scene.matter.add.circle(x, y, PHYSICS.BALL_RADIUS, {
       restitution: PHYSICS.BALL_RESTITUTION,
       friction: PHYSICS.BALL_FRICTION,
@@ -100,21 +115,74 @@ export class Ball {
       this.trail.pop();
     }
 
-    // Each older segment is smaller and fainter — a soft taper behind the ball.
-    this.trailGraphics.clear();
-    this.trail.forEach((pos, i) => {
-      const t = 1 - i / PHYSICS.TRAIL_LENGTH; // 1 = newest, → 0 = oldest
-      const alpha = t * PHYSICS.TRAIL_MAX_ALPHA;
-      const radius = PHYSICS.BALL_RADIUS * t * 0.55;
-      this.trailGraphics.fillStyle(this.glow, alpha);
-      this.trailGraphics.fillCircle(pos.x, pos.y, radius);
-    });
+    this.drawTrail();
 
     if (this.animated) {
       this.phase += 0.08;
       this.draw(this.phase); // animated/void skins breathe each frame
     }
     this.graphics.setPosition(bx, by);
+  }
+
+  // Styled comet tail. `comet/fire/ice/void/galaxy` taper soft circles (per-style
+  // color); `lightning` draws a jagged electric bolt between trail points. Vector +
+  // additive, within the trail-length budget.
+  private drawTrail(): void {
+    const g = this.trailGraphics;
+    const cols = this.trailColors;
+    g.clear();
+
+    if (this.trailStyle === 'lightning') {
+      for (let i = 1; i < this.trail.length; i++) {
+        const t = 1 - i / PHYSICS.TRAIL_LENGTH;
+        const a = this.trail[i - 1];
+        const b = this.trail[i];
+        const mx = (a.x + b.x) / 2;
+        const my = (a.y + b.y) / 2;
+        const nx = -(b.y - a.y);
+        const ny = b.x - a.x;
+        const len = Math.hypot(nx, ny) || 1;
+        const jolt = (i % 2 === 0 ? 1 : -1) * 5 * t;
+        const jx = mx + (nx / len) * jolt;
+        const jy = my + (ny / len) * jolt;
+        g.lineStyle(2.5, lerpColor(cols[0], cols[cols.length - 1], i / this.trail.length), t * PHYSICS.TRAIL_MAX_ALPHA * 3);
+        g.beginPath();
+        g.moveTo(a.x, a.y);
+        g.lineTo(jx, jy);
+        g.lineTo(b.x, b.y);
+        g.strokePath();
+      }
+      return;
+    }
+
+    this.trail.forEach((pos, i) => {
+      const t = 1 - i / PHYSICS.TRAIL_LENGTH; // 1 = newest, → 0 = oldest
+      let color: number;
+      let radius = PHYSICS.BALL_RADIUS * t * 0.55;
+      let alpha = t * PHYSICS.TRAIL_MAX_ALPHA;
+      switch (this.trailStyle) {
+        case 'galaxy':
+          color = cols[i % cols.length]; // shimmer through the palette
+          break;
+        case 'fire':
+          color = lerpColor(cols[0], cols[cols.length - 1], t); // hot core → cooler tail
+          radius *= 1.15;
+          break;
+        case 'ice':
+          color = lerpColor(cols[0], cols[cols.length - 1], 1 - t);
+          alpha *= 1.2;
+          break;
+        case 'void':
+          color = lerpColor(cols[0], cols[cols.length - 1], t);
+          radius *= 1.3;
+          alpha *= 0.85;
+          break;
+        default: // comet
+          color = cols[0];
+      }
+      g.fillStyle(color, alpha);
+      g.fillCircle(pos.x, pos.y, radius);
+    });
   }
 
   destroy(): void {
