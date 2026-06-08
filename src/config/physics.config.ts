@@ -103,6 +103,15 @@ export const PHYSICS = {
   COLOR_TIMER: '#EDEDF2',
   COLOR_TIMER_WARN: '#ff5a6a',
 
+  // Live par chip + PB ghost trail (mastery feedback — the 3-star "one more try").
+  COLOR_PAR_UNDER: '#ffd166',    // elapsed still under par (on pace for 3 stars) — gold.
+  COLOR_PAR_OVER: '#8b93a7',     // over par — muted slate.
+  GHOST_SAMPLE_MS: 60,           // record the ball position this often during a run.
+  GHOST_MAX_POINTS: 90,          // downsample the saved PB path to at most this many points.
+  GHOST_MAX_SAMPLES: 600,        // safety cap on in-run recording (long runs).
+  COLOR_GHOST: 0x8fb0ff,         // pale blue — your best run's faint trail.
+  GHOST_ALPHA: 0.16,
+
   // Collectible gem (2nd star — optional off-path route)
   GEM_RADIUS: 13,
   COLOR_GEM: 0xffd166,           // gold gem (matches the star it grants)

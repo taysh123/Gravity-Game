@@ -29,6 +29,8 @@ import { fadeToScene } from '../utils/transitions';
 import { safeAreaInsetsScaled, reducedMotionActive } from '../utils/a11y';
 import { computeStars, type StarResult } from '../utils/scoring';
 import { ProgressStore } from '../utils/ProgressStore';
+import { GhostStore } from '../utils/GhostStore';
+import { downsamplePath } from '../utils/ghost';
 import { DailyStore } from '../utils/DailyStore';
 import { StatsStore } from '../utils/StatsStore';
 import { AchievementStore } from '../utils/AchievementStore';
@@ -83,6 +85,11 @@ export class GameScene extends Phaser.Scene {
   private gemCollected = false;
   private winResult: StarResult | null = null;
   private winTimeMs = 0;
+  // Mastery feedback — live par chip + PB ghost trail.
+  private parChip: Phaser.GameObjects.Text | null = null;
+  private prevBestMs = 0; // best time before this run (for new-best detection)
+  private ghostPath: { x: number; y: number }[] = []; // this run's path, in play coords
+  private ghostLastSampleMs = 0;
   private newAchievements: AchievementDef[] = [];
   private awardedStardust = 0;
   private isDaily = false; // launched from the Daily Challenge
@@ -143,6 +150,7 @@ export class GameScene extends Phaser.Scene {
     this.levelTitle = config.title ?? '';
     this.isBoss = config.boss ?? false;
     this.countdown = null;
+    this.parChip = null;
     this.gemCollected = false;
     this.winResult = null;
     this.orbs = [];
@@ -162,6 +170,12 @@ export class GameScene extends Phaser.Scene {
     this.createHud();
     this.createNav();
     if (this.timeLimitMs > 0) this.createCountdown();
+    else this.createParChip();
+    // Mastery feedback: remember the pre-run best, reset the recorder, paint the PB ghost.
+    this.prevBestMs = this.isDaily ? 0 : ProgressStore.get(this.currentLevel).bestTimeMs;
+    this.ghostPath = [];
+    this.ghostLastSampleMs = this.levelStartMs;
+    this.renderGhostTrail();
     this.hintText = null;
     this.showHint(config.hint);
     this.coachMark = null;
@@ -466,6 +480,63 @@ export class GameScene extends Phaser.Scene {
     this.countdown.setScale(warn ? 1 + 0.08 * Math.sin(time / 110) : 1);
   }
 
+  // Live par chip (untimed levels): elapsed time, gold while still under par — the
+  // "am I on pace for 3 stars?" feedback that drives the replay loop.
+  private createParChip(): void {
+    const insets = this.safeInsets;
+    const padY = Math.max(SAFE_PAD, insets.top) + 8;
+    const w = 80;
+    const h = 36;
+    const chip = this.add.graphics();
+    drawGlass(chip, w, h, h / 2);
+    this.parChip = this.add
+      .text(0, 0, '0.0s', {
+        fontFamily: THEME.FONT_DISPLAY,
+        fontSize: '17px',
+        color: PHYSICS.COLOR_PAR_UNDER,
+        fontStyle: '700',
+      })
+      .setOrigin(0.5);
+    const cont = this.add
+      .container(this.scale.width / 2, padY + 56 + h / 2, [chip, this.parChip])
+      .setDepth(20);
+    this.uiBlockers.push(cont);
+  }
+
+  private updateParChip(time: number): void {
+    if (!this.parChip) return;
+    const elapsed = time - this.levelStartMs;
+    this.parChip.setText(fmtTime(elapsed));
+    this.parChip.setColor(elapsed <= this.parTimeMs ? PHYSICS.COLOR_PAR_UNDER : PHYSICS.COLOR_PAR_OVER);
+  }
+
+  // Sample the ball's path (play coords) for the PB ghost, throttled + capped.
+  private sampleGhost(time: number): void {
+    if (this.isDaily) return;
+    if (time - this.ghostLastSampleMs < PHYSICS.GHOST_SAMPLE_MS) return;
+    this.ghostLastSampleMs = time;
+    if (this.ghostPath.length >= PHYSICS.GHOST_MAX_SAMPLES) return;
+    this.ghostPath.push({
+      x: this.ball.body.position.x - this.playX,
+      y: this.ball.body.position.y - this.playY,
+    });
+  }
+
+  // Paint the faint trail of the player's best run (campaign only, motion-on).
+  private renderGhostTrail(): void {
+    if (this.isDaily || reducedMotionActive()) return;
+    const path = GhostStore.get(this.currentLevel);
+    if (path.length < 2) return;
+    const ox = this.playX;
+    const oy = this.playY;
+    const g = this.add.graphics().setDepth(0);
+    g.lineStyle(2, PHYSICS.COLOR_GHOST, PHYSICS.GHOST_ALPHA);
+    g.beginPath();
+    g.moveTo(ox + path[0].x, oy + path[0].y);
+    for (let i = 1; i < path.length; i++) g.lineTo(ox + path[i].x, oy + path[i].y);
+    g.strokePath();
+  }
+
   // Top-right nav as one cohesive glass toolbar (Home / Settings / Restart).
   // Bare icon buttons sit inside a shared glass pill — reads as a finished HUD
   // component, not loose squares. Safe-area aware; generous targets.
@@ -660,6 +731,8 @@ export class GameScene extends Phaser.Scene {
     this.updateCountdown(time);
     if (this.isDying) return; // updateCountdown may have triggered a timeout death
     this.ball.update();
+    this.sampleGhost(time);
+    this.updateParChip(time);
     this.updateGoalMotion(time);
     const nearT = clamp(
       1 - distance(this.ball.body.position.x, this.ball.body.position.y, this.goal.x, this.goal.y) / PHYSICS.GOAL_NEAR_DIST,
@@ -797,6 +870,11 @@ export class GameScene extends Phaser.Scene {
     });
     // Campaign progress only — the daily isn't a campaign level.
     if (!this.isDaily) {
+      // Save the PB ghost trail if this run beat the stored best (before record() updates it).
+      const isNewBest = this.prevBestMs === 0 || this.winTimeMs < this.prevBestMs;
+      if (isNewBest && this.ghostPath.length >= 2) {
+        GhostStore.save(this.currentLevel, downsamplePath(this.ghostPath, PHYSICS.GHOST_MAX_POINTS));
+      }
       ProgressStore.record(this.currentLevel, {
         stars: this.winResult.stars,
         timeMs: this.winTimeMs,
