@@ -13,3 +13,14 @@ scripts/*.py
 scripts/*.png
 
 .vercel
+
+# Capacitor / Android (generated locally by `npx cap add android`). Build outputs
+# and secrets are never committed; the native project itself may be committed.
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/app/google-services.json
+android/app/release/
+*.keystore
+*.jks
