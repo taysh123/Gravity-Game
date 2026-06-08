@@ -1,15 +1,20 @@
 import type { LevelConfig } from '../../types';
 
-// World 4 — Peril · teach: a spiked hazard sits dead centre. Touching red fails
-// the run — route the ball around it to the goal.
+// World 4 — Peril · TOY opener "Sparkweave": the playful first taste of red.
+// Three small sparks sit off-centre in a gentle slalom with wide, forgiving
+// lanes — a centred pull sails straight through, but the alternating nodes
+// invite a satisfying weave. Near-unloseable (no clock), big welcoming goal —
+// wonder before the world's nerves begin. Gem off to the right rewards the weave.
 export const level17: LevelConfig = {
   ball:      { x: 180, y: 660 },
-  goal:      { x: 180, y: 110, radius: 42 },
+  goal:      { x: 180, y: 120, radius: 44 },
   obstacles: [],
   hazards: [
-    { x: 180, y: 390, radius: 38 },
+    { x: 120, y: 490, radius: 22 },
+    { x: 240, y: 360, radius: 22 },
+    { x: 120, y: 230, radius: 22 },
   ],
-  collectible: { x: 300, y: 390 }, // tucked beside the hazard
-  hint:      "Don't touch the red — route around it",
-  parTimeMs: 11000,
+  collectible: { x: 290, y: 490 }, // right of the first spark — invites the weave
+  hint:      'Weave between the sparks — red bites, but the lanes are wide',
+  parTimeMs: 12000,
 };
