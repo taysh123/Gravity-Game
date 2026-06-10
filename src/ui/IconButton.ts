@@ -46,11 +46,11 @@ export class IconButton {
 
     this.container = scene.add.container(x, y, [this.bg, icon]);
     this.container.setSize(size, size);
-    // Hit area extends past the visible square so the full surface + a margin
-    // for finger-drift is tappable.
-    const pad = THEME.HIT_PADDING;
+    // Hit area == the visible icon button (≥44px). No padding: in the HUD toolbar
+    // the 48px buttons sit 52px apart, so a 14px pad made adjacent hit rects
+    // overlap and the later-added Settings button stole the Home button's edge.
     this.container.setInteractive(
-      new Phaser.Geom.Rectangle(-half - pad, -half - pad, size + pad * 2, size + pad * 2),
+      new Phaser.Geom.Rectangle(-half, -half, size, size),
       Phaser.Geom.Rectangle.Contains,
     );
     if (this.container.input) this.container.input.cursor = 'pointer';

@@ -77,11 +77,11 @@ export class Button {
 
     this.container = scene.add.container(x, y, children);
     this.container.setSize(this.w, this.h);
-    // Hit area extends past the visible edge so the whole surface + a margin
-    // for finger-drift is tappable (and releases stay inside → onClick fires).
-    const pad = THEME.HIT_PADDING;
+    // Hit area == the visible button (buttons are already ≥44px). No padding:
+    // padding made stacked buttons' hit rects overlap, so a later-added neighbour
+    // stole the shared strip (taps below PLAY hit the button beneath it).
     this.container.setInteractive(
-      new Phaser.Geom.Rectangle(-this.w / 2 - pad, -this.h / 2 - pad, this.w + pad * 2, this.h + pad * 2),
+      new Phaser.Geom.Rectangle(-this.w / 2, -this.h / 2, this.w, this.h),
       Phaser.Geom.Rectangle.Contains,
     );
     if (this.container.input) this.container.input.cursor = 'pointer';
