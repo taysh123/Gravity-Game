@@ -5,10 +5,6 @@
 **Effective date:** 10 June 2026
 **Contact:** truestorylabs@gmail.com
 
-> This page is written to be hosted as-is (e.g. GitHub Pages or Vercel) and linked from the
-> Google Play listing. Before publishing, confirm the items in the **Pre-hosting checklist**
-> at the end.
-
 ---
 
 ## Overview
@@ -76,10 +72,21 @@ us and we will address it.
 
 ## Data retention and deletion
 
-Locally stored gameplay data lives on your device until you clear it or uninstall the app. Data
-processed by the third parties above is retained per their respective policies. You may request
-deletion of any data associated with you by emailing **truestorylabs@gmail.com**; we will respond
-within a reasonable period and coordinate with the relevant provider where applicable.
+Gameplay data stored on your device remains there until you clear the app's data or uninstall
+the app. We do not keep a separate server-side copy of that on-device data.
+
+Information processed by the third-party services described above is retained and deleted in
+accordance with each provider's own policies and controls — we do not directly control or store
+that data. If you wish to access or delete information held by those providers, **we will assist
+you and direct you to the appropriate provider and tools** (for example, your device's
+advertising-identifier controls, or your Google Play account settings). You may also contact us
+at **truestorylabs@gmail.com** and we will respond within a reasonable period and help where we
+can.
+
+We may retain certain information for longer where reasonably necessary to comply with legal
+obligations, prevent fraud or abuse, maintain the security and integrity of the app, resolve
+disputes, or enforce our terms — or for other legitimate business purposes. Once it is no longer
+needed for these purposes, such information is deleted or anonymized.
 
 ## Security
 
@@ -93,6 +100,26 @@ The third-party providers may process data on servers located outside your count
 the United States. By using the app you understand that data may be transferred and processed in
 those locations under the providers' safeguards.
 
+## Legal requests
+
+We may disclose information where we believe in good faith that doing so is necessary to comply
+with applicable law, regulation, legal process, a court order, subpoena, or a valid governmental
+or law-enforcement request, or to protect the rights, property, or safety of our users, the
+public, or True Story Labs.
+
+## Service availability and disclaimer
+
+The app is provided on an **"as is"** and **"as available"** basis, without warranties of any
+kind, whether express or implied, to the maximum extent permitted by applicable law. We do not
+guarantee that the app will be uninterrupted, timely, error-free, or secure, or that it will be
+compatible with every device, operating-system version, or configuration. Features, content, and
+third-party integrations may change, be suspended, or be discontinued at any time.
+
+## Governing law
+
+This Privacy Policy, and any matter arising out of or relating to it, is governed by the laws of
+the **State of Israel**, without regard to its conflict-of-laws principles.
+
 ## Changes to this policy
 
 We may update this policy as the app evolves (for example, if integrations change). Material
@@ -101,23 +128,8 @@ update constitutes acceptance of the revised policy.
 
 ## Contact
 
-Questions or requests regarding this policy or your data:
+For any questions or requests regarding this Privacy Policy or your data, contact:
+
 **True Story Labs — truestorylabs@gmail.com**
 
----
-
-## Pre-hosting checklist (remove this section before publishing, or keep — it's harmless)
-
-Confirm/adjust before linking the URL in Play Console:
-
-- [x] **Contact email** — set to `truestorylabs@gmail.com`, the official True Story Labs
-      public contact (a dedicated company inbox, not a personal address).
-- [ ] **Studio / legal name** — currently "True Story Labs" (display name). Use a registered
-      legal entity name here if one exists.
-- [ ] **Jurisdiction** — no specific governing-law clause is included; add one (e.g. Israel)
-      if you want it stated.
-- [ ] **Hosted URL** — host this file (GitHub Pages / Vercel / any static host) and paste the
-      resulting public URL into Play Console → App content → Privacy policy, and into the
-      store listing.
-- [ ] **Effective date** — set to 10 June 2026; update if you publish later.
-- [ ] Keep this policy in sync with the Play **Data safety** form (see `docs/store/listing.md`).
+This policy is published at: https://taysh123.github.io/Gravity-Game/store/
