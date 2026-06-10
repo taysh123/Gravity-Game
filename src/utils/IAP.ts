@@ -27,18 +27,23 @@ function hasEntitlement(info: { customerInfo: { entitlements: { active: Record<s
 
 let rc: PurchasesPlugin | null = null;
 let configured = false;
-async function ensureRC(): Promise<PurchasesPlugin | null> {
-  if (!Capacitor.isNativePlatform()) return null;
-  if (configured) return rc;
+// Resolves true once the native plugin is available. Does NOT return the proxy —
+// a Capacitor registerPlugin() proxy is thenable, and returning it would invoke
+// proxy.then -> "PurchasesPlugin.then is not implemented on android". Callers use
+// the module-scoped `rc`.
+async function ensureRC(): Promise<boolean> {
+  if (!Capacitor.isNativePlatform()) return false;
+  if (configured) return rc !== null;
   configured = true;
   try {
     const m = await import('./native/revenueCat');
-    rc = m.Purchases;
-    if (REVENUECAT.apiKey) await rc.configure({ apiKey: REVENUECAT.apiKey });
+    const p = m.Purchases;
+    if (REVENUECAT.apiKey) await p.configure({ apiKey: REVENUECAT.apiKey }); // a method CALL is fine
+    rc = p;
   } catch {
     rc = null; // plugin unavailable — fall back to the cached value
   }
-  return rc;
+  return rc !== null;
 }
 
 export const IAP = {
@@ -52,12 +57,11 @@ export const IAP = {
 
   // Native: configure RevenueCat + refresh the cached entitlement. No-op on web.
   async initNative(): Promise<void> {
-    const p = await ensureRC();
-    if (!p) return;
+    if (!(await ensureRC()) || !rc) return;
     try {
-      setCachedPremium(hasEntitlement(await p.getCustomerInfo()));
+      setCachedPremium(hasEntitlement(await rc.getCustomerInfo()));
     } catch {
-      // leave the cached value as-is
+      // leave the cached value as-is (e.g. RevenueCat key not set yet)
     }
   },
 
@@ -68,16 +72,15 @@ export const IAP = {
       setCachedPremium(true);
       return true;
     }
-    const p = await ensureRC();
-    if (!p) return false;
+    if (!(await ensureRC()) || !rc) return false;
     try {
-      const offerings = await p.getOfferings();
+      const offerings = await rc.getOfferings();
       const pkg =
         offerings.current?.availablePackages.find(
           (a) => a.product.identifier === REVENUECAT.removeAdsProductId,
         ) ?? offerings.current?.availablePackages[0];
       if (!pkg) return false;
-      const ok = hasEntitlement(await p.purchasePackage({ aPackage: pkg }));
+      const ok = hasEntitlement(await rc.purchasePackage({ aPackage: pkg }));
       setCachedPremium(ok);
       return ok;
     } catch {
@@ -96,13 +99,12 @@ export const IAP = {
       if (bundle.premium) setCachedPremium(true);
       return true;
     }
-    const p = await ensureRC();
-    if (!p) return false;
+    if (!(await ensureRC()) || !rc) return false;
     try {
-      const offerings = await p.getOfferings();
+      const offerings = await rc.getOfferings();
       const pkg = offerings.current?.availablePackages.find((a) => a.product.identifier === bundle.productId);
       if (!pkg) return false;
-      const result = await p.purchasePackage({ aPackage: pkg });
+      const result = await rc.purchasePackage({ aPackage: pkg });
       CosmeticStore.grant(bundle.grants); // entitlement also gates re-grant on restore
       if (bundle.premium) setCachedPremium(hasEntitlement(result) || true);
       return true;
@@ -115,10 +117,9 @@ export const IAP = {
   async restorePurchases(): Promise<boolean> {
     Analytics.track(restoreEvent());
     if (!Capacitor.isNativePlatform()) return this.isPremium();
-    const p = await ensureRC();
-    if (!p) return this.isPremium();
+    if (!(await ensureRC()) || !rc) return this.isPremium();
     try {
-      const ok = hasEntitlement(await p.restorePurchases());
+      const ok = hasEntitlement(await rc.restorePurchases());
       setCachedPremium(ok);
       return ok;
     } catch {

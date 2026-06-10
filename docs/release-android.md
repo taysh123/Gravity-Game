@@ -35,11 +35,17 @@ npx cap sync android     # copies dist/ + the native plugins into the project
 
 ## 3. Wire the native config
 - Put **`google-services.json`** in `android/app/`.
-- In `android/app/src/main/AndroidManifest.xml`, add the **AdMob app id** meta-data:
+- 🚨 **REQUIRED or the app crashes on launch.** `cap add android` does NOT write the AdMob app id, but the
+  Mobile Ads SDK's startup `ContentProvider` (`MobileAdsInitProvider`) demands it. In
+  `android/app/src/main/AndroidManifest.xml`, **inside `<application>`**, add the **AdMob app id** meta-data
+  (use Google's TEST id below to boot without an AdMob account; swap for your real id before production):
   ```xml
   <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID"
-             android:value="ca-app-pub-XXXXXXXX~XXXXXXXX"/>
+             android:value="ca-app-pub-3940256099942544~3347511713"/>
   ```
+  **Symptom if missing:** `java.lang.IllegalStateException: ... Missing application ID` →
+  `Unable to get provider com.google.android.gms.ads.MobileAdsInitProvider` → "keeps stopping" on launch.
+  (This edit survives `npx cap sync android`; it's lost only if you delete + re-`cap add` android/.)
 - In `src/config/monetization.config.ts`, replace the **AdMob test ids** with your
   real rewarded/interstitial ids and set `REVENUECAT.apiKey` (+ confirm
   `removeAdsProductId` / `premiumEntitlementId`). Then re-run `npm run build &&

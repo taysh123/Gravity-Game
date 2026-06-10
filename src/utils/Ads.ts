@@ -3,6 +3,10 @@
 // the web bundle never loads the plugin. Rewarded ads are always opt-in and never
 // required to progress; interstitials are frequency-capped and suppressed for
 // premium owners. Analytics events are emitted on both paths.
+//
+// NOTE: a Capacitor registerPlugin() proxy is thenable, so `ensureAdMob()` must NOT
+// return the proxy (that would invoke proxy.then -> "AdMob.then is not implemented").
+// It resolves to a boolean; callers use the module-scoped `admob`.
 import { Capacitor } from '@capacitor/core';
 import { IAP } from './IAP';
 import { ADMOB } from '../config/monetization.config';
@@ -15,18 +19,20 @@ const INTERSTITIAL_MIN_GAP_MS = 180_000; // ≥3 min between interstitials
 
 let admob: AdMobPlugin | null = null;
 let initStarted = false;
-async function ensureAdMob(): Promise<AdMobPlugin | null> {
-  if (!Capacitor.isNativePlatform()) return null;
-  if (initStarted) return admob;
+// Resolves true once the native plugin is available. Does NOT return the proxy.
+async function ensureAdMob(): Promise<boolean> {
+  if (!Capacitor.isNativePlatform()) return false;
+  if (initStarted) return admob !== null;
   initStarted = true;
   try {
     const m = await import('./native/admob');
-    admob = m.AdMob;
-    await admob.initialize();
+    const a = m.AdMob;
+    await a.initialize(); // a method CALL is fine (real promise)
+    admob = a;
   } catch {
     admob = null; // plugin unavailable — never block gameplay
   }
-  return admob;
+  return admob !== null;
 }
 
 export const Ads = {
@@ -41,11 +47,10 @@ export const Ads = {
       Analytics.track(rewardedEarned());
       return true;
     }
-    const ad = await ensureAdMob();
-    if (!ad) return false;
+    if (!(await ensureAdMob()) || !admob) return false;
     try {
-      await ad.prepareRewardVideoAd({ adId: ADMOB.rewardedAdId });
-      const reward = await ad.showRewardVideoAd();
+      await admob.prepareRewardVideoAd({ adId: ADMOB.rewardedAdId });
+      const reward = await admob.showRewardVideoAd();
       const earned = reward != null;
       if (earned) Analytics.track(rewardedEarned());
       return earned;
@@ -61,11 +66,10 @@ export const Ads = {
     if (now - lastInterstitialMs < INTERSTITIAL_MIN_GAP_MS) return;
     lastInterstitialMs = now;
     if (!Capacitor.isNativePlatform()) return;
-    const ad = await ensureAdMob();
-    if (!ad) return;
+    if (!(await ensureAdMob()) || !admob) return;
     try {
-      await ad.prepareInterstitial({ adId: ADMOB.interstitialAdId });
-      await ad.showInterstitial();
+      await admob.prepareInterstitial({ adId: ADMOB.interstitialAdId });
+      await admob.showInterstitial();
       Analytics.track(interstitialShown());
     } catch {
       // ad failed to load/show — silently skip; never block gameplay
