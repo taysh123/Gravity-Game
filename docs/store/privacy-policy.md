@@ -132,4 +132,4 @@ For any questions or requests regarding this Privacy Policy or your data, contac
 
 **True Story Labs — truestorylabs@gmail.com**
 
-This policy is published at: https://taysh123.github.io/gravityflow-privacy-policy/
+This policy is published at: https://taysh123.github.io/Gravity-Game/
