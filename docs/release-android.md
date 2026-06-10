@@ -55,13 +55,24 @@ npx cap sync android     # copies dist/ + the native plugins into the project
   `apply plugin: 'com.google.gms.google-services'` (app `build.gradle`).
 
 ## 4. Sign + build the AAB
-```
-npx cap open android     # opens Android Studio
-```
-- Create a **keystore** (Build → Generate Signed Bundle/APK → Android App Bundle →
-  Create new…). **Keep the keystore + passwords safe** — losing them means you can
-  never update the app.
-- Build a **signed release AAB** (Build → Generate Signed Bundle).
+Release signing is wired into Gradle (`android/app/build.gradle`): it loads the
+keystore from `android/keystore.properties` if that file exists, otherwise it
+configures cleanly and emits an *unsigned* release (so fresh clones / CI never break).
+
+1. **Generate an upload keystore** (you pick the passwords — **keep the `.jks` +
+   passwords safe; losing them means you can never update the app**). From `android/`:
+   ```
+   keytool -genkeypair -v -keystore upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+   ```
+2. **Create `android/keystore.properties`** — copy `android/keystore.properties.example`
+   and fill in `storeFile` / `storePassword` / `keyAlias` / `keyPassword`. Both the
+   `.jks` and `keystore.properties` are gitignored — never commit them.
+3. **Build the signed AAB** — either:
+   ```
+   cd android; ./gradlew bundleRelease     # → android/app/build/outputs/bundle/release/app-release.aab
+   ```
+   or `npx cap open android` and **Build → Generate Signed Bundle/APK → Android App
+   Bundle** (the dialog will reuse the same keystore).
 
 ## 5. Upload to internal testing
 - Play Console → your app → **Testing → Internal testing** → create a release →

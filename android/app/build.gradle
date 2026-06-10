@@ -1,5 +1,16 @@
 apply plugin: 'com.android.application'
 
+// Release signing — loaded from android/keystore.properties (gitignored; never committed).
+// If the file is absent (fresh clone, web/CI, anyone without the keystore) the release build
+// still configures and simply produces an UNSIGNED bundle — no crash, no hard dependency.
+// With the file present, bundleRelease/assembleRelease are signed with your upload key.
+// Generate the keystore + this file per docs/release-android.md §4 (see keystore.properties.example).
+def keystorePropsFile = rootProject.file('keystore.properties')
+def keystoreProps = new Properties()
+if (keystorePropsFile.exists()) {
+    keystoreProps.load(new FileInputStream(keystorePropsFile))
+}
+
 android {
     namespace = "com.truestorylabs.gravityflow"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -16,10 +27,25 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (keystorePropsFile.exists()) {
+                storeFile file(keystoreProps['storeFile'])
+                storePassword keystoreProps['storePassword']
+                keyAlias keystoreProps['keyAlias']
+                keyPassword keystoreProps['keyPassword']
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // Only attach the signing config when the keystore is present, so builds
+            // without secrets stay valid (they emit an unsigned release artifact).
+            if (keystorePropsFile.exists()) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }
