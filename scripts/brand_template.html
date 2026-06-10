@@ -86,6 +86,18 @@
   body.icon.comet .star{width:120px;height:120px;left:300px;top:150px}
   body.icon.comet .goal{width:60px;height:60px;left:120px;top:330px}
 
+  /* ============ LAUNCHER 1024x1024 (Android adaptive sources) ============ */
+  body.launcher .stage{ width:1024px; height:1024px }
+  body.launcher .word, body.launcher .tag{ display:none }
+  /* bg: full cosmic field (-> assets/icon-background.png) */
+  /* fg: motif centered in the adaptive safe zone, transparent backdrop (-> icon-foreground.png) */
+  body.launcher.fg .vortex{ width:600px; height:600px; left:212px; top:212px }
+  body.launcher.fg .vortex .core{ display:none } /* keep the dark hole when composed over bg */
+  body.launcher.fg .star{ width:150px; height:150px; left:600px; top:250px }
+  /* full: full-bleed composed icon (-> assets/icon-only.png, legacy square/round) */
+  body.launcher.full .vortex{ width:780px; height:780px; left:122px; top:122px }
+  body.launcher.full .star{ width:190px; height:190px; left:640px; top:250px }
+
   /* ============ FEATURE 1024x500 ============ */
   body.feature .stage{width:1024px;height:500px}
   body.feature .text{position:absolute;z-index:3}
@@ -155,6 +167,17 @@
       USE.wordmark = ['nebula','stars','orbit','star','attractor','text'];
       USE.vortex   = ['nebula','stars','vortex','star','scrim','text'];
       USE.vignette = ['nebula','stars','goal','comet','attractor','star','text'];
+    }
+    if (type === 'launcher') {
+      USE.bg   = ['nebula','stars'];
+      USE.fg   = ['vortex','star'];           // transparent backdrop -> alpha PNG
+      USE.full = ['nebula','stars','vortex','star'];
+      if (style === 'fg') {
+        // transparent foreground layer for the adaptive icon
+        document.documentElement.style.background = 'transparent';
+        document.body.style.background = 'transparent';
+        document.querySelector('.stage').style.background = 'transparent';
+      }
     }
     const keep = new Set(USE[style] || []);
     ['nebula','stars','scrim','vortex','lens','orbit','goal','comet','attractor','star','text']
