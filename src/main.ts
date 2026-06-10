@@ -12,6 +12,7 @@ import { GameScene } from './scenes/GameScene';
 import { EndScene } from './scenes/EndScene';
 import { Crash } from './utils/Crash';
 import { IAP } from './utils/IAP';
+import { sharedAudio } from './utils/AudioSynth';
 
 // Crash reporting (Crashlytics on native; global error bridge everywhere).
 Crash.init();
@@ -77,6 +78,20 @@ window.visualViewport?.addEventListener('scroll', syncViewport);
 // A couple of delayed passes catch iOS Chrome's toolbar settling after first paint.
 setTimeout(syncViewport, 300);
 setTimeout(syncViewport, 1200);
+
+// App background → foreground: the WebView suspends the AudioContext (and stalls the
+// game loop) while hidden. On return, resume audio (suspended oscillators — incl. the
+// ambient pad — pick back up) and re-fit the viewport. visibilitychange works in the
+// Android WebView, so no native @capacitor/app dependency is needed.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible') return;
+  try {
+    sharedAudio().resume();
+  } catch {
+    // audio unavailable — ignore
+  }
+  game.scale.refresh();
+});
 
 // Dev-only handles for automated verification (Playwright). Stripped from prod builds.
 if (import.meta.env.DEV) {

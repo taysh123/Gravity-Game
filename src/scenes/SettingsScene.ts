@@ -19,6 +19,7 @@ interface Row {
 // Lightweight glass panel: Sound / Music / Haptics / Reduce Motion + close.
 export class SettingsScene extends Phaser.Scene {
   private caller = 'MainMenuScene';
+  private closing = false;
 
   constructor() {
     super({ key: 'SettingsScene' });
@@ -26,6 +27,7 @@ export class SettingsScene extends Phaser.Scene {
 
   create(data: { caller?: string }): void {
     this.caller = data?.caller ?? 'MainMenuScene';
+    this.closing = false; // reset: this scene is reused (singleton) across re-opens
     // Render above the launching scene regardless of scene-list order
     // (the list places this before GameScene).
     this.scene.bringToTop();
@@ -125,7 +127,9 @@ export class SettingsScene extends Phaser.Scene {
   }
 
   private close(): void {
-    this.scene.stop();
+    if (this.closing) return; // scrim + ✕ + ESC can all fire; resume the caller exactly once
+    this.closing = true;
     this.scene.resume(this.caller);
+    this.scene.stop();
   }
 }

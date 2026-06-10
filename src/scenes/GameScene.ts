@@ -64,6 +64,7 @@ export class GameScene extends Phaser.Scene {
   private currentLevel = 1;
   private isWon = false;
   private isDying = false;
+  private leaving = false; // true once any scene-leaving path (home/restart/advance) starts — prevents races
   private hintText: Phaser.GameObjects.Text | null = null;
   private pullLine!: Phaser.GameObjects.Graphics;
   private cosmic!: CosmicBackground;
@@ -141,6 +142,7 @@ export class GameScene extends Phaser.Scene {
     this.dailyModifier = data?.dailyModifier ?? 'none';
     this.isWon = false;
     this.isDying = false;
+    this.leaving = false;
     this.advanceConsumed = false;
 
     const config = this.isDaily
@@ -664,6 +666,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   private goHome(): void {
+    if (this.leaving) return;
+    this.leaving = true;
     this.getAudio().stopHum();
     this.getAudio().stopWorldTheme();
     this.attractor?.destroy();
@@ -671,8 +675,10 @@ export class GameScene extends Phaser.Scene {
     fadeToScene(this, 'MainMenuScene');
   }
 
-  // Pause gameplay and open the settings overlay on top.
+  // Pause gameplay and open the settings overlay on top. Idempotent — a double-tap
+  // must not pause the scene twice (close() resumes once → would leave us frozen).
   private openSettings(): void {
+    if (this.leaving || this.scene.isActive('SettingsScene')) return;
     this.getAudio().stopHum();
     this.attractor?.destroy();
     this.attractor = null;
@@ -966,8 +972,9 @@ export class GameScene extends Phaser.Scene {
   // Advance after a win (next level / end / menu). Extracted so the optional
   // "2x Stardust" offer can cancel the auto-advance, run the ad, then advance.
   private advanceAfterWin(): void {
-    if (this.advanceConsumed) return;
+    if (this.leaving || this.advanceConsumed) return;
     this.advanceConsumed = true;
+    this.leaving = true;
     const nextLevel = this.currentLevel + 1;
     if (this.isDaily) {
       this.getAudio().stopWorldTheme();
@@ -1189,6 +1196,7 @@ export class GameScene extends Phaser.Scene {
   private triggerDeath(cause: 'hazard' | 'timeout' | 'oob' = 'hazard'): void {
     if (this.isDying) return;
     this.isDying = true;
+    this.leaving = true; // block manual nav during the death → auto-restart window
     StatsStore.recordDeath();
     Analytics.track(levelFail(this.isDaily ? 0 : this.currentLevel, cause));
     const audio = this.getAudio();
@@ -1242,6 +1250,8 @@ export class GameScene extends Phaser.Scene {
 
   // Instant restart (keyboard R) - no death animation.
   private triggerRestart(): void {
+    if (this.leaving) return;
+    this.leaving = true;
     Analytics.track(retryEvent(this.isDaily ? 0 : this.currentLevel));
     this.getAudio().stopHum();
     this.attractor?.destroy();

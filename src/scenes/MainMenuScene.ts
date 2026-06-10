@@ -40,6 +40,7 @@ export class MainMenuScene extends Phaser.Scene {
       Math.max(12, insets.top) + 8 + gearSize / 2,
       'settings',
       () => {
+        if (this.scene.isActive('SettingsScene')) return; // no double-pause on double-tap
         this.scene.pause();
         this.scene.launch('SettingsScene', { caller: 'MainMenuScene' });
       },
