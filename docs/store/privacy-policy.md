@@ -110,8 +110,8 @@ Questions or requests regarding this policy or your data:
 
 Confirm/adjust before linking the URL in Play Console:
 
-- [ ] **Contact email** — currently `truestorylabs@gmail.com`. Swap for a dedicated support
-      address if you prefer not to publish a personal inbox.
+- [x] **Contact email** — set to `truestorylabs@gmail.com`, the official True Story Labs
+      public contact (a dedicated company inbox, not a personal address).
 - [ ] **Studio / legal name** — currently "True Story Labs" (display name). Use a registered
       legal entity name here if one exists.
 - [ ] **Jurisdiction** — no specific governing-law clause is included; add one (e.g. Israel)
