@@ -53,16 +53,12 @@ Declare the following collected/shared data and purposes:
 Abstract puzzle game. No violence, no sexual content, no profanity, no gambling, no
 user-to-user communication. Contains **ads** (yes) and **digital purchases** (yes).
 
-## Privacy policy (stub — host this, link the URL in Play Console)
-```
-GRAVITY FLOW Privacy Policy (True Story Labs)
-We respect your privacy. Gameplay data (progress, stars, times, cosmetics, settings)
-is stored only on your device. We use Google Firebase (Analytics, Crashlytics) and
-Google AdMob to understand usage, diagnose crashes, and show optional rewarded/capped
-ads; these may process device and advertising identifiers per Google’s policies. We
-use RevenueCat to manage purchases (Remove Ads). We do not sell personal data.
-Contact: <your-email>. Last updated: <date>.
-```
+## Privacy policy
+The **final, hosting-ready** privacy policy now lives in
+[`docs/store/privacy-policy.md`](./privacy-policy.md). Host that file (GitHub Pages /
+Vercel / any static host) and paste the public URL into Play Console → App content →
+Privacy policy (and the store listing). Confirm the items in that file's pre-hosting
+checklist (contact email, studio/legal name, jurisdiction) before publishing.
 
 ## Required graphic assets (specs in docs/store/aso.md)
 - App icon 512×512 (32-bit PNG, with adaptive layers in-build)

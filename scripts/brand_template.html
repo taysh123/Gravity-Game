@@ -1,0 +1,83 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  /* Self-hosted Orbitron (display) + Exo 2 (body), relative to scripts/ -> ../assets/fonts */
+  @font-face { font-family:'Orbitron'; font-weight:700; src:url('../assets/fonts/orbitron-700.woff2') format('woff2'); }
+  @font-face { font-family:'Orbitron'; font-weight:600; src:url('../assets/fonts/orbitron-600.woff2') format('woff2'); }
+  @font-face { font-family:'Exo 2';   font-weight:400; src:url('../assets/fonts/exo-2-400.woff2') format('woff2'); }
+
+  :root{
+    --bg:#0d0d1a; --ink:#EDEDF2;
+    --gold:#ffd479; --violet:#8b5cff; --cyan:#46e0ff; --green:#4ee39a;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{background:var(--bg);overflow:hidden}
+  .stage{position:relative;overflow:hidden;background:
+      radial-gradient(120% 90% at 70% 20%, rgba(139,92,255,.28), transparent 55%),
+      radial-gradient(90% 80% at 20% 85%, rgba(70,224,255,.20), transparent 55%),
+      radial-gradient(140% 120% at 50% 50%, #14142a 0%, #0d0d1a 70%);}
+  /* starfield */
+  .stars{position:absolute;inset:0;background-image:
+      radial-gradient(1.4px 1.4px at 12% 22%, #fff, transparent),
+      radial-gradient(1.2px 1.2px at 82% 14%, #cfe6ff, transparent),
+      radial-gradient(1.6px 1.6px at 65% 72%, #fff, transparent),
+      radial-gradient(1px 1px at 32% 64%, #bcd, transparent),
+      radial-gradient(1.3px 1.3px at 48% 36%, #fff, transparent),
+      radial-gradient(1px 1px at 90% 60%, #9fb, transparent),
+      radial-gradient(1.1px 1.1px at 24% 88%, #fff, transparent);
+    opacity:.85}
+
+  /* the pulled-star + orbit motif */
+  .motif{position:absolute}
+  .orbit{position:absolute;border-radius:50%;border:2px solid rgba(255,212,121,.35);
+    box-shadow:0 0 30px rgba(255,212,121,.18) inset}
+  .orbit.tilt{transform:rotate(-22deg) scaleY(.62)}
+  .star{position:absolute;border-radius:50%;
+    background:radial-gradient(circle at 38% 34%, #fff, var(--gold) 40%, #c8821f 72%, #7a4a10 100%);
+    box-shadow:0 0 24px 6px rgba(255,212,121,.65), 0 0 70px 18px rgba(255,180,80,.35);}
+  .attractor{position:absolute;border-radius:50%;
+    background:radial-gradient(circle at 50% 50%, rgba(70,224,255,.9), rgba(139,92,255,.35) 60%, transparent 72%);
+    box-shadow:0 0 30px 8px rgba(70,224,255,.4);}
+
+  .word{font-family:'Orbitron';color:var(--ink);letter-spacing:.06em;
+    text-shadow:0 0 22px rgba(139,92,255,.45)}
+  .tag{font-family:'Exo 2';color:#c7c9d6;letter-spacing:.02em}
+
+  /* ---------- ICON 512x512 ---------- */
+  body.icon .stage{width:512px;height:512px}
+  body.icon .orbit{width:340px;height:340px;left:86px;top:86px}
+  body.icon .star{width:140px;height:140px;left:186px;top:186px}  /* centered */
+  body.icon .attractor{width:58px;height:58px;left:316px;top:300px}
+  body.icon .text{display:none}  /* no wordmark/tagline on the icon */
+
+  /* ---------- FEATURE 1024x500 ---------- */
+  body.feature .stage{width:1024px;height:500px}
+  /* focal art kept right-of-center (Play overlays UI on the far left) */
+  body.feature .orbit{width:300px;height:300px;left:690px;top:100px}
+  body.feature .star{width:104px;height:104px;left:792px;top:158px}
+  body.feature .attractor{width:46px;height:46px;left:900px;top:300px}
+  body.feature .text{position:absolute;left:70px;top:170px;width:600px}
+  body.feature .word{font-size:104px;line-height:.96}
+  body.feature .tag{font-size:30px;margin-top:18px;opacity:.92}
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="stars"></div>
+    <div class="orbit tilt"></div>
+    <div class="star"></div>
+    <div class="attractor"></div>
+    <div class="text">
+      <div class="word">GRAVITY<br/>FLOW</div>
+      <div class="tag">Bring the lost star home.</div>
+    </div>
+  </div>
+  <script>
+    // mode via ?mode=icon|feature
+    const mode = new URLSearchParams(location.search).get('mode') || 'icon';
+    document.body.className = mode;
+  </script>
+</body>
+</html>

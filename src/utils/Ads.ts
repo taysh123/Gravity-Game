@@ -27,6 +27,17 @@ async function ensureAdMob(): Promise<boolean> {
   try {
     const m = await import('./native/admob');
     const a = m.AdMob;
+    // UMP consent (GDPR/EEA) BEFORE initialize. Best-effort + non-blocking: any
+    // failure, NOT_REQUIRED, or an unconfigured form simply falls through to init.
+    // The actual form is configured in the AdMob "Privacy & messaging" console.
+    try {
+      const consent = await a.requestConsentInfo();
+      if (consent.status === 'REQUIRED' && consent.isConsentFormAvailable) {
+        await a.showConsentForm();
+      }
+    } catch {
+      // consent unavailable/not set up — proceed; ads SDK still initializes
+    }
     await a.initialize(); // a method CALL is fine (real promise)
     admob = a;
   } catch {

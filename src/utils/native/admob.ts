@@ -10,8 +10,18 @@ export interface AdMobRewardItem {
   amount?: number;
 }
 
+// UMP (User Messaging Platform) consent — GDPR/EEA. Mirrors the plugin's
+// AdmobConsentInfo; status is the plugin's string enum (NOT_REQUIRED / OBTAINED /
+// REQUIRED / UNKNOWN). We only act on 'REQUIRED' + a form being available.
+export interface AdMobConsentInfo {
+  status: 'NOT_REQUIRED' | 'OBTAINED' | 'REQUIRED' | 'UNKNOWN';
+  isConsentFormAvailable?: boolean;
+}
+
 export interface AdMobPlugin {
   initialize(options?: Record<string, unknown>): Promise<void>;
+  requestConsentInfo(options?: Record<string, unknown>): Promise<AdMobConsentInfo>;
+  showConsentForm(): Promise<AdMobConsentInfo>;
   prepareRewardVideoAd(options: { adId: string }): Promise<unknown>;
   showRewardVideoAd(): Promise<AdMobRewardItem>;
   prepareInterstitial(options: { adId: string }): Promise<unknown>;
