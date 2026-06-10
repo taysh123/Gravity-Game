@@ -14,23 +14,23 @@
   }
   *{margin:0;padding:0;box-sizing:border-box}
   html,body{background:var(--bg);overflow:hidden}
-  .stage{position:relative;overflow:hidden;background:
+  .stage{position:relative;overflow:hidden}
+
+  /* shared nebula + starfield */
+  .nebula{position:absolute;inset:0;background:
       radial-gradient(120% 90% at 70% 20%, rgba(139,92,255,.28), transparent 55%),
       radial-gradient(90% 80% at 20% 85%, rgba(70,224,255,.20), transparent 55%),
-      radial-gradient(140% 120% at 50% 50%, #14142a 0%, #0d0d1a 70%);}
-  /* starfield */
-  .stars{position:absolute;inset:0;background-image:
+      radial-gradient(140% 120% at 50% 50%, #14142a 0%, #0d0d1a 72%);}
+  .stars{position:absolute;inset:0;opacity:.85;background-image:
       radial-gradient(1.4px 1.4px at 12% 22%, #fff, transparent),
       radial-gradient(1.2px 1.2px at 82% 14%, #cfe6ff, transparent),
       radial-gradient(1.6px 1.6px at 65% 72%, #fff, transparent),
       radial-gradient(1px 1px at 32% 64%, #bcd, transparent),
       radial-gradient(1.3px 1.3px at 48% 36%, #fff, transparent),
       radial-gradient(1px 1px at 90% 60%, #9fb, transparent),
-      radial-gradient(1.1px 1.1px at 24% 88%, #fff, transparent);
-    opacity:.85}
+      radial-gradient(1.1px 1.1px at 24% 88%, #fff, transparent);}
 
-  /* the pulled-star + orbit motif */
-  .motif{position:absolute}
+  /* motif primitives */
   .orbit{position:absolute;border-radius:50%;border:2px solid rgba(255,212,121,.35);
     box-shadow:0 0 30px rgba(255,212,121,.18) inset}
   .orbit.tilt{transform:rotate(-22deg) scaleY(.62)}
@@ -40,44 +40,125 @@
   .attractor{position:absolute;border-radius:50%;
     background:radial-gradient(circle at 50% 50%, rgba(70,224,255,.9), rgba(139,92,255,.35) 60%, transparent 72%);
     box-shadow:0 0 30px 8px rgba(70,224,255,.4);}
+  .goal{position:absolute;border-radius:50%;border:3px solid rgba(78,227,154,.85);
+    box-shadow:0 0 26px rgba(78,227,154,.5), 0 0 26px rgba(78,227,154,.4) inset}
+  .vortex{position:absolute;border-radius:50%;
+    background:conic-gradient(from 200deg, #46e0ff, #8b5cff, #2a1d52, #8b5cff, #ffd479, #46e0ff);
+    -webkit-mask:radial-gradient(circle, transparent 14%, #000 22%, #000 70%, transparent 82%);
+            mask:radial-gradient(circle, transparent 14%, #000 22%, #000 70%, transparent 82%);
+    filter:blur(.4px);box-shadow:0 0 60px 10px rgba(139,92,255,.45)}
+  .vortex .core{position:absolute;inset:0;border-radius:50%;
+    background:radial-gradient(circle, #fff 0%, var(--gold) 16%, transparent 30%);}
+  .lens{position:absolute;border-radius:50%;
+    border:2px solid rgba(255,255,255,.18);box-shadow:0 0 40px rgba(70,224,255,.25) inset}
+  .comet{position:absolute;height:10px;border-radius:10px;transform-origin:left center;
+    background:linear-gradient(90deg, transparent, rgba(255,212,121,.0), rgba(255,212,121,.55), #ffe6b0);
+    box-shadow:0 0 24px rgba(255,212,121,.5)}
 
-  .word{font-family:'Orbitron';color:var(--ink);letter-spacing:.06em;
+  .word{font-family:'Orbitron';font-weight:700;color:var(--ink);letter-spacing:.06em;
     text-shadow:0 0 22px rgba(139,92,255,.45)}
   .tag{font-family:'Exo 2';color:#c7c9d6;letter-spacing:.02em}
 
-  /* ---------- ICON 512x512 ---------- */
+  /* ============ ICON 512x512 ============ */
   body.icon .stage{width:512px;height:512px}
-  body.icon .orbit{width:340px;height:340px;left:86px;top:86px}
-  body.icon .star{width:140px;height:140px;left:186px;top:186px}  /* centered */
-  body.icon .attractor{width:58px;height:58px;left:316px;top:300px}
-  body.icon .text{display:none}  /* no wordmark/tagline on the icon */
+  body.icon .word,body.icon .tag{display:none}
 
-  /* ---------- FEATURE 1024x500 ---------- */
+  /* -- orbit -- centered star + tilted ring + attractor */
+  body.icon.orbit .orbit{width:340px;height:340px;left:86px;top:86px}
+  body.icon.orbit .star{width:140px;height:140px;left:186px;top:186px}
+  body.icon.orbit .attractor{width:58px;height:58px;left:316px;top:300px}
+
+  /* -- vortex -- swirling accretion pulling a bright star */
+  body.icon.vortex .vortex{width:360px;height:360px;left:76px;top:76px}
+  body.icon.vortex .vortex .core{}
+  body.icon.vortex .star{width:84px;height:84px;left:300px;top:120px}
+
+  /* -- minimal -- one bold star + lens ring, lots of space */
+  body.icon.minimal .nebula{background:
+      radial-gradient(130% 110% at 50% 42%, #181833 0%, #0c0c18 72%)}
+  body.icon.minimal .stars{opacity:.4}
+  body.icon.minimal .lens{width:300px;height:300px;left:106px;top:106px}
+  body.icon.minimal .star{width:188px;height:188px;left:162px;top:162px;
+    box-shadow:0 0 40px 10px rgba(255,212,121,.7), 0 0 110px 30px rgba(255,180,80,.4)}
+
+  /* -- comet -- star with a curving trail toward a goal glow */
+  body.icon.comet .comet{width:300px;left:70px;top:210px;transform:rotate(-24deg)}
+  body.icon.comet .star{width:120px;height:120px;left:300px;top:150px}
+  body.icon.comet .goal{width:60px;height:60px;left:120px;top:330px}
+
+  /* ============ FEATURE 1024x500 ============ */
   body.feature .stage{width:1024px;height:500px}
-  /* focal art kept right-of-center (Play overlays UI on the far left) */
-  body.feature .orbit{width:300px;height:300px;left:690px;top:100px}
-  body.feature .star{width:104px;height:104px;left:792px;top:158px}
-  body.feature .attractor{width:46px;height:46px;left:900px;top:300px}
-  body.feature .text{position:absolute;left:70px;top:170px;width:600px}
+  body.feature .text{position:absolute;z-index:3}
   body.feature .word{font-size:104px;line-height:.96}
   body.feature .tag{font-size:30px;margin-top:18px;opacity:.92}
+
+  /* -- wordmark -- text left, star+orbit right -- */
+  body.feature.wordmark .text{left:70px;top:170px;width:600px}
+  body.feature.wordmark .orbit{width:300px;height:300px;left:690px;top:100px}
+  body.feature.wordmark .star{width:104px;height:104px;left:792px;top:158px}
+  body.feature.wordmark .attractor{width:46px;height:46px;left:900px;top:300px}
+
+  /* -- vortex -- galaxy on the right third, wordmark in the dark-left zone -- */
+  body.feature.vortex .scrim{position:absolute;inset:0;z-index:2;
+    background:linear-gradient(90deg, rgba(8,8,18,.97) 52%, rgba(8,8,18,.6) 70%, transparent 88%)}
+  body.feature.vortex .vortex{width:380px;height:380px;left:770px;top:60px;z-index:1}
+  body.feature.vortex .star{width:58px;height:58px;left:930px;top:166px;z-index:1}
+  body.feature.vortex .text{left:70px;top:176px;width:680px}
+  body.feature.vortex .word{font-size:66px;letter-spacing:.04em}
+  body.feature.vortex .tag{font-size:25px}
+
+  /* -- vignette -- a stylized gameplay beat + wordmark -- */
+  body.feature.vignette .goal{width:96px;height:96px;left:120px;top:120px}
+  body.feature.vignette .comet{width:360px;left:230px;top:300px;transform:rotate(-26deg);z-index:1}
+  body.feature.vignette .star{width:96px;height:96px;left:520px;top:250px;z-index:1}
+  body.feature.vignette .attractor{width:70px;height:70px;left:300px;top:360px;z-index:1}
+  body.feature.vignette .text{right:60px;left:auto;top:150px;width:430px;text-align:right}
+  body.feature.vignette .word{font-size:88px}
 </style>
 </head>
 <body>
   <div class="stage">
+    <div class="nebula"></div>
     <div class="stars"></div>
+    <div class="scrim"></div>
+    <div class="vortex"><div class="core"></div></div>
+    <div class="lens"></div>
     <div class="orbit tilt"></div>
-    <div class="star"></div>
+    <div class="goal"></div>
+    <div class="comet"></div>
     <div class="attractor"></div>
+    <div class="star"></div>
     <div class="text">
       <div class="word">GRAVITY<br/>FLOW</div>
       <div class="tag">Bring the lost star home.</div>
     </div>
   </div>
   <script>
-    // mode via ?mode=icon|feature
-    const mode = new URLSearchParams(location.search).get('mode') || 'icon';
-    document.body.className = mode;
+    // ?type=icon|feature & style=NAME
+    const q = new URLSearchParams(location.search);
+    const type = q.get('type') || 'icon';
+    const style = q.get('style') || (type === 'icon' ? 'orbit' : 'wordmark');
+    document.body.className = type + ' ' + style;
+    // Hide primitives a given style doesn't use (keeps each concept clean).
+    const USE = {
+      // icon
+      orbit:['nebula','stars','orbit','star','attractor'],
+      vortex:['nebula','stars','vortex','star'],
+      minimal:['nebula','stars','lens','star'],
+      comet:['nebula','stars','comet','star','goal'],
+      // feature
+      wordmark:['nebula','stars','orbit','star','attractor','text'],
+      // feature.vortex shares the name 'vortex' but adds scrim+text:
+    };
+    // feature styles need their own sets (names overlap with icon):
+    if (type === 'feature') {
+      USE.wordmark = ['nebula','stars','orbit','star','attractor','text'];
+      USE.vortex   = ['nebula','stars','vortex','star','scrim','text'];
+      USE.vignette = ['nebula','stars','goal','comet','attractor','star','text'];
+    }
+    const keep = new Set(USE[style] || []);
+    ['nebula','stars','scrim','vortex','lens','orbit','goal','comet','attractor','star','text']
+      .forEach(c=>{ const el=document.querySelector('.'+c); if(el && !keep.has(c)) el.style.display='none'; });
   </script>
 </body>
 </html>

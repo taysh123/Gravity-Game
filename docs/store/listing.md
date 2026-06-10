@@ -60,8 +60,10 @@ Vercel / any static host) and paste the public URL into Play Console → App con
 Privacy policy (and the store listing). Confirm the items in that file's pre-hosting
 checklist (contact email, studio/legal name, jurisdiction) before publishing.
 
-## Required graphic assets (specs in docs/store/aso.md)
-- App icon 512×512 (32-bit PNG, with adaptive layers in-build)
-- Feature graphic 1024×500
-- Phone screenshots ×6–8 (portrait, ≥1080px on the short side)
-- (Optional) 30s promo video
+## Required graphic assets (specs in docs/store/aso.md · files in docs/store/assets/)
+- **App icon 512×512** (32-bit PNG) → `docs/store/assets/icon-512.png` *(ready; alternatives in `icon-concepts/`)*
+- **Feature graphic 1024×500** → `docs/store/assets/feature-1024x500.png` *(ready; alternatives in `feature-concepts/`)*
+- **Phone screenshots ×8** (portrait 1080×2160, Play-compliant) → `docs/store/assets/screenshots/`
+- (Optional) 30s promo video — not produced
+- Adaptive in-build launcher icon (replace the default Capacitor robot) — **still to do** via `@capacitor/assets`
+- Catalog of finals vs. alternatives: `docs/store/assets/README.md`

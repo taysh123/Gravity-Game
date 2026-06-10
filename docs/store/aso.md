@@ -17,7 +17,8 @@ Weave naturally into the title / short / full description — **no keyword stuff
   home.” (the hook + the core mechanic in one line).
 
 ## 2. Screenshot plan (6–8, portrait)
-Capture from the web build (`npm run dev`, 1080×2340 device frame). Each pairs ONE
+Capture from the web build (`npm run dev`, **1080×2160** device frame — exactly 2:1, within
+Play's "max side ≤ 2× min side" cap; 1080×2340 is over and gets rejected). Each pairs ONE
 moment with ONE short benefit caption (top third, safe-area-aware, high contrast on
 the dark sky). Order = a mini funnel: hook → variety → mastery → depth.
 1. **The Comet** (L2) — the star streaks across on its trail. *“Hold to pull. Guide
@@ -41,6 +42,10 @@ one accent-glow color per shot matched to that world’s palette; never cover th
 moment.
 
 ## 3. App icon variants checklist
+> **Generated concepts:** `docs/store/assets/icon-concepts/{orbit,vortex,minimal}.png` (512²).
+> **Recommended final:** `docs/store/assets/icon-512.png` (32-bit, currently the **vortex** concept).
+> Regenerate via `scripts/gen_brand_assets.py` then `node scripts/finalize_brand.mjs`.
+
 Identity: deep-indigo cosmic field + the gravity “pulled star / orbit” motif + the
 Orbitron wordmark feel. Provide:
 - [ ] **Adaptive icon** — separate **foreground** (the star + orbit glow, centered in
@@ -55,6 +60,9 @@ Orbitron wordmark feel. Provide:
   rounded masks; sufficient contrast in light and dark launchers.
 
 ## 4. Feature graphic (1024×500)
+> **Generated concepts:** `docs/store/assets/feature-concepts/{wordmark,vortex,vignette}.png`.
+> **Recommended final:** `docs/store/assets/feature-1024x500.png` (currently the **vignette** concept).
+
 Wordmark **GRAVITY FLOW** (Orbitron) on the cosmic field with the star-and-orbit
 motif and one tagline: *“Bring the lost star home.”* Keep the focal art off the far
 left (Play overlays the install UI there on some surfaces).
