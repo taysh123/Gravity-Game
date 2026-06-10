@@ -148,7 +148,11 @@ export class GameScene extends Phaser.Scene {
     const config = this.isDaily
       ? DAILY_LEVELS[this.dailyIndex] ?? DAILY_LEVELS[0]
       : LEVELS[this.currentLevel - 1] ?? LEVELS[0];
-    this.levelStartMs = this.time.now;
+    // game.loop.time is the fresh current global time. (this.time.now is the Scene
+    // Clock, which FREEZES on shutdown and is only re-synced by the first update() —
+    // which runs AFTER create() — so reading it here on re-entry yields a stale value
+    // and the timer/par/best-time would not reset to 0.)
+    this.levelStartMs = this.game.loop.time;
     this.parTimeMs = config.parTimeMs ?? PHYSICS.STAR_PAR_DEFAULT_MS;
     this.timeLimitMs = config.timeLimitMs ?? 0;
     // Apply the daily modifier.

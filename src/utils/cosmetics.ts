@@ -58,7 +58,7 @@ const SKINS: Cosmetic[] = [
   { id: 'cosmic_pulsar', name: 'Pulsar Star', category: 'skin', rarity: 'epic', collection: 'cosmic', acquire: 'fragments', cost: 35, fill: 0xc9a8ff, glow: 0xb46bff, accent: 0xffffff, skinStyle: 'animated' },
   { id: 'cosmic_supernova', name: 'Supernova', category: 'skin', rarity: 'legendary', collection: 'cosmic', acquire: 'fragments', cost: 65, fill: 0xfff0c0, glow: 0xff5a3d, accent: 0xffd166, skinStyle: 'animated' },
   // Cyber Collection
-  { id: 'cyber_neon', name: 'Neon Core', category: 'skin', rarity: 'rare', collection: 'cyber', acquire: 'stardust', cost: 140, fill: 0x1affd5, glow: 0x00ffc8, accent: 0xff2bd6, skinStyle: 'dualtone' },
+  { id: 'cyber_neon', name: 'Neon Core', category: 'skin', rarity: 'rare', collection: 'cyber', acquire: 'stardust', cost: 110, fill: 0x1affd5, glow: 0x00ffc8, accent: 0xff2bd6, skinStyle: 'dualtone' },
   { id: 'cyber_glitch', name: 'Glitch Orb', category: 'skin', rarity: 'epic', collection: 'cyber', acquire: 'fragments', cost: 35, fill: 0xff2bd6, glow: 0x2bd6ff, accent: 0xffffff, skinStyle: 'dualtone' },
   { id: 'cyber_quantum', name: 'Quantum Sphere', category: 'skin', rarity: 'epic', collection: 'cyber', acquire: 'fragments', cost: 45, fill: 0xa8eaff, glow: 0x6b8bff, accent: 0xffffff, skinStyle: 'ringed' },
   // Mythic Collection
@@ -74,7 +74,7 @@ const TRAILS: Cosmetic[] = [
   { id: 'trail_ice', name: 'Ice Trail', category: 'trail', rarity: 'epic', collection: 'trails', acquire: 'fragments', cost: 25, trail: { colors: [0x9fdcff, 0xe6f7ff], style: 'ice' } },
   { id: 'trail_lightning', name: 'Lightning Trail', category: 'trail', rarity: 'legendary', collection: 'trails', acquire: 'fragments', cost: 50, trail: { colors: [0xfff36b, 0x8ad0ff], style: 'lightning' } },
   { id: 'trail_galaxy', name: 'Galaxy Trail', category: 'trail', rarity: 'legendary', collection: 'trails', acquire: 'bundle', bundleId: 'starter', unlockHint: 'Starter Pack', trail: { colors: [0xb46bff, 0x33e1ff, 0xff6bd0], style: 'galaxy' } },
-  { id: 'trail_void', name: 'Void Trail', category: 'trail', rarity: 'mythic', collection: 'trails', acquire: 'fragments', cost: 90, trail: { colors: [0x2a1a4a, 0x7c5cff], style: 'void' } },
+  { id: 'trail_void', name: 'Void Trail', category: 'trail', rarity: 'mythic', collection: 'trails', acquire: 'fragments', cost: 100, trail: { colors: [0x2a1a4a, 0x7c5cff], style: 'void' } },
 ];
 
 // --- ARRIVAL EFFECTS ------------------------------------------------------
@@ -84,7 +84,7 @@ const ARRIVALS: Cosmetic[] = [
   { id: 'arrival_portal', name: 'Portal Collapse', category: 'arrival', rarity: 'epic', collection: 'arrivals', acquire: 'fragments', cost: 25, arrival: { particle: 0x33e1ff, flash: 0xa8eaff, count: 28, pattern: 'implode' } },
   { id: 'arrival_nova', name: 'Nova Explosion', category: 'arrival', rarity: 'legendary', collection: 'arrivals', acquire: 'fragments', cost: 50, arrival: { particle: 0xff7a3d, flash: 0xffd166, count: 36, pattern: 'nova' } },
   { id: 'arrival_bolt', name: 'Lightning Strike', category: 'arrival', rarity: 'legendary', collection: 'arrivals', acquire: 'bundle', bundleId: 'premium_collection', unlockHint: 'Premium Collection Pack', arrival: { particle: 0xfff36b, flash: 0xffffff, count: 26, pattern: 'bolt' } },
-  { id: 'arrival_bloom', name: 'Cosmic Bloom', category: 'arrival', rarity: 'mythic', collection: 'arrivals', acquire: 'fragments', cost: 90, arrival: { particle: 0xb46bff, flash: 0xff6bd0, count: 40, pattern: 'bloom' } },
+  { id: 'arrival_bloom', name: 'Cosmic Bloom', category: 'arrival', rarity: 'mythic', collection: 'arrivals', acquire: 'fragments', cost: 100, arrival: { particle: 0xb46bff, flash: 0xff6bd0, count: 40, pattern: 'bloom' } },
 ];
 
 export const COSMETICS: Cosmetic[] = [...SKINS, ...TRAILS, ...ARRIVALS];

@@ -93,6 +93,20 @@ document.addEventListener('visibilitychange', () => {
   game.scale.refresh();
 });
 
+// First user gesture: resume the (custom) shared AudioContext SYNCHRONOUSLY inside the
+// DOM handler. The Android WebView only unlocks audio when resume() runs inside a real
+// gesture; Phaser dispatches its pointer events during the game step (not the gesture
+// call stack), so resuming from a Phaser input callback leaves the context suspended.
+const unlockAudio = (): void => {
+  try {
+    sharedAudio().resume();
+  } catch {
+    // audio unavailable — ignore
+  }
+};
+window.addEventListener('pointerdown', unlockAudio, { once: true, capture: true });
+window.addEventListener('touchend', unlockAudio, { once: true, capture: true });
+
 // Dev-only handles for automated verification (Playwright). Stripped from prod builds.
 if (import.meta.env.DEV) {
   (window as unknown as { __game: Phaser.Game; __Phaser: typeof Phaser }).__game = game;

@@ -26,6 +26,11 @@ export class AudioSynth {
     }
   }
 
+  // AudioContext state ('suspended' | 'running' | 'closed') — for the gesture-unlock check.
+  get contextState(): AudioContextState {
+    return this.ctx.state;
+  }
+
   // Sustained low hum while the gravity field is held. Idempotent — calling
   // again while already humming does nothing, so it's safe per pointerdown.
   startHum(): void {
