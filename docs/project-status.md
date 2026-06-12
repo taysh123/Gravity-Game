@@ -1,8 +1,9 @@
 # Gravity Flow — Project Status (Single Source of Truth)
 
-> **Resume in one line:** Read this file first, then continue from **[Next Recommended Sprint](#next-recommended-sprint)**.
-> Quick version: `docs/session-handoff.md`.
-> **Repository:** https://github.com/taysh123/Gravity-Game.git · branch `master` (synced).
+> **Resume in one line:** Read this file first, then continue from **[Release Readiness — Play Store Launch Prep](#release-readiness--play-store-launch-prep-current-phase)**.
+> Quick version + Next Session Quick Start: `docs/session-handoff.md`. Release tracker: `docs/release-prep.md`.
+> **Repository:** https://github.com/taysh123/Gravity-Game.git · branch `master` (synced, HEAD `a354492`).
+> **Phase:** Google Play launch engineering (game is content-complete v0.14.0). **Privacy policy:** https://taysh123.github.io/Gravity-Game/
 
 ---
 
@@ -65,6 +66,61 @@
 **Caveat:** automated Playwright scripts verified that mechanics *function* (zone lifts, saw sweeps,
 hazard kills, countdown fails). They **cannot** reproduce precise finger input, so per-level
 **solvability/difficulty balance** is not yet verified — that needs a **human device playtest**.
+
+---
+
+## Release Readiness — Play Store Launch Prep (current phase)
+
+The game is content-complete (v0.14.0); the active work is **shipping it to Google Play**.
+**Canonical privacy-policy URL:** https://taysh123.github.io/Gravity-Game/ (this repo's GitHub
+Pages, served from `docs/index.html`).
+
+**Done this phase — all committed + pushed (HEAD `a354492`):**
+- **Release signing** wired in Gradle (`android/app/build.gradle`) from a gitignored
+  `android/keystore.properties`; upload key **`gravityflow-upload`** (`C:\Keys\gravityflow-upload.jks`,
+  valid to 2051). `./gradlew signingReport` → release variant **Valid**. (`b79e849`)
+- **First signed AAB** built + `jarsigner`-verified at
+  `android/app/build/outputs/bundle/release/app-release.aab`. ⚠️ **Built 2026-06-10 — predates the UMP
+  consent + branded icon, so REBUILD before uploading.**
+- **UMP (GDPR) consent** gathered before `AdMob.initialize()` (`utils/Ads.ts` + `utils/native/admob.ts`),
+  guarded + web-safe. (`dd49e3e`)
+- **Privacy policy finalized**: source `docs/store/privacy-policy.md` + hosted HTML `docs/index.html`
+  (mobile-friendly, no raw markdown). Contact `truestorylabs@gmail.com`; governing law = Israel;
+  legal-requests / disclaimer / retention-exceptions clauses. (`cb13ff0`, `fe0bfc7`, `ddcfe8e`)
+- **Store assets** in `docs/store/assets/`: **8 screenshots @ 1080×2160** (Play-compliant), **32-bit
+  `icon-512.png`**, **`feature-1024x500.png`**, + concept alternatives (`icon-concepts/`,
+  `feature-concepts/`); catalog `docs/store/assets/README.md`. (`693a2c9`)
+- **Branded launcher icon** (vortex) replaces the default Capacitor robot — adaptive + legacy mipmaps
+  at all densities via `@capacitor/assets` from `assets/icon-{foreground,background,only}.png`. (`a354492`)
+- Firebase real `google-services.json` in `android/app/` (project `gravity-flow-e8dff`).
+- Quality: `tsc` clean · **82 tests** · web build clean (firebase/admob/RC **not** bundled).
+
+**Readiness by track:**
+- **Internal Testing — code & assets READY; blocked only on user/Play-Console steps:** confirm Pages
+  live → create Play Console app → App content (privacy URL + data safety + content rating + ads
+  declaration + target audience) → Main store listing (paste `docs/store/listing.md` text + upload
+  assets) → **rebuild AAB** → upload + add testers. *Test AdMob ids are fine for this track.*
+- **Closed Testing — adds external accounts:** real **AdMob** app + 2 ad-unit ids → `config/
+  monetization.config.ts` + `AndroidManifest.xml` → rebuild; AdMob **UMP consent message**;
+  **RevenueCat** SDK key + Remove-Ads product + `premium` entitlement; **Play billing products**
+  (`remove_ads` + the 3 bundles); on-device verify ads / interstitial cap / Remove-Ads / Restore /
+  Analytics DebugView / Crashlytics; Play's new-personal-account tester+duration window.
+- **Production — adds:** device **1★ fairness playtest**; final data safety / pricing / countries;
+  promote → submit for review.
+
+**Known issues / risks / blockers:**
+- ⚠️ **The signed AAB is stale** (no UMP, old icon) — `cd android; ./gradlew bundleRelease` before upload.
+- **GitHub Pages source must be `master` → `/docs`** so `…/Gravity-Game/` serves `docs/index.html`
+  (otherwise that URL hits the game's root `index.html`). Verify after enabling Pages.
+- **Jekyll exposure:** serving `/docs` publishes *all* of `docs/` (status, handoff, plans,
+  monetization-review). No secrets — keystore + `google-services.json` are gitignored. Optional:
+  add `docs/.nojekyll` or relocate internal docs.
+- **1★ device fairness** is still unverified (long-standing gameplay gate; runnable on the internal build).
+- `android/.idea/*` IDE files are tracked and show churn (cosmetic; candidate for gitignore).
+
+**External-account tasks still required (cannot run locally):** Play Console (app, all App-content
+forms, tracks, billing products, uploads); AdMob (real app + ad-unit ids, consent message); RevenueCat
+(SDK key, product, entitlement); Firebase (done — optionally verify DebugView/Crashlytics on device).
 
 ---
 
@@ -232,26 +288,17 @@ History lives in `docs/superpowers/plans/`. Summary:
 
 ## Next Recommended Sprint
 
-**v0.7.0 shipped: Excitement Sprint — per-world visual identity (8 palettes + title cards), per-world
-in-game music + boss audio, star-by-star win + PERFECT, boss STAR FREED payoff + red arena + camera
-punches, signature/boss title cards, and the hook "Bring the lost star home." Turned the prototype toward
-a memorable game (no new mechanics). NEXT: device-playtest the excitement build, then Sprint 2 (Capacitor
-→ Play, AdMob, IAP, analytics → RC). Excitement audit + roadmap in `~/.claude/plans/`. (Prior: v0.6.x
-Gameplay Overhaul; v0.5.0 Retention
-Engine; v0.4.1 pacing fix.)**
-1. **Device playtest of the harder curve + Portals (open, highest priority):** the rebalanced goals/par
-   and the new combination/Rifts levels need real finger input to confirm fair-but-real difficulty
-   (1★ always achievable). Tune `parTimeMs`/`timeLimitMs`/geometry from notes.
-2. **World 7 — One-way Gates** (the last new mechanic), then **combination/mastery Worlds 8–10** to reach
-   ~100, and backfill W1–6 to 10 each. Rubric + full roadmap:
-   `docs/superpowers/plans/2026-06-03-content-roadmap-100.md`.
+The content/mechanic roadmap is **paused** — the game is content-complete and the project is in the
+**Google Play launch phase**. See **[Release Readiness — Play Store Launch Prep](#release-readiness--play-store-launch-prep-current-phase)**
+above for the authoritative current state, and `docs/session-handoff.md` → *Next Session Quick Start*
+for the immediate next actions. Release checklists per track live in `docs/release-prep.md`.
 
-**Gate for monetization + release phases:** choose **PWA** vs **Capacitor native wrap** (decides whether
-AdMob rewarded ads + store IAP are possible). Deferred until those phases; recorded here.
+**Immediate next action:** rebuild the signed AAB (it predates UMP + the branded icon), then the
+user-side Play Console steps (create app → App content → listing → upload to Internal Testing). The
+**device 1★ fairness playtest** remains the open gameplay gate and can run on the internal build.
 
-**Why this order:** balance before more content avoids compounding unfair levels; retention is high
-value-per-cost; Portals add the next decision axis. **Deliverables:** tuned configs, Daily Challenge,
-green full-flow runs.
+*(Content backlog kept for after launch: gameplay tuning from the device playtest, real soundtrack,
+the retired "Expert" level packs on disk. Mechanic roadmap: `docs/superpowers/plans/`.)*
 
 ---
 
@@ -272,8 +319,8 @@ Ranked in `docs/superpowers/plans/2026-06-01-mechanics-roadmap.md`. Highlights:
 
 1. **Read this file first.** It is the single source of truth.
 2. Skim `docs/session-handoff.md` for the 30-second version.
-3. Continue from **[Next Recommended Sprint](#next-recommended-sprint)** (currently: device playtest +
-   balance tuning of Worlds 2-5, then the Daily Challenge).
+3. Continue from **[Release Readiness — Play Store Launch Prep](#release-readiness--play-store-launch-prep-current-phase)**
+   (currently: rebuild the AAB, then user-side Play Console steps for Internal Testing).
 4. Working conventions: plan first (`writing-plans` → `docs/superpowers/plans/`), one entity + one
    `LevelConfig` field per mechanic, all constants in config, verify in-browser before "done"
    (`npm run dev` + Playwright `--disable-gpu --use-gl=swiftshader`), keep `tsc`/tests/build green.
