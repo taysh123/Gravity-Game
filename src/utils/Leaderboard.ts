@@ -20,6 +20,7 @@ export interface RunResult {
 
 const KEY = 'gravity-flow:leaderboard:daily';
 const RUN_KEY = 'gravity-flow:leaderboard:run';
+const ENDLESS_KEY = 'gravity-flow:leaderboard:endless'; // all-time personal best (random runs)
 
 function read(): DailyResult[] {
   try {
@@ -77,5 +78,20 @@ export const Leaderboard = {
       const all = raw ? (JSON.parse(raw) as RunResult[]) : [];
       return all.find((x) => x.week === week)?.score ?? 0;
     } catch { return 0; }
+  },
+
+  // Endless mode (random seeds, not globally rankable) — a single all-time personal
+  // best. Same swap-to-PGS shape: a global "all-time Endless" board can replace this.
+  submitEndless(score: number): number {
+    const best = this.bestEndless();
+    if (score > best) {
+      try { localStorage.setItem(ENDLESS_KEY, String(score)); } catch { /* storage off */ }
+      return score;
+    }
+    return best;
+  },
+
+  bestEndless(): number {
+    try { return Number(localStorage.getItem(ENDLESS_KEY)) || 0; } catch { return 0; }
   },
 };

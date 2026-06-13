@@ -165,7 +165,7 @@ export class MainMenuScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setLetterSpacing(1);
     runBtn.setInteractive(new Phaser.Geom.Rectangle(-110, -22, 220, 44), Phaser.Geom.Rectangle.Contains);
-    runBtn.on('pointerup', () => fadeToScene(this, 'EndlessScene'));
+    runBtn.on('pointerup', () => fadeToScene(this, 'RunSelectScene'));
 
     if (reduced) {
       logo.setScale(logoScale);

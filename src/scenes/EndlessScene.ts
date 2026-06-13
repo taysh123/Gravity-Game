@@ -67,6 +67,7 @@ export class EndlessScene extends Phaser.Scene {
   private invulnUntil = 0;
   private awardedStardust = 0;
   private runWeek = '';
+  private mode: 'endless' | 'weekly' = 'endless';
   private overlay: Phaser.GameObjects.GameObject[] = [];
   private overlayActions: Phaser.GameObjects.GameObject[] = [];
 
@@ -78,6 +79,10 @@ export class EndlessScene extends Phaser.Scene {
 
   constructor() {
     super({ key: 'EndlessScene' });
+  }
+
+  init(data: { mode?: 'endless' | 'weekly' }): void {
+    this.mode = data?.mode === 'weekly' ? 'weekly' : 'endless';
   }
 
   create(): void {
@@ -114,9 +119,11 @@ export class EndlessScene extends Phaser.Scene {
     this.createSideWalls();
     this.setupInput();
 
-    // Deterministic weekly run; loop the sequence if a run goes extremely long.
+    // Weekly Challenge = the shared weekly seed (a fair, everyone-gets-the-same-run
+    // leaderboard). Endless = a fresh random seed each attempt, so every run differs.
     this.runWeek = weekKey(new Date());
-    this.run = generateRun(this.runWeek, 400);
+    const seed = this.mode === 'weekly' ? this.runWeek : `e${(Math.random() * 1e9) | 0}`;
+    this.run = generateRun(seed, 400);
     this.filledToY = -40; // first chunk spawns above the star (open runway below)
     this.ensureSpawned();
 
@@ -320,12 +327,28 @@ export class EndlessScene extends Phaser.Scene {
     // clean (non-revived) run, so a rewarded revive can't buy a leaderboard score.
     this.awardedStardust = stardustForRun(this.score);
     if (this.awardedStardust > 0) CurrencyStore.add(this.awardedStardust);
-    if (!this.revived) {
-      Leaderboard.submitRun({ week: this.runWeek, score: this.score, date: dateKey(new Date()) });
+
+    let best: number;
+    let isBest: boolean;
+    if (this.mode === 'weekly') {
+      // Ranked weekly board — a revive must not buy a score, so don't post revived runs.
+      if (!this.revived) {
+        Leaderboard.submitRun({ week: this.runWeek, score: this.score, date: dateKey(new Date()) });
+      }
+      best = Leaderboard.bestRun(this.runWeek);
+      isBest = !this.revived && this.score > 0 && this.score >= best;
+    } else {
+      // Endless — a personal all-time best (random runs aren't globally rankable).
+      const prev = Leaderboard.bestEndless();
+      best = Leaderboard.submitEndless(this.score);
+      isBest = this.score > 0 && this.score > prev;
     }
-    const best = Leaderboard.bestRun(this.runWeek);
-    const isBest = !this.revived && this.score > 0 && this.score >= best;
     this.showRunOver(best, isBest);
+  }
+
+  // Instant restart of the same mode — the core "one more try" loop.
+  private retry(): void {
+    this.scene.restart({ mode: this.mode });
   }
 
   private showRunOver(best: number, isBest: boolean): void {
@@ -361,6 +384,9 @@ export class EndlessScene extends Phaser.Scene {
 
     const actions: Phaser.GameObjects.GameObject[] = [];
     let ay = cy + panelH / 2 + 30;
+    // RETRY first — instant restart of the same mode (the "one more try" loop).
+    actions.push(this.pill('↻ RETRY', '#ffffff', 0xffd166, 168, cx, ay, () => this.retry()));
+    ay += 50;
     if (!this.revived) {
       actions.push(this.pill('▶ REVIVE', '#7affb0', 0x7affb0, 168, cx, ay, () => void this.tryRevive()));
       ay += 50;
