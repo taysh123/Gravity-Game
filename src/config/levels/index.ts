@@ -119,6 +119,16 @@ import { level130 } from './level130';
 import { level131 } from './level131';
 import { level132 } from './level132';
 import { level133 } from './level133';
+import { level134 } from './level134';
+import { level135 } from './level135';
+import { level136 } from './level136';
+import { level137 } from './level137';
+import { level138 } from './level138';
+import { level139 } from './level139';
+import { level140 } from './level140';
+import { level141 } from './level141';
+import { level142 } from './level142';
+import { level143 } from './level143';
 
 // Single source of truth for level order and count (used by GameScene + EndScene).
 // 150-LEVEL EXPANSION (M2): the 8 mechanic worlds grown 7->10 each by PROMOTING the
@@ -171,4 +181,7 @@ export const LEVELS: LevelConfig[] = [
   // rotating arms). teach×2, develop×2, twin-saw twist, combine×3, SIGNATURE THE TEMPEST,
   // BOSS THE EYE OF THE STORM (timed multi-hazard).
   level124, level125, level126, level127, level128, level129, level130, level131, level132, level133,
+  // W13 Ascension (121-130): long multi-stage journeys, all mechanics. opener, stage×4,
+  // descent twist, combine×3, SIGNATURE THE ASCENT, BOSS THE SUMMIT (the long climb).
+  level134, level135, level136, level137, level138, level139, level140, level141, level142, level143,
 ];
