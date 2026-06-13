@@ -139,6 +139,16 @@ import { level150 } from './level150';
 import { level151 } from './level151';
 import { level152 } from './level152';
 import { level153 } from './level153';
+import { level154 } from './level154';
+import { level155 } from './level155';
+import { level156 } from './level156';
+import { level157 } from './level157';
+import { level158 } from './level158';
+import { level159 } from './level159';
+import { level160 } from './level160';
+import { level161 } from './level161';
+import { level162 } from './level162';
+import { level163 } from './level163';
 
 // Single source of truth for level order and count (used by GameScene + EndScene).
 // 150-LEVEL EXPANSION (M2): the 8 mechanic worlds grown 7->10 each by PROMOTING the
@@ -197,4 +207,8 @@ export const LEVELS: LevelConfig[] = [
   // W14 Singularity (131-140): mastery capstone, tight margins (goals ~26->22).
   // precision×4, timed twist, combine×3, SIGNATURE THE EVENT HORIZON, BOSS THE SINGULARITY.
   level144, level145, level146, level147, level148, level149, level150, level151, level152, level153,
+  // W15 Homecoming (141-150): the resolution arc — "bring the star home". reprise×3,
+  // develop, grand-descent twist, combine×3, SIGNATURE THE HOMEWARD PATH,
+  // FINALE BOSS THE LONG WAY HOME (every mechanic, timed — the campaign's last journey).
+  level154, level155, level156, level157, level158, level159, level160, level161, level162, level163,
 ];
