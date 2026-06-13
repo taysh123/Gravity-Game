@@ -99,6 +99,16 @@ import { level110 } from './level110';
 import { level111 } from './level111';
 import { level112 } from './level112';
 import { level113 } from './level113';
+import { level114 } from './level114';
+import { level115 } from './level115';
+import { level116 } from './level116';
+import { level117 } from './level117';
+import { level118 } from './level118';
+import { level119 } from './level119';
+import { level120 } from './level120';
+import { level121 } from './level121';
+import { level122 } from './level122';
+import { level123 } from './level123';
 
 // Single source of truth for level order and count (used by GameScene + EndScene).
 // 150-LEVEL EXPANSION (M2): the 8 mechanic worlds grown 7->10 each by PROMOTING the
@@ -144,4 +154,7 @@ export const LEVELS: LevelConfig[] = [
   // W10 Binary (91-100): dual magnets / orbital mastery. teach×2, develop×2, dual-well
   // twist, combine×3, SIGNATURE THE BINARY STAR, BOSS THE PULSAR (repel core + arm).
   level104, level105, level106, level107, level108, level109, level110, level111, level112, level113,
+  // W11 Labyrinth (101-110): portals + gates spatial puzzles. teach×2, develop×2,
+  // two-rift twist, combine×3, SIGNATURE HALL OF ECHOES, BOSS THE WARDEN.
+  level114, level115, level116, level117, level118, level119, level120, level121, level122, level123,
 ];
