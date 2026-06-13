@@ -7,7 +7,14 @@ Readiness". Release checklists: [`docs/release-prep.md`](./release-prep.md).**
 
 ## Current status (one screen)
 - **Game:** GRAVITY FLOW by **True Story Labs** — cosmic physics puzzler (Phaser 3 + TS + Vite).
-  **Content-complete: 56 levels / 8 worlds, all mechanics, v0.14.0.**
+  **NOW 150 levels / 15 worlds** (2026-06-14 expansion; was 56/8). All 7 mechanics; Worlds 9–15 are new
+  combination/tension/mastery worlds (no new engine code). Plan of record + curation catalog:
+  `docs/superpowers/plans/2026-06-14-expansion-150.md`.
+- **Verified:** tsc + 87 tests (incl. `levels.test.ts` structural validator) + build green; all 150 boot
+  with zero console errors (`scripts/smoke_levels.py`). **Open:** device 1★ fairness playtest
+  (`docs/device-playtest-checklist.md`) + optional M5 polish (cosmetic fanfare / transitions).
+- **Launch:** deferred during the expansion. The store/AAB notes below are pre-expansion — **rebuild the
+  AAB** (now also reflects 150 levels) before any upload.
 - **Phase:** **Google Play launch engineering** (not gameplay). Code + store assets are ready;
   remaining work is mostly **user-side Play Console + external accounts**.
 - **Git:** branch `master`, **synced**, HEAD **`a354492`**. Repo https://github.com/taysh123/Gravity-Game.git

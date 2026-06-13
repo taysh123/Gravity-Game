@@ -235,17 +235,24 @@ History lives in `docs/superpowers/plans/`. Summary:
 
 ## Current Content
 
-> **⚠️ Active program (started 2026-06-14): 150-level expansion + polish.** Plan of record:
-> `docs/superpowers/plans/2026-06-14-expansion-150.md`. **Now at 80 levels (8×10)** after M2 promoted the
-> retired pre-trim levels into Worlds 1–8. Launch timing is deferred while this runs. Key finding: the
-> per-world visual identity + adaptive audio + win-celebration polish the old excitement audit asked for is
-> **already built** — remaining work leads with content (Worlds 9–15 → 150) plus targeted polish. The
-> 56-level snapshot below is superseded; structure/philosophy still apply.
+> **⚠️ Active program (2026-06-14): 150-level expansion + polish — CONTENT COMPLETE at 150.** Plan of
+> record: `docs/superpowers/plans/2026-06-14-expansion-150.md`. **Now at 150 levels / 15 worlds.** Launch
+> timing deferred while polish/balance finishes. Key finding: the per-world visual identity + adaptive
+> audio + win-celebration polish the old excitement audit asked for is **already built**, so the program
+> led with content + targeted polish. **All 150 levels boot with zero console errors** (`scripts/smoke_levels.py`);
+> per-level solvability/fairness still needs the human **device playtest** (`docs/device-playtest-checklist.md`).
+> The 56-level snapshot below is superseded; structure/philosophy still apply.
 
-- **8 worlds, 80 levels (8×10)** as of M2 — `LEVELS[]` ordered by world so chapter ranges are contiguous.
-  Each world grew 7→10 by promoting curated retired levels (+ one new currents level) into develop/combine
-  slots, keeping each signature + boss last. A structural validator (`src/config/levels/levels.test.ts`)
-  guards every level. *(Original 56-level WOW-trim notes retained below for reference.)*
+- **15 worlds, 150 levels** — `LEVELS[]` ordered by world so chapter ranges are contiguous; a structural
+  validator (`src/config/levels/levels.test.ts`) guards every level. Worlds 1–8 (the 7 mechanic worlds)
+  grew 7→10 by promoting curated retired levels; Worlds 9–15 are new combination/tension/mastery worlds
+  reusing the 7 mechanics (no new engine code):
+  - **9 Gauntlet** (81-90) precision routing · **10 Binary** (91-100) orbital magnets ·
+    **11 Labyrinth** (101-110) portals+gates · **12 Tempest** (111-120) timed + moving hazards ·
+    **13 Ascension** (121-130) long journeys · **14 Singularity** (131-140) tight-margin mastery ·
+    **15 Homecoming** (141-150) the finale arc → BOSS "THE LONG WAY HOME".
+  - Each world keeps the teach→…→signature→boss arc; goal radii shrink and par tightens across the campaign.
+  *(Original 56-level WOW-trim notes retained below for reference.)*
 - **(Superseded snapshot) 8 worlds, 56 levels (8×7)** — `LEVELS[]` ordered by world so chapter ranges are contiguous. The whole
   campaign was trimmed to its strongest levels (Phase 1 = W1-3, Phase 2 = W4-8) with toys-before-tests,
   cut filler combine-stacks, and a fully rotated set of distinct boss archetypes:
