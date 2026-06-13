@@ -15,8 +15,8 @@ describe('worldOf', () => {
     expect(worldOf(1).name).toBe('FOUNDATIONS');
     expect(worldOf(11).name).toBe('CURRENTS');
     expect(worldOf(21).name).toBe('CLOCKWORK');
-    expect(worldOf(25).name).toBe('PERIL');
-    expect(worldOf(32).name).toBe('WELLS');
+    expect(worldOf(35).name).toBe('PERIL');
+    expect(worldOf(45).name).toBe('WELLS');
   });
   it('falls back to the first world out of range', () => {
     expect(worldOf(0).id).toBe(1);

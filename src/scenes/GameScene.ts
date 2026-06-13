@@ -950,6 +950,11 @@ export class GameScene extends Phaser.Scene {
     const arrival = CosmeticStore.equipped('arrival').arrival;
     this.emitGoalBurst(arrival);
     this.winFlash(arrival?.flash);
+    // Screen-wide bloom on the biggest wins (3★ or boss) — a celebratory moment
+    // beyond the goal-localized flash. Tinted to the world accent.
+    if (this.isBoss || this.winResult.stars >= 3) {
+      this.celebrationFlash(this.worldTheme?.accent ?? PHYSICS.COLOR_STAR);
+    }
     // Camera punch — a small zoom kick for impact (bigger for a boss).
     const punch = this.isBoss ? 1.06 : 1.035;
     this.tweens.add({ targets: this.cameras.main, zoom: punch, duration: 130, yoyo: true, ease: 'Quad.easeOut' });
@@ -1123,6 +1128,35 @@ export class GameScene extends Phaser.Scene {
       toast.setScale(0.85).setAlpha(0);
       this.tweens.add({ targets: toast, scale: 1, alpha: 1, delay: 360, duration: 320, ease: THEME.EASE_POP });
     }
+  }
+
+  // Screen-wide radial bloom for the biggest wins (3★ / boss) — the "screen-
+  // filling" celebratory moment. One additive sprite (not particles), tinted to
+  // the world accent, blooming out then fading. Sits above gameplay, below the
+  // win overlay scrim. Honors reduced-motion via a calmer peak alpha.
+  private celebrationFlash(tint: number): void {
+    const { width, height } = this.scale;
+    const size = Math.max(width, height) * 2;
+    const flash = this.add
+      .image(width / 2, height / 2, 'glow')
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(tint)
+      .setDepth(45)
+      .setDisplaySize(size, size)
+      .setAlpha(0);
+    const peak = reducedMotionActive()
+      ? PHYSICS.CELEBRATION_FLASH_ALPHA_REDUCED
+      : PHYSICS.CELEBRATION_FLASH_ALPHA;
+    this.tweens.add({
+      targets: flash,
+      alpha: peak,
+      scale: flash.scale * 1.15,
+      duration: PHYSICS.CELEBRATION_FLASH_MS,
+      ease: 'Quad.easeOut',
+      yoyo: true,
+      hold: 60,
+      onComplete: () => flash.destroy(),
+    });
   }
 
   // Soft "absorb" flash at the goal when the ball is captured.

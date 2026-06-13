@@ -15,9 +15,10 @@ export interface RecordInput {
   completed: boolean;
 }
 
-// v8: Phase-2 back-half redesign — Worlds 4-8 trimmed 10->7 each (renumbering
-// everything from level 22 on), so reset progress cleanly. (v7 = Phase-1 W1-3 trim.)
-const KEY = 'gravity-flow:progress:v8';
+// v9: 150-level expansion (M2) — Worlds 1-8 grown 7->10 each by promoting the
+// retired pre-trim levels, which renumbers the whole campaign, so reset cleanly.
+// (v8 = Phase-2 back-half trim; v7 = Phase-1 W1-3 trim.)
+const KEY = 'gravity-flow:progress:v9';
 const EMPTY: LevelProgress = { stars: 0, bestTimeMs: 0, gem: false };
 
 let cache: Record<number, LevelProgress> | null = null;

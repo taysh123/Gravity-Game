@@ -51,6 +51,9 @@ export const PHYSICS = {
 
   // Win / death feedback (elegant, within the <50-particle ceiling)
   WIN_FLASH_MS: 340,             // Goal "absorb" flash on capture.
+  CELEBRATION_FLASH_MS: 150,     // Screen-wide bloom (3★ / boss) — bloom-out then fade.
+  CELEBRATION_FLASH_ALPHA: 0.4,  // Peak opacity of the screen bloom (full-motion).
+  CELEBRATION_FLASH_ALPHA_REDUCED: 0.16, // Calmer peak when reduced-motion is on.
   DEATH_FLASH_MS: 360,           // Red vignette flash on death.
   DEATH_PUFF_COUNT: 16,          // Ball "puff" particles on death.
   COLOR_DEATH: 0xff5a6a,         // Fail red — vignette + puff + ball tint.

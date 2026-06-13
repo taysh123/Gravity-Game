@@ -235,7 +235,18 @@ History lives in `docs/superpowers/plans/`. Summary:
 
 ## Current Content
 
-- **8 worlds, 56 levels (8×7)** — `LEVELS[]` ordered by world so chapter ranges are contiguous. The whole
+> **⚠️ Active program (started 2026-06-14): 150-level expansion + polish.** Plan of record:
+> `docs/superpowers/plans/2026-06-14-expansion-150.md`. **Now at 80 levels (8×10)** after M2 promoted the
+> retired pre-trim levels into Worlds 1–8. Launch timing is deferred while this runs. Key finding: the
+> per-world visual identity + adaptive audio + win-celebration polish the old excitement audit asked for is
+> **already built** — remaining work leads with content (Worlds 9–15 → 150) plus targeted polish. The
+> 56-level snapshot below is superseded; structure/philosophy still apply.
+
+- **8 worlds, 80 levels (8×10)** as of M2 — `LEVELS[]` ordered by world so chapter ranges are contiguous.
+  Each world grew 7→10 by promoting curated retired levels (+ one new currents level) into develop/combine
+  slots, keeping each signature + boss last. A structural validator (`src/config/levels/levels.test.ts`)
+  guards every level. *(Original 56-level WOW-trim notes retained below for reference.)*
+- **(Superseded snapshot) 8 worlds, 56 levels (8×7)** — `LEVELS[]` ordered by world so chapter ranges are contiguous. The whole
   campaign was trimmed to its strongest levels (Phase 1 = W1-3, Phase 2 = W4-8) with toys-before-tests,
   cut filler combine-stacks, and a fully rotated set of distinct boss archetypes:
   - **World 1 — Foundations** (1-7): attractor + static walls; toy First-Pull/Comet/Constellation; BOSS THE COLLAPSE (descent set-piece).
