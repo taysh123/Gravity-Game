@@ -79,6 +79,16 @@ import { level90 } from './level90';
 import { level91 } from './level91';
 import { level92 } from './level92';
 import { level93 } from './level93';
+import { level94 } from './level94';
+import { level95 } from './level95';
+import { level96 } from './level96';
+import { level97 } from './level97';
+import { level98 } from './level98';
+import { level99 } from './level99';
+import { level100 } from './level100';
+import { level101 } from './level101';
+import { level102 } from './level102';
+import { level103 } from './level103';
 
 // Single source of truth for level order and count (used by GameScene + EndScene).
 // 150-LEVEL EXPANSION (M2): the 8 mechanic worlds grown 7->10 each by PROMOTING the
@@ -117,4 +127,8 @@ export const LEVELS: LevelConfig[] = [
   // fuse-aha, platforms+hazards+gate, 4-mechanic synthesis, gates+portal+hazard →
   // improvise-aha, SIGNATURE THE CONFLUENCE, BOSS/FINALE HOMECOMING.
   level58, level60, level57, level87, level59, level62, level61, level88, level89, level90,
+  // ── 150-LEVEL EXPANSION: combination / tension / mastery worlds (no new mechanic) ──
+  // W9 Gauntlet (81-90): precision routing — platforms + hazards + zones. teach×2,
+  // develop×2, descent twist, combine×3, SIGNATURE THE GAUNTLET, BOSS THE CRUCIBLE.
+  level94, level95, level96, level97, level98, level99, level100, level101, level102, level103,
 ];

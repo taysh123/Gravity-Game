@@ -320,6 +320,13 @@ export class AudioSynth {
       6: { base: 98, ratios: [1, 1.414, 2], type: 'triangle' },    // Rifts — unstable (tritone) G
       7: { base: 73.4, ratios: [1, 1.5, 2], type: 'sine' },        // Gates — clean D
       8: { base: 65.4, ratios: [1, 1.5, 2, 2.5], type: 'triangle' }, // Convergence — warm add9 C
+      9: { base: 49, ratios: [1, 1.2, 1.5], type: 'sawtooth' },     // Gauntlet — driving minor G
+      10: { base: 61.7, ratios: [1, 1.5, 2, 3], type: 'sine' },     // Binary — twin-star B
+      11: { base: 92.5, ratios: [1, 1.414, 2], type: 'triangle' },  // Labyrinth — uneasy tritone
+      12: { base: 77.8, ratios: [1, 1.2, 1.5], type: 'sawtooth' },  // Tempest — tense, stormy
+      13: { base: 87.3, ratios: [1, 1.5, 2.25], type: 'triangle' }, // Ascension — rising, open
+      14: { base: 58.3, ratios: [1, 1.19, 1.5], type: 'sine' },     // Singularity — deep, vast
+      15: { base: 65.4, ratios: [1, 1.5, 2, 2.5], type: 'triangle' }, // Homecoming — warm, resolved
     };
     const bed = boss ? { base: 55, ratios: [1, 1.19, 1.5], type: 'sawtooth' as OscillatorType } : (beds[worldId] ?? beds[1]);
     const t = this.ctx.currentTime;

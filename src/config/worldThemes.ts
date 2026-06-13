@@ -21,6 +21,14 @@ export const WORLD_THEMES: WorldTheme[] = [
   { id: 6, roman: 'VI',   subtitle: 'Through the rifts',  bgColor: 0x06121a, nebulaTints: [0x33e1ff, 0xffa64d], starTint: 0xd0f5ff, starAlpha: 1.1,  accent: 0x33e1ff },
   { id: 7, roman: 'VII',  subtitle: 'One way only',      bgColor: 0x07170f, nebulaTints: [0x2ee6c0, 0x1f8f6a], starTint: 0xd0ffe9, starAlpha: 1.0,  accent: 0x2ee6c0 },
   { id: 8, roman: 'VIII', subtitle: 'Almost home',       bgColor: 0x16120a, nebulaTints: [0xffe9a8, 0xffd166], starTint: 0xfff4d0, starAlpha: 1.15, accent: 0xffd166 },
+  // 150-level expansion — combination / tension / mastery worlds (no new mechanic).
+  { id: 9,  roman: 'IX',  subtitle: 'Run the gauntlet',   bgColor: 0x1a1206, nebulaTints: [0xff8a3d, 0x8a4a1a], starTint: 0xffe0c0, starAlpha: 1.0,  accent: 0xff8a3d },
+  { id: 10, roman: 'X',   subtitle: 'Caught between stars', bgColor: 0x0a0f1f, nebulaTints: [0x4d8aff, 0xc04cff], starTint: 0xd0d8ff, starAlpha: 1.1,  accent: 0x6a8cff },
+  { id: 11, roman: 'XI',  subtitle: 'Lost in the maze',    bgColor: 0x0a0a16, nebulaTints: [0x33e1ff, 0x2ee6c0], starTint: 0xcfeeff, starAlpha: 1.05, accent: 0x33e1ff },
+  { id: 12, roman: 'XII', subtitle: 'Into the tempest',    bgColor: 0x16060c, nebulaTints: [0xff5a6a, 0xffb04d], starTint: 0xffd0d0, starAlpha: 0.9,  accent: 0xff5a6a },
+  { id: 13, roman: 'XIII', subtitle: 'The long climb',     bgColor: 0x0a1410, nebulaTints: [0x7affb0, 0x2ee6c0], starTint: 0xd0ffe0, starAlpha: 1.1,  accent: 0x7affb0 },
+  { id: 14, roman: 'XIV', subtitle: 'Edge of the dark',    bgColor: 0x070710, nebulaTints: [0xc04cff, 0x6a2a9a], starTint: 0xe0d0ff, starAlpha: 1.0,  accent: 0xc04cff },
+  { id: 15, roman: 'XV',  subtitle: 'Bring the star home', bgColor: 0x16120a, nebulaTints: [0xffe9a8, 0xffd166], starTint: 0xfff4d0, starAlpha: 1.2,  accent: 0xffd166 },
 ];
 
 export function themeForWorld(id: number): WorldTheme {

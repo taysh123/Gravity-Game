@@ -23,4 +23,6 @@ export const WORLDS: World[] = [
   { id: 6, name: 'RIFTS', theme: PHYSICS.COLOR_PORTAL_A, from: 51, to: 60 },
   { id: 7, name: 'GATES', theme: PHYSICS.COLOR_GATE, from: 61, to: 70 },
   { id: 8, name: 'CONVERGENCE', theme: PHYSICS.COLOR_BALL_GLOW, from: 71, to: 80 },
+  // Combination / tension / mastery worlds (reuse the 7 mechanics; no new engine code).
+  { id: 9, name: 'GAUNTLET', theme: 0xff8a3d, from: 81, to: 90 },
 ];
