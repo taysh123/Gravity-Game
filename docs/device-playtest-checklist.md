@@ -35,8 +35,21 @@
 - Zone: lower `strength`. Magnet: it's global in `physics.config` (`MAGNET_*`) — tune cautiously.
 - After any change: `npm test` (validator stays green) + re-smoke if structure changed.
 
+## Gravity Run (endless mode) — feel pass (the only non-automatable check)
+Menu → **GRAVITY RUN** → try both **Endless** and **Weekly Challenge**. Automation has verified seeds,
+variety, fairness invariants, and overlays; only a human can judge *feel*:
+- **"One more try":** does **RETRY** + the fresh random Endless run pull you back in?
+- **Ramp:** with the v2 tuning (`ENDLESS_SCROLL_BASE 64 / ACCEL 1.8 / MAX 200`, 7s onboarding hold), does it
+  start gentle and tense up fairly — or still spike / drag? Tune the `ENDLESS_*` constants in `physics.config`.
+- **Chunk fairness/readability at speed:** any chunk that cheap-kills or reads poorly fast? (Each is validated
+  to have a safe lane, but feel is the judge.) Adjust the offending chunk in `config/endless/chunks.ts`.
+- **Variety:** do runs feel distinct now (recency window + 20 chunks)? Add chunks if any sameness remains.
+- **Onboarding:** does the first-run coach hint + start grace make the opening clear and non-punishing?
+- After any change: `npm test` (endless + chunk validators stay green) + re-smoke.
+
 ## Sign-off
 - [ ] All 150 levels 1★-cleared on device.
 - [ ] No unavoidable-hazard / unreadable-trick levels remain.
 - [ ] Magnet escape + gravity feel confirmed on a phone.
-- [ ] Tuning changes (if any) committed; validator + smoke green.
+- [ ] Gravity Run: both modes feel good (ramp fair, runs fresh, "one more try" lands); ramp/chunks tuned if needed.
+- [ ] Tuning changes (if any) committed; validators + smoke green.

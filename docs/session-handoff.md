@@ -12,13 +12,17 @@ Readiness". Release checklists: [`docs/release-prep.md`](./release-prep.md).**
   `docs/superpowers/plans/2026-06-14-expansion-150.md`.
 - **Verified:** tsc + 96 tests + build green; all 150 boot with zero console errors
   (`scripts/smoke_levels.py`). Reward-flair polish done (cosmetic **unlock fanfare** + COLLECTION COMPLETE).
-- **NEW — GRAVITY RUN (endless flagship, built):** `EndlessScene` — camera-scroll vertical climb reusing
-  every campaign entity; deterministic **weekly-seeded** handcrafted chunks (`utils/endless.ts` +
-  `config/endless/chunks.ts`, TDD); rich RUN OVER overlay with **Revive** (rewarded, off the ranked board),
-  **2× Stardust**, **weekly-seed leaderboard** (`Leaderboard.submitRun/bestRun`), and a **shareable card**
-  (`utils/Share`). Reached from a **GRAVITY RUN** entry on the main menu. Strategy of record:
-  `~/.claude/plans/pure-foraging-fiddle.md`. **Open:** human feel-playtest (scroll ramp / chunk fairness);
-  optional polish — proper menu placement + real Play Games Services leaderboards.
+- **GRAVITY RUN (endless flagship, built + v2 tuned):** `EndlessScene` — camera-scroll vertical climb
+  reusing every campaign entity. **Two modes** via a `RunSelectScene` hub off the GRAVITY RUN menu entry:
+  **Endless** (fresh random seed every attempt → different run each time; local all-time best
+  `Leaderboard.bestEndless`) and **Weekly Challenge** (fixed `weekKey` seed → shared **weekly leaderboard**
+  `Leaderboard.submitRun/bestRun`). RUN OVER overlay: **RETRY** (instant restart), Revive (rewarded, off the
+  ranked board), 2× Stardust, shareable card (`utils/Share`). **20 handcrafted chunks** with a validator
+  (`config/endless/chunks.test.ts`); `generateRun` variety/pacing (tier-0 opener, tension/release, no
+  back-to-back id/tag, recency window — TDD in `utils/endless.test.ts`); gentler readable ramp + onboarding
+  window + start grace + one-time coach hint (`physics.config ENDLESS_*`). Strategy of record:
+  `~/.claude/plans/pure-foraging-fiddle.md`. **Open:** human feel-playtest of the tuned ramp; optional real
+  Play Games Services leaderboards (interface ready).
 - **Open (campaign):** device 1★ fairness playtest (`docs/device-playtest-checklist.md`).
 - **Launch:** deferred during the expansion. The store/AAB notes below are pre-expansion — **rebuild the
   AAB** (now also reflects 150 levels) before any upload.

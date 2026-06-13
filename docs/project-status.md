@@ -243,12 +243,14 @@ History lives in `docs/superpowers/plans/`. Summary:
 > per-level solvability/fairness still needs the human **device playtest** (`docs/device-playtest-checklist.md`).
 > The 56-level snapshot below is superseded; structure/philosophy still apply.
 >
-> **NEW — GRAVITY RUN (endless flagship mode, built):** a camera-scroll vertical climb (`EndlessScene`)
-> reusing every campaign entity, with deterministic **weekly-seeded** handcrafted chunks
-> (`utils/endless.ts` + `config/endless/chunks.ts`), a Revive (rewarded, off the ranked board) + 2×-Stardust
-> + **weekly-seed leaderboard** (`Leaderboard.submitRun/bestRun`) + a **shareable card** (`utils/Share`).
-> Launched from a GRAVITY RUN menu entry. Growth strategy of record: `~/.claude/plans/pure-foraging-fiddle.md`.
-> Open: human feel-playtest; optional Play Games Services leaderboards + proper menu placement.
+> **GRAVITY RUN (endless flagship mode, built + v2 tuned):** a camera-scroll vertical climb (`EndlessScene`)
+> reusing every campaign entity. **Two modes** via a `RunSelectScene` hub: **Endless** (random seed each
+> attempt → fresh run every time; local best) and **Weekly Challenge** (fixed weekly seed + shared
+> leaderboard `Leaderboard.submitRun/bestRun`). RUN OVER: **RETRY**, Revive (rewarded, off the ranked board),
+> 2×-Stardust, shareable card (`utils/Share`). **20 handcrafted chunks** (`config/endless/chunks.ts` +
+> validator) with a variety/pacing generator (`utils/endless.ts` — tier-0 opener, tension/release, no
+> back-to-back id/tag, recency window) + a gentler readable ramp/onboarding. Strategy of record:
+> `~/.claude/plans/pure-foraging-fiddle.md`. Open: human feel-playtest of the tuned ramp; optional PGS leaderboards.
 
 - **15 worlds, 150 levels** — `LEVELS[]` ordered by world so chapter ranges are contiguous; a structural
   validator (`src/config/levels/levels.test.ts`) guards every level. Worlds 1–8 (the 7 mechanic worlds)
