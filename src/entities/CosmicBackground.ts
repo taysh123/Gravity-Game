@@ -81,6 +81,14 @@ export class CosmicBackground {
     });
   }
 
+  // Pin the whole backdrop to the screen (ignore camera scroll) — used by the
+  // endless climb so the starfield stays put while the world scrolls past it.
+  setScrollFactor(factor: number): void {
+    this.objects.forEach((o) => {
+      (o as Phaser.GameObjects.GameObject & { setScrollFactor?: (f: number) => void }).setScrollFactor?.(factor);
+    });
+  }
+
   destroy(): void {
     this.objects.forEach((o) => o.destroy());
     this.objects.length = 0;

@@ -152,6 +152,21 @@ export class MainMenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
+    // GRAVITY RUN — the endless flagship. Compact tertiary entry (full 44px hit
+    // area), clamped above the bottom safe area. (Proper menu layout lands in G4.)
+    const runY = Math.min(
+      height - Math.max(SPLASH.SAFE_AREA_MIN_PAD, insets.bottom) - 24,
+      dailyY + SPLASH.MENU_BTN_H / 2 + 48,
+    );
+    const runBtn = this.add
+      .text(cx, runY, '▶  GRAVITY RUN', {
+        fontFamily: THEME.FONT_DISPLAY, fontSize: '16px', color: '#ffd166', fontStyle: '700',
+      })
+      .setOrigin(0.5)
+      .setLetterSpacing(1);
+    runBtn.setInteractive(new Phaser.Geom.Rectangle(-110, -22, 220, 44), Phaser.Geom.Rectangle.Contains);
+    runBtn.on('pointerup', () => fadeToScene(this, 'EndlessScene'));
+
     if (reduced) {
       logo.setScale(logoScale);
       glow.setAlpha(0.4);
@@ -170,6 +185,7 @@ export class MainMenuScene extends Phaser.Scene {
     daily.container.setAlpha(0).setY(daily.container.y + 24);
     dailyCap.setAlpha(0);
     badge?.setAlpha(0);
+    runBtn.setAlpha(0);
 
     this.tweens.add({ targets: glow, alpha: 0.4, duration: 700, ease: THEME.EASE });
     this.tweens.add({
@@ -209,7 +225,7 @@ export class MainMenuScene extends Phaser.Scene {
       ease: THEME.EASE,
       onComplete: () => daily.startBreathing(SPLASH.IDLE_BREATHE_MS / 2),
     });
-    const fadeTargets: Phaser.GameObjects.GameObject[] = badge ? [dailyCap, badge] : [dailyCap];
+    const fadeTargets: Phaser.GameObjects.GameObject[] = badge ? [dailyCap, badge, runBtn] : [dailyCap, runBtn];
     this.tweens.add({ targets: fadeTargets, alpha: 1, delay: 620, duration: 420, ease: THEME.EASE });
   }
 

@@ -9,6 +9,7 @@ import { AchievementsScene } from './scenes/AchievementsScene';
 import { CosmeticsScene } from './scenes/CosmeticsScene';
 import { SettingsScene } from './scenes/SettingsScene';
 import { GameScene } from './scenes/GameScene';
+import { EndlessScene } from './scenes/EndlessScene';
 import { EndScene } from './scenes/EndScene';
 import { Crash } from './utils/Crash';
 import { IAP } from './utils/IAP';
@@ -47,6 +48,7 @@ const game = new Phaser.Game({
     CosmeticsScene,
     SettingsScene,
     GameScene,
+    EndlessScene,
     EndScene,
   ],
 });

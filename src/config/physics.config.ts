@@ -134,6 +134,15 @@ export const PHYSICS = {
   // Instant retry — snappy re-spawn on death (premium flow, less dead time).
   RESTART_DELAY_MS: 240,
 
+  // Gravity Run (endless climb) — the camera auto-pans up; keep the star above the
+  // bottom edge with the attractor while dodging seeded chunks. Tuning surface.
+  ENDLESS_SCROLL_BASE: 72,       // initial upward scroll speed (px/s)
+  ENDLESS_SCROLL_ACCEL: 2.4,     // speed gained per second (the ramp)
+  ENDLESS_SCROLL_MAX: 240,       // speed cap (px/s)
+  ENDLESS_SPAWN_AHEAD: 320,      // keep chunks filled this far above the view top
+  ENDLESS_CULL_MARGIN: 220,      // destroy chunks this far below the view bottom
+  ENDLESS_FALL_MARGIN: 40,       // ball this far below the view bottom = fell behind
+
   // Colors
   COLOR_BACKGROUND: 0x0d0d1a,
   COLOR_BALL: 0xf0f0ff,
