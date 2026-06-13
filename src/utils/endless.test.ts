@@ -55,6 +55,27 @@ describe('generateRun', () => {
     const b = generateRun('gw200', 20).map((c) => c.id).join();
     expect(a).not.toBe(b);
   });
+
+  it('never stacks the same family (tag) back-to-back', () => {
+    for (const seed of ['gw1', 'gw42', 'gw777']) {
+      const run = generateRun(seed, 80);
+      for (let i = 1; i < run.length; i++) {
+        expect(run[i].tag, `${seed} @${i} ${run[i].id} after ${run[i - 1].id}`).not.toBe(run[i - 1].tag);
+      }
+    }
+  });
+
+  it('tension/release: a hard chunk (tier >= 2) is always followed by an easy one', () => {
+    const run = generateRun('gw42', 90);
+    for (let i = 0; i < run.length - 1; i++) {
+      if (run[i].tier >= 2) expect(run[i + 1].tier, `@${i}`).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it('a long run draws on plenty of variety (recency window spreads picks)', () => {
+    const distinct = new Set(generateRun('gw7', 60).map((c) => c.id));
+    expect(distinct.size).toBeGreaterThanOrEqual(12);
+  });
 });
 
 describe('runScore', () => {
