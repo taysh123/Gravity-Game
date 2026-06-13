@@ -129,6 +129,16 @@ import { level140 } from './level140';
 import { level141 } from './level141';
 import { level142 } from './level142';
 import { level143 } from './level143';
+import { level144 } from './level144';
+import { level145 } from './level145';
+import { level146 } from './level146';
+import { level147 } from './level147';
+import { level148 } from './level148';
+import { level149 } from './level149';
+import { level150 } from './level150';
+import { level151 } from './level151';
+import { level152 } from './level152';
+import { level153 } from './level153';
 
 // Single source of truth for level order and count (used by GameScene + EndScene).
 // 150-LEVEL EXPANSION (M2): the 8 mechanic worlds grown 7->10 each by PROMOTING the
@@ -184,4 +194,7 @@ export const LEVELS: LevelConfig[] = [
   // W13 Ascension (121-130): long multi-stage journeys, all mechanics. opener, stage×4,
   // descent twist, combine×3, SIGNATURE THE ASCENT, BOSS THE SUMMIT (the long climb).
   level134, level135, level136, level137, level138, level139, level140, level141, level142, level143,
+  // W14 Singularity (131-140): mastery capstone, tight margins (goals ~26->22).
+  // precision×4, timed twist, combine×3, SIGNATURE THE EVENT HORIZON, BOSS THE SINGULARITY.
+  level144, level145, level146, level147, level148, level149, level150, level151, level152, level153,
 ];

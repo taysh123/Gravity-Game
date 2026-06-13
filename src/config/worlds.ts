@@ -29,4 +29,5 @@ export const WORLDS: World[] = [
   { id: 11, name: 'LABYRINTH', theme: 0x33e1ff, from: 101, to: 110 },
   { id: 12, name: 'TEMPEST', theme: 0xff5a6a, from: 111, to: 120 },
   { id: 13, name: 'ASCENSION', theme: 0x7affb0, from: 121, to: 130 },
+  { id: 14, name: 'SINGULARITY', theme: 0xc04cff, from: 131, to: 140 },
 ];
