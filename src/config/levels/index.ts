@@ -89,6 +89,16 @@ import { level100 } from './level100';
 import { level101 } from './level101';
 import { level102 } from './level102';
 import { level103 } from './level103';
+import { level104 } from './level104';
+import { level105 } from './level105';
+import { level106 } from './level106';
+import { level107 } from './level107';
+import { level108 } from './level108';
+import { level109 } from './level109';
+import { level110 } from './level110';
+import { level111 } from './level111';
+import { level112 } from './level112';
+import { level113 } from './level113';
 
 // Single source of truth for level order and count (used by GameScene + EndScene).
 // 150-LEVEL EXPANSION (M2): the 8 mechanic worlds grown 7->10 each by PROMOTING the
@@ -131,4 +141,7 @@ export const LEVELS: LevelConfig[] = [
   // W9 Gauntlet (81-90): precision routing — platforms + hazards + zones. teach×2,
   // develop×2, descent twist, combine×3, SIGNATURE THE GAUNTLET, BOSS THE CRUCIBLE.
   level94, level95, level96, level97, level98, level99, level100, level101, level102, level103,
+  // W10 Binary (91-100): dual magnets / orbital mastery. teach×2, develop×2, dual-well
+  // twist, combine×3, SIGNATURE THE BINARY STAR, BOSS THE PULSAR (repel core + arm).
+  level104, level105, level106, level107, level108, level109, level110, level111, level112, level113,
 ];
