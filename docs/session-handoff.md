@@ -10,10 +10,16 @@ Readiness". Release checklists: [`docs/release-prep.md`](./release-prep.md).**
   **NOW 150 levels / 15 worlds** (2026-06-14 expansion; was 56/8). All 7 mechanics; Worlds 9–15 are new
   combination/tension/mastery worlds (no new engine code). Plan of record + curation catalog:
   `docs/superpowers/plans/2026-06-14-expansion-150.md`.
-- **Verified:** tsc + 87 tests (incl. `levels.test.ts` structural validator) + build green; all 150 boot
-  with zero console errors (`scripts/smoke_levels.py`). Reward-flair polish done (cosmetic **unlock
-  fanfare** + COLLECTION COMPLETE flourish, web-verified). **Open:** device 1★ fairness playtest
-  (`docs/device-playtest-checklist.md`).
+- **Verified:** tsc + 96 tests + build green; all 150 boot with zero console errors
+  (`scripts/smoke_levels.py`). Reward-flair polish done (cosmetic **unlock fanfare** + COLLECTION COMPLETE).
+- **NEW — GRAVITY RUN (endless flagship, built):** `EndlessScene` — camera-scroll vertical climb reusing
+  every campaign entity; deterministic **weekly-seeded** handcrafted chunks (`utils/endless.ts` +
+  `config/endless/chunks.ts`, TDD); rich RUN OVER overlay with **Revive** (rewarded, off the ranked board),
+  **2× Stardust**, **weekly-seed leaderboard** (`Leaderboard.submitRun/bestRun`), and a **shareable card**
+  (`utils/Share`). Reached from a **GRAVITY RUN** entry on the main menu. Strategy of record:
+  `~/.claude/plans/pure-foraging-fiddle.md`. **Open:** human feel-playtest (scroll ramp / chunk fairness);
+  optional polish — proper menu placement + real Play Games Services leaderboards.
+- **Open (campaign):** device 1★ fairness playtest (`docs/device-playtest-checklist.md`).
 - **Launch:** deferred during the expansion. The store/AAB notes below are pre-expansion — **rebuild the
   AAB** (now also reflects 150 levels) before any upload.
 - **Phase:** **Google Play launch engineering** (not gameplay). Code + store assets are ready;

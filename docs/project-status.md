@@ -242,6 +242,13 @@ History lives in `docs/superpowers/plans/`. Summary:
 > led with content + targeted polish. **All 150 levels boot with zero console errors** (`scripts/smoke_levels.py`);
 > per-level solvability/fairness still needs the human **device playtest** (`docs/device-playtest-checklist.md`).
 > The 56-level snapshot below is superseded; structure/philosophy still apply.
+>
+> **NEW — GRAVITY RUN (endless flagship mode, built):** a camera-scroll vertical climb (`EndlessScene`)
+> reusing every campaign entity, with deterministic **weekly-seeded** handcrafted chunks
+> (`utils/endless.ts` + `config/endless/chunks.ts`), a Revive (rewarded, off the ranked board) + 2×-Stardust
+> + **weekly-seed leaderboard** (`Leaderboard.submitRun/bestRun`) + a **shareable card** (`utils/Share`).
+> Launched from a GRAVITY RUN menu entry. Growth strategy of record: `~/.claude/plans/pure-foraging-fiddle.md`.
+> Open: human feel-playtest; optional Play Games Services leaderboards + proper menu placement.
 
 - **15 worlds, 150 levels** — `LEVELS[]` ordered by world so chapter ranges are contiguous; a structural
   validator (`src/config/levels/levels.test.ts`) guards every level. Worlds 1–8 (the 7 mechanic worlds)
