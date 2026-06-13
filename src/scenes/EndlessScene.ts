@@ -72,6 +72,7 @@ export class EndlessScene extends Phaser.Scene {
   private overlayActions: Phaser.GameObjects.GameObject[] = [];
 
   private scoreText!: Phaser.GameObjects.Text;
+  private coachText?: Phaser.GameObjects.Text;
 
   private get ballHomeX(): number {
     return this.playX + PHYSICS.PLAY_WIDTH / 2;
@@ -100,7 +101,7 @@ export class EndlessScene extends Phaser.Scene {
     this.attractor = null;
     this.matter.world.enabled = true;
     this.revived = false;
-    this.invulnUntil = 0;
+    this.invulnUntil = this.time.now + PHYSICS.ENDLESS_START_INVULN_MS; // spawn grace
     this.awardedStardust = 0;
     this.overlay = [];
     this.overlayActions = [];
@@ -134,6 +135,33 @@ export class EndlessScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setScrollFactor(0)
       .setDepth(100);
+
+    this.maybeShowCoach();
+  }
+
+  // One-time coach hint on the player's first run (either mode). Dismissed on the
+  // first press or after a few seconds; persisted so it never nags again.
+  private maybeShowCoach(): void {
+    let seen = false;
+    try { seen = localStorage.getItem('gravity-flow:run:coached') === '1'; } catch { /* storage off */ }
+    if (seen) return;
+    this.coachText = this.add
+      .text(this.viewW / 2, this.viewH * 0.4, 'Hold to pull the star upward\nKeep it above the bottom edge', {
+        fontFamily: THEME.FONT_BODY, fontSize: '15px', color: THEME.TEXT_PRIMARY, align: 'center', fontStyle: '600',
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(100)
+      .setAlpha(0.92);
+    try { localStorage.setItem('gravity-flow:run:coached', '1'); } catch { /* storage off */ }
+    this.time.delayedCall(4200, () => this.dismissCoach());
+  }
+
+  private dismissCoach(): void {
+    if (!this.coachText) return;
+    const c = this.coachText;
+    this.coachText = undefined;
+    this.tweens.add({ targets: c, alpha: 0, duration: 300, onComplete: () => c.destroy() });
   }
 
   // Two tall static side walls, repositioned each frame to span the current view.
@@ -152,6 +180,7 @@ export class EndlessScene extends Phaser.Scene {
     this.input.mouse?.disableContextMenu();
     this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
       if (this.isDead) return; // the run-over overlay's scrim handles "tap to return"
+      this.dismissCoach();
       const audio = this.getAudio();
       audio.resume();
       audio.playGravityActivate();
@@ -178,11 +207,12 @@ export class EndlessScene extends Phaser.Scene {
     if (this.isDead) return;
     const dt = delta / 1000;
 
-    // Accelerating upward scroll.
+    // Upward scroll: hold the base speed through the onboarding window, then ramp.
     this.elapsed += dt;
+    const rampSec = Math.max(0, this.elapsed - PHYSICS.ENDLESS_ONBOARD_MS / 1000);
     this.scrollSpeed = Math.min(
       PHYSICS.ENDLESS_SCROLL_MAX,
-      PHYSICS.ENDLESS_SCROLL_BASE + this.elapsed * PHYSICS.ENDLESS_SCROLL_ACCEL,
+      PHYSICS.ENDLESS_SCROLL_BASE + rampSec * PHYSICS.ENDLESS_SCROLL_ACCEL,
     );
     const cam = this.cameras.main;
     cam.scrollY -= this.scrollSpeed * dt;
