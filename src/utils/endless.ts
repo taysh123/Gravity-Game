@@ -59,3 +59,9 @@ export function generateRun(seedKey: string, count: number, chunks: RunChunk[] =
 export function runScore(distancePx: number, stars: number): number {
   return Math.floor(distancePx / 10) + stars * 25;
 }
+
+// Soft-currency (Stardust) earned for a run, scaling gently with score and capped
+// so the campaign stays the main earner. Cosmetic economy only — never gameplay.
+export function stardustForRun(score: number): number {
+  return Math.min(60, Math.floor(score / 40));
+}

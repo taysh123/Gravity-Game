@@ -12,10 +12,15 @@ import { GravityZone } from '../entities/GravityZone';
 import { Magnet } from '../entities/Magnet';
 import { Collectible } from '../entities/Collectible';
 import { drawGlass } from '../ui/glass';
-import { generateRun, weekKey, runScore } from '../utils/endless';
+import { generateRun, weekKey, runScore, stardustForRun } from '../utils/endless';
 import type { RunChunk } from '../config/endless/chunks';
 import { fadeToScene } from '../utils/transitions';
 import { sharedAudio } from '../utils/AudioSynth';
+import { CurrencyStore } from '../utils/CurrencyStore';
+import { Leaderboard } from '../utils/Leaderboard';
+import { Ads } from '../utils/Ads';
+import { Share } from '../utils/Share';
+import { dateKey } from '../utils/daily';
 
 // A live (spawned) chunk: its world-Y extent + the entities to pulse/cull.
 interface LiveChunk {
@@ -28,8 +33,6 @@ interface LiveChunk {
   obstacles: Obstacle[];
   bodies: MatterJS.BodyType[]; // obstacle Matter bodies to remove on cull
 }
-
-const BEST_KEY = 'gravity-flow:run:best'; // local best until G4 wires Leaderboard
 
 // GRAVITY RUN — the endless flagship. The camera auto-pans UP at an accelerating
 // speed; the player keeps the star above the bottom edge with the attractor while
@@ -60,8 +63,18 @@ export class EndlessScene extends Phaser.Scene {
   private score = 0;
   private isDead = false;
   private canReturn = false;
+  private revived = false;
+  private invulnUntil = 0;
+  private awardedStardust = 0;
+  private runWeek = '';
+  private overlay: Phaser.GameObjects.GameObject[] = [];
+  private overlayActions: Phaser.GameObjects.GameObject[] = [];
 
   private scoreText!: Phaser.GameObjects.Text;
+
+  private get ballHomeX(): number {
+    return this.playX + PHYSICS.PLAY_WIDTH / 2;
+  }
 
   constructor() {
     super({ key: 'EndlessScene' });
@@ -81,6 +94,11 @@ export class EndlessScene extends Phaser.Scene {
     this.elapsed = 0;
     this.attractor = null;
     this.matter.world.enabled = true;
+    this.revived = false;
+    this.invulnUntil = 0;
+    this.awardedStardust = 0;
+    this.overlay = [];
+    this.overlayActions = [];
 
     this.cosmic = new CosmicBackground(this);
     this.cosmic.setScrollFactor(0); // backdrop pinned to the screen
@@ -97,7 +115,8 @@ export class EndlessScene extends Phaser.Scene {
     this.setupInput();
 
     // Deterministic weekly run; loop the sequence if a run goes extremely long.
-    this.run = generateRun(weekKey(new Date()), 400);
+    this.runWeek = weekKey(new Date());
+    this.run = generateRun(this.runWeek, 400);
     this.filledToY = -40; // first chunk spawns above the star (open runway below)
     this.ensureSpawned();
 
@@ -125,10 +144,7 @@ export class EndlessScene extends Phaser.Scene {
   private setupInput(): void {
     this.input.mouse?.disableContextMenu();
     this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
-      if (this.isDead) {
-        if (this.canReturn) fadeToScene(this, 'MainMenuScene');
-        return;
-      }
+      if (this.isDead) return; // the run-over overlay's scrim handles "tap to return"
       const audio = this.getAudio();
       audio.resume();
       audio.playGravityActivate();
@@ -183,7 +199,7 @@ export class EndlessScene extends Phaser.Scene {
       ch.magnets.forEach((m) => m.pulse(time / 600));
       for (const h of ch.hazards) {
         h.pulse(time);
-        if (h.overlaps(bx, by, PHYSICS.BALL_RADIUS)) { this.die(); return; }
+        if (time > this.invulnUntil && h.overlaps(bx, by, PHYSICS.BALL_RADIUS)) { this.die(); return; }
       }
       for (const s of ch.stars) {
         s.pulse(time / 300);
@@ -198,8 +214,8 @@ export class EndlessScene extends Phaser.Scene {
     this.ensureSpawned();
     this.cull(cam);
 
-    // Fell behind the climbing camera → run over.
-    if (by > cam.scrollY + this.viewH + PHYSICS.ENDLESS_FALL_MARGIN) { this.die(); return; }
+    // Fell behind the climbing camera → run over (ignored during revive invuln).
+    if (time > this.invulnUntil && by > cam.scrollY + this.viewH + PHYSICS.ENDLESS_FALL_MARGIN) { this.die(); return; }
 
     this.score = runScore(this.startScrollY - cam.scrollY, this.starsCollected);
     this.scoreText.setText(`${this.score}`);
@@ -300,10 +316,16 @@ export class EndlessScene extends Phaser.Scene {
     this.matter.world.enabled = false;
     this.cameras.main.shake(PHYSICS.SHAKE_DEATH_MS, PHYSICS.SHAKE_DEATH_INTENSITY);
 
-    const best = this.loadBest();
-    const isBest = this.score > best;
-    if (isBest) this.saveBest(this.score);
-    this.showRunOver(isBest ? this.score : best, isBest);
+    // Award Stardust (cosmetic economy only). Submit to the weekly board ONLY for a
+    // clean (non-revived) run, so a rewarded revive can't buy a leaderboard score.
+    this.awardedStardust = stardustForRun(this.score);
+    if (this.awardedStardust > 0) CurrencyStore.add(this.awardedStardust);
+    if (!this.revived) {
+      Leaderboard.submitRun({ week: this.runWeek, score: this.score, date: dateKey(new Date()) });
+    }
+    const best = Leaderboard.bestRun(this.runWeek);
+    const isBest = !this.revived && this.score > 0 && this.score >= best;
+    this.showRunOver(best, isBest);
   }
 
   private showRunOver(best: number, isBest: boolean): void {
@@ -312,33 +334,131 @@ export class EndlessScene extends Phaser.Scene {
     const scrim = this.add.graphics().setScrollFactor(0).setDepth(110);
     scrim.fillStyle(0x000000, THEME.SCRIM_ALPHA);
     scrim.fillRect(0, 0, this.viewW, this.viewH);
+    scrim.setInteractive(new Phaser.Geom.Rectangle(0, 0, this.viewW, this.viewH), Phaser.Geom.Rectangle.Contains);
+    scrim.on('pointerup', () => { if (this.canReturn) fadeToScene(this, 'MainMenuScene'); });
 
     const panelW = Math.min(this.viewW * 0.8, 300);
     const panelH = 150;
     const panel = this.add.graphics();
     drawGlass(panel, panelW, panelH, THEME.RADIUS);
-    const title = this.add.text(0, -50, 'RUN OVER', {
+    const title = this.add.text(0, -52, 'RUN OVER', {
       fontFamily: THEME.FONT_DISPLAY, fontSize: '20px', color: THEME.TEXT_PRIMARY, fontStyle: '700',
     }).setOrigin(0.5).setLetterSpacing(2);
-    const scoreLine = this.add.text(0, -8, `${this.score}`, {
+    const scoreLine = this.add.text(0, -12, `${this.score}`, {
       fontFamily: THEME.FONT_DISPLAY, fontSize: '34px', color: '#ffd166', fontStyle: '700',
     }).setOrigin(0.5);
-    const bestLine = this.add.text(0, 30, isBest ? 'NEW BEST!' : `best ${best}`, {
+    const sub = this.add.text(0, 26, isBest ? 'NEW BEST!' : `best ${best}`, {
       fontFamily: THEME.FONT_BODY, fontSize: '14px', color: isBest ? '#7affb0' : THEME.TEXT_MUTED, fontStyle: '600',
     }).setOrigin(0.5);
-    const tap = this.add.text(0, 56, 'tap to return', {
-      fontFamily: THEME.FONT_BODY, fontSize: '12px', color: THEME.TEXT_MUTED,
-    }).setOrigin(0.5);
-    const card = this.add.container(cx, cy, [panel, title, scoreLine, bestLine, tap])
-      .setScrollFactor(0).setDepth(111).setScale(0.85).setAlpha(0);
+    const cardChildren: Phaser.GameObjects.GameObject[] = [panel, title, scoreLine, sub];
+    if (this.awardedStardust > 0) {
+      cardChildren.push(this.add.text(0, 50, `+${this.awardedStardust} ✦`, {
+        fontFamily: THEME.FONT_BODY, fontSize: '13px', color: '#ffd166', fontStyle: '700',
+      }).setOrigin(0.5));
+    }
+    const card = this.add.container(cx, cy, cardChildren).setScrollFactor(0).setDepth(111).setScale(0.85).setAlpha(0);
     this.tweens.add({ targets: card, scale: 1, alpha: 1, duration: 320, ease: THEME.EASE_POP });
+
+    const actions: Phaser.GameObjects.GameObject[] = [];
+    let ay = cy + panelH / 2 + 30;
+    if (!this.revived) {
+      actions.push(this.pill('▶ REVIVE', '#7affb0', 0x7affb0, 168, cx, ay, () => void this.tryRevive()));
+      ay += 50;
+    }
+    const hasDouble = this.awardedStardust > 0;
+    actions.push(this.pill('SHARE', '#cfe0ff', 0x6a8cff, 124, hasDouble ? cx - 68 : cx, ay, () => this.shareRun()));
+    if (hasDouble) {
+      actions.push(this.pill('▶ 2× ✦', '#ffd166', 0xffd166, 124, cx + 68, ay, (self) => void this.tryDouble(self)));
+    }
+    ay += 46;
+    actions.push(
+      this.add.text(cx, ay, 'tap to return', {
+        fontFamily: THEME.FONT_BODY, fontSize: '12px', color: THEME.TEXT_MUTED,
+      }).setOrigin(0.5).setScrollFactor(0).setDepth(112),
+    );
+
+    this.overlayActions = actions;
+    this.overlay = [scrim, card, ...actions];
     this.time.delayedCall(500, () => { this.canReturn = true; });
   }
 
-  private loadBest(): number {
-    try { return Number(localStorage.getItem(BEST_KEY)) || 0; } catch { return 0; }
+  // A small glass action pill. `width` lets the secondary row fit two side-by-side.
+  private pill(
+    label: string, colorHex: string, accent: number, width: number, x: number, y: number,
+    onTap: (self: Phaser.GameObjects.Container) => void,
+  ): Phaser.GameObjects.Container {
+    const h = 42;
+    const bg = this.add.graphics();
+    drawGlass(bg, width, h, h / 2);
+    bg.lineStyle(2, accent, 0.6);
+    bg.strokeRoundedRect(-width / 2, -h / 2, width, h, h / 2);
+    const txt = this.add.text(0, 0, label, {
+      fontFamily: THEME.FONT_DISPLAY, fontSize: '15px', color: colorHex, fontStyle: '700',
+    }).setOrigin(0.5);
+    const c = this.add.container(x, y, [bg, txt]).setScrollFactor(0).setDepth(112);
+    c.setSize(width, h);
+    c.setInteractive(new Phaser.Geom.Rectangle(-width / 2, -h / 2, width, h), Phaser.Geom.Rectangle.Contains);
+    c.on('pointerup', () => onTap(c));
+    return c;
   }
-  private saveBest(v: number): void {
-    try { localStorage.setItem(BEST_KEY, String(v)); } catch { /* storage off */ }
+
+  private async tryRevive(): Promise<void> {
+    const earned = await Ads.showRewarded();
+    if (earned) this.doRevive();
+  }
+
+  // Clear the immediate threats, recentre the star, grant brief invulnerability, and
+  // resume. One revive per run; revived runs don't post to the weekly board.
+  private doRevive(): void {
+    this.overlay.forEach((o) => o.destroy());
+    this.overlay = [];
+    this.overlayActions = [];
+    this.revived = true;
+    for (const ch of this.live) { ch.hazards.forEach((hz) => hz.destroy()); ch.hazards = []; }
+    const cam = this.cameras.main;
+    RawMatter.Body.setPosition(this.ball.body, { x: this.ballHomeX, y: cam.scrollY + this.viewH * 0.45 });
+    RawMatter.Body.setVelocity(this.ball.body, { x: 0, y: 0 });
+    this.invulnUntil = this.time.now + 1500;
+    this.isDead = false;
+    this.canReturn = false;
+    this.matter.world.enabled = true;
+  }
+
+  private async tryDouble(btn: Phaser.GameObjects.Container): Promise<void> {
+    const earned = await Ads.showRewarded();
+    if (!earned) return;
+    CurrencyStore.add(this.awardedStardust);
+    const txt = btn.list.find((o) => o instanceof Phaser.GameObjects.Text) as Phaser.GameObjects.Text | undefined;
+    txt?.setText('✦ ×2!');
+    btn.disableInteractive();
+  }
+
+  private shareRun(): void {
+    const text = `I climbed to ${this.score} in GRAVITY RUN 🌌 — can you beat it?`;
+    const setVis = (vis: boolean) =>
+      this.overlayActions.forEach((o) => (o as unknown as Phaser.GameObjects.Components.Visible).setVisible(vis));
+    setVis(false);
+    this.snapshotBlob((blob) => {
+      setVis(true);
+      void Share.shareCard(blob, text);
+    });
+  }
+
+  // Grab the current frame as a PNG blob (WebGL-safe via renderer.snapshot → 2D canvas).
+  private snapshotBlob(cb: (b: Blob | null) => void): void {
+    const renderer = this.game.renderer as unknown as { snapshot?: (c: (img: unknown) => void) => void };
+    if (!renderer.snapshot) { cb(null); return; }
+    renderer.snapshot((img) => {
+      try {
+        const image = img as HTMLImageElement;
+        const canvas = document.createElement('canvas');
+        canvas.width = this.game.canvas.width;
+        canvas.height = this.game.canvas.height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { cb(null); return; }
+        ctx.drawImage(image, 0, 0);
+        canvas.toBlob((b) => cb(b), 'image/png');
+      } catch { cb(null); }
+    });
   }
 }

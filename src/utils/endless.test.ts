@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { weekKey, generateRun, runScore } from './endless';
+import { weekKey, generateRun, runScore, stardustForRun } from './endless';
 import { CHUNKS } from '../config/endless/chunks';
 
 describe('weekKey', () => {
@@ -63,5 +63,14 @@ describe('runScore', () => {
     expect(runScore(1000, 0)).toBe(100);
     expect(runScore(1000, 4)).toBe(200);
     expect(runScore(5000, 0)).toBeGreaterThan(runScore(0, 10)); // distance dominates
+  });
+});
+
+describe('stardustForRun', () => {
+  it('scales with score and is capped (cosmetic economy, never gameplay)', () => {
+    expect(stardustForRun(0)).toBe(0);
+    expect(stardustForRun(400)).toBe(10);
+    expect(stardustForRun(100000)).toBe(60); // capped
+    expect(stardustForRun(2000)).toBeGreaterThan(stardustForRun(800));
   });
 });

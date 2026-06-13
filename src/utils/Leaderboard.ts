@@ -9,7 +9,17 @@ export interface DailyResult {
   stars: number;
 }
 
+// Gravity Run — best score per weekly seed. Same swap-to-PGS philosophy: callers
+// only touch submitRun/bestRun; the local impl can be replaced by Play Games
+// Services / a backend later without changing EndlessScene.
+export interface RunResult {
+  week: string; // weekKey(date) — the weekly seed everyone shares
+  score: number;
+  date: string; // YYYY-MM-DD the best was set
+}
+
 const KEY = 'gravity-flow:leaderboard:daily';
+const RUN_KEY = 'gravity-flow:leaderboard:run';
 
 function read(): DailyResult[] {
   try {
@@ -41,5 +51,31 @@ export const Leaderboard = {
 
   recentDaily(n = 14): DailyResult[] {
     return read().sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, n);
+  },
+
+  // Record a run if it beats this week's best. Returns the (possibly new) best.
+  submitRun(r: RunResult): number {
+    let all: RunResult[] = [];
+    try {
+      const raw = localStorage.getItem(RUN_KEY);
+      all = raw ? (JSON.parse(raw) as RunResult[]) : [];
+    } catch { all = []; }
+    const existing = all.find((x) => x.week === r.week);
+    if (existing) {
+      if (r.score > existing.score) { existing.score = r.score; existing.date = r.date; }
+    } else {
+      all.push(r);
+    }
+    try { localStorage.setItem(RUN_KEY, JSON.stringify(all)); } catch { /* storage off */ }
+    return this.bestRun(r.week);
+  },
+
+  // This week's best run score (0 if none yet).
+  bestRun(week: string): number {
+    try {
+      const raw = localStorage.getItem(RUN_KEY);
+      const all = raw ? (JSON.parse(raw) as RunResult[]) : [];
+      return all.find((x) => x.week === week)?.score ?? 0;
+    } catch { return 0; }
   },
 };
