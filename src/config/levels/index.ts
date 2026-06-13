@@ -109,6 +109,16 @@ import { level120 } from './level120';
 import { level121 } from './level121';
 import { level122 } from './level122';
 import { level123 } from './level123';
+import { level124 } from './level124';
+import { level125 } from './level125';
+import { level126 } from './level126';
+import { level127 } from './level127';
+import { level128 } from './level128';
+import { level129 } from './level129';
+import { level130 } from './level130';
+import { level131 } from './level131';
+import { level132 } from './level132';
+import { level133 } from './level133';
 
 // Single source of truth for level order and count (used by GameScene + EndScene).
 // 150-LEVEL EXPANSION (M2): the 8 mechanic worlds grown 7->10 each by PROMOTING the
@@ -157,4 +167,8 @@ export const LEVELS: LevelConfig[] = [
   // W11 Labyrinth (101-110): portals + gates spatial puzzles. teach×2, develop×2,
   // two-rift twist, combine×3, SIGNATURE HALL OF ECHOES, BOSS THE WARDEN.
   level114, level115, level116, level117, level118, level119, level120, level121, level122, level123,
+  // W12 Tempest (111-120): tension — timed levels + moving hazards (saws, laser beams,
+  // rotating arms). teach×2, develop×2, twin-saw twist, combine×3, SIGNATURE THE TEMPEST,
+  // BOSS THE EYE OF THE STORM (timed multi-hazard).
+  level124, level125, level126, level127, level128, level129, level130, level131, level132, level133,
 ];
