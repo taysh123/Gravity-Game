@@ -12,6 +12,7 @@ import { cosmeticsByCategory, cosmeticById, COSMETICS, type Cosmetic, type Categ
 import { purchaseCost } from '../utils/cosmeticsLogic';
 import { claimCollectionRewards } from '../utils/Rewards';
 import { CosmeticStore } from '../utils/CosmeticStore';
+import { sharedAudio } from '../utils/AudioSynth';
 import { CurrencyStore } from '../utils/CurrencyStore';
 import { FragmentStore } from '../utils/FragmentStore';
 import { IAP } from '../utils/IAP';
@@ -70,10 +71,13 @@ export class CosmeticsScene extends Phaser.Scene {
     this.add.text(cx, topY + 26, `${CurrencyStore.balance()} ${SD}    ${FragmentStore.balance()} ${FR}`, {
       fontFamily: THEME.FONT_BODY, fontSize: '15px', color: '#cfe0ff', fontStyle: '600',
     }).setOrigin(0.5);
-    // Collection progress (retention): total cosmetics unlocked.
+    // Collection progress (retention): total cosmetics unlocked. Completing the
+    // whole collection earns a gold flourish — personality + a reason to chase 100%.
     const unlocked = CosmeticStore.ownedIds().filter((id) => cosmeticById(id)).length;
-    this.add.text(cx, topY + 44, `${unlocked} / ${COSMETICS.length} unlocked`, {
-      fontFamily: THEME.FONT_BODY, fontSize: '11px', color: THEME.TEXT_MUTED,
+    const complete = unlocked === COSMETICS.length;
+    this.add.text(cx, topY + 44, complete ? '✦ COLLECTION COMPLETE ✦' : `${unlocked} / ${COSMETICS.length} unlocked`, {
+      fontFamily: THEME.FONT_BODY, fontSize: '11px',
+      color: complete ? STARDUST : THEME.TEXT_MUTED, fontStyle: complete ? '700' : '400',
     }).setOrigin(0.5);
 
     // Tabs.
@@ -191,8 +195,12 @@ export class CosmeticsScene extends Phaser.Scene {
       card.on('pointerup', () => {
         if (this.dragging) return;
         const result = CosmeticStore.buyOrEquip(c.id);
-        if (result === 'cantAfford' || result === 'locked') this.cameras.main.shake(110, 0.004);
-        else { Analytics.track(cosmeticEquip(c.id)); claimCollectionRewards(); this.scene.restart({ tab: this.tab }); }
+        if (result === 'cantAfford' || result === 'locked') { this.cameras.main.shake(110, 0.004); return; }
+        Analytics.track(cosmeticEquip(c.id));
+        claimCollectionRewards();
+        // A new unlock gets a celebratory moment; a re-equip just refreshes.
+        if (result === 'bought') this.playUnlockFanfare(c, () => this.scene.restart({ tab: this.tab }));
+        else this.scene.restart({ tab: this.tab });
       });
     }
     this.entrance(card, i);
@@ -333,6 +341,62 @@ export class CosmeticsScene extends Phaser.Scene {
     if (reducedMotionActive()) return;
     card.setAlpha(0).setScale(0.97);
     this.tweens.add({ targets: card, alpha: 1, scale: 1, delay: 30 + i * 26, duration: 260, ease: THEME.EASE });
+  }
+
+  // Celebratory overlay when a NEW cosmetic is unlocked (the audit's missing "unlock
+  // fanfare"): a rarity-tinted burst, a scaled-up preview, and an "UNLOCKED" card,
+  // with the level-complete chord. Input is gated until it dismisses to onDone.
+  private playUnlockFanfare(c: Cosmetic, onDone: () => void): void {
+    this.input.enabled = false;
+    const { width, height } = this.scale;
+    const cx = width / 2;
+    const cy = height / 2;
+    const rarity = RARITY[c.rarity];
+    const rarityHex = `#${rarity.color.toString(16).padStart(6, '0')}`;
+    const reduced = reducedMotionActive();
+
+    const audio = sharedAudio();
+    audio.resume();
+    audio.playLevelComplete();
+
+    const scrim = this.add.graphics().setDepth(60);
+    scrim.fillStyle(0x000000, 0.6);
+    scrim.fillRect(0, 0, width, height);
+
+    const panelW = Math.min(width * 0.8, 300);
+    const panelH = 156;
+    const panel = this.add.graphics();
+    drawGlass(panel, panelW, panelH, THEME.RADIUS);
+    panel.lineStyle(2, rarity.color, 0.8);
+    panel.strokeRoundedRect(-panelW / 2, -panelH / 2, panelW, panelH, THEME.RADIUS);
+
+    const head = this.add.text(0, -54, 'UNLOCKED', {
+      fontFamily: THEME.FONT_DISPLAY, fontSize: '16px', color: rarityHex, fontStyle: '700',
+    }).setOrigin(0.5).setLetterSpacing(3);
+    const preview = this.add.graphics();
+    this.drawPreview(preview, c, 0, 0);
+    preview.setScale(reduced ? 1.6 : 2.0);
+    const name = this.add.text(0, 38, c.name, {
+      fontFamily: THEME.FONT_DISPLAY, fontSize: '18px', color: THEME.TEXT_PRIMARY, fontStyle: '700',
+    }).setOrigin(0.5);
+    const rlabel = this.add.text(0, 60, rarity.label.toUpperCase(), {
+      fontFamily: THEME.FONT_BODY, fontSize: '11px', color: rarityHex,
+    }).setOrigin(0.5).setLetterSpacing(2);
+
+    const card = this.add.container(cx, cy, [panel, head, preview, name, rlabel]).setDepth(61);
+    if (!reduced) {
+      card.setScale(0.8).setAlpha(0);
+      this.tweens.add({ targets: card, scale: 1, alpha: 1, duration: 320, ease: THEME.EASE_POP });
+      const burst = this.add.particles(cx, cy - 2, 'spark', {
+        tint: rarity.color, blendMode: 'ADD', emitting: false,
+        speed: { min: 60, max: 220 }, lifespan: 700,
+        scale: { start: 0.9, end: 0 }, alpha: { start: 1, end: 0 },
+      }).setDepth(62);
+      burst.explode(28);
+      this.time.delayedCall(900, () => burst.destroy());
+    }
+
+    this.time.delayedCall(reduced ? 700 : 1250, onDone);
   }
 
   update(): void {
