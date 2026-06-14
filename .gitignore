@@ -11,6 +11,7 @@ assets/raw/
 .shots/
 scripts/*.py
 scripts/*.png
+scripts/__pycache__/
 
 # Raw media-capture dump (regenerable via scripts/capture_media.py).
 # Only the curated finals under docs/media/{store,github,portfolio,linkedin} are committed.
