@@ -10,7 +10,7 @@
 |---|---|
 | Game / studio | GRAVITY FLOW — **True Story Labs** |
 | Content | **150 levels · 15 worlds** · Star Map · Gravity Run (Endless + Weekly) · Daily · achievements · cosmetics |
-| Code version | `0.15.0` (`package.json`) · git tag **`v0.15.0`** |
+| Code version | **`1.0.0-rc.1`** (`package.json`) · last stable tag `v0.15.0` · launch plan: [`RELEASE-v1.0.0.md`](./RELEASE-v1.0.0.md) |
 | Android | `versionName 1.0.0` / `versionCode 1` · pkg `com.truestorylabs.gravityflow` · target SDK 36 / min 24 |
 | Repo | `master` synced · https://github.com/taysh123/Gravity-Game |
 | Privacy policy | https://taysh123.github.io/Gravity-Game/ (Pages → `docs/index.html`) |

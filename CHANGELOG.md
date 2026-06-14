@@ -4,6 +4,15 @@ Internal project changelog (newest first). Store-facing "What's new" copy lives 
 `docs/store/release-notes.md`. Versions track `package.json`; the Android marketing
 version is `versionName` / `versionCode` in `android/app/build.gradle`.
 
+## [1.0.0-rc.1] — release candidate (launch-locked, pre-publication)
+The 1.0 launch candidate: feature- & content-complete, repo-side launch-ready, store copy accurate.
+Code is functionally identical to `v0.15.0` — this RC marks the locked launch candidate pending the
+**device 1★ fairness + Endless/Star-Map feel playtest** and the Play Console upload.
+- Android marketing version `versionName 1.0.0` / `versionCode 1` (the first Play release).
+- Launch command-center, audit & roadmaps: `docs/LAUNCH-READINESS.md`; release plan: `docs/RELEASE-v1.0.0.md`.
+- **`[1.0.0]` is cut at public launch** (production rollout) — see the release plan. RC builds may iterate
+  (`rc.2`, `rc.3`, …) if the device playtest forces tuning.
+
 ## [0.15.0] — Star Map presentation milestone
 - **The Star Map** (`WorldMapScene`): world progression is now a journey — 15 worlds as
   glowing destination nodes on a winding constellation path (per-world accent, roman
