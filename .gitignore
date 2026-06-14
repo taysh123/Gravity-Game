@@ -12,6 +12,10 @@ assets/raw/
 scripts/*.py
 scripts/*.png
 
+# Raw media-capture dump (regenerable via scripts/capture_media.py).
+# Only the curated finals under docs/media/{store,github,portfolio,linkedin} are committed.
+docs/media/raw/
+
 .vercel
 
 # Capacitor / Android (generated locally by `npx cap add android`). Build outputs
