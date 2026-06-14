@@ -70,8 +70,8 @@ checklist (contact email, studio/legal name, jurisdiction) before publishing.
 - **App icon 512×512** (32-bit PNG) → `docs/store/assets/icon-512.png` *(ready; alternatives in `icon-concepts/`)*
 - **Feature graphic 1024×500** → `docs/store/assets/feature-1024x500.png` *(ready; alternatives in `feature-concepts/`)*
 - **Phone screenshots ×8** (portrait 1080×2160, Play-compliant) → `docs/store/assets/screenshots/`
-  *(⚠️ predate the v0.15.0 Star Map redesign + 150-level expansion — re-capture `06-world-map` to show the
-  Star Map, and add a GRAVITY RUN shot, via `scripts/capture_store_shots.py` before final production listing)*
+  *(✅ refreshed 2026-06-14 for the Star Map + 150-level build: Star Map, gameplay, boss, Gravity Run,
+  hazards, cosmetics, achievements, 3-star win. Full package + captions in `docs/media/README.md`.)*
 - (Optional) 30s promo video — not produced
 - Adaptive in-build launcher icon (branded vortex, replaces the Capacitor robot) — **done** (`@capacitor/assets`, all densities)
 - Catalog of finals vs. alternatives: `docs/store/assets/README.md`

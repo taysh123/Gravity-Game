@@ -11,7 +11,7 @@ repo's `scripts/*.py` gitignore.)*
 |---|---|---|---|
 | `icon-512.png` | 512×512, **32-bit PNG** | hi-res icon | ✅ ready (= **vortex** concept) |
 | `feature-1024x500.png` | 1024×500, 24-bit | feature graphic | ✅ ready (= **vignette** concept) |
-| `screenshots/01..08-*.png` | **1080×2160** (2:1) | phone screenshots, max side ≤ 2× min | ✅ ready (8 frames) |
+| `screenshots/01..08-*.png` | **1080×2160** (2:1) | phone screenshots, max side ≤ 2× min | ✅ ready (8 frames, **refreshed 2026-06-14** for the Star Map + 150-level build via `scripts/capture_media.py`) |
 
 ## Alternatives (pick one, then re-run finalize to swap)
 **Icon concepts** — `icon-concepts/`
@@ -25,9 +25,11 @@ repo's `scripts/*.py` gitignore.)*
 - `vignette.png` — a gameplay beat (goal + attractor + star + trail) with the wordmark (**recommended**; shows the verb).
 
 ## Screenshots (in order)
-1 main menu · 2 The Comet · 3 Constellation · 4 THE GEARWORKS · 5 THE LOCKWORKS ·
-6 world map · 7 store · 8 settings. Caption copy (optional overlay in Play's editor) is in
-`docs/store/aso.md §2`.
+1 Star Map · 2 gameplay (hold-to-pull, Rifts) · 3 boss "THE SINGULARITY" · 4 Gravity Run hub ·
+5 hazards + timer (Peril) · 6 cosmetics store · 7 achievements · 8 3-star LEVEL COMPLETE.
+Caption copy (optional overlay in Play's editor) is in `docs/media/README.md §B` (and `docs/store/aso.md`).
+The full multi-destination media package (Play / App Store / GitHub / portfolio / LinkedIn) lives in
+`docs/media/` — regenerate everything with `scripts/capture_media.py` → `scripts/curate_media.mjs`.
 
 ## To swap a final
 Edit `RECOMMENDED` in `scripts/finalize_brand.mjs` (e.g. `icon: 'orbit'`) and run
