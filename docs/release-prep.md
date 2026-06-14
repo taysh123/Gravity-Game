@@ -1,9 +1,8 @@
 # Release Prep — GRAVITY FLOW (Google Play tracker)
 
-> Per-track readiness checklists for the Play Store launch. Single source of truth for overall
-> state stays **[`docs/project-status.md`](./project-status.md)** ("Release Readiness"); 30-second
-> version + Next Session Quick Start in **[`docs/session-handoff.md`](./session-handoff.md)**; the
-> hands-on signing/AAB steps are in **[`docs/release-android.md`](./release-android.md)**.
+> Per-track checklists for the Play launch. **Command-center / full audit + roadmaps:
+> [`docs/LAUNCH-READINESS.md`](./LAUNCH-READINESS.md).** Overall state: **[`project-status.md`](./project-status.md)**;
+> 30-second version: **[`session-handoff.md`](./session-handoff.md)**; hands-on signing/AAB: **[`release-android.md`](./release-android.md)**.
 
 ---
 
@@ -11,13 +10,15 @@
 | | |
 |---|---|
 | **Game / studio** | GRAVITY FLOW — **True Story Labs** |
-| **Version** | `0.14.0` (`package.json`) · **app `versionCode 1` / `versionName 1.0`** (`android/app/build.gradle`) |
+| **Content** | **150 levels · 15 worlds** · Star Map · Gravity Run (Endless + Weekly) · Daily · achievements · cosmetics |
+| **Version** | `0.15.0` (`package.json`) · git tag **`v0.15.0`** · **app `versionCode 1` / `versionName 1.0.0`** (`android/app/build.gradle`) |
 | **Package** | `com.truestorylabs.gravityflow` · target SDK **36** / min **24** |
-| **Branch** | `master` (synced, HEAD `a354492`) · https://github.com/taysh123/Gravity-Game |
+| **Branch** | `master` (synced) · https://github.com/taysh123/Gravity-Game |
 | **Privacy policy** | **https://taysh123.github.io/Gravity-Game/** (Pages → `docs/index.html`) |
-| **Web demo (Vercel)** | https://gravity-flow-six.vercel.app (older v0.2.0 build; not the release artifact) |
-| **Signed AAB** | `android/app/build/outputs/bundle/release/app-release.aab` — **STALE, rebuild** (predates UMP + branded icon) |
+| **Web demo (Vercel)** | https://gravity-flow-six.vercel.app (older build; not the release artifact) |
+| **Signed AAB** | `android/app/build/outputs/bundle/release/app-release.aab` — **STALE, rebuild** (predates UMP, branded icon & all v0.15.0 content) |
 | **Upload key** | `gravityflow-upload` · `C:\Keys\gravityflow-upload.jks` (gitignored, valid to 2051) |
+| **Store copy** | listing/ASO/release-notes refreshed to 150/15 + new modes (`docs/store/`) |
 
 ---
 
@@ -35,8 +36,8 @@ Verify: `jarsigner -verify <aab>` → "jar verified" with alias `gravityflow-upl
 ## ✅ Internal Testing — code & assets READY (user/Play-Console gated)
 - [x] Signed-AAB pipeline (signing config + keystore) · [x] UMP consent code · [x] boot fixes
 - [x] Privacy policy (text + hosted HTML) · [x] icon 512 (32-bit) · [x] feature 1024×500 · [x] 8 screenshots 1080×2160
-- [x] Branded launcher icon · [x] Firebase `google-services.json` · [x] listing/ASO copy drafted
-- [ ] **Rebuild AAB** (current one is stale)
+- [x] Branded launcher icon · [x] Firebase `google-services.json` · [x] listing/ASO/release-notes **refreshed to 150/15 + Gravity Run** (v0.15.0)
+- [ ] **Rebuild AAB** (current one is stale — predates all v0.15.0 content)
 - [ ] **[User]** GitHub Pages live + privacy URL renders
 - [ ] **[Play Console]** Create app → **App content** (privacy URL, data safety, content rating, ads, target audience)
 - [ ] **[Play Console]** Main store listing (paste `docs/store/listing.md`; upload `docs/store/assets/*`)

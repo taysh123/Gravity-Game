@@ -10,7 +10,8 @@ Weave naturally into the title / short / full description — **no keyword stuff
 - **Primary:** gravity puzzle, physics puzzle, one-touch / one-finger, space puzzle,
   relaxing puzzle game.
 - **Secondary / long-tail:** hold to pull, brain teaser, minimalist puzzle, orbit /
-  slingshot, logic puzzle, offline puzzle game, star, cosmic, no wifi game.
+  slingshot, logic puzzle, offline puzzle game, star, cosmic, no wifi game, endless
+  runner, score chase, weekly challenge, leaderboard, star map.
 - **Brand:** GRAVITY FLOW, True Story Labs.
 - **Title slot** carries the strongest term: `GRAVITY FLOW — Physics Puzzle`.
 - **Short description** leads with the verb + fantasy: “Hold to pull a lost star
@@ -30,11 +31,13 @@ the dark sky). Order = a mini funnel: hook → variety → mastery → depth.
 4. **THE LOCKWORKS** (L48) — the pulsing laser corridor. *“Thread the gateworks.”*
    (tension + spectacle)
 5. **A boss STAR FREED** beat (e.g. THE MAELSTROM/HOMECOMING) — red arena + banner.
-   *“Eight worlds. Eight bosses, all different.”* (scope)
-6. **Mastery HUD** — the live par chip + faint ghost trail of a best run. *“Beat your
-   best. Chase 3 stars.”* (replay / skill hook)
-7. **World map / level select** — star badges across worlds. *“56 hand-tuned levels.”*
-8. *(optional)* **Cosmetics** — a ball theme. *“Earn cosmetic star themes.”*
+   *“15 worlds. 15 bosses, all different.”* (scope)
+6. **GRAVITY RUN** — the endless climb mid-run, score ticking. *“Endless mode + a weekly
+   challenge leaderboard.”* (replayability / score-chase hook)
+7. **THE STAR MAP** — the constellation of worlds with star badges. *“Journey 150 levels
+   across 15 worlds.”* *(re-capture for v0.15.0 — shows the new map)*
+8. *(optional)* **Cosmetics / Mastery HUD** — a star skin + the par chip + ghost trail.
+   *“Chase 3 stars. Earn cosmetic skins, trails & effects.”*
 
 Caption spec: Orbitron display for the headline word, Exo 2 for the rest; ≥40px type
 at export size; keep text clear of the top notch + bottom gesture bar (~10% insets);

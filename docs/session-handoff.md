@@ -1,7 +1,8 @@
 # Session Handoff — GRAVITY FLOW
 
-**30-second resume card. Full detail: [`docs/project-status.md`](./project-status.md) → "Release
-Readiness". Release checklists: [`docs/release-prep.md`](./release-prep.md).**
+**30-second resume card. 🚀 Launch command-center: [`docs/LAUNCH-READINESS.md`](./LAUNCH-READINESS.md)
+(full audit + roadmaps + next actions). Full detail: [`docs/project-status.md`](./project-status.md).
+Release checklists: [`docs/release-prep.md`](./release-prep.md).**
 
 ---
 

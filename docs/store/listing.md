@@ -18,18 +18,24 @@ GRAVITY FLOW is a one-touch physics puzzle set in deep space. You never move the
 star directly — press and hold to create a point of gravity, and the star is pulled
 toward it. Drag to steer, release to let go. Hold to pull, guide the star home.
 
-Across 8 worlds you’ll learn a new way to think with every chapter — currents that
-sweep you off course, clockwork that opens and closes, magnetic wells you slingshot
-around, rifts that fold space, one-way gates you commit to. Time spinning gears and
-pulsing laser beams, thread sweeping hazards, and chase a drifting home star through
-a maelstrom. Every boss is a different kind of spectacle.
+Journey across a living star map of 15 worlds and 150 hand-tuned levels. Every world
+teaches a new way to think — currents that sweep you off course, clockwork that opens
+and closes, magnetic wells you slingshot around, rifts that fold space, one-way gates
+you commit to, deadly spinning arms and pulsing laser beams. Each world ends in its
+own boss, each chapter a fresh kind of spectacle. Warp between worlds on the cosmic
+map and watch your constellation of stars grow.
+
+Then test your nerve in GRAVITY RUN — an endless, accelerating climb through space.
+Chase your best in Endless mode (a fresh run every time), or take on the Weekly
+Challenge, where everyone races the same seeded course for the leaderboard.
 
 • Pure one-thumb control — easy to learn, deep to master
-• 56 hand-tuned levels across 8 distinct worlds
-• A new mechanic and a memorable “wow” in every chapter
+• 150 hand-tuned levels across 15 distinct worlds, on a cosmic star map
+• GRAVITY RUN: an endless score-chase + a weekly challenge leaderboard
+• A new mechanic and a memorable boss in every world
 • 3-star mastery: finish, grab the gem, beat par — chase your best with a ghost trail
-• A daily challenge + streaks, unlockable cosmetic star themes
-• Calm, premium cosmic visuals and audio; relaxing or rewarding, your pace
+• Daily challenge + streaks, achievements, and unlockable cosmetic star skins, trails & arrival effects
+• Premium cosmic visuals and audio; relaxing or thrilling, your pace
 
 No pay-to-win. Optional ads are rewarded and never required to progress. Remove ads
 any time. Play offline.
@@ -64,6 +70,8 @@ checklist (contact email, studio/legal name, jurisdiction) before publishing.
 - **App icon 512×512** (32-bit PNG) → `docs/store/assets/icon-512.png` *(ready; alternatives in `icon-concepts/`)*
 - **Feature graphic 1024×500** → `docs/store/assets/feature-1024x500.png` *(ready; alternatives in `feature-concepts/`)*
 - **Phone screenshots ×8** (portrait 1080×2160, Play-compliant) → `docs/store/assets/screenshots/`
+  *(⚠️ predate the v0.15.0 Star Map redesign + 150-level expansion — re-capture `06-world-map` to show the
+  Star Map, and add a GRAVITY RUN shot, via `scripts/capture_store_shots.py` before final production listing)*
 - (Optional) 30s promo video — not produced
-- Adaptive in-build launcher icon (replace the default Capacitor robot) — **still to do** via `@capacitor/assets`
+- Adaptive in-build launcher icon (branded vortex, replaces the Capacitor robot) — **done** (`@capacitor/assets`, all densities)
 - Catalog of finals vs. alternatives: `docs/store/assets/README.md`
