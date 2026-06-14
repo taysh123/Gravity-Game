@@ -63,6 +63,13 @@
 - Quality gates green: `npx tsc --noEmit` clean · `npm test` 44 tests pass (MathUtils 10 + scoring 6 +
   daily 12 + portal 5 + gate 5 + achievements 6) · `npm run build` clean · full flow **no console errors**.
 
+**Media package (2026-06-14):** a full multi-destination visual package was auto-captured from the
+150-level build into `docs/media/` (Google Play, App Store iPhone/iPad, GitHub, portfolio, LinkedIn) +
+3 animated README GIFs; the root `README.md` was rewritten portfolio-grade and the Play
+`docs/store/assets/screenshots/` set refreshed for the Star Map + 150 levels. Strategy, full inventory,
+ordering, and captions: `docs/media/README.md`. Tooling (reproducible): `scripts/capture_media.py`,
+`capture_frames.py`, `assemble_gifs.mjs`, `curate_media.mjs`.
+
 **Caveat:** automated Playwright scripts verified that mechanics *function* (zone lifts, saw sweeps,
 hazard kills, countdown fails). They **cannot** reproduce precise finger input, so per-level
 **solvability/difficulty balance** is not yet verified — that needs a **human device playtest**.

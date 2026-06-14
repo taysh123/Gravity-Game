@@ -33,6 +33,11 @@ Release checklists: [`docs/release-prep.md`](./release-prep.md).**
   window + start grace + one-time coach hint (`physics.config ENDLESS_*`). Strategy of record:
   `~/.claude/plans/pure-foraging-fiddle.md`. **Open:** human feel-playtest of the tuned ramp; optional real
   Play Games Services leaderboards (interface ready).
+- **MEDIA PACKAGE (built 2026-06-14):** full multi-destination visual package in `docs/media/`
+  (Google Play / App Store / GitHub / portfolio / LinkedIn) auto-captured from the 150-level build +
+  3 README GIFs; root **`README.md`** rewritten portfolio-grade; Play `docs/store/assets/screenshots/`
+  refreshed (Star Map + 150-level). Strategy + inventory + captions: `docs/media/README.md`.
+  Regenerate: `scripts/capture_media.py` → `capture_frames.py` → `assemble_gifs.mjs` → `curate_media.mjs`.
 - **Open (campaign):** device 1★ fairness playtest (`docs/device-playtest-checklist.md`).
 - **Launch:** deferred during the expansion. The store/AAB notes below are pre-expansion — **rebuild the
   AAB** (now also reflects 150 levels) before any upload.
