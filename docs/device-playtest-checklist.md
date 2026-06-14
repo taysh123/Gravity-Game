@@ -39,8 +39,12 @@
 Menu → **GRAVITY RUN** → try both **Endless** and **Weekly Challenge**. Automation has verified seeds,
 variety, fairness invariants, and overlays; only a human can judge *feel*:
 - **"One more try":** does **RETRY** + the fresh random Endless run pull you back in?
-- **Ramp:** with the v2 tuning (`ENDLESS_SCROLL_BASE 64 / ACCEL 1.8 / MAX 200`, 7s onboarding hold), does it
-  start gentle and tense up fairly — or still spike / drag? Tune the `ENDLESS_*` constants in `physics.config`.
+- **Ramp:** with the v3 tuning (`ENDLESS_SCROLL_BASE 76 / ACCEL 4.0 / MAX 250`, 3.5s onboarding) the run now
+  climbs ~76→234 px/s over ~45s — does it feel *fast & exciting but fair*, or does it spike? Tune the
+  `ENDLESS_*` constants in `physics.config`.
+- **Star Map journey:** menu → WORLDS → does the Star Map + warp-into-a-world feel like a rewarding journey?
+  Each world's themed panel should feel like its own destination. Adjust `WorldMapScene` spacing / warp in
+  `transitions.warpToScene` if a transition feels off.
 - **Chunk fairness/readability at speed:** any chunk that cheap-kills or reads poorly fast? (Each is validated
   to have a safe lane, but feel is the judge.) Adjust the offending chunk in `config/endless/chunks.ts`.
 - **Variety:** do runs feel distinct now (recency window + 20 chunks)? Add chunks if any sameness remains.

@@ -251,6 +251,12 @@ History lives in `docs/superpowers/plans/`. Summary:
 > validator) with a variety/pacing generator (`utils/endless.ts` — tier-0 opener, tension/release, no
 > back-to-back id/tag, recency window) + a gentler readable ramp/onboarding. Strategy of record:
 > `~/.claude/plans/pure-foraging-fiddle.md`. Open: human feel-playtest of the tuned ramp; optional PGS leaderboards.
+>
+> **PRESENTATION (premium pass):** world progression is now a **journey** — `WorldMapScene` ("Star Map":
+> 15 worlds as nodes on a constellation path, per-world accent/roman/tally/locks); `LevelSelectScene`
+> refactored to a **themed per-world panel**; **`warpToScene`** cinematic warp transition (menu LEVELS →
+> WORLDS / Star Map). Endless re-tuned **faster** (`ENDLESS_SCROLL_BASE 76 / ACCEL 4.0 / MAX 250 / ONBOARD
+> 3500`). Future-growth seams (events/LTC/PGS/social) documented in `docs/growth-architecture.md`.
 
 - **15 worlds, 150 levels** — `LEVELS[]` ordered by world so chapter ranges are contiguous; a structural
   validator (`src/config/levels/levels.test.ts`) guards every level. Worlds 1–8 (the 7 mechanic worlds)

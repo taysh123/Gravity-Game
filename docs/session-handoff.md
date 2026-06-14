@@ -10,8 +10,17 @@ Readiness". Release checklists: [`docs/release-prep.md`](./release-prep.md).**
   **NOW 150 levels / 15 worlds** (2026-06-14 expansion; was 56/8). All 7 mechanics; Worlds 9–15 are new
   combination/tension/mastery worlds (no new engine code). Plan of record + curation catalog:
   `docs/superpowers/plans/2026-06-14-expansion-150.md`.
-- **Verified:** tsc + 96 tests + build green; all 150 boot with zero console errors
+- **Verified:** tsc + 103 tests + build green; all 150 boot with zero console errors
   (`scripts/smoke_levels.py`). Reward-flair polish done (cosmetic **unlock fanfare** + COLLECTION COMPLETE).
+- **PRESENTATION (premium pass, built):** world progression is now a **journey, not a list** —
+  `WorldMapScene` (the "Star Map": 15 worlds as glowing nodes on a constellation path, per-world
+  accent/roman/tally/locks, auto-centres on your world); `LevelSelectScene` refactored to a **themed
+  per-world panel** (`init({world})`, recoloured cosmos + roman/subtitle header); **`warpToScene`** cinematic
+  warp (star-streaks + accent bloom) entering a world / from the menu (reduced-motion → fade). Menu LEVELS →
+  **WORLDS** (Star Map). Future-growth seams documented in `docs/growth-architecture.md`.
+- **Endless re-tune (v3, faster):** `ENDLESS_SCROLL_BASE 76 / ACCEL 4.0 / MAX 250 / ONBOARD 3500 /
+  SPAWN_AHEAD 480` — a real adrenaline climb (~76→234 px/s over a ~45s run), still fair (start grace +
+  safe-lane chunks). Verified ramp = 183 px/s at 30s.
 - **GRAVITY RUN (endless flagship, built + v2 tuned):** `EndlessScene` — camera-scroll vertical climb
   reusing every campaign entity. **Two modes** via a `RunSelectScene` hub off the GRAVITY RUN menu entry:
   **Endless** (fresh random seed every attempt → different run each time; local all-time best
