@@ -11,7 +11,7 @@
 |---|---|
 | **Game / studio** | GRAVITY FLOW — **True Story Labs** |
 | **Content** | **150 levels · 15 worlds** · Star Map · Gravity Run (Endless + Weekly) · Daily · achievements · cosmetics |
-| **Version** | `0.15.0` (`package.json`) · git tag **`v0.15.0`** · **app `versionCode 1` / `versionName 1.0.0`** (`android/app/build.gradle`) |
+| **Version** | **`1.0.0-rc.1`** (`package.json`) · git tags **`v0.15.0`** (milestone) + **`v1.0.0-rc.1`** (launch candidate) · **app `versionCode 1` / `versionName 1.0.0`** (`android/app/build.gradle`) |
 | **Package** | `com.truestorylabs.gravityflow` · target SDK **36** / min **24** |
 | **Branch** | `master` (synced) · https://github.com/taysh123/Gravity-Game |
 | **Privacy policy** | **https://taysh123.github.io/Gravity-Game/** (Pages → `docs/index.html`) |
@@ -19,6 +19,7 @@
 | **Signed AAB** | `android/app/build/outputs/bundle/release/app-release.aab` — **STALE, rebuild** (predates UMP, branded icon & all v0.15.0 content) |
 | **Upload key** | `gravityflow-upload` · `C:\Keys\gravityflow-upload.jks` (gitignored, valid to 2051) |
 | **Store copy** | listing/ASO/release-notes refreshed to 150/15 + new modes (`docs/store/`) |
+| **Media package** | ✅ full visual package in `docs/media/` (Play / App Store / GitHub / portfolio / LinkedIn) + 3 GIFs; strategy/captions in `docs/media/README.md`; portfolio-grade root `README.md` |
 
 ---
 
@@ -35,7 +36,7 @@ Verify: `jarsigner -verify <aab>` → "jar verified" with alias `gravityflow-upl
 
 ## ✅ Internal Testing — code & assets READY (user/Play-Console gated)
 - [x] Signed-AAB pipeline (signing config + keystore) · [x] UMP consent code · [x] boot fixes
-- [x] Privacy policy (text + hosted HTML) · [x] icon 512 (32-bit) · [x] feature 1024×500 · [x] 8 screenshots 1080×2160
+- [x] Privacy policy (text + hosted HTML) · [x] icon 512 (32-bit) · [x] feature 1024×500 · [x] **8 screenshots 1080×2160 (refreshed 2026-06-14 for Star Map + 150 levels via `scripts/capture_media.py`)**
 - [x] Branded launcher icon · [x] Firebase `google-services.json` · [x] listing/ASO/release-notes **refreshed to 150/15 + Gravity Run** (v0.15.0)
 - [ ] **Rebuild AAB** (current one is stale — predates all v0.15.0 content)
 - [ ] **[User]** GitHub Pages live + privacy URL renders

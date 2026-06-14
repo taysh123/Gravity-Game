@@ -12,6 +12,11 @@ Code is functionally identical to `v0.15.0` — this RC marks the locked launch 
 - Launch command-center, audit & roadmaps: `docs/LAUNCH-READINESS.md`; release plan: `docs/RELEASE-v1.0.0.md`.
 - **`[1.0.0]` is cut at public launch** (production rollout) — see the release plan. RC builds may iterate
   (`rc.2`, `rc.3`, …) if the device playtest forces tuning.
+- **Media & presentation (docs-only, 2026-06-14):** full **Screenshot & Media Production Pass** — a
+  multi-destination visual package in `docs/media/` (Google Play / App Store / GitHub / portfolio /
+  LinkedIn) + 3 animated README GIFs, auto-captured from the 150-level build (`scripts/capture_media.py`
+  → `curate_media.mjs`); **portfolio-grade root `README.md`**; Play `docs/store/assets/screenshots/`
+  refreshed to the Star Map + 150-level content. Strategy/inventory/captions: `docs/media/README.md`.
 
 ## [0.15.0] — Star Map presentation milestone
 - **The Star Map** (`WorldMapScene`): world progression is now a journey — 15 worlds as
