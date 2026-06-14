@@ -9,13 +9,14 @@ import { drawGlass } from '../ui/glass';
 import { fadeIn, fadeToScene } from '../utils/transitions';
 import { reducedMotionActive, safeAreaInsetsScaled } from '../utils/a11y';
 import { ProgressStore } from '../utils/ProgressStore';
+import { themeForWorld } from '../config/worldThemes';
+import { worldOf } from '../utils/world';
 
 const COLS = 3;
 const CELL_W = 84;
 const CELL_H = 44; // >= 44 so each cell stays a valid touch target
 const GAP_X = 12;
 const GAP_Y = 6;
-const HEADER_H = 22;
 const SECTION_GAP = 10;
 const DRAG_THRESHOLD = 8; // px of movement before a press counts as a scroll, not a tap
 
@@ -29,9 +30,15 @@ export class LevelSelectScene extends Phaser.Scene {
   private scrolled = false; // true once a press has moved past the drag threshold
   private dragStartY = 0;
   private contentStartY = 0;
+  private worldId = 1;
 
   constructor() {
     super({ key: 'LevelSelectScene' });
+  }
+
+  init(data: { world?: number }): void {
+    // Default to the world the player is currently progressing through.
+    this.worldId = data?.world ?? worldOf(ProgressStore.nextLevel(LEVELS.length)).id;
   }
 
   create(): void {
@@ -42,94 +49,70 @@ export class LevelSelectScene extends Phaser.Scene {
     const insets = safeAreaInsetsScaled(sx, sy);
     const reduced = reducedMotionActive();
 
-    this.cosmic = new CosmicBackground(this);
+    const world = WORLDS[this.worldId - 1] ?? WORLDS[0];
+    const t = themeForWorld(world.id);
+    const accentHex = `#${t.accent.toString(16).padStart(6, '0')}`;
+
+    // This world's own atmosphere — the destination recolors the cosmos.
+    this.cosmic = new CosmicBackground(this, 1, t);
     fadeIn(this);
 
+    const titleY = Math.max(height * 0.08, insets.top + 40);
     this.add
-      .text(cx, Math.max(height * 0.07, insets.top + 38), 'SELECT LEVEL', {
-        fontFamily: THEME.FONT_DISPLAY,
-        fontSize: '22px',
-        color: THEME.TEXT_PRIMARY,
-        fontStyle: '700',
+      .text(cx, titleY, `${t.roman} · ${world.name}`, {
+        fontFamily: THEME.FONT_DISPLAY, fontSize: '22px', color: accentHex, fontStyle: '700',
       })
       .setOrigin(0.5)
-      .setLetterSpacing(3)
+      .setLetterSpacing(2)
+      .setDepth(10);
+
+    const levels: number[] = [];
+    for (let n = world.from; n <= Math.min(world.to, LEVELS.length); n++) levels.push(n);
+    const earned = levels.reduce((s, n) => s + ProgressStore.get(n).stars, 0);
+    this.add
+      .text(cx, titleY + 24, `${t.subtitle}   ·   ${earned}/${levels.length * 3}★`, {
+        fontFamily: THEME.FONT_BODY, fontSize: '13px', color: THEME.TEXT_MUTED,
+      })
+      .setOrigin(0.5)
       .setDepth(10);
 
     const gridW = COLS * CELL_W + (COLS - 1) * GAP_X;
     const startX = cx - gridW / 2 + CELL_W / 2;
 
-    // Scroll viewport: between the title and the Back button.
-    const viewTop = Math.max(height * 0.14, insets.top + 76);
+    const viewTop = Math.max(height * 0.18, insets.top + 96);
     const backY = Math.min(height - Math.max(SPLASH.SAFE_AREA_MIN_PAD, insets.bottom) - 30, height * 0.95);
     const viewBottom = backY - 38;
 
-    // All sections live in one scrollable container (laid out from y=0).
     this.content = this.add.container(0, viewTop);
-    let y = 12; // top padding so the first world header isn't clipped by the mask
-    for (const world of WORLDS) {
-      const levels: number[] = [];
-      for (let n = world.from; n <= Math.min(world.to, LEVELS.length); n++) levels.push(n);
-      if (levels.length === 0) continue;
+    let y = 12;
+    levels.forEach((level, i) => {
+      const col = i % COLS;
+      const row = Math.floor(i / COLS);
+      const x = startX + col * (CELL_W + GAP_X);
+      const cyc = y + row * (CELL_H + GAP_Y) + CELL_H / 2;
+      this.makeCell(x, cyc, level, t.accent, reduced, i);
+    });
+    const rows = Math.ceil(levels.length / COLS);
+    y += rows * (CELL_H + GAP_Y) + SECTION_GAP;
 
-      const earned = levels.reduce((s, n) => s + ProgressStore.get(n).stars, 0);
-      const header = this.add
-        .text(startX - CELL_W / 2, y, world.name, {
-          fontFamily: THEME.FONT_DISPLAY,
-          fontSize: '15px',
-          color: Phaser.Display.Color.IntegerToColor(world.theme).rgba,
-          fontStyle: '600',
-        })
-        .setOrigin(0, 0.5)
-        .setLetterSpacing(2);
-      const tally = this.add
-        .text(startX - CELL_W / 2 + gridW, y, `${earned}/${levels.length * 3}★`, {
-          fontFamily: THEME.FONT_BODY,
-          fontSize: '13px',
-          color: THEME.TEXT_MUTED,
-        })
-        .setOrigin(1, 0.5);
-      this.content.add([header, tally]);
-      y += HEADER_H;
-
-      levels.forEach((level, i) => {
-        const col = i % COLS;
-        const row = Math.floor(i / COLS);
-        const x = startX + col * (CELL_W + GAP_X);
-        const cyc = y + row * (CELL_H + GAP_Y) + CELL_H / 2;
-        this.makeCell(x, cyc, level, world.theme, reduced, i);
-      });
-
-      const rows = Math.ceil(levels.length / COLS);
-      y += rows * (CELL_H + GAP_Y) + SECTION_GAP;
-    }
-
-    // Clip the content to the viewport, and set up scrolling if it overflows.
     const maskShape = this.make.graphics({});
     maskShape.fillRect(0, viewTop, width, viewBottom - viewTop);
     this.content.setMask(maskShape.createGeometryMask());
 
-    const contentH = y;
     const viewH = viewBottom - viewTop;
-    this.scrollMin = Math.min(0, viewH - contentH); // negative when scrollable
+    this.scrollMin = Math.min(0, viewH - y);
     this.setupScroll(viewTop, viewBottom);
 
     if (this.scrollMin < 0) {
-      // Subtle hint that there's more below.
       this.add
-        .text(cx, viewBottom + 4, '▾ scroll', {
-          fontFamily: THEME.FONT_BODY,
-          fontSize: '11px',
-          color: THEME.TEXT_MUTED,
-        })
+        .text(cx, viewBottom + 4, '▾ scroll', { fontFamily: THEME.FONT_BODY, fontSize: '11px', color: THEME.TEXT_MUTED })
         .setOrigin(0.5)
         .setDepth(10);
     }
 
-    new Button(this, cx, backY, '← Back', () => fadeToScene(this, 'MainMenuScene'), {
-      width: 150,
-      height: 46,
-      fontSize: 18,
+    // Back to the Star Map (the journey overview).
+    new Button(this, cx, backY, '← Map', () => fadeToScene(this, 'WorldMapScene'), {
+      width: 150, height: 46, fontSize: 18,
     }).container.setDepth(10);
   }
 

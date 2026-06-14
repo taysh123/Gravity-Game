@@ -5,7 +5,7 @@ import { THEME } from '../config/theme.config';
 import { CosmicBackground } from '../entities/CosmicBackground';
 import { Button } from '../ui/Button';
 import { IconButton } from '../ui/IconButton';
-import { fadeIn, fadeToScene } from '../utils/transitions';
+import { fadeIn, fadeToScene, warpToScene } from '../utils/transitions';
 import { reducedMotionActive, safeAreaInsetsScaled } from '../utils/a11y';
 import { sharedAudio } from '../utils/AudioSynth';
 import { ProgressStore } from '../utils/ProgressStore';
@@ -99,7 +99,7 @@ export class MainMenuScene extends Phaser.Scene {
     const btnY = Math.max(height * 0.64, titleY + targetW * 0.5 + 70);
     const resumeLevel = ProgressStore.nextLevel(LEVELS.length);
     const playLabel = resumeLevel > 1 ? 'CONTINUE' : 'PLAY';
-    const play = new Button(this, cx, btnY, playLabel, () => fadeToScene(this, 'GameScene', { level: resumeLevel }), {
+    const play = new Button(this, cx, btnY, playLabel, () => warpToScene(this, 'GameScene', { level: resumeLevel }), {
       fill: THEME.ACCENT_PRIMARY,
       textColor: THEME.TEXT_ON_PRIMARY,
       fontFamily: THEME.FONT_DISPLAY,
@@ -110,8 +110,8 @@ export class MainMenuScene extends Phaser.Scene {
       this,
       cx,
       btnY + SPLASH.MENU_BTN_H + SPLASH.MENU_BTN_GAP,
-      'LEVELS',
-      () => fadeToScene(this, 'LevelSelectScene'),
+      'WORLDS',
+      () => warpToScene(this, 'WorldMapScene', undefined, THEME.ACCENT_GOLD),
       { fill: SPLASH.MENU_FILL_SECONDARY, fontFamily: THEME.FONT_DISPLAY, fontSize: 20 },
     );
 

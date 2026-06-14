@@ -5,6 +5,7 @@ import { CompanySplashScene } from './scenes/CompanySplashScene';
 import { IntroSplashScene } from './scenes/IntroSplashScene';
 import { MainMenuScene } from './scenes/MainMenuScene';
 import { LevelSelectScene } from './scenes/LevelSelectScene';
+import { WorldMapScene } from './scenes/WorldMapScene';
 import { AchievementsScene } from './scenes/AchievementsScene';
 import { CosmeticsScene } from './scenes/CosmeticsScene';
 import { SettingsScene } from './scenes/SettingsScene';
@@ -45,6 +46,7 @@ const game = new Phaser.Game({
     IntroSplashScene,
     MainMenuScene,
     LevelSelectScene,
+    WorldMapScene,
     AchievementsScene,
     CosmeticsScene,
     SettingsScene,
