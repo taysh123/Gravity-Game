@@ -1,5 +1,9 @@
 # Mechanics Roadmap — candidates (ranked)
 
+> ⏳ **Historical plan record (superseded).** All 7 mechanics are now shipped (attractor, gravity zones,
+> magnets, portals, moving platforms, hazards, one-way gates) across 150 levels / 15 worlds (`v1.0.0-rc.1`).
+> Current state: [`docs/project-status.md`](../../project-status.md).
+
 Shipped so far: **Gravity Zones**, **Moving Platforms**, **Collectibles/Stars** (Depth sprint);
 **Hazards** (fail-on-touch, incl. moving saws) + **hard-countdown timed levels** (Tension sprint) →
 4 worlds, 22 levels, with a real fail state. Remaining candidates ranked by value-per-risk. Each

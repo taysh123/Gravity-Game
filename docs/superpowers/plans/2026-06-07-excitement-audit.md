@@ -1,5 +1,9 @@
 # Gravity Flow — Brutally Honest Excitement Audit
 
+> ⏳ **Historical analysis record (largely addressed).** Written pre-expansion; its asks (per-world visual
+> identity, a world-journey, an endless mode, more excitement) were since delivered (Star Map, Gravity Run,
+> 150 levels / 15 worlds, per-world themes). Current state: [`docs/project-status.md`](../../project-status.md).
+
 > Question this answers: **"Why isn't Gravity Flow a game people get excited about and tell friends —
 > and what would change that?"** Bug fixes shipped alongside (v0.6.1): L9 was unsolvable (fixed),
 > L1/early-world 3★ too strict (fixed). This doc is analysis only — nothing here is implemented yet.

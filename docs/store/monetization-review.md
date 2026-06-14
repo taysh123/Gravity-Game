@@ -59,8 +59,8 @@ milestone rewards + progress). All web-verified; native purchase/ads remain devi
 The game now has the *content* a premium puzzler needs: 16 ball-skins with real visual
 identity (void Black Hole, animated Supernova, dualtone Neon), 6 trails (jagged
 Lightning, multi-hue Galaxy), 6 win-celebration arrival effects, and a store that reads
-like a real mobile game rather than a list. The hold-to-pull core and the 56-level
-campaign are unchanged — this is pure depth + presentation. Gap: the store previews are
+like a real mobile game rather than a list. The hold-to-pull core and the campaign
+(since expanded to **150 levels**) are unchanged — this is pure depth + presentation. Gap: the store previews are
 small static swatches; animated/in-context previews would convert better (future).
 
 ### 2. Monetization review
