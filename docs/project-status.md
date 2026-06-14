@@ -1,9 +1,40 @@
 # Gravity Flow — Project Status (Single Source of Truth)
 
-> **Resume in one line:** Read this file first, then continue from **[Release Readiness — Play Store Launch Prep](#release-readiness--play-store-launch-prep-current-phase)**.
-> Quick version + Next Session Quick Start: `docs/session-handoff.md`. Release tracker: `docs/release-prep.md`.
-> **Repository:** https://github.com/taysh123/Gravity-Game.git · branch `master` (synced, HEAD `a354492`).
-> **Phase:** Google Play launch engineering (game is content-complete v0.14.0). **Privacy policy:** https://taysh123.github.io/Gravity-Game/
+> **Resume in one line:** Read **[CURRENT PROJECT STATUS](#current-project-status)** below, then continue from **[Release Readiness — Play Store Launch Prep](#release-readiness--play-store-launch-prep-current-phase)**.
+> Quick version + Next Session Start Point: `docs/session-handoff.md`. Launch command-center + Exact Next Actions: `docs/LAUNCH-READINESS.md`. Release tracker: `docs/release-prep.md`.
+> **Repository:** https://github.com/taysh123/Gravity-Game.git · branch `master` (synced, HEAD `2779d48`).
+> **Phase:** Google Play launch engineering. Game is **content-complete & launch-prep complete** at **`v1.0.0-rc.1`** (milestone `v0.15.0`). **Privacy policy:** https://taysh123.github.io/Gravity-Game/
+
+---
+
+## CURRENT PROJECT STATUS
+
+*Snapshot for instant resume — see the sections below for full detail. Last synced 2026-06-14, HEAD `2779d48`.*
+
+**Product:** GRAVITY FLOW by True Story Labs — a one-touch cosmic physics puzzler. **`v1.0.0-rc.1`** launch
+candidate (milestone `v0.15.0`; `package.json 1.0.0-rc.1`; Android `versionName 1.0.0` / `versionCode 1`).
+
+- **✅ Finished (repo-side):** 150 levels / 15 worlds · Star Map (`WorldMapScene`) · Gravity Run — Endless +
+  Weekly (`EndlessScene`/`RunSelectScene`) · Daily Challenge · 14 achievements · 28-item cosmetics store ·
+  dual currency (Stardust + Cosmic Fragments) · AdMob / RevenueCat / Firebase **guarded seams** · Android
+  signing pipeline + branded launcher icon · privacy policy (hosted) · **store assets + full media package +
+  portfolio README**.
+- **✅ Verified:** `tsc` clean · **103 tests** · `npm run build` clean · all 150 levels boot with **zero
+  console errors** (`scripts/smoke_levels.py`). *(Caveat: per-level solvability/fairness is **not** device-
+  verified — see Open Issues.)*
+- **✅ Committed & pushed:** branch `master`, **synced** with `origin`, HEAD **`2779d48`**. Tags include
+  `v0.15.0` + `v1.0.0-rc.1`.
+- **🚀 Deployed:** nothing to Play yet. GitHub Pages serves the privacy policy
+  (https://taysh123.github.io/Gravity-Game/). An older Vercel web build exists (not the release artifact).
+- **⛔ Needs external accounts (you):** Play Console (app, App-content, listing, tracks, billing products,
+  uploads) · real AdMob app/ad-unit ids + UMP message · RevenueCat SDK key/product/entitlement.
+- **📱 Needs a physical Android device (you):** rebuild + upload the (stale) signed AAB · the **1★ fairness
+  + Endless/Star-Map feel playtest** · on-device ad/IAP/Restore/Analytics/Crashlytics smoke.
+- **🍎 Needs macOS/iOS (future):** no `ios/` platform exists — adding it needs macOS + Xcode + Apple
+  Developer ($99/yr). App Store readiness ~10%.
+
+**→ Exact next actions** (split by actor): `docs/LAUNCH-READINESS.md` → *EXACT NEXT ACTIONS*.
+**→ Where to start next session:** `docs/session-handoff.md` → *NEXT SESSION START POINT*.
 
 ---
 
@@ -60,8 +91,8 @@
 - UI/UX: glassmorphic design system, Orbitron+Exo 2 fonts, in-game glass toolbar (Home/Settings/Restart),
   settings overlay (Sound/Music/Haptics/Reduce-Motion), one-time Level-1 coach-mark, win/death feedback,
   full-surface button hit areas + press feedback, safe-area handling.
-- Quality gates green: `npx tsc --noEmit` clean · `npm test` 44 tests pass (MathUtils 10 + scoring 6 +
-  daily 12 + portal 5 + gate 5 + achievements 6) · `npm run build` clean · full flow **no console errors**.
+- Quality gates green: `npx tsc --noEmit` clean · `npm test` **103 tests pass (16 files)** · `npm run build`
+  clean · full flow **no console errors**.
 
 **Media package (2026-06-14):** a full multi-destination visual package was auto-captured from the
 150-level build into `docs/media/` (Google Play, App Store iPhone/iPad, GitHub, portfolio, LinkedIn) +
@@ -100,7 +131,7 @@ Pages, served from `docs/index.html`).
 - **Branded launcher icon** (vortex) replaces the default Capacitor robot — adaptive + legacy mipmaps
   at all densities via `@capacitor/assets` from `assets/icon-{foreground,background,only}.png`. (`a354492`)
 - Firebase real `google-services.json` in `android/app/` (project `gravity-flow-e8dff`).
-- Quality: `tsc` clean · **82 tests** · web build clean (firebase/admob/RC **not** bundled).
+- Quality: `tsc` clean · **103 tests** · web build clean (firebase/admob/RC **not** bundled).
 
 **Readiness by track:**
 - **Internal Testing — code & assets READY; blocked only on user/Play-Console steps:** confirm Pages

@@ -6,6 +6,32 @@ Release checklists: [`docs/release-prep.md`](./release-prep.md).**
 
 ---
 
+## NEXT SESSION START POINT
+
+**Read first, in this order:**
+1. This card (you're here) — the 30-second state.
+2. `docs/project-status.md` → **CURRENT PROJECT STATUS** (finished / verified / deployed / committed /
+   needs-accounts / needs-device / needs-Mac).
+3. `docs/LAUNCH-READINESS.md` → **EXACT NEXT ACTIONS** (split by actor) — the launch command-center.
+
+**Exact state on pause (2026-06-14):** GRAVITY FLOW **`v1.0.0-rc.1`** (milestone `v0.15.0`) · **150
+levels / 15 worlds** · branch `master` **synced**, HEAD **`2779d48`** · tags `v0.15.0` + `v1.0.0-rc.1` ·
+`tsc` clean / **103 tests** / build clean. Game + launch-prep + **media package** all complete repo-side;
+no Play upload yet.
+
+**The single open repo-side nothing** — everything left is your account/device work. **First actions when
+you resume (in order):**
+1. **[You · local]** Rebuild the signed AAB (it's stale): `npm run build && npx cap sync android && cd
+   android && ./gradlew bundleRelease`.
+2. **[You · GitHub]** Confirm Pages is live (`master` / `/docs`) → privacy URL renders.
+3. **[You · Play Console]** Create app → App content → paste listing (`docs/store/listing.md`) + upload
+   `docs/store/assets/` → **Internal testing** → upload AAB → testers.
+4. **[You · device]** **1★ fairness playtest** on the internal build (`docs/device-playtest-checklist.md`).
+
+*Nothing in the codebase blocks any of this; do not add features before launch.*
+
+---
+
 ## Current status (one screen)
 - **Game:** GRAVITY FLOW by **True Story Labs** — cosmic physics puzzler (Phaser 3 + TS + Vite).
   **NOW 150 levels / 15 worlds** (2026-06-14 expansion; was 56/8). All 7 mechanics; Worlds 9–15 are new
@@ -43,7 +69,7 @@ Release checklists: [`docs/release-prep.md`](./release-prep.md).**
   AAB** (now also reflects 150 levels) before any upload.
 - **Phase:** **Google Play launch engineering** (not gameplay). Code + store assets are ready;
   remaining work is mostly **user-side Play Console + external accounts**.
-- **Git:** branch `master`, **synced**, HEAD **`a354492`**. Repo https://github.com/taysh123/Gravity-Game.git
+- **Git:** branch `master`, **synced**, HEAD **`2779d48`**. Repo https://github.com/taysh123/Gravity-Game.git
 - **Privacy policy (canonical, live target):** **https://taysh123.github.io/Gravity-Game/**
   (this repo's GitHub Pages → `docs/index.html`; source markdown `docs/store/privacy-policy.md`).
 - **Signed AAB:** exists at `android/app/build/outputs/bundle/release/app-release.aab` but is
@@ -59,7 +85,7 @@ Release checklists: [`docs/release-prep.md`](./release-prep.md).**
 - **Store assets** (`docs/store/assets/`): 8 screenshots **1080×2160**, **32-bit `icon-512.png`**,
   **`feature-1024x500.png`**, + alternatives; catalog `README.md`.
 - **Branded launcher icon** (vortex) replaces the default robot — all densities, adaptive + legacy.
-- Firebase real `google-services.json` in place; `tsc` clean, **82 tests**, web build clean.
+- Firebase real `google-services.json` in place; `tsc` clean, **103 tests**, web build clean.
 
 ## Readiness by track
 - **Internal Testing:** code/assets READY → blocked only on Pages-live + Play Console setup + AAB rebuild.
