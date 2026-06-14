@@ -28,17 +28,23 @@
   adaptive launcher icon (all densities), Firebase `google-services.json` in place.
 - **Monetization/telemetry wiring**: AdMob (rewarded + interstitial + **UMP consent**), RevenueCat
   (Remove-Ads/`premium`), Firebase **Analytics + Crashlytics** — all guarded seams (web-safe, activate on device).
-- **Store**: icon-512 (32-bit), feature-1024×500, **8 screenshots** (1080×2160), concept alternatives — all
-  present under `docs/store/assets/`. Listing + ASO + data-safety + content-rating drafts.
+- **Store**: icon-512 (32-bit), feature-1024×500, **8 screenshots** (1080×2160, **refreshed 2026-06-14 for
+  the Star Map + 150-level build**), concept alternatives — all present under `docs/store/assets/`. Listing
+  + ASO + data-safety + content-rating drafts.
+- **Media & presentation**: full **Screenshot & Media Production Pass** — multi-destination visual package
+  in `docs/media/` (Play / App Store / GitHub / portfolio / LinkedIn) + 3 animated README GIFs; **portfolio-
+  grade root `README.md`**. Reproducible: `scripts/capture_media.py` → `curate_media.mjs`. Strategy/captions:
+  `docs/media/README.md`.
 - **Privacy policy**: finalized + hosted source (`docs/index.html`); contact `truestorylabs@gmail.com`.
 - **CI**: web typecheck/test/build on push (`.github/workflows/ci.yml`); Android job is a ready-to-enable sketch.
 
-### 🟡 Stale → fixed in this pass (repo-side)
+### 🟡 Stale → fixed in earlier passes (repo-side)
 - **Store listing/ASO** rewritten 56→**150** levels, 8→**15** worlds, + Star Map + **Gravity Run** + leaderboard.
-- **Release tracker / changelog / release notes / versioning display** brought to v0.15.0 / current state.
-- **Screenshots flagged**: the 8 shots **predate the Star Map + 150-level expansion** → re-capture
-  `06-world-map` (now the Star Map) + add a GRAVITY RUN shot via `scripts/capture_store_shots.py` before the
-  *production* listing. (Internal/closed testing can ship with the current shots.)
+- **Release tracker / changelog / release notes / versioning display** brought to the current
+  **`v1.0.0-rc.1`** state (milestone `v0.15.0`).
+- **Screenshots — ✅ RESOLVED (media pass 2026-06-14):** the 8 Play shots were **re-captured** for the Star
+  Map + 150-level content (Star Map, gameplay, boss, Gravity Run, hazards, cosmetics, achievements, 3-star
+  win) and a full multi-destination media package was produced (`docs/media/`). Production-ready.
 
 ### 🔴 Blocked on YOU + external accounts (cannot be automated here)
 Play Console app + all App-content forms + billing products + tracks + uploads · real AdMob app/ad-unit ids +
@@ -107,7 +113,7 @@ Internal Testing → Closed Testing → Production. Test AdMob ids are acceptabl
 ### 4) Production roadmap
 - **[You · device]** **1★ fairness playtest** of the campaign + Endless ramp / Star-Map feel
   (`device-playtest-checklist.md`); tune `parTimeMs`/hazard timings / `ENDLESS_*` if needed (data only, no new code).
-- **[You]** Re-capture the **Star Map** + a **GRAVITY RUN** screenshot for the production listing.
+- **Production screenshots — ✅ done** (refreshed in the media pass; `docs/media/store/android/` + `docs/store/assets/screenshots/`).
 - **[Play Console]** Finalize data safety / pricing (free) / countries → **promote to Production** → submit for review.
 
 ### 5) App Store / iOS roadmap (future, macOS-gated)
@@ -119,10 +125,58 @@ Internal Testing → Closed Testing → Production. Test AdMob ids are acceptabl
 
 ---
 
-## F. Exact next actions — quick table
+## EXACT NEXT ACTIONS
+
+Split by who/what each step needs. Detailed roadmaps with full commands are in §E above.
+
+### Actions only Tay can perform (no extra account/device)
+- **Rebuild the signed AAB** locally (needs your Android SDK): `npm run build && npx cap sync android &&
+  cd android && ./gradlew bundleRelease`; verify `jarsigner -verify <aab>` shows `gravityflow-upload`.
+- **Enable GitHub Pages** (Settings → Pages → source `master` / `/docs`) and confirm
+  https://taysh123.github.io/Gravity-Game/ renders the policy.
+- At public launch: bump `package.json` → `1.0.0`, commit, tag **`v1.0.0`**, create the GitHub Release
+  (`RELEASE-v1.0.0.md`). **Do not tag `v1.0.0` before the device playtest passes.**
+
+### Actions requiring an Android device
+- **1★ fairness + Endless/Star-Map feel playtest** (`device-playtest-checklist.md`); tune
+  `parTimeMs`/hazard timings/`ENDLESS_*` (data only, no new code) if needed.
+- (Closed) On-device smoke: rewarded grants reward · interstitial appears (≥3-min cap) & is suppressed
+  after a Remove-Ads test purchase · **Restore** re-grants · Analytics **DebugView** events · forced
+  **Crashlytics** error.
+
+### Actions requiring Play Console
+- Create the app (Game, Free). **App content**: privacy URL, Data safety, Content rating (Everyone; ads +
+  purchases), Ads = yes, Target audience.
+- **Main store listing**: paste copy from `store/listing.md`; upload `store/assets/icon-512.png`,
+  `feature-1024x500.png`, the 8 screenshots (category Puzzle).
+- **Internal testing** → upload AAB → testers → roll out. Later: billing products (`remove_ads` + the 3
+  bundles) → Closed → final data-safety/pricing/countries → **Production**.
+
+### Actions requiring AdMob
+- Create the app (pkg `com.truestorylabs.gravityflow`) + a **rewarded** + an **interstitial** ad unit →
+  app id into `AndroidManifest.xml`, ad-unit ids into `src/config/monetization.config.ts`.
+- Configure the **"Privacy & messaging" UMP** consent message (so the wired consent shows in the EEA).
+  *(Test ids are fine until Closed testing.)*
+
+### Actions requiring RevenueCat
+- Add the Android app → set the **public SDK key** in `monetization.config.ts`; create the **Remove-Ads**
+  product + a **`premium`** entitlement.
+
+### Actions requiring Apple Developer / macOS (future)
+- On macOS: `npx cap add ios` → Xcode (bundle id, signing team; Apple Developer $99/yr) → iOS assets
+  (1024 icon, per-device screenshots), App Store privacy labels, ATT if ads track → add the iOS app in
+  AdMob/RevenueCat/Firebase → App Store Connect → TestFlight → review. Reuse the web codebase + listing
+  copy + privacy policy.
+
+### Future optional improvements (post-launch; build only when live metrics justify)
+- Real ambient soundtrack (beyond the pad) · Play Games Services leaderboards (interface ready) ·
+  events / limited-time challenges / social seams (`growth-architecture.md`) · the retired "Expert" level
+  packs on disk · a first-purchase Supporter framing.
+
+### Quick-reference table
 | Actor | Next action |
 |---|---|
-| **Claude (me)** | Done this pass: refreshed all store copy + trackers + this audit + changelog + versioning. Next: on request, re-capture Star Map/Run screenshots (local Playwright), or wire real ids into config once you provide them. |
+| **Claude (me)** | Done: refreshed all store copy + trackers + audit + changelog + versioning; **completed the Screenshot & Media Production Pass** (refreshed Play screenshots + full `docs/media/` package + GIFs + portfolio README); reconciled all docs to `v1.0.0-rc.1` / 150-15 / 103 tests. Next: on request, wire real AdMob/RevenueCat ids into config once you provide them. |
 | **You** | (1) Rebuild AAB, (2) enable GitHub Pages, (3) create Play Console app + App content + listing, (4) upload to Internal testing. |
 | **Play Console** | Create app · App content forms · store listing (paste copy + assets) · Internal testing release · later: billing products, Closed/Production. |
 | **Firebase** | Done (`google-services.json`); verify DebugView/Crashlytics on device during Closed. |
@@ -152,5 +206,5 @@ The game is commercially solid; these are *launch-tuning* nudges, not new system
 - GitHub Pages must serve `master` → `/docs` or the privacy URL hits the game, not the policy.
 - Serving `/docs` publishes all internal docs via Jekyll (no secrets — keystore + `google-services.json`
   gitignored); `docs/.nojekyll` added to skip Jekyll processing.
-- Screenshots predate v0.15.0 — fine for internal/closed; re-capture for production.
+- Screenshots **refreshed** for the Star Map + 150-level build (media pass 2026-06-14) — production-ready.
 - This is not legal advice — the privacy policy is standard for this app type; a formal review is optional but prudent.
