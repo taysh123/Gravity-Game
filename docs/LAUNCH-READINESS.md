@@ -14,7 +14,7 @@
 | Android | `versionName 1.0.0` / `versionCode 1` · pkg `com.truestorylabs.gravityflow` · target SDK 36 / min 24 |
 | Repo | `master` synced · https://github.com/taysh123/Gravity-Game |
 | Privacy policy | https://taysh123.github.io/Gravity-Game/ (Pages → `docs/index.html`) |
-| **Google Play readiness** | **~70%** overall (repo-side ~95%; remainder = your account + device work) |
+| **Google Play readiness** | **~72%** overall (repo-side **~99%** — AAB rebuilt 2026-06-16; remainder = your account + device work) |
 | **App Store readiness** | **~10%** (no iOS platform/assets/account; macOS-blocked) |
 
 ---
@@ -25,7 +25,8 @@
 - **Game**: feature- & content-complete (150 levels, Star Map, Gravity Run, Daily, achievements, cosmetics,
   dual-currency economy). `tsc` + 103 tests + build green; web boot zero console errors.
 - **Android**: Capacitor wrap, release **signing pipeline** (gitignored keystore, valid to 2051), branded
-  adaptive launcher icon (all densities), Firebase `google-services.json` in place.
+  adaptive launcher icon (all densities), Firebase `google-services.json` in place. **Signed AAB rebuilt
+  2026-06-16** (11.4 MB, `gravityflow-upload`, `jarsigner` verified; reflects UMP + branded icon + 150 levels).
 - **Monetization/telemetry wiring**: AdMob (rewarded + interstitial + **UMP consent**), RevenueCat
   (Remove-Ads/`premium`), Firebase **Analytics + Crashlytics** — all guarded seams (web-safe, activate on device).
 - **Store**: icon-512 (32-bit), feature-1024×500, **8 screenshots** (1080×2160, **refreshed 2026-06-14 for
@@ -48,8 +49,9 @@
 
 ### 🔴 Blocked on YOU + external accounts (cannot be automated here)
 Play Console app + all App-content forms + billing products + tracks + uploads · real AdMob app/ad-unit ids +
-UMP message · RevenueCat SDK key/product/entitlement · **rebuild + upload the signed AAB** (needs your local
-Android SDK) · **device 1★ fairness + monetization smoke** · confirm GitHub Pages live.
+UMP message · RevenueCat SDK key/product/entitlement · **upload the signed AAB** (rebuilt 2026-06-16 — fresh
+& verified; rebuild again only on real-id/version change) · **device 1★ fairness + monetization smoke** ·
+confirm GitHub Pages live.
 
 ### ⛔ Blocked (platform): App Store / iOS
 No `ios/` platform exists; adding it needs **macOS + Xcode + Apple Developer ($99/yr)** — none available on this
@@ -61,7 +63,7 @@ No `ios/` platform exists; adding it needs **macOS + Xcode + Apple Developer ($9
 | # | Blocker | Owner | Priority | Track |
 |---|---|---|---|---|
 | 1 | Store listing claimed 56/8 (now fixed) → **paste updated copy** into Play Console | You | P0 | Listing |
-| 2 | **Rebuild the signed AAB** (current is stale: predates UMP + branded icon + all v0.15.0 content) | You | P0 | All |
+| 2 | **Upload the signed AAB** to Play (✅ rebuilt 2026-06-16 — fresh, signed `gravityflow-upload`, verified) | You | P0 | All |
 | 3 | **Create Play Console app + App content** (privacy URL, data safety, rating, ads, target audience) | You | P0 | Internal |
 | 4 | **GitHub Pages live** (`master`/`/docs`) so the privacy URL renders | You | P0 | Internal |
 | 5 | Real **AdMob** app + 2 ad-unit ids + **UMP message**; **RevenueCat** key/product/entitlement; **Play billing** products | You | P1 | Closed |
@@ -87,8 +89,10 @@ no App-Store-sized assets, no account). All net-new and macOS-gated.
 Internal Testing → Closed Testing → Production. Test AdMob ids are acceptable until Closed.
 
 ### 2) Internal Testing roadmap (start here — fastest path to a live build)
-- **[You · local]** Rebuild AAB: `npm run build && npx cap sync android && cd android && ./gradlew bundleRelease`
-  → verify `jarsigner -verify` shows `gravityflow-upload`. (Full runbook: `release-android.md`.)
+- **[You · local]** ✅ **AAB already rebuilt 2026-06-16** & `jarsigner`-verified (`gravityflow-upload`) at
+  `android/app/build/outputs/bundle/release/app-release.aab` — just upload it. Rebuild only if real
+  ids/version change: `npm run build && npx cap sync android && cd android && ./gradlew bundleRelease`
+  (set `JAVA_HOME` to the Android Studio JBR first — Gradle 8.14 rejects JDK 25). Full runbook: `release-android.md`.
 - **[You · GitHub]** Settings → Pages → source `master` / `/docs`; confirm https://taysh123.github.io/Gravity-Game/ renders the policy.
 - **[Play Console]** Create app (name, default language, Game, Free). **App content**: privacy URL, **Data
   safety** (from `store/listing.md`), **Content rating** (Everyone; ads + purchases), **Ads** = yes, **Target
@@ -130,8 +134,9 @@ Internal Testing → Closed Testing → Production. Test AdMob ids are acceptabl
 Split by who/what each step needs. Detailed roadmaps with full commands are in §E above.
 
 ### Actions only Tay can perform (no extra account/device)
-- **Rebuild the signed AAB** locally (needs your Android SDK): `npm run build && npx cap sync android &&
-  cd android && ./gradlew bundleRelease`; verify `jarsigner -verify <aab>` shows `gravityflow-upload`.
+- ✅ **Signed AAB rebuilt 2026-06-16** (`jarsigner` verified, `gravityflow-upload`) — ready to upload.
+  Rebuild again only if real ids/version change (`npm run build && npx cap sync android && cd android &&
+  ./gradlew bundleRelease`, with `JAVA_HOME` → Android Studio JBR since Gradle 8.14 rejects JDK 25).
 - **Enable GitHub Pages** (Settings → Pages → source `master` / `/docs`) and confirm
   https://taysh123.github.io/Gravity-Game/ renders the policy.
 - At public launch: bump `package.json` → `1.0.0`, commit, tag **`v1.0.0`**, create the GitHub Release
@@ -176,8 +181,8 @@ Split by who/what each step needs. Detailed roadmaps with full commands are in �
 ### Quick-reference table
 | Actor | Next action |
 |---|---|
-| **Claude (me)** | Done: refreshed all store copy + trackers + audit + changelog + versioning; **completed the Screenshot & Media Production Pass** (refreshed Play screenshots + full `docs/media/` package + GIFs + portfolio README); reconciled all docs to `v1.0.0-rc.1` / 150-15 / 103 tests. Next: on request, wire real AdMob/RevenueCat ids into config once you provide them. |
-| **You** | (1) Rebuild AAB, (2) enable GitHub Pages, (3) create Play Console app + App content + listing, (4) upload to Internal testing. |
+| **Claude (me)** | Done: refreshed all store copy + trackers + audit + changelog + versioning; **completed the Screenshot & Media Production Pass**; reconciled all docs to `v1.0.0-rc.1` / 150-15 / 103 tests; **rebuilt + verified the signed AAB (2026-06-16)**; ran full QA (tsc / 103 tests / build green); cleaned git hygiene (untracked `.idea`, ignored `.vscode`/`.kotlin`, restored the concept asset). Next: on request, wire real AdMob/RevenueCat ids into config once you provide them. |
+| **You** | (1) enable GitHub Pages, (2) create Play Console app + App content + listing, (3) **upload the freshly-rebuilt AAB** to Internal testing, (4) device 1★ fairness playtest. |
 | **Play Console** | Create app · App content forms · store listing (paste copy + assets) · Internal testing release · later: billing products, Closed/Production. |
 | **Firebase** | Done (`google-services.json`); verify DebugView/Crashlytics on device during Closed. |
 | **AdMob** | Closed: real app + rewarded/interstitial ids + UMP message → into config + manifest. |
@@ -202,7 +207,7 @@ The game is commercially solid; these are *launch-tuning* nudges, not new system
   reviews) — it gates Production and needs you on a phone.
 
 ## Watch-outs
-- ⚠️ **Rebuild the AAB** before any upload (stale).
+- ✅ **AAB rebuilt 2026-06-16** (fresh, signed, `jarsigner`-verified) — ready to upload; rebuild again only on real-id/version change.
 - GitHub Pages must serve `master` → `/docs` or the privacy URL hits the game, not the policy.
 - Serving `/docs` publishes all internal docs via Jekyll (no secrets — keystore + `google-services.json`
   gitignored); `docs/.nojekyll` added to skip Jekyll processing.

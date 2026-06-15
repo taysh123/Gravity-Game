@@ -2,14 +2,15 @@
 
 > **Resume in one line:** Read **[CURRENT PROJECT STATUS](#current-project-status)** below, then continue from **[Release Readiness — Play Store Launch Prep](#release-readiness--play-store-launch-prep-current-phase)**.
 > Quick version + Next Session Start Point: `docs/session-handoff.md`. Launch command-center + Exact Next Actions: `docs/LAUNCH-READINESS.md`. Release tracker: `docs/release-prep.md`.
-> **Repository:** https://github.com/taysh123/Gravity-Game.git · branch `master` (synced, HEAD `2779d48`).
+> **Repository:** https://github.com/taysh123/Gravity-Game.git · branch `master` (synced with `origin/master`).
 > **Phase:** Google Play launch engineering. Game is **content-complete & launch-prep complete** at **`v1.0.0-rc.1`** (milestone `v0.15.0`). **Privacy policy:** https://taysh123.github.io/Gravity-Game/
 
 ---
 
 ## CURRENT PROJECT STATUS
 
-*Snapshot for instant resume — see the sections below for full detail. Last synced 2026-06-14, HEAD `2779d48`.*
+*Snapshot for instant resume — see the sections below for full detail. Last synced 2026-06-16 (Android
+launch-prep pass: signed AAB rebuilt + verified, docs reconciled, git hygiene cleaned).*
 
 **Product:** GRAVITY FLOW by True Story Labs — a one-touch cosmic physics puzzler. **`v1.0.0-rc.1`** launch
 candidate (milestone `v0.15.0`; `package.json 1.0.0-rc.1`; Android `versionName 1.0.0` / `versionCode 1`).
@@ -28,8 +29,9 @@ candidate (milestone `v0.15.0`; `package.json 1.0.0-rc.1`; Android `versionName 
   (https://taysh123.github.io/Gravity-Game/). An older Vercel web build exists (not the release artifact).
 - **⛔ Needs external accounts (you):** Play Console (app, App-content, listing, tracks, billing products,
   uploads) · real AdMob app/ad-unit ids + UMP message · RevenueCat SDK key/product/entitlement.
-- **📱 Needs a physical Android device (you):** rebuild + upload the (stale) signed AAB · the **1★ fairness
-  + Endless/Star-Map feel playtest** · on-device ad/IAP/Restore/Analytics/Crashlytics smoke.
+- **📱 Needs a physical Android device (you):** upload the **freshly-rebuilt** signed AAB (rebuilt
+  2026-06-16, verified) · the **1★ fairness + Endless/Star-Map feel playtest** · on-device
+  ad/IAP/Restore/Analytics/Crashlytics smoke.
 - **🍎 Needs macOS/iOS (future):** no `ios/` platform exists — adding it needs macOS + Xcode + Apple
   Developer ($99/yr). App Store readiness ~10%.
 
@@ -117,9 +119,11 @@ Pages, served from `docs/index.html`).
 - **Release signing** wired in Gradle (`android/app/build.gradle`) from a gitignored
   `android/keystore.properties`; upload key **`gravityflow-upload`** (`C:\Keys\gravityflow-upload.jks`,
   valid to 2051). `./gradlew signingReport` → release variant **Valid**. (`b79e849`)
-- **First signed AAB** built + `jarsigner`-verified at
-  `android/app/build/outputs/bundle/release/app-release.aab`. ⚠️ **Built 2026-06-10 — predates the UMP
-  consent + branded icon, so REBUILD before uploading.**
+- **Signed AAB** built + `jarsigner`-verified at
+  `android/app/build/outputs/bundle/release/app-release.aab`. ✅ **Rebuilt 2026-06-16** (11.4 MB, signed
+  `gravityflow-upload`, `jarsigner` verified) so it now reflects the UMP consent + branded icon + all
+  150 levels — ready to upload (rebuild again only on real-id/version change; Gradle 8.14 needs the
+  Android Studio JBR / JDK 21, not the system JDK 25).
 - **UMP (GDPR) consent** gathered before `AdMob.initialize()` (`utils/Ads.ts` + `utils/native/admob.ts`),
   guarded + web-safe. (`dd49e3e`)
 - **Privacy policy finalized**: source `docs/store/privacy-policy.md` + hosted HTML `docs/index.html`
@@ -147,14 +151,17 @@ Pages, served from `docs/index.html`).
   promote → submit for review.
 
 **Known issues / risks / blockers:**
-- ⚠️ **The signed AAB is stale** (no UMP, old icon) — `cd android; ./gradlew bundleRelease` before upload.
+- ✅ **The signed AAB was rebuilt 2026-06-16** (UMP + branded icon + 150 levels; `jarsigner` verified) —
+  ready to upload. Rebuild again only on real-id/version change (use the Android Studio JBR — Gradle 8.14
+  rejects the system JDK 25).
 - **GitHub Pages source must be `master` → `/docs`** so `…/Gravity-Game/` serves `docs/index.html`
   (otherwise that URL hits the game's root `index.html`). Verify after enabling Pages.
 - **Jekyll exposure:** serving `/docs` publishes *all* of `docs/` (status, handoff, plans,
   monetization-review). No secrets — keystore + `google-services.json` are gitignored. Optional:
   add `docs/.nojekyll` or relocate internal docs.
 - **1★ device fairness** is still unverified (long-standing gameplay gate; runnable on the internal build).
-- `android/.idea/*` IDE files are tracked and show churn (cosmetic; candidate for gitignore).
+- ✅ `android/.idea/*` is now untracked + gitignored (the IDE churn is resolved); `.vscode/` and
+  `android/.kotlin/` are also ignored.
 
 **External-account tasks still required (cannot run locally):** Play Console (app, all App-content
 forms, tracks, billing products, uploads); AdMob (real app + ad-unit ids, consent message); RevenueCat
@@ -364,9 +371,9 @@ The content/mechanic roadmap is **paused** — the game is content-complete and 
 above for the authoritative current state, and `docs/session-handoff.md` → *Next Session Quick Start*
 for the immediate next actions. Release checklists per track live in `docs/release-prep.md`.
 
-**Immediate next action:** rebuild the signed AAB (it predates UMP + the branded icon), then the
-user-side Play Console steps (create app → App content → listing → upload to Internal Testing). The
-**device 1★ fairness playtest** remains the open gameplay gate and can run on the internal build.
+**Immediate next action:** the signed AAB is **rebuilt + verified (2026-06-16)** — proceed to the
+user-side Play Console steps (create app → App content → listing → upload the AAB to Internal Testing).
+The **device 1★ fairness playtest** remains the open gameplay gate and can run on the internal build.
 
 *(Content backlog kept for after launch: gameplay tuning from the device playtest, real soundtrack,
 the retired "Expert" level packs on disk. Mechanic roadmap: `docs/superpowers/plans/`.)*
@@ -391,7 +398,7 @@ Ranked in `docs/superpowers/plans/2026-06-01-mechanics-roadmap.md`. Highlights:
 1. **Read this file first.** It is the single source of truth.
 2. Skim `docs/session-handoff.md` for the 30-second version.
 3. Continue from **[Release Readiness — Play Store Launch Prep](#release-readiness--play-store-launch-prep-current-phase)**
-   (currently: rebuild the AAB, then user-side Play Console steps for Internal Testing).
+   (AAB rebuilt 2026-06-16; next is the user-side Play Console steps for Internal Testing).
 4. Working conventions: plan first (`writing-plans` → `docs/superpowers/plans/`), one entity + one
    `LevelConfig` field per mechanic, all constants in config, verify in-browser before "done"
    (`npm run dev` + Playwright `--disable-gpu --use-gl=swiftshader`), keep `tsc`/tests/build green.

@@ -14,19 +14,20 @@ Release checklists: [`docs/release-prep.md`](./release-prep.md).**
    needs-accounts / needs-device / needs-Mac).
 3. `docs/LAUNCH-READINESS.md` → **EXACT NEXT ACTIONS** (split by actor) — the launch command-center.
 
-**Exact state on pause (2026-06-14):** GRAVITY FLOW **`v1.0.0-rc.1`** (milestone `v0.15.0`) · **150
-levels / 15 worlds** · branch `master` **synced**, HEAD **`2779d48`** · tags `v0.15.0` + `v1.0.0-rc.1` ·
+**Exact state (updated 2026-06-16):** GRAVITY FLOW **`v1.0.0-rc.1`** (milestone `v0.15.0`) · **150
+levels / 15 worlds** · branch `master` **synced** · tags `v0.15.0` + `v1.0.0-rc.1` ·
 `tsc` clean / **103 tests** / build clean. Game + launch-prep + **media package** all complete repo-side;
-no Play upload yet.
+**signed AAB rebuilt 2026-06-16** (fresh & `jarsigner`-verified). No Play upload yet.
 
-**The single open repo-side nothing** — everything left is your account/device work. **First actions when
+**No repo-side work remains** — everything left is your account/device work. **First actions when
 you resume (in order):**
-1. **[You · local]** Rebuild the signed AAB (it's stale): `npm run build && npx cap sync android && cd
-   android && ./gradlew bundleRelease`.
-2. **[You · GitHub]** Confirm Pages is live (`master` / `/docs`) → privacy URL renders.
-3. **[You · Play Console]** Create app → App content → paste listing (`docs/store/listing.md`) + upload
-   `docs/store/assets/` → **Internal testing** → upload AAB → testers.
-4. **[You · device]** **1★ fairness playtest** on the internal build (`docs/device-playtest-checklist.md`).
+1. **[You · GitHub]** Confirm Pages is live (`master` / `/docs`) → privacy URL renders.
+2. **[You · Play Console]** Create app → App content → paste listing (`docs/store/listing.md`) + upload
+   `docs/store/assets/` → **Internal testing** → **upload the freshly-rebuilt AAB**
+   (`android/app/build/outputs/bundle/release/app-release.aab`) → testers.
+3. **[You · device]** **1★ fairness playtest** on the internal build (`docs/device-playtest-checklist.md`).
+4. *(Only if you change real AdMob/RevenueCat ids or the version)* rebuild the AAB —
+   see the runbook in `docs/release-prep.md` (use the Android Studio JBR, not system JDK 25).
 
 *Nothing in the codebase blocks any of this; do not add features before launch.*
 
@@ -65,20 +66,21 @@ you resume (in order):**
   refreshed (Star Map + 150-level). Strategy + inventory + captions: `docs/media/README.md`.
   Regenerate: `scripts/capture_media.py` → `capture_frames.py` → `assemble_gifs.mjs` → `curate_media.mjs`.
 - **Open (campaign):** device 1★ fairness playtest (`docs/device-playtest-checklist.md`).
-- **Launch:** deferred during the expansion. The store/AAB notes below are pre-expansion — **rebuild the
-  AAB** (now also reflects 150 levels) before any upload.
+- **Launch:** the signed AAB was **rebuilt 2026-06-16** and now reflects UMP + the branded icon + all
+  150 levels — ready to upload (no further rebuild needed unless real ids/version change).
 - **Phase:** **Google Play launch engineering** (not gameplay). Code + store assets are ready;
   remaining work is mostly **user-side Play Console + external accounts**.
-- **Git:** branch `master`, **synced**, HEAD **`2779d48`**. Repo https://github.com/taysh123/Gravity-Game.git
+- **Git:** branch `master`, **synced**. Repo https://github.com/taysh123/Gravity-Game.git
 - **Privacy policy (canonical, live target):** **https://taysh123.github.io/Gravity-Game/**
   (this repo's GitHub Pages → `docs/index.html`; source markdown `docs/store/privacy-policy.md`).
-- **Signed AAB:** exists at `android/app/build/outputs/bundle/release/app-release.aab` but is
-  **STALE** (built 2026-06-10, before UMP consent + the branded icon). **Rebuild before uploading.**
+- **Signed AAB:** **rebuilt 2026-06-16** at `android/app/build/outputs/bundle/release/app-release.aab`
+  (11.4 MB, signed `gravityflow-upload`, `jarsigner` verified; reflects UMP consent + branded icon +
+  150 levels). Gitignored — it's a local deliverable to upload, not committed. **Ready to upload.**
 
 ## Done this phase (all committed + pushed)
 - **Release signing** via Gradle + gitignored `android/keystore.properties`; upload key
   `gravityflow-upload` (`C:\Keys\gravityflow-upload.jks`, valid to 2051); `signingReport` = Valid.
-- **First signed AAB** built + `jarsigner`-verified (now stale — see above).
+- **Signed AAB** built + `jarsigner`-verified; **rebuilt 2026-06-16** so it reflects UMP + branded icon + 150 levels.
 - **UMP/GDPR consent** before `AdMob.initialize()` (`utils/Ads.ts` + `native/admob.ts`), web-safe.
 - **Privacy policy finalized** (markdown + mobile-friendly HTML `docs/index.html`; contact
   `truestorylabs@gmail.com`; Israel governing law; legal/disclaimer/retention clauses).
@@ -100,11 +102,13 @@ you resume (in order):**
 **Current phase:** Google Play launch engineering. Game content-complete; shipping to Play.
 
 **Immediate next tasks (in order):**
-1. **Rebuild the signed AAB** so it includes UMP + the branded icon (and any real ids once set):
+1. **✅ Done (2026-06-16): signed AAB rebuilt** (includes UMP + branded icon + 150 levels; signed
+   `gravityflow-upload`, `jarsigner` verified). Re-run only if you set real ids or bump the version:
    ```
    npm install            # if node_modules is missing after a restart
    npm run build
    npx cap sync android
+   $env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"   # Gradle 8.14 needs JDK 21, not 25
    cd android; ./gradlew bundleRelease   # -> app/build/outputs/bundle/release/app-release.aab
    ```
 2. **[User]** Confirm **GitHub Pages** is live (Settings → Pages → source **`master` / `/docs`**) and
@@ -134,8 +138,8 @@ you resume (in order):**
 `keystore.properties`/`*.jks`/`google-services.json` (all gitignored).
 
 ## Known issues / watch-outs
-- ⚠️ **AAB stale** — rebuild before any upload (step 1).
+- ✅ **AAB rebuilt 2026-06-16** (fresh & verified) — ready to upload; rebuild again only on real-id/version change.
 - **Pages must serve from `/docs`** or the canonical URL hits the game, not the policy.
-- **Jekyll exposure:** `/docs` Pages publishes all internal docs (no secrets, but public) — optional `docs/.nojekyll`.
-- **Working tree (uncommitted):** `docs/store/assets/icon-concepts/vortex.png` deleted (concept cleanup;
-  the *final* `icon-512.png` is unaffected) + `android/.idea/*` churn — decide whether to commit/ignore.
+- **Jekyll exposure:** `/docs` Pages publishes all internal docs (no secrets, but public) — `docs/.nojekyll` present.
+- ✅ **Working tree clean** — `android/.idea/*` is now untracked + gitignored (the IDE churn is gone),
+  `.vscode/` + `android/.kotlin/` are ignored, and the deleted `vortex.png` concept was restored.

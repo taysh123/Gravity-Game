@@ -16,7 +16,7 @@
 | **Branch** | `master` (synced) · https://github.com/taysh123/Gravity-Game |
 | **Privacy policy** | **https://taysh123.github.io/Gravity-Game/** (Pages → `docs/index.html`) |
 | **Web demo (Vercel)** | https://gravity-flow-six.vercel.app (older build; not the release artifact) |
-| **Signed AAB** | `android/app/build/outputs/bundle/release/app-release.aab` — **STALE, rebuild** (predates UMP, branded icon & all v0.15.0 content) |
+| **Signed AAB** | `android/app/build/outputs/bundle/release/app-release.aab` — **✅ rebuilt 2026-06-16** (11.4 MB, signed `gravityflow-upload`, `jarsigner` verified; reflects UMP + branded icon + 150 levels). Re-run the build only if real ids/version change. |
 | **Upload key** | `gravityflow-upload` · `C:\Keys\gravityflow-upload.jks` (gitignored, valid to 2051) |
 | **Store copy** | listing/ASO/release-notes refreshed to 150/15 + new modes (`docs/store/`) |
 | **Media package** | ✅ full visual package in `docs/media/` (Play / App Store / GitHub / portfolio / LinkedIn) + 3 GIFs; strategy/captions in `docs/media/README.md`; portfolio-grade root `README.md` |
@@ -28,9 +28,13 @@
 npm install                     # if deps missing (e.g. after a machine restart)
 npm run build                   # tsc + vite -> dist/
 npx cap sync android            # copy web assets + plugins into android/
+# Gradle 8.14 doesn't support JDK 25 — point it at the Android Studio JBR (JDK 21):
+$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
 cd android; ./gradlew bundleRelease   # -> app/build/outputs/bundle/release/app-release.aab (signed)
 ```
-Verify: `jarsigner -verify <aab>` → "jar verified" with alias `gravityflow-upload`.
+Verify: `jarsigner -verify <aab>` → "jar verified" with alias `gravityflow-upload`. (A
+"certificate chain is invalid / unable to find valid certification path" warning is **expected** for a
+self-signed upload key — the signature is still valid; Play does not require a CA-chained cert.)
 
 ---
 
@@ -38,7 +42,7 @@ Verify: `jarsigner -verify <aab>` → "jar verified" with alias `gravityflow-upl
 - [x] Signed-AAB pipeline (signing config + keystore) · [x] UMP consent code · [x] boot fixes
 - [x] Privacy policy (text + hosted HTML) · [x] icon 512 (32-bit) · [x] feature 1024×500 · [x] **8 screenshots 1080×2160 (refreshed 2026-06-14 for Star Map + 150 levels via `scripts/capture_media.py`)**
 - [x] Branded launcher icon · [x] Firebase `google-services.json` · [x] listing/ASO/release-notes **refreshed to 150/15 + Gravity Run** (v0.15.0)
-- [ ] **Rebuild AAB** (current one is stale — predates all v0.15.0 content)
+- [x] **AAB rebuilt 2026-06-16** (signed `gravityflow-upload`, `jarsigner` verified; reflects UMP + branded icon + 150 levels) — re-run only if real ids/version change
 - [ ] **[User]** GitHub Pages live + privacy URL renders
 - [ ] **[Play Console]** Create app → **App content** (privacy URL, data safety, content rating, ads, target audience)
 - [ ] **[Play Console]** Main store listing (paste `docs/store/listing.md`; upload `docs/store/assets/*`)
@@ -68,7 +72,7 @@ Verify: `jarsigner -verify <aab>` → "jar verified" with alias `gravityflow-upl
 - Drafts: `docs/store/listing.md` (listing + data-safety + rating answers), `docs/store/aso.md` (ASO + asset specs).
 
 ## Risks / watch-outs
-- ⚠️ Rebuild the AAB before any upload (stale).
+- ✅ AAB rebuilt 2026-06-16 (fresh & verified); rebuild again only when real ids/version change.
 - GitHub Pages source must be `master` → `/docs` (else `…/Gravity-Game/` serves the game, not the policy).
 - Serving `/docs` via Jekyll publishes all internal docs (no secrets — keystore + `google-services.json`
   gitignored); optional `docs/.nojekyll`.

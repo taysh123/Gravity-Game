@@ -3,6 +3,9 @@ dist/
 .DS_Store
 *.local
 
+# Editor / IDE local settings (machine-specific, not part of the project).
+.vscode/
+
 # Full-resolution logo originals — source for `npm run optimize:assets`.
 # Only the optimized assets/images/*.png are committed.
 assets/raw/
