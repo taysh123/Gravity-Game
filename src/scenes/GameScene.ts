@@ -1092,7 +1092,11 @@ export class GameScene extends Phaser.Scene {
       this.getAudio().stopWorldTheme();
       this.scene.start('EndScene');
     } else {
-      void Ads.maybeInterstitial(); // frequency-capped; no-op on web / for premium
+      // Ads owns premium/grace/cap decisions; the scene only supplies whether
+      // THIS win is a satisfying moment worth protecting from interruption.
+      void Ads.maybeInterstitial({
+        flowProtected: this.isBoss || (this.winResult?.stars ?? 0) >= 3 || streakTier(this.winStreakCount).level >= 1,
+      });
       this.scene.restart({ level: nextLevel }); // startWorldTheme keeps same-world music continuous
     }
   }

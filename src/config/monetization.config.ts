@@ -11,6 +11,16 @@ export const ADMOB = {
   interstitialAdId: 'ca-app-pub-3940256099942544/1033173712',
 } as const;
 
+// Interstitial cadence (Wave 3 Task 1) — retention-first, deliberately
+// conservative. Consumed by the pure gate in utils/interstitial.ts; Ads.ts
+// supplies the runtime context (now/lastShownMs/session state). Tune UP later
+// from live `interstitial_suppressed` analytics, never down without data.
+export const INTERSTITIAL = {
+  MIN_GAP_MS: 180_000, // ≥3 min between interstitials (moved from Ads.ts)
+  GRACE_LEVELS: 3, // no interstitial in a session's first N campaign level completions
+  GRACE_MS: 120_000, // …or its first M ms, whichever protects longer
+} as const;
+
 export const REVENUECAT = {
   // Public Android SDK key from the RevenueCat dashboard — set before release.
   apiKey: '',

@@ -16,6 +16,7 @@ import {
   streakBroken,
   loginBonus,
   streakFrozen,
+  interstitialSuppressed,
 } from './analyticsEvents';
 
 describe('sanitizeParams', () => {
@@ -75,5 +76,8 @@ describe('event creators', () => {
   });
   it('streakFrozen carries the streak count the freeze preserved', () => {
     expect(streakFrozen(6)).toEqual({ name: 'streak_frozen', params: { streak: 6 } });
+  });
+  it('interstitialSuppressed sanitizes the reason', () => {
+    expect(interstitialSuppressed('grace')).toEqual({ name: 'interstitial_suppressed', params: { reason: 'grace' } });
   });
 });

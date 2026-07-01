@@ -1,8 +1,11 @@
 // Ads provider seam. Web build = stubs (so the reward flow is testable); native
 // build = Capacitor AdMob, dynamically imported + guarded by isNativePlatform() so
 // the web bundle never loads the plugin. Rewarded ads are always opt-in and never
-// required to progress; interstitials are frequency-capped and suppressed for
-// premium owners. Analytics events are emitted on both paths.
+// required to progress; interstitials are gated by interstitialDecision() (Wave 3
+// Task 1) — premium / first-session grace / flow-protected (boss, 3★, hot streak)
+// / frequency-capped, in that order — and the frequency cap PERSISTS across
+// reloads (localStorage) so a cold start never re-arms a fresh player's cooldown.
+// Analytics events are emitted on both the show and every suppression.
 //
 // NOTE: a Capacitor registerPlugin() proxy is thenable, so `ensureAdMob()` must NOT
 // return the proxy (that would invoke proxy.then -> "AdMob.then is not implemented").
@@ -11,11 +14,42 @@ import { Capacitor } from '@capacitor/core';
 import { IAP } from './IAP';
 import { ADMOB } from '../config/monetization.config';
 import { Analytics } from './Analytics';
-import { rewardedShown, rewardedEarned, interstitialShown } from './analyticsEvents';
+import { rewardedShown, rewardedEarned, interstitialShown, interstitialSuppressed } from './analyticsEvents';
+import { interstitialDecision } from './interstitial';
 import type { AdMobPlugin } from './native/admob';
 
-let lastInterstitialMs = 0;
-const INTERSTITIAL_MIN_GAP_MS = 180_000; // ≥3 min between interstitials
+// Persisted cooldown — survives a reload/cold start, unlike the old in-memory
+// `let` (which reset every launch, leaving a brand-new player's first win the
+// LEAST protected). Read once on module load, rewritten on every eligible show.
+const COOLDOWN_KEY = 'gravity-flow:interstitial:v1';
+
+function loadLastShownMs(): number {
+  try {
+    const raw = localStorage.getItem(COOLDOWN_KEY);
+    if (!raw) return 0;
+    const parsed = JSON.parse(raw) as { lastShownMs?: unknown };
+    return typeof parsed.lastShownMs === 'number' ? parsed.lastShownMs : 0;
+  } catch {
+    return 0; // storage disabled/corrupt — behave like a first-ever show
+  }
+}
+
+let lastShownMs = loadLastShownMs();
+
+function persistLastShownMs(v: number): void {
+  lastShownMs = v;
+  try {
+    localStorage.setItem(COOLDOWN_KEY, JSON.stringify({ lastShownMs: v }));
+  } catch {
+    // storage disabled — cooldown still holds for the rest of this session
+  }
+}
+
+// Session-scoped (reset every app load, by design): a returning player's new
+// session gets the same first-few-levels grace as a brand-new one — that's
+// protective, not a loophole. The cross-session cap is the persisted value above.
+const sessionStartMs = Date.now();
+let sessionLevels = 0;
 
 let admob: AdMobPlugin | null = null;
 let initStarted = false;
@@ -70,12 +104,30 @@ export const Ads = {
     }
   },
 
-  // Show an interstitial if eligible (not premium, past the frequency cap).
-  // No-op on web; real ad on native.
-  async maybeInterstitial(now: number = Date.now()): Promise<void> {
-    if (IAP.isPremium()) return;
-    if (now - lastInterstitialMs < INTERSTITIAL_MIN_GAP_MS) return;
-    lastInterstitialMs = now;
+  // Show an interstitial if eligible. `ctx.flowProtected` is the ONLY thing the
+  // caller supplies (was the just-finished win a boss / 3★ / hot streak?) — every
+  // other signal (premium, session grace, the persisted frequency cap) is owned
+  // here. No-op on web; real ad on native. Suppressions are tracked too, so the
+  // cadence is measurable even where no ad can actually show (web/DEV).
+  async maybeInterstitial(ctx: { flowProtected: boolean; now?: number } = { flowProtected: false }): Promise<void> {
+    const now = ctx.now ?? Date.now();
+    const decision = interstitialDecision({
+      now,
+      lastShownMs,
+      isPremium: IAP.isPremium(),
+      sessionLevels,
+      sessionElapsedMs: now - sessionStartMs,
+      flowProtected: ctx.flowProtected,
+    });
+    sessionLevels += 1; // this call = one more campaign level completed this session
+
+    if (!decision.show) {
+      Analytics.track(interstitialSuppressed(decision.reason));
+      return;
+    }
+
+    persistLastShownMs(now); // pre-native-guard, matching the old pre-guard write — the
+    // cap must reflect an "eligible" moment even where no real ad can show (web).
     if (!Capacitor.isNativePlatform()) return;
     if (!(await ensureAdMob()) || !admob) return;
     try {
