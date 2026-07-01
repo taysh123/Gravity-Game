@@ -45,6 +45,7 @@ import { StatsStore } from '../utils/StatsStore';
 import { AchievementStore } from '../utils/AchievementStore';
 import { grantAchievementRewards, claimMilestoneRewards, claimCollectionRewards, grantStreakReward } from '../utils/Rewards';
 import type { AchievementDef } from '../utils/achievements';
+import { COLLECTIONS, type CollectionId } from '../config/cosmetics.config';
 import { CurrencyStore } from '../utils/CurrencyStore';
 import { stardustForWin } from '../utils/currency';
 import { streakReward, dateKey, type DailyModifier } from '../utils/daily';
@@ -108,6 +109,8 @@ export class GameScene extends Phaser.Scene {
   private ghostPath: { x: number; y: number }[] = []; // this run's path, in play coords
   private ghostLastSampleMs = 0;
   private newAchievements: AchievementDef[] = [];
+  private milestoneClaimed: { stars: number; fr: number } | null = null; // total-stars milestone crossed THIS win (Task 4 toast)
+  private collectionsClaimed: CollectionId[] = []; // collection(s) completed THIS win (Task 4 toast)
   private awardedStardust = 0;
   private isFirstWin = false; // this run is the first-ever campaign win (FTUE hero beat)
   private hadPriorProgress = false; // had campaign stars at level entry — suppresses the FTUE beat for returning players
@@ -1018,10 +1021,12 @@ export class GameScene extends Phaser.Scene {
     this.newAchievements = AchievementStore.syncAndGetNew(StatsStore.collectSnapshot());
     this.newAchievements.forEach((a) => Analytics.track(achievementUnlocked(a.id)));
     // Retention rewards: achievements grant currency; star-milestones + completed
-    // collections grant one-time Fragment bonuses (all cosmetic economy).
+    // collections grant one-time Fragment bonuses (all cosmetic economy). Both
+    // return what they claimed (null/[] if nothing newly crossed) so a genuine
+    // milestone/collection-complete can be celebrated on the win overlay below.
     grantAchievementRewards(this.newAchievements.map((a) => a.id));
-    claimMilestoneRewards(ProgressStore.totalStars());
-    claimCollectionRewards();
+    this.milestoneClaimed = claimMilestoneRewards(ProgressStore.totalStars());
+    this.collectionsClaimed = claimCollectionRewards();
 
     const audio = this.getAudio();
     audio.stopHum();
@@ -1040,6 +1045,12 @@ export class GameScene extends Phaser.Scene {
     // Screen-wide bloom on the biggest wins (perfect / boss) — a celebratory
     // moment beyond the goal-localized flash. Tinted to the world accent.
     if (spec.screenFlash) this.celebrationFlash(this.worldTheme?.accent ?? PHYSICS.COLOR_STAR);
+    // Milestone / collection-complete celebration flash — independent of the
+    // tier-based screenFlash above (may fire on the SAME win; two brief
+    // overlapping blooms read as "extra celebratory", not broken). Milestone
+    // takes the gold tint, a completed collection the violet Fragments tint.
+    if (this.milestoneClaimed) this.celebrationFlash(RETENTION.MILESTONE_FLASH_COLOR);
+    else if (this.collectionsClaimed.length) this.celebrationFlash(RETENTION.COLLECTION_FLASH_COLOR);
     // Transient global-bloom swell during the moment, then ease back to base
     // (WebGL only — this.bloomFx is unset under Canvas/reduced-motion/low-FPS,
     // so this auto-guards with no extra reduced-motion check needed).
@@ -1308,6 +1319,46 @@ export class GameScene extends Phaser.Scene {
       const toast = this.add.container(cx, cy + panelH / 2 + 40 + (showDouble ? 54 : 0) + nudgeExtra, [tg, head, nm]).setDepth(51);
       toast.setScale(0.85).setAlpha(0);
       this.tweens.add({ targets: toast, scale: 1, alpha: 1, delay: 360, duration: 320, ease: THEME.EASE_POP });
+    }
+
+    // Milestone / collection-complete celebration — a distinct, rarer-tier
+    // toast than the achievement toast above (same glass pattern). At most
+    // one shown per win: a total-stars milestone (rarer — 4 ever) takes
+    // priority over a collection completion (6 ever) in the vanishingly rare
+    // case both land on the same win. Stacks below the achievement toast (if
+    // also shown) rather than overlapping it.
+    const milestoneText = this.milestoneClaimed
+      ? `★ ${this.milestoneClaimed.stars} STARS — ${RETENTION.MILESTONE_LABEL[this.milestoneClaimed.stars] ?? 'Milestone'}`
+      : this.collectionsClaimed.length
+        ? `${RETENTION.COLLECTION_TEXT_PREFIX}${COLLECTIONS[this.collectionsClaimed[0]].label}${
+            this.collectionsClaimed.length > 1 ? `  +${this.collectionsClaimed.length - 1} more` : ''
+          }`
+        : null;
+    if (milestoneText) {
+      const isMilestone = !!this.milestoneClaimed;
+      const mw = Math.min(width * 0.82, 280);
+      const mh = 44;
+      const mg = this.add.graphics();
+      drawGlass(mg, mw, mh, mh / 2);
+      const mHead = this.add
+        .text(0, -8, isMilestone ? RETENTION.MILESTONE_HEAD : RETENTION.COLLECTION_HEAD, {
+          fontFamily: THEME.FONT_BODY,
+          fontSize: '10px',
+          color: isMilestone ? RETENTION.MILESTONE_TOAST_COLOR : RETENTION.COLLECTION_TOAST_COLOR,
+        })
+        .setOrigin(0.5)
+        .setLetterSpacing(2);
+      const mName = this.add
+        .text(0, 8, milestoneText, { fontFamily: THEME.FONT_DISPLAY, fontSize: '13px', color: THEME.TEXT_PRIMARY, fontStyle: '600' })
+        .setOrigin(0.5);
+      const achievementExtra = this.newAchievements.length ? 54 : 0;
+      const mToast = this.add
+        .container(cx, cy + panelH / 2 + 40 + (showDouble ? 54 : 0) + nudgeExtra + achievementExtra, [mg, mHead, mName])
+        .setDepth(51);
+      if (!reduced) {
+        mToast.setScale(0.85).setAlpha(0);
+        this.tweens.add({ targets: mToast, scale: 1, alpha: 1, delay: 420, duration: 320, ease: THEME.EASE_POP });
+      }
     }
   }
 

@@ -78,7 +78,7 @@ export class WorldMapScene extends Phaser.Scene {
 
     WORLDS.forEach((world, i) => {
       const unlocked = ProgressStore.isUnlocked(world.from);
-      const node = this.makeNode(nodeX(i), nodeY(i), world.id, unlocked, reduced, i);
+      const node = this.makeNode(nodeX(i), nodeY(i), world.id, unlocked, reduced, i, i === reachedIndex);
       this.content.add(node);
     });
 
@@ -100,7 +100,7 @@ export class WorldMapScene extends Phaser.Scene {
   }
 
   private makeNode(
-    x: number, y: number, worldId: number, unlocked: boolean, reduced: boolean, index: number,
+    x: number, y: number, worldId: number, unlocked: boolean, reduced: boolean, index: number, isCurrent: boolean,
   ): Phaser.GameObjects.Container {
     const world = WORLDS[worldId - 1];
     const t = themeForWorld(worldId);
@@ -149,9 +149,16 @@ export class WorldMapScene extends Phaser.Scene {
         color: unlocked ? accentHex : THEME.TEXT_MUTED, fontStyle: '600',
       }).setOrigin(origin, 0.5).setLetterSpacing(1),
     );
+    // The current node's tally is emphasized (gold + bold) — the one piece of
+    // "where am I, and how am I doing here" clarity a returning player needs
+    // at a glance; every other node's tally stays a muted, secondary detail.
+    const emphasizeTally = isCurrent && unlocked;
     children.push(
       this.add.text(lx, 10, unlocked ? `${earned}/${maxStars}★` : 'locked', {
-        fontFamily: THEME.FONT_BODY, fontSize: '12px', color: THEME.TEXT_MUTED,
+        fontFamily: THEME.FONT_BODY,
+        fontSize: emphasizeTally ? '13px' : '12px',
+        color: emphasizeTally ? '#ffd166' : THEME.TEXT_MUTED,
+        fontStyle: emphasizeTally ? '700' : '400',
       }).setOrigin(origin, 0.5),
     );
 

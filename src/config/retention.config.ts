@@ -54,4 +54,21 @@ export const RETENTION = {
   SO_CLOSE_COLOR: '#ffb37a', // warm encouragement — distinct from the death-red flash
   JUST_PAR_SUFFIX: 'from ★★★ — retry?', // scene composes `${fmtTime(over)} ${JUST_PAR_SUFFIX}`
   JUST_PAR_COLOR: '#ffd166', // matches the star gold
+
+  // ── Task 4: milestone / collection-complete celebrations (win overlay) ───
+  // Total-stars milestones (30/60/100/150★) and collection-completion Fragment
+  // grants (Rewards.claimMilestoneRewards / claimCollectionRewards) used to
+  // land silently — Fragments just appeared in the balance. These surface
+  // them as a rarer-tier toast than the generic achievement toast (same glass
+  // pattern, stacked below it — see GameScene.showWinOverlay), plus a
+  // celebrationFlash tint. Flavor names for each star tier — purely cosmetic
+  // display text, no gameplay meaning.
+  MILESTONE_LABEL: { 30: 'Voyager', 60: 'Luminary', 100: 'Ascendant', 150: 'Celestial' } as Record<number, string>,
+  MILESTONE_HEAD: '★ MILESTONE',
+  COLLECTION_HEAD: '◆ COLLECTION',
+  COLLECTION_TEXT_PREFIX: 'Collection complete: ',
+  MILESTONE_TOAST_COLOR: '#ffd166', // gold — matches PHYSICS.COLOR_STAR / the star row above
+  COLLECTION_TOAST_COLOR: '#c9a8ff', // violet — matches the Fragments accent (CosmeticsScene FRAGMENT)
+  MILESTONE_FLASH_COLOR: 0xffd166, // celebrationFlash tint (numeric) — gold
+  COLLECTION_FLASH_COLOR: 0xc9a8ff, // celebrationFlash tint (numeric) — violet
 } as const;

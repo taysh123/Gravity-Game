@@ -44,9 +44,13 @@ export function grantAchievementRewards(ids: string[]): void {
   }
 }
 
-// Grant a one-time Fragment bonus for each newly-completed collection.
-export function claimCollectionRewards(): void {
+// Grant a one-time Fragment bonus for each newly-completed collection. Same
+// RewardStore.claimedEver gate + FragmentStore grant as before; now also
+// returns the ids of collections that completed for the FIRST TIME this call
+// (empty if none did) so the caller (GameScene.triggerWin) can celebrate it.
+export function claimCollectionRewards(): CollectionId[] {
   const owned = CosmeticStore.ownedIds();
+  const newlyCompleted: CollectionId[] = [];
   (Object.keys(COLLECTIONS) as CollectionId[]).forEach((cid) => {
     const key = `collection:${cid}`;
     if (collectionComplete(owned, cid) && !RewardStore.claimedEver(key)) {
@@ -54,20 +58,31 @@ export function claimCollectionRewards(): void {
       FragmentStore.add(COLLECTION_REWARD_FR);
       Analytics.track(collectionCompleteEvent(cid));
       Analytics.track(fragmentEarned(COLLECTION_REWARD_FR, 'collection'));
+      newlyCompleted.push(cid);
     }
   });
+  return newlyCompleted;
 }
 
-// Grant one-time Fragment bonuses as total-stars thresholds are crossed.
-export function claimMilestoneRewards(totalStars: number): void {
+// Grant one-time Fragment bonuses as total-stars thresholds are crossed. Same
+// RewardStore.claimedEver gate + FragmentStore grant as before; now also
+// returns the milestone crossed so the caller can celebrate it. If several
+// thresholds cross in the same call, every one is still claimed + granted
+// (no reward is ever silently dropped) — but since STAR_MILESTONES is
+// ascending, only the HIGHEST is returned (the win overlay shows at most one
+// milestone toast per win, and the highest is the most meaningful one).
+export function claimMilestoneRewards(totalStars: number): { stars: number; fr: number } | null {
+  let crossed: { stars: number; fr: number } | null = null;
   for (const m of STAR_MILESTONES) {
     const key = `stars:${m.stars}`;
     if (totalStars >= m.stars && !RewardStore.claimedEver(key)) {
       RewardStore.claim(key);
       FragmentStore.add(m.fr);
       Analytics.track(fragmentEarned(m.fr, 'milestone'));
+      crossed = { stars: m.stars, fr: m.fr };
     }
   }
+  return crossed;
 }
 
 // Grant the win-streak milestone Stardust bonus (else a no-op, returns 0).
