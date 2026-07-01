@@ -47,10 +47,13 @@ export const FX = {
   // Coordinated set-pieces: shake + optional screen bloom-flash + camera punch +
   // a transient global-bloom boost. Particle burst stays the equipped Arrival
   // cosmetic (capped <50). Haptic pattern chosen by tier.
-  CELEB_NORMAL:  { shakeMs: 120, shakeIntensity: 0.004, screenFlash: false, bloomBoost: 0.4, cameraPunch: 1.03 },
+  // 1★ normal reuses the existing baseline win-shake constants (single source of
+  // truth); higher tiers escalate from there.
+  CELEB_NORMAL:  { shakeMs: PHYSICS.SHAKE_WIN_MS, shakeIntensity: PHYSICS.SHAKE_WIN_INTENSITY, screenFlash: false, bloomBoost: 0.4, cameraPunch: 1.03 },
   CELEB_GREAT:   { shakeMs: 150, shakeIntensity: 0.005, screenFlash: false, bloomBoost: 0.7, cameraPunch: 1.04 },
   CELEB_PERFECT: { shakeMs: 190, shakeIntensity: 0.007, screenFlash: true,  bloomBoost: 1.1, cameraPunch: 1.05 },
   CELEB_BOSS:    { shakeMs: 220, shakeIntensity: 0.009, screenFlash: true,  bloomBoost: 1.4, cameraPunch: 1.07 },
+  CELEB_BLOOM_DECAY_MS: 700, // transient bloom swell eases back to base over this
 } as const;
 
 export type FxConst = typeof FX;

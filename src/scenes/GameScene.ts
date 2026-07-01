@@ -1004,7 +1004,7 @@ export class GameScene extends Phaser.Scene {
     if (this.bloomFx) {
       const base = FX.BLOOM_STRENGTH;
       this.bloomFx.strength = base + spec.bloomBoost;
-      this.tweens.add({ targets: this.bloomFx, strength: base, duration: 700, ease: 'Quad.easeOut' });
+      this.tweens.add({ targets: this.bloomFx, strength: base, duration: FX.CELEB_BLOOM_DECAY_MS, ease: 'Quad.easeOut' });
     }
     // Camera punch — a small zoom kick for impact, scaled by tier.
     this.tweens.add({ targets: this.cameras.main, zoom: spec.cameraPunch, duration: 130, yoyo: true, ease: 'Quad.easeOut' });
