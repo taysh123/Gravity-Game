@@ -39,11 +39,11 @@ import { Analytics } from '../utils/Analytics';
 import { Crash } from '../utils/Crash';
 import { CosmeticStore } from '../utils/CosmeticStore';
 import type { ArrivalStyle } from '../utils/cosmetics';
-import { levelStart, levelComplete, levelFail, retry as retryEvent, worldStart, dailyComplete, dailyStart, worldComplete, achievementUnlocked, hintUsed, rewardDoubleStardust, onboardingComplete } from '../utils/analyticsEvents';
+import { levelStart, levelComplete, levelFail, retry as retryEvent, worldStart, dailyComplete, dailyStart, worldComplete, achievementUnlocked, hintUsed, rewardDoubleStardust, onboardingComplete, winStreak, streakBroken } from '../utils/analyticsEvents';
 import { DailyStore } from '../utils/DailyStore';
 import { StatsStore } from '../utils/StatsStore';
 import { AchievementStore } from '../utils/AchievementStore';
-import { grantAchievementRewards, claimMilestoneRewards, claimCollectionRewards } from '../utils/Rewards';
+import { grantAchievementRewards, claimMilestoneRewards, claimCollectionRewards, grantStreakReward } from '../utils/Rewards';
 import type { AchievementDef } from '../utils/achievements';
 import { CurrencyStore } from '../utils/CurrencyStore';
 import { stardustForWin } from '../utils/currency';
@@ -55,6 +55,9 @@ import { Leaderboard } from '../utils/Leaderboard';
 import { Ads } from '../utils/Ads';
 import { nextUnlockHint } from '../utils/onboarding';
 import { RETENTION } from '../config/retention.config';
+import { StreakStore } from '../utils/StreakStore';
+import { streakTier } from '../utils/streak';
+import { nearMiss } from '../utils/nearMiss';
 
 const SAFE_PAD = 12; // minimum padding from any screen edge for HUD/nav
 
@@ -112,6 +115,7 @@ export class GameScene extends Phaser.Scene {
   private advanceConsumed = false;
   private isDaily = false; // launched from the Daily Challenge
   private dailyStreak = 0; // streak after winning today's daily
+  private winStreakCount = 0; // consecutive-campaign-win streak after this win (0 = daily / no streak)
   private dailyIndex = 0; // which curated daily level
   private dailyModifier: DailyModifier = 'none';
   private gemRequired = false; // daily 'gemRush' modifier — must collect the gem to win
@@ -181,6 +185,7 @@ export class GameScene extends Phaser.Scene {
     this.gemCollected = false;
     this.winResult = null;
     this.isFirstWin = false;
+    this.winStreakCount = 0;
     // Snapshot prior progress at entry (before this level's win is recorded) so the
     // one-time FTUE hero beat only greets a genuine first-timer — never a returning
     // player who predates the seenFirstWin flag.
@@ -998,6 +1003,17 @@ export class GameScene extends Phaser.Scene {
       });
     }
     CurrencyStore.add(this.awardedStardust);
+    // Win-streak momentum (campaign only) — a separate bonus from the base
+    // award above. grantStreakReward adds its own Stardust directly (see
+    // Rewards.ts for why that hook intentionally skips the RewardStore
+    // one-time guard), so the bonus is folded into the displayed total here
+    // for the overlay only, never re-added to CurrencyStore.
+    if (!this.isDaily) {
+      this.winStreakCount = StreakStore.win();
+      const bonus = grantStreakReward(this.winStreakCount);
+      this.awardedStardust += bonus;
+      if (bonus > 0) Analytics.track(winStreak(this.winStreakCount));
+    }
     // Achievements reflect this win (progress + daily streak recorded above).
     this.newAchievements = AchievementStore.syncAndGetNew(StatsStore.collectSnapshot());
     this.newAchievements.forEach((a) => Analytics.track(achievementUnlocked(a.id)));
@@ -1163,22 +1179,55 @@ export class GameScene extends Phaser.Scene {
             ),
         });
       }
+    } else if (!this.isDaily && streakTier(this.winStreakCount).level >= 1) {
+      // Win-streak momentum flourish — the same kicker slot as the FTUE hero
+      // beat above (mutually exclusive with it: a single win never shows two
+      // competing headline moments). Escalates size + color with the tier.
+      const tier = streakTier(this.winStreakCount);
+      const tierColor =
+        tier.level === 3 ? RETENTION.STREAK_NOVA_COLOR :
+        tier.level === 2 ? RETENTION.STREAK_BLAZE_COLOR : RETENTION.STREAK_FLOW_COLOR;
+      const streakLabel = this.add
+        .text(0, -88, tier.label, {
+          fontFamily: THEME.FONT_DISPLAY,
+          fontSize: `${12 + tier.level * 2}px`, // 14 / 16 / 18 — escalates with the tier
+          color: tierColor,
+          fontStyle: '700',
+        })
+        .setOrigin(0.5)
+        .setLetterSpacing(1);
+      card.add(streakLabel);
+      if (!reduced) {
+        streakLabel.setScale(0.85).setAlpha(0);
+        this.tweens.add({ targets: streakLabel, scale: 1, alpha: 1, duration: 320, delay: 120, ease: THEME.EASE_POP });
+      }
     }
 
+    // Near-miss encouragement (win side): finished just OVER par without the
+    // efficiency star — a "so close" retry pull. Takes priority over the
+    // generic next-world nudge below (same slot; never shows both at once).
+    const justPar =
+      !this.isFirstWin && !this.isDaily &&
+      nearMiss({ outcome: 'win', timeMs: this.winTimeMs, parMs: this.parTimeMs, underPar: this.winResult?.underPar }) === 'just-par';
+    const justParText = justPar
+      ? `${fmtTime(Math.max(0, this.winTimeMs - this.parTimeMs))} ${RETENTION.JUST_PAR_SUFFIX}`
+      : null;
     // Momentum nudge (early campaign wins, not the first) — the ever-present
     // "next carrot" so progress toward the next world always reads. Subordinate
     // to the title/stars (small, muted); mutually exclusive with the hero beat
-    // above so a single win never shows two competing headline moments.
+    // above and the near-miss line above so a single win never shows two
+    // competing headline moments.
     const nudgeHint =
-      !this.isFirstWin && !this.isDaily && this.currentLevel <= RETENTION.NUDGE_MAX_LEVEL
+      !justParText && !this.isFirstWin && !this.isDaily && this.currentLevel <= RETENTION.NUDGE_MAX_LEVEL
         ? nextUnlockHint(this.currentLevel)
         : null;
-    if (nudgeHint) {
+    const secondLine = justParText ?? nudgeHint;
+    if (secondLine) {
       const nudge = this.add
-        .text(0, 70, nudgeHint, {
+        .text(0, 70, secondLine, {
           fontFamily: THEME.FONT_BODY,
           fontSize: '12px',
-          color: RETENTION.NUDGE_COLOR,
+          color: justParText ? RETENTION.JUST_PAR_COLOR : RETENTION.NUDGE_COLOR,
         })
         .setOrigin(0.5);
       card.add(nudge);
@@ -1188,8 +1237,8 @@ export class GameScene extends Phaser.Scene {
       }
     }
     // Below-panel elements (2x offer, achievement toast) make room when the
-    // nudge is showing, so nothing overlaps it.
-    const nudgeExtra = nudgeHint ? 30 : 0;
+    // second line (nudge or near-miss) is showing, so nothing overlaps it.
+    const nudgeExtra = secondLine ? 30 : 0;
 
     const parStr = fmtTime(this.parTimeMs);
     const timeStr = fmtTime(this.winTimeMs);
@@ -1369,6 +1418,16 @@ export class GameScene extends Phaser.Scene {
     this.leaving = true; // block manual nav during the death → auto-restart window
     StatsStore.recordDeath();
     Analytics.track(levelFail(this.isDaily ? 0 : this.currentLevel, cause));
+    // Win-streak momentum: ANY death breaks a live streak. A manual restart or
+    // leaving the level is a player choice, not a loss — triggerRestart/goHome
+    // never call StreakStore.reset(), only this path does. Read the ball→goal
+    // distance up front (before anything else can move the ball) so a
+    // near-goal death is judged on the true distance at the moment of death.
+    const distToGoal = distance(this.ball.body.position.x, this.ball.body.position.y, this.goal.x, this.goal.y);
+    const prevStreak = StreakStore.current();
+    StreakStore.reset();
+    if (prevStreak > 0) Analytics.track(streakBroken(prevStreak));
+    const isNearGoal = nearMiss({ outcome: 'death', distToGoal }) === 'near-goal';
     const audio = this.getAudio();
     audio.stopHum();
     audio.playFail();
@@ -1378,7 +1437,7 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.shake(PHYSICS.SHAKE_DEATH_MS, PHYSICS.SHAKE_DEATH_INTENSITY);
     // Quick zoom punch for impact on the loss.
     this.tweens.add({ targets: this.cameras.main, zoom: 1.05, duration: 90, yoyo: true, ease: 'Quad.easeOut' });
-    this.deathFeedback();
+    this.deathFeedback(isNearGoal);
     // Instant retry: snappy re-spawn (less dead time) so failure keeps flow.
     this.time.delayedCall(PHYSICS.RESTART_DELAY_MS, () =>
       this.scene.restart({ level: this.currentLevel, daily: this.isDaily, dailyIndex: this.dailyIndex, dailyModifier: this.dailyModifier }),
@@ -1386,7 +1445,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   // Red flash/vignette + a puff of fail-colored particles where the ball was lost.
-  private deathFeedback(): void {
+  // `isNearGoal` layers a brief "SO CLOSE" encouragement on top (near-miss death).
+  private deathFeedback(isNearGoal: boolean): void {
     const { width, height } = this.scale;
     const reduced = reducedMotionActive();
 
@@ -1416,6 +1476,26 @@ export class GameScene extends Phaser.Scene {
     puff.setDepth(44);
     puff.explode(PHYSICS.DEATH_PUFF_COUNT);
     this.time.delayedCall(PHYSICS.DEATH_FLASH_MS - 20, () => puff.destroy());
+
+    // Near-miss encouragement — a death right next to the goal reads as "so
+    // close" rather than a plain fail. Kept inside the same snappy
+    // RESTART_DELAY_MS window as the rest of this feedback (never blocks or
+    // delays the retry); reduced-motion gets a static (no pop-in) version.
+    if (isNearGoal) {
+      const soClose = this.add
+        .text(width / 2, height * 0.4, RETENTION.SO_CLOSE_TEXT, {
+          fontFamily: THEME.FONT_DISPLAY,
+          fontSize: '15px',
+          color: RETENTION.SO_CLOSE_COLOR,
+          fontStyle: '700',
+        })
+        .setOrigin(0.5)
+        .setDepth(46);
+      if (!reduced) {
+        soClose.setScale(0.85).setAlpha(0);
+        this.tweens.add({ targets: soClose, scale: 1, alpha: 1, duration: 140, ease: THEME.EASE_POP });
+      }
+    }
   }
 
   // Instant restart (keyboard R) - no death animation.

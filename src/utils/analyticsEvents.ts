@@ -45,6 +45,10 @@ export const worldComplete = (world: number): AnalyticsEvent => ({ name: 'world_
 export const achievementUnlocked = (id: string): AnalyticsEvent => ({ name: 'achievement_unlocked', params: sanitizeParams({ id }) });
 // FTUE: fires once, the moment the first-ever campaign win beat is shown.
 export const onboardingComplete = (): AnalyticsEvent => ({ name: 'onboarding_complete', params: {} });
+// Win-streak momentum (consecutive campaign wins) — fired at each milestone count.
+export const winStreak = (count: number): AnalyticsEvent => ({ name: 'win_streak', params: { count } });
+// Fired when a live win-streak is broken by a death (never a manual restart).
+export const streakBroken = (count: number): AnalyticsEvent => ({ name: 'streak_broken', params: { count } });
 
 // --- Economy / shop -------------------------------------------------------
 export const shopOpen = (): AnalyticsEvent => ({ name: 'shop_open', params: {} });

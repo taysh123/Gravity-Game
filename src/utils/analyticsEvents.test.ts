@@ -12,6 +12,8 @@ import {
   achievementUnlocked,
   worldComplete,
   onboardingComplete,
+  winStreak,
+  streakBroken,
 } from './analyticsEvents';
 
 describe('sanitizeParams', () => {
@@ -59,5 +61,11 @@ describe('event creators', () => {
   });
   it('onboardingComplete carries no params', () => {
     expect(onboardingComplete()).toEqual({ name: 'onboarding_complete', params: {} });
+  });
+  it('winStreak carries the streak count', () => {
+    expect(winStreak(5)).toEqual({ name: 'win_streak', params: { count: 5 } });
+  });
+  it('streakBroken carries the prior streak count', () => {
+    expect(streakBroken(4)).toEqual({ name: 'streak_broken', params: { count: 4 } });
   });
 });

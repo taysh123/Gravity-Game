@@ -10,6 +10,7 @@ import { collectionComplete } from './cosmeticsLogic';
 import { COLLECTIONS, type CollectionId } from '../config/cosmetics.config';
 import { Analytics } from './Analytics';
 import { fragmentEarned, collectionComplete as collectionCompleteEvent } from './analyticsEvents';
+import { streakMilestone } from './streak';
 
 // Per-achievement reward (Stardust + Fragments). Bigger milestones grant more.
 const ACH_REWARD: Record<string, { sd: number; fr: number }> = {
@@ -67,4 +68,24 @@ export function claimMilestoneRewards(totalStars: number): void {
       Analytics.track(fragmentEarned(m.fr, 'milestone'));
     }
   }
+}
+
+// Grant the win-streak milestone Stardust bonus (else a no-op, returns 0).
+//
+// Deliberately WITHOUT a RewardStore.claimedEver guard — unlike every other
+// reward in this file. Why that's still correct (not a P2W/duplication bug):
+// the caller, GameScene.triggerWin, calls `StreakStore.win()` to get `count`
+// exactly once per genuine win (triggerWin is guarded by `this.isWon` and only
+// ever runs on a real goal-reach, never on `scene.restart()`), so `count`
+// itself already carries a once-per-win guarantee — there is no replay path
+// that can hand this function the same milestone count twice for one win.
+// It is INTENTIONALLY repeatable ACROSS separate streaks (a momentum reward
+// for current skill, not a one-time lifetime unlock): reaching a 5-win streak
+// again next week must pay out again, or the "one more" loop this exists to
+// support would die after its first payout. A `claimedEver` guard here would
+// silently turn every streak milestone into a single lifetime grant — wrong.
+export function grantStreakReward(count: number): number {
+  const bonus = streakMilestone(count);
+  if (bonus > 0) CurrencyStore.add(bonus);
+  return bonus;
 }

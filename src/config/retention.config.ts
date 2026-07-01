@@ -18,4 +18,38 @@ export const RETENTION = {
   // An onboarding aid, not permanent clutter — only surfaced through this level.
   NUDGE_MAX_LEVEL: 15,
   NUDGE_COLOR: THEME.TEXT_MUTED, // subordinate to the title/stars
+
+  // ── Task 3: win-streak momentum (escalating flourish + repeatable bonus) ──
+  // Consecutive-campaign-win tiers — an escalating "temperature" (cool → hot →
+  // white-hot) driving the win-overlay flourish. The streak breaks ONLY on a
+  // death (GameScene.triggerDeath); a manual restart/leaving a level is a
+  // player choice, not a loss (see StreakStore).
+  STREAK_FLOW_MIN: 3,
+  STREAK_BLAZE_MIN: 5,
+  STREAK_NOVA_MIN: 8,
+  STREAK_FLOW_LABEL: 'FLOW',
+  STREAK_BLAZE_LABEL: 'BLAZE',
+  STREAK_NOVA_LABEL: 'NOVA',
+  STREAK_FLOW_COLOR: '#00d4ff', // cool cyan — matches THEME.ACCENT_CYAN
+  STREAK_BLAZE_COLOR: '#ffa64d', // warm amber — matches COLOR_PORTAL_B
+  STREAK_NOVA_COLOR: '#ffffff', // white-hot peak
+
+  // Repeatable Stardust bonus at exact streak counts — intentionally fires
+  // again on every future streak that reaches these counts (see
+  // Rewards.grantStreakReward for why this skips the usual RewardStore
+  // one-time-ever guard).
+  STREAK_MILESTONES: [
+    { count: 3, stardust: 10 },
+    { count: 5, stardust: 20 },
+    { count: 8, stardust: 35 },
+    { count: 12, stardust: 60 },
+  ],
+
+  // ── Task 3: near-miss encouragement ("so close, try again") ──────────────
+  NEAR_GOAL_PX: 60, // a death within this many px of the goal reads as "so close"
+  JUST_PAR_MS: 400, // a win finishing this much (or less) OVER par reads as "just missed ★★★"
+  SO_CLOSE_TEXT: 'SO CLOSE — try again',
+  SO_CLOSE_COLOR: '#ffb37a', // warm encouragement — distinct from the death-red flash
+  JUST_PAR_SUFFIX: 'from ★★★ — retry?', // scene composes `${fmtTime(over)} ${JUST_PAR_SUFFIX}`
+  JUST_PAR_COLOR: '#ffd166', // matches the star gold
 } as const;
