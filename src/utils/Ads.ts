@@ -86,10 +86,14 @@ export const Ads = {
   },
 
   // Resolves true if the player earned the reward. Web stub grants it.
-  async showRewarded(): Promise<boolean> {
-    Analytics.track(rewardedShown());
+  // `source` identifies the calling surface ('campaign_2x' | 'endless_2x' |
+  // 'endless_revive' | 'free_fragments') so shown/earned are attributable
+  // per-surface in analytics (Wave 3 Task 2). This is the ONLY call site for
+  // rewardedShown/rewardedEarned, so every caller gets the attribution for free.
+  async showRewarded(source: string): Promise<boolean> {
+    Analytics.track(rewardedShown(source));
     if (!Capacitor.isNativePlatform()) {
-      Analytics.track(rewardedEarned());
+      Analytics.track(rewardedEarned(source));
       return true;
     }
     if (!(await ensureAdMob()) || !admob) return false;
@@ -97,7 +101,7 @@ export const Ads = {
       await admob.prepareRewardVideoAd({ adId: ADMOB.rewardedAdId });
       const reward = await admob.showRewardVideoAd();
       const earned = reward != null;
-      if (earned) Analytics.track(rewardedEarned());
+      if (earned) Analytics.track(rewardedEarned(source));
       return earned;
     } catch {
       return false;

@@ -62,8 +62,14 @@ export const purchase = (product: string): AnalyticsEvent => ({ name: 'purchase'
 export const restore = (): AnalyticsEvent => ({ name: 'restore', params: {} });
 
 // --- Ads ------------------------------------------------------------------
-export const rewardedShown = (): AnalyticsEvent => ({ name: 'rewarded_shown', params: {} });
-export const rewardedEarned = (): AnalyticsEvent => ({ name: 'rewarded_earned', params: {} });
+// `source` identifies which of the 4 opt-in rewarded surfaces fired the event
+// (e.g. 'campaign_2x', 'endless_2x', 'endless_revive', 'free_fragments') so the
+// previously-indistinguishable shown/earned events are attributable per-surface,
+// and rewardedOffered (fired once when the offer button renders, not on tap)
+// makes the offer → shown → earned funnel measurable.
+export const rewardedShown = (source: string): AnalyticsEvent => ({ name: 'rewarded_shown', params: sanitizeParams({ source }) });
+export const rewardedEarned = (source: string): AnalyticsEvent => ({ name: 'rewarded_earned', params: sanitizeParams({ source }) });
+export const rewardedOffered = (source: string): AnalyticsEvent => ({ name: 'rewarded_offered', params: sanitizeParams({ source }) });
 export const interstitialShown = (): AnalyticsEvent => ({ name: 'interstitial_shown', params: {} });
 // Fired on every early-return from the interstitial gate (premium/grace/flow/capped)
 // so the retention-first cadence is measurable, not just assumed.

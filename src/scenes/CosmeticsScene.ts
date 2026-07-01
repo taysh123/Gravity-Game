@@ -19,7 +19,7 @@ import { IAP } from '../utils/IAP';
 import { Ads } from '../utils/Ads';
 import { RewardStore } from '../utils/RewardStore';
 import { Analytics } from '../utils/Analytics';
-import { shopOpen, cosmeticEquip, fragmentEarned } from '../utils/analyticsEvents';
+import { shopOpen, cosmeticEquip, fragmentEarned, rewardedOffered } from '../utils/analyticsEvents';
 
 const FREE_FRAGMENTS = 5; // daily rewarded grant
 
@@ -227,10 +227,11 @@ export class CosmeticsScene extends Phaser.Scene {
     const card = this.add.container(0, 0, [bg, name, blurb, tag]);
     card.setSize(w, h);
     if (!claimed) {
+      Analytics.track(rewardedOffered('free_fragments')); // offer impression, fires once on render
       card.setInteractive(new Phaser.Geom.Rectangle(-w / 2, -h / 2, w, h), Phaser.Geom.Rectangle.Contains);
       card.on('pointerup', async () => {
         if (this.dragging) return;
-        const earned = await Ads.showRewarded();
+        const earned = await Ads.showRewarded('free_fragments');
         if (earned) {
           FragmentStore.add(FREE_FRAGMENTS);
           RewardStore.claim('free_fragments');

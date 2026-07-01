@@ -39,7 +39,7 @@ import { Analytics } from '../utils/Analytics';
 import { Crash } from '../utils/Crash';
 import { CosmeticStore } from '../utils/CosmeticStore';
 import type { ArrivalStyle } from '../utils/cosmetics';
-import { levelStart, levelComplete, levelFail, retry as retryEvent, worldStart, dailyComplete, dailyStart, worldComplete, achievementUnlocked, hintUsed, rewardDoubleStardust, onboardingComplete, winStreak, streakBroken } from '../utils/analyticsEvents';
+import { levelStart, levelComplete, levelFail, retry as retryEvent, worldStart, dailyComplete, dailyStart, worldComplete, achievementUnlocked, hintUsed, rewardDoubleStardust, onboardingComplete, winStreak, streakBroken, rewardedOffered } from '../utils/analyticsEvents';
 import { DailyStore } from '../utils/DailyStore';
 import { StatsStore } from '../utils/StatsStore';
 import { AchievementStore } from '../utils/AchievementStore';
@@ -1274,15 +1274,21 @@ export class GameScene extends Phaser.Scene {
     this.tweens.add({ targets: card, scale: 1, alpha: 1, duration: 360, ease: THEME.EASE_POP });
 
     // Optional "2x Stardust" rewarded offer (campaign wins) — cancels the
-    // auto-advance, runs an ad, doubles the reward. Always opt-in.
+    // auto-advance, runs an ad, doubles the reward. Always opt-in. Copy names
+    // "Stardust" explicitly so "2×" always reads as doubling the currency
+    // (never ambiguous with stars/time); on a live win streak it honestly nods
+    // to that already-banked momentum — the ad itself never affects the streak.
     const showDouble = !this.isDaily && this.awardedStardust > 0;
     if (showDouble) {
-      const bw = 190, bh = 42;
+      Analytics.track(rewardedOffered('campaign_2x')); // offer impression, fires once on render
+      const onStreak = streakTier(this.winStreakCount).level >= 1;
+      const bw = 210, bh = 42;
       const bbg = this.add.graphics();
       drawGlass(bbg, bw, bh, bh / 2);
       bbg.lineStyle(2, 0x7affb0, 0.6);
       bbg.strokeRoundedRect(-bw / 2, -bh / 2, bw, bh, bh / 2);
-      const btxt = this.add.text(0, 0, `▶  2×  +${this.awardedStardust} ✦`, {
+      const btnLabel = onStreak ? '▶  On a streak — 2× ✦' : `▶  2× Stardust  +${this.awardedStardust} ✦`;
+      const btxt = this.add.text(0, 0, btnLabel, {
         fontFamily: THEME.FONT_DISPLAY, fontSize: '15px', color: '#7affb0', fontStyle: '700',
       }).setOrigin(0.5);
       const btn = this.add.container(cx, cy + panelH / 2 + 34 + nudgeExtra, [bbg, btxt]).setDepth(51);
@@ -1291,7 +1297,7 @@ export class GameScene extends Phaser.Scene {
       btn.once('pointerup', async () => {
         btn.disableInteractive();
         this.advanceTimer?.remove();
-        const earned = await Ads.showRewarded();
+        const earned = await Ads.showRewarded('campaign_2x');
         if (earned) {
           CurrencyStore.add(this.awardedStardust);
           Analytics.track(rewardDoubleStardust(this.awardedStardust));

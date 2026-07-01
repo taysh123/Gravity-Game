@@ -21,6 +21,8 @@ import { Leaderboard } from '../utils/Leaderboard';
 import { Ads } from '../utils/Ads';
 import { Share } from '../utils/Share';
 import { dateKey } from '../utils/daily';
+import { Analytics } from '../utils/Analytics';
+import { rewardedOffered } from '../utils/analyticsEvents';
 
 // A live (spawned) chunk: its world-Y extent + the entities to pulse/cull.
 interface LiveChunk {
@@ -418,12 +420,14 @@ export class EndlessScene extends Phaser.Scene {
     actions.push(this.pill('↻ RETRY', '#ffffff', 0xffd166, 168, cx, ay, () => this.retry()));
     ay += 50;
     if (!this.revived) {
+      Analytics.track(rewardedOffered('endless_revive')); // offer impression, fires once on render
       actions.push(this.pill('▶ REVIVE', '#7affb0', 0x7affb0, 168, cx, ay, () => void this.tryRevive()));
       ay += 50;
     }
     const hasDouble = this.awardedStardust > 0;
     actions.push(this.pill('SHARE', '#cfe0ff', 0x6a8cff, 124, hasDouble ? cx - 68 : cx, ay, () => this.shareRun()));
     if (hasDouble) {
+      Analytics.track(rewardedOffered('endless_2x')); // offer impression, fires once on render
       actions.push(this.pill('▶ 2× ✦', '#ffd166', 0xffd166, 124, cx + 68, ay, (self) => void this.tryDouble(self)));
     }
     ay += 46;
@@ -459,7 +463,7 @@ export class EndlessScene extends Phaser.Scene {
   }
 
   private async tryRevive(): Promise<void> {
-    const earned = await Ads.showRewarded();
+    const earned = await Ads.showRewarded('endless_revive');
     if (earned) this.doRevive();
   }
 
@@ -481,7 +485,7 @@ export class EndlessScene extends Phaser.Scene {
   }
 
   private async tryDouble(btn: Phaser.GameObjects.Container): Promise<void> {
-    const earned = await Ads.showRewarded();
+    const earned = await Ads.showRewarded('endless_2x');
     if (!earned) return;
     CurrencyStore.add(this.awardedStardust);
     const txt = btn.list.find((o) => o instanceof Phaser.GameObjects.Text) as Phaser.GameObjects.Text | undefined;

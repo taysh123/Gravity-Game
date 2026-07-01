@@ -17,6 +17,9 @@ import {
   loginBonus,
   streakFrozen,
   interstitialSuppressed,
+  rewardedShown,
+  rewardedEarned,
+  rewardedOffered,
 } from './analyticsEvents';
 
 describe('sanitizeParams', () => {
@@ -79,5 +82,14 @@ describe('event creators', () => {
   });
   it('interstitialSuppressed sanitizes the reason', () => {
     expect(interstitialSuppressed('grace')).toEqual({ name: 'interstitial_suppressed', params: { reason: 'grace' } });
+  });
+  it('rewardedShown sanitizes the surface source', () => {
+    expect(rewardedShown('campaign_2x')).toEqual({ name: 'rewarded_shown', params: { source: 'campaign_2x' } });
+  });
+  it('rewardedEarned sanitizes the surface source', () => {
+    expect(rewardedEarned('endless_revive')).toEqual({ name: 'rewarded_earned', params: { source: 'endless_revive' } });
+  });
+  it('rewardedOffered sanitizes the surface source', () => {
+    expect(rewardedOffered('free_fragments')).toEqual({ name: 'rewarded_offered', params: { source: 'free_fragments' } });
   });
 });
