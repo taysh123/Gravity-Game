@@ -33,6 +33,8 @@ export const RETENTION = {
   STREAK_FLOW_COLOR: '#00d4ff', // cool cyan — matches THEME.ACCENT_CYAN
   STREAK_BLAZE_COLOR: '#ffa64d', // warm amber — matches COLOR_PORTAL_B
   STREAK_NOVA_COLOR: '#ffffff', // white-hot peak
+  STREAK_LABEL_BASE_PX: 12,  // streak label font size at tier 0…
+  STREAK_LABEL_STEP_PX: 2,   // …+this per tier level (→ 14/16/18 for FLOW/BLAZE/NOVA)
 
   // Repeatable Stardust bonus at exact streak counts — intentionally fires
   // again on every future streak that reaches these counts (see

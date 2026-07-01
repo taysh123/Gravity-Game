@@ -1190,7 +1190,7 @@ export class GameScene extends Phaser.Scene {
       const streakLabel = this.add
         .text(0, -88, tier.label, {
           fontFamily: THEME.FONT_DISPLAY,
-          fontSize: `${12 + tier.level * 2}px`, // 14 / 16 / 18 — escalates with the tier
+          fontSize: `${RETENTION.STREAK_LABEL_BASE_PX + tier.level * RETENTION.STREAK_LABEL_STEP_PX}px`, // escalates with the tier
           color: tierColor,
           fontStyle: '700',
         })
@@ -1418,15 +1418,18 @@ export class GameScene extends Phaser.Scene {
     this.leaving = true; // block manual nav during the death → auto-restart window
     StatsStore.recordDeath();
     Analytics.track(levelFail(this.isDaily ? 0 : this.currentLevel, cause));
-    // Win-streak momentum: ANY death breaks a live streak. A manual restart or
-    // leaving the level is a player choice, not a loss — triggerRestart/goHome
-    // never call StreakStore.reset(), only this path does. Read the ball→goal
-    // distance up front (before anything else can move the ball) so a
-    // near-goal death is judged on the true distance at the moment of death.
+    // Win-streak momentum: a CAMPAIGN death breaks a live campaign streak — a daily
+    // death does NOT (symmetric with the campaign-only win side). A manual restart or
+    // leaving the level is a player choice, not a loss — triggerRestart/goHome never
+    // call StreakStore.reset(), only this path does. Read the ball→goal distance up
+    // front (before anything moves the ball) so a near-goal death is judged on the
+    // true distance at the moment of death.
     const distToGoal = distance(this.ball.body.position.x, this.ball.body.position.y, this.goal.x, this.goal.y);
-    const prevStreak = StreakStore.current();
-    StreakStore.reset();
-    if (prevStreak > 0) Analytics.track(streakBroken(prevStreak));
+    if (!this.isDaily) {
+      const prevStreak = StreakStore.current();
+      StreakStore.reset();
+      if (prevStreak > 0) Analytics.track(streakBroken(prevStreak));
+    }
     const isNearGoal = nearMiss({ outcome: 'death', distToGoal }) === 'near-goal';
     const audio = this.getAudio();
     audio.stopHum();
