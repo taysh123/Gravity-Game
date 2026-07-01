@@ -79,3 +79,36 @@ export function effectiveStreak(state: DailyState, today: string): number {
   const gap = daysBetween(state.lastPlayedDate, today);
   return gap === 0 || gap === 1 ? state.streak : 0;
 }
+
+// Wave 2b Task 5 — streak protection: an EARNED-ONLY freeze token (see
+// DailyStore) that forgives EXACTLY one missed day. A sibling of nextStreak
+// rather than an edit to it, so every existing caller/test is untouched; the
+// no-freeze path is byte-identical to nextStreak (see daily.test.ts's
+// regression-guard cases). `usedFreeze` tells the caller (DailyStore.recordWin)
+// whether to actually consume a held token.
+export function nextStreakWithFreeze(
+  state: DailyState,
+  today: string,
+  hasFreeze: boolean,
+): { streak: number; usedFreeze: boolean } {
+  if (state.lastPlayedDate === today) return { streak: state.streak, usedFreeze: false }; // already counted today
+  if (state.lastPlayedDate) {
+    const gap = daysBetween(state.lastPlayedDate, today);
+    if (gap === 1) return { streak: state.streak + 1, usedFreeze: false }; // consecutive day
+    if (gap === 2 && hasFreeze) return { streak: state.streak + 1, usedFreeze: true }; // one missed day, forgiven
+  }
+  return { streak: 1, usedFreeze: false }; // first play or a broken streak
+}
+
+// Display-side counterpart of effectiveStreakWithFreeze: keeps the streak
+// reading "alive" across a single missed day when a freeze is held (the token
+// itself isn't consumed here — that only happens once nextStreakWithFreeze
+// actually runs via DailyStore.recordWin). Byte-identical to effectiveStreak
+// whenever hasFreeze is false (see daily.test.ts's regression-guard cases).
+export function effectiveStreakWithFreeze(state: DailyState, today: string, hasFreeze: boolean): number {
+  if (!state.lastPlayedDate) return 0;
+  const gap = daysBetween(state.lastPlayedDate, today);
+  if (gap === 0 || gap === 1) return state.streak;
+  if (gap === 2 && hasFreeze) return state.streak;
+  return 0;
+}

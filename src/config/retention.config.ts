@@ -71,4 +71,42 @@ export const RETENTION = {
   COLLECTION_TOAST_COLOR: '#c9a8ff', // violet — matches the Fragments accent (CosmeticsScene FRAGMENT)
   MILESTONE_FLASH_COLOR: 0xffd166, // celebrationFlash tint (numeric) — gold
   COLLECTION_FLASH_COLOR: 0xc9a8ff, // celebrationFlash tint (numeric) — violet
+
+  // ── Task 5: daily login bonus (escalating-then-cyclic ladder) ───────────
+  // A free Stardust/Fragments reward for opening the app, keyed to a
+  // CONSECUTIVE-LOGIN-DAY counter (DailyStore.claimLoginBonus) — separate
+  // from the daily-CHALLENGE streak above (a player can open the app without
+  // playing the daily). Climbs day 1 → day 7 (the best reward), then cycles
+  // (day 8 repeats day 1, …) so a very long login streak keeps paying out.
+  // Currency/Fragments only — never a purchase, never gameplay-affecting.
+  LOGIN_BONUS_LADDER: [
+    { sd: 10, fr: 0 }, // day 1
+    { sd: 12, fr: 0 }, // day 2
+    { sd: 15, fr: 1 }, // day 3
+    { sd: 18, fr: 0 }, // day 4
+    { sd: 22, fr: 1 }, // day 5
+    { sd: 28, fr: 1 }, // day 6
+    { sd: 40, fr: 3 }, // day 7 — best; day 8 cycles back to day 1
+  ] as Array<{ sd: number; fr: number }>,
+
+  // ── Task 5: earned-only streak-freeze ("streak protection") ─────────────
+  // +1 freeze token every Nth CONSECUTIVE daily-streak day (DailyStore.recordWin),
+  // capped so tokens can't stockpile unboundedly. NEVER purchasable — the hard
+  // no-P2W line for this feature. A held token silently forgives exactly one
+  // missed day (daily.ts#nextStreakWithFreeze) so a long streak survives.
+  STREAK_FREEZE_GRANT_EVERY: 7,
+  STREAK_FREEZE_MAX: 3,
+
+  // ── Task 5: MainMenu DAILY REWARD chest + streak-protection surfacing ───
+  // Gold while claimable, dim once claimed today (DailyStore.loginBonusClaimedToday).
+  // Numeric hexes for Graphics tint/stroke; CSS-hex strings for Text color.
+  LOGIN_CHEST_GOLD: 0xffd166,
+  LOGIN_CHEST_DIM: 0x6b7080,
+  LOGIN_CHEST_GOLD_TEXT: '#ffd166',
+  LOGIN_CHEST_DIM_TEXT: THEME.TEXT_MUTED,
+  LOGIN_CHEST_CLAIM_POP_MS: 260, // claim flourish enter (scale+fade in)
+  LOGIN_CHEST_EXIT_MS: 170, // claim flourish exit — ~65% of enter (timing-token rhythm)
+  LOGIN_CHEST_HOLD_MS: 700, // how long the granted-amount text holds before exiting
+  LOGIN_CHEST_FLOURISH_RISE_PX: 22, // px the granted-amount text floats up on exit
+  PROTECTED_SUFFIX: ' · protected', // appended to the DAILY caption while a freeze is held
 } as const;

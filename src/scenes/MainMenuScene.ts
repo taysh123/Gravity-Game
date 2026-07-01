@@ -6,11 +6,13 @@ import { CosmicBackground } from '../entities/CosmicBackground';
 import { Button } from '../ui/Button';
 import { IconButton } from '../ui/IconButton';
 import { fadeIn, fadeToScene, warpToScene } from '../utils/transitions';
-import { reducedMotionActive, safeAreaInsetsScaled } from '../utils/a11y';
+import { reducedMotionActive, safeAreaInsetsScaled, type SafeAreaInsets } from '../utils/a11y';
 import { sharedAudio } from '../utils/AudioSynth';
 import { ProgressStore } from '../utils/ProgressStore';
 import { DailyStore } from '../utils/DailyStore';
 import { LEVELS } from '../config/levels';
+import { RETENTION } from '../config/retention.config';
+import { drawGlass } from '../ui/glass';
 
 // Stage 3: the home screen. Logo title (bobbing) + tagline + PLAY / LEVELS,
 // with a staggered cinematic entrance. Shares the cosmic backdrop with the intro.
@@ -66,6 +68,15 @@ export class MainMenuScene extends Phaser.Scene {
       () => fadeToScene(this, 'CosmeticsScene'),
       { size: gearSize },
     ).container.setDepth(30);
+
+    // DAILY REWARD chest (Task 5: daily login bonus) — top-right, one slot
+    // left of the gear. Gold + glowing while claimable; dim once claimed
+    // today (DailyStore.loginBonusClaimedToday — a read-only peek, since
+    // claimLoginBonus() itself grants on first call). No new IconName is
+    // added for this (icons.ts is a closed vocabulary out of scope here), so
+    // this reuses the existing glass-panel look with a text glyph, same as
+    // the ▶ GRAVITY RUN text-button below.
+    this.createDailyRewardChest(width, insets, gearSize, reduced);
 
     // Start the ambient music pad on the first gesture (autoplay policy).
     this.input.once('pointerdown', () => {
@@ -141,9 +152,14 @@ export class MainMenuScene extends Phaser.Scene {
       badge.setPosition(cx + SPLASH.MENU_BTN_W / 2 - 6, dailyY - SPLASH.MENU_BTN_H / 2 + 6);
       badge.setDepth(20);
     }
+    // Streak-protection indicator (Task 5): surfaced right on the DAILY
+    // caption, exactly like the streak count next to it — an earned-only
+    // freeze token (never purchasable) is silently ready to forgive one
+    // missed day, so a returning player sees their streak is safe.
+    const protectedSuffix = DailyStore.hasFreeze() ? RETENTION.PROTECTED_SUFFIX : '';
     const capStr = doneToday
-      ? `Done today · streak ${streak}`
-      : `Today: ${modLabel}${streak > 0 ? ` · streak ${streak}` : ''}`;
+      ? `Done today · streak ${streak}${protectedSuffix}`
+      : `Today: ${modLabel}${streak > 0 ? ` · streak ${streak}` : ''}${protectedSuffix}`;
     const dailyCap = this.add
       .text(cx, dailyY + SPLASH.MENU_BTN_H / 2 + 13, capStr, {
         fontFamily: THEME.FONT_BODY,
@@ -237,6 +253,100 @@ export class MainMenuScene extends Phaser.Scene {
       ease: THEME.EASE_SOFT,
       yoyo: true,
       repeat: -1,
+    });
+  }
+
+  // DAILY REWARD chest (Task 5) — a glass toolbar button, gold+glowing while
+  // claimable, dim once claimed today. Tapping claims via DailyStore
+  // (idempotent — a second tap the same day is a harmless no-op) and plays a
+  // claim flourish showing the granted amount. ≥44px touch target; reduced
+  // motion drops the pop/rise to a calm static reveal.
+  private createDailyRewardChest(width: number, insets: SafeAreaInsets, gearSize: number, reduced: boolean): void {
+    const size = gearSize;
+    const x = width - Math.max(12, insets.right) - 8 - gearSize / 2 - gearSize - 8;
+    const y = Math.max(12, insets.top) + 8 + gearSize / 2;
+    let claimed = DailyStore.loginBonusClaimedToday();
+
+    const glow = this.add
+      .image(0, 0, 'glow')
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(RETENTION.LOGIN_CHEST_GOLD)
+      .setDisplaySize(size * 1.8, size * 1.8)
+      .setAlpha(claimed ? 0 : 0.5);
+    const bg = this.add.graphics();
+    const glyph = this.add
+      .text(0, 0, '✦', {
+        fontFamily: THEME.FONT_DISPLAY,
+        fontSize: '20px',
+        color: claimed ? RETENTION.LOGIN_CHEST_DIM_TEXT : RETENTION.LOGIN_CHEST_GOLD_TEXT,
+      })
+      .setOrigin(0.5);
+
+    const drawBg = () => {
+      bg.clear();
+      drawGlass(bg, size, size, THEME.RADIUS_SM);
+      bg.lineStyle(1.5, claimed ? RETENTION.LOGIN_CHEST_DIM : RETENTION.LOGIN_CHEST_GOLD, claimed ? 0.35 : 0.8);
+      bg.strokeRoundedRect(-size / 2, -size / 2, size, size, THEME.RADIUS_SM);
+    };
+    drawBg();
+
+    const chest = this.add.container(x, y, [glow, bg, glyph]).setDepth(30);
+    chest.setSize(size, size);
+    chest.setInteractive(new Phaser.Geom.Rectangle(-size / 2, -size / 2, size, size), Phaser.Geom.Rectangle.Contains);
+    if (chest.input) chest.input.cursor = 'pointer';
+
+    chest.on('pointerdown', () => this.tweens.add({ targets: chest, scale: THEME.PRESS_SCALE, duration: 100, ease: THEME.EASE }));
+    chest.on('pointerupoutside', () => this.tweens.add({ targets: chest, scale: 1, duration: 100, ease: THEME.EASE }));
+    chest.on('pointerup', () => {
+      this.tweens.add({ targets: chest, scale: 1, duration: 100, ease: THEME.EASE });
+      if (claimed) return; // already claimed today — no reward left to grant, tap is a no-op
+      const reward = DailyStore.claimLoginBonus();
+      if (!reward) return; // guarded — DailyStore itself says "already claimed"
+      claimed = true;
+      glyph.setColor(RETENTION.LOGIN_CHEST_DIM_TEXT);
+      drawBg();
+      if (reduced) {
+        glow.setAlpha(0);
+      } else {
+        this.tweens.add({ targets: glow, alpha: 0, duration: 300, ease: THEME.EASE });
+        this.tweens.add({ targets: chest, scale: 1.15, duration: 160, yoyo: true, ease: THEME.EASE_POP });
+      }
+      this.showLoginRewardFlourish(x, y, reward, reduced);
+    });
+  }
+
+  // The "+N ✦" (and optional Fragments) toast after a chest claim. Non-blocking
+  // (floats near the chest, never captures input) and honors reduced-motion
+  // with a static hold+fade instead of the pop-in/rise-out.
+  private showLoginRewardFlourish(x: number, y: number, reward: { sd: number; fr: number }, reduced: boolean): void {
+    const label = reward.fr > 0 ? `+${reward.sd} ✦  +${reward.fr} ◆` : `+${reward.sd} ✦`;
+    const text = this.add
+      .text(x, y + 34, label, {
+        fontFamily: THEME.FONT_DISPLAY,
+        fontSize: '13px',
+        color: RETENTION.LOGIN_CHEST_GOLD_TEXT,
+        fontStyle: '700',
+      })
+      .setOrigin(0.5)
+      .setDepth(40);
+
+    if (reduced) {
+      this.time.delayedCall(RETENTION.LOGIN_CHEST_HOLD_MS, () => {
+        this.tweens.add({ targets: text, alpha: 0, duration: 200, onComplete: () => text.destroy() });
+      });
+      return;
+    }
+
+    text.setAlpha(0).setScale(0.85);
+    this.tweens.add({ targets: text, alpha: 1, scale: 1, duration: RETENTION.LOGIN_CHEST_CLAIM_POP_MS, ease: THEME.EASE_POP });
+    this.tweens.add({
+      targets: text,
+      y: y + 34 - RETENTION.LOGIN_CHEST_FLOURISH_RISE_PX,
+      alpha: 0,
+      delay: RETENTION.LOGIN_CHEST_HOLD_MS,
+      duration: RETENTION.LOGIN_CHEST_EXIT_MS,
+      ease: THEME.EASE,
+      onComplete: () => text.destroy(),
     });
   }
 

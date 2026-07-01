@@ -9,8 +9,9 @@ import { RewardStore } from './RewardStore';
 import { collectionComplete } from './cosmeticsLogic';
 import { COLLECTIONS, type CollectionId } from '../config/cosmetics.config';
 import { Analytics } from './Analytics';
-import { fragmentEarned, collectionComplete as collectionCompleteEvent } from './analyticsEvents';
+import { fragmentEarned, collectionComplete as collectionCompleteEvent, loginBonus } from './analyticsEvents';
 import { streakMilestone } from './streak';
+import { loginBonusFor } from './loginBonus';
 
 // Per-achievement reward (Stardust + Fragments). Bigger milestones grant more.
 const ACH_REWARD: Record<string, { sd: number; fr: number }> = {
@@ -103,4 +104,20 @@ export function grantStreakReward(count: number): number {
   const bonus = streakMilestone(count);
   if (bonus > 0) CurrencyStore.add(bonus);
   return bonus;
+}
+
+// Grant the daily login bonus for the Nth consecutive login day (Stardust +
+// Fragments only — never a purchase; see Global Constraints, no P2W).
+//
+// Deliberately WITHOUT its own RewardStore guard, like grantAchievementRewards
+// above: idempotency (once per calendar day) is the CALLER's responsibility.
+// The sole caller, DailyStore.claimLoginBonus, gates via
+// RewardStore.claimedToday('login:'+dateKey) BEFORE it ever calls this, so
+// this function must never be called more than once for the same day's claim.
+export function grantLoginBonus(loginDay: number): { sd: number; fr: number } {
+  const reward = loginBonusFor(loginDay);
+  if (reward.sd) CurrencyStore.add(reward.sd);
+  if (reward.fr) FragmentStore.add(reward.fr);
+  Analytics.track(loginBonus(loginDay));
+  return reward;
 }

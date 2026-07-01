@@ -1,5 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { dateKey, dailyLevelFor, nextStreak, effectiveStreak, dailyChallengeFor, streakReward } from './daily';
+import {
+  dateKey,
+  dailyLevelFor,
+  nextStreak,
+  effectiveStreak,
+  dailyChallengeFor,
+  streakReward,
+  nextStreakWithFreeze,
+  effectiveStreakWithFreeze,
+} from './daily';
 
 describe('dateKey', () => {
   it('formats a local date as YYYY-MM-DD', () => {
@@ -96,5 +105,84 @@ describe('effectiveStreak (display)', () => {
   it('shows 0 once a day has been missed', () => {
     expect(effectiveStreak({ lastPlayedDate: '2026-05-31', streak: 5 }, '2026-06-02')).toBe(0);
     expect(effectiveStreak({ lastPlayedDate: '', streak: 0 }, '2026-06-02')).toBe(0);
+  });
+});
+
+// Wave 2b Task 5 — streak protection: a held freeze token forgives EXACTLY one
+// missed day (a 2-day gap). Regression-guard: the no-freeze path must stay
+// byte-identical to nextStreak/effectiveStreak (existing cases above are
+// UNCHANGED — these are additive sibling functions, not replacements).
+describe('nextStreakWithFreeze', () => {
+  it('matches nextStreak exactly whenever hasFreeze is false (regression guard)', () => {
+    const cases: Array<{ state: { lastPlayedDate: string; streak: number }; today: string }> = [
+      { state: { lastPlayedDate: '', streak: 0 }, today: '2026-06-02' },
+      { state: { lastPlayedDate: '2026-06-01', streak: 3 }, today: '2026-06-02' },
+      { state: { lastPlayedDate: '2026-06-02', streak: 3 }, today: '2026-06-02' },
+      { state: { lastPlayedDate: '2026-05-31', streak: 5 }, today: '2026-06-02' }, // 2-day gap
+      { state: { lastPlayedDate: '2026-05-30', streak: 5 }, today: '2026-06-02' }, // 3-day gap
+    ];
+    for (const { state, today } of cases) {
+      expect(nextStreakWithFreeze(state, today, false)).toEqual({
+        streak: nextStreak(state, today),
+        usedFreeze: false,
+      });
+    }
+  });
+
+  it('is idempotent when already played today, freeze or not', () => {
+    expect(nextStreakWithFreeze({ lastPlayedDate: '2026-06-02', streak: 3 }, '2026-06-02', true)).toEqual({
+      streak: 3,
+      usedFreeze: false,
+    });
+  });
+
+  it('increments on a consecutive day without touching the freeze', () => {
+    expect(nextStreakWithFreeze({ lastPlayedDate: '2026-06-01', streak: 3 }, '2026-06-02', true)).toEqual({
+      streak: 4,
+      usedFreeze: false,
+    });
+  });
+
+  it('forgives a 2-day gap (one missed day) when a freeze is held: keeps + increments, and consumes it', () => {
+    expect(nextStreakWithFreeze({ lastPlayedDate: '2026-05-31', streak: 5 }, '2026-06-02', true)).toEqual({
+      streak: 6,
+      usedFreeze: true,
+    });
+  });
+
+  it('without a freeze, that same 2-day gap resets to 1 (existing behavior, unchanged)', () => {
+    expect(nextStreakWithFreeze({ lastPlayedDate: '2026-05-31', streak: 5 }, '2026-06-02', false)).toEqual({
+      streak: 1,
+      usedFreeze: false,
+    });
+  });
+
+  it('a freeze cannot forgive a gap larger than one missed day (3+ days still resets)', () => {
+    expect(nextStreakWithFreeze({ lastPlayedDate: '2026-05-30', streak: 5 }, '2026-06-02', true)).toEqual({
+      streak: 1,
+      usedFreeze: false,
+    });
+  });
+});
+
+describe('effectiveStreakWithFreeze (display)', () => {
+  it('matches effectiveStreak exactly whenever hasFreeze is false (regression guard)', () => {
+    const cases: Array<{ state: { lastPlayedDate: string; streak: number }; today: string }> = [
+      { state: { lastPlayedDate: '2026-06-02', streak: 4 }, today: '2026-06-02' },
+      { state: { lastPlayedDate: '2026-06-01', streak: 4 }, today: '2026-06-02' },
+      { state: { lastPlayedDate: '2026-05-31', streak: 5 }, today: '2026-06-02' },
+      { state: { lastPlayedDate: '', streak: 0 }, today: '2026-06-02' },
+    ];
+    for (const { state, today } of cases) {
+      expect(effectiveStreakWithFreeze(state, today, false)).toBe(effectiveStreak(state, today));
+    }
+  });
+
+  it('keeps showing the streak across a 2-day gap when a freeze is held (not yet consumed)', () => {
+    expect(effectiveStreakWithFreeze({ lastPlayedDate: '2026-05-31', streak: 5 }, '2026-06-02', true)).toBe(5);
+  });
+
+  it('still shows 0 beyond a 2-day gap even with a freeze (forgives exactly one missed day)', () => {
+    expect(effectiveStreakWithFreeze({ lastPlayedDate: '2026-05-30', streak: 5 }, '2026-06-02', true)).toBe(0);
   });
 });

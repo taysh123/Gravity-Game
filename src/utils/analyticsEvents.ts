@@ -49,6 +49,11 @@ export const onboardingComplete = (): AnalyticsEvent => ({ name: 'onboarding_com
 export const winStreak = (count: number): AnalyticsEvent => ({ name: 'win_streak', params: { count } });
 // Fired when a live win-streak is broken by a death (never a manual restart).
 export const streakBroken = (count: number): AnalyticsEvent => ({ name: 'streak_broken', params: { count } });
+// Wave 2b Task 5 — comeback hooks: the daily login bonus (chest claim, carries
+// the consecutive-login day) and streak protection (a held freeze token
+// forgave a missed day, carries the streak it preserved).
+export const loginBonus = (day: number): AnalyticsEvent => ({ name: 'login_bonus', params: { day } });
+export const streakFrozen = (streak: number): AnalyticsEvent => ({ name: 'streak_frozen', params: { streak } });
 
 // --- Economy / shop -------------------------------------------------------
 export const shopOpen = (): AnalyticsEvent => ({ name: 'shop_open', params: {} });

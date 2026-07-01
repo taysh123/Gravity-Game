@@ -14,6 +14,8 @@ import {
   onboardingComplete,
   winStreak,
   streakBroken,
+  loginBonus,
+  streakFrozen,
 } from './analyticsEvents';
 
 describe('sanitizeParams', () => {
@@ -67,5 +69,11 @@ describe('event creators', () => {
   });
   it('streakBroken carries the prior streak count', () => {
     expect(streakBroken(4)).toEqual({ name: 'streak_broken', params: { count: 4 } });
+  });
+  it('loginBonus carries the consecutive-login day', () => {
+    expect(loginBonus(3)).toEqual({ name: 'login_bonus', params: { day: 3 } });
+  });
+  it('streakFrozen carries the streak count the freeze preserved', () => {
+    expect(streakFrozen(6)).toEqual({ name: 'streak_frozen', params: { streak: 6 } });
   });
 });
