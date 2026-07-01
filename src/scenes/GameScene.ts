@@ -27,6 +27,8 @@ import { IconButton } from '../ui/IconButton';
 import { drawGlass } from '../ui/glass';
 import { fadeToScene } from '../utils/transitions';
 import { safeAreaInsetsScaled, reducedMotionActive } from '../utils/a11y';
+import { FX } from '../config/fx.config';
+import { fxCapable, shouldDowngradeFx } from '../utils/fx';
 import { computeStars, type StarResult } from '../utils/scoring';
 import { ProgressStore } from '../utils/ProgressStore';
 import { GhostStore } from '../utils/GhostStore';
@@ -109,6 +111,9 @@ export class GameScene extends Phaser.Scene {
   private levelTitle = ''; // signature-level name shown in the HUD
   private isBoss = false; // boss level — HUD shows a BOSS identity
   private worldTheme: WorldTheme | undefined; // per-world palette (undefined for daily)
+  // Screen-space post-FX (bloom/vignette) — WebGL-gated, torn down by the FPS watchdog.
+  private fxSamples: number[] = [];
+  private bloomFx?: Phaser.FX.Bloom;
 
   private get playX(): number {
     return (this.scale.width - PHYSICS.PLAY_WIDTH) / 2;
@@ -217,6 +222,36 @@ export class GameScene extends Phaser.Scene {
     this.restartKey = this.input.keyboard!.addKey(
       Phaser.Input.Keyboard.KeyCodes.R,
     );
+
+    this.applyScenePostFX();
+  }
+
+  // Screen-space premium pass: subtle global bloom + vignette. WebGL-only; skipped
+  // under reduced-motion; auto-removed by the FPS watchdog on weak GPUs. Never a
+  // gameplay dependency — the scene renders identically without it.
+  private applyScenePostFX(): void {
+    this.fxSamples = [];
+    const cam = this.cameras.main;
+    const capable = fxCapable(this.game.renderer.type) && !!cam.postFX;
+    if (!capable) return;
+    // Vignette is cheap — keep it even under reduced-motion for focus/depth.
+    cam.postFX.addVignette(0.5, 0.5, FX.VIGNETTE_RADIUS, FX.VIGNETTE_STRENGTH);
+    if (reducedMotionActive()) return; // motion-sensitive users: no bloom bloom-in
+    this.bloomFx = cam.postFX.addBloom(
+      FX.BLOOM_COLOR, FX.BLOOM_OFFSET, FX.BLOOM_OFFSET,
+      FX.BLOOM_BLUR_STRENGTH, FX.BLOOM_STRENGTH, FX.BLOOM_STEPS,
+    );
+  }
+
+  // Called each frame from update() — samples fps and tears down bloom if the
+  // device can't sustain it. Only samples while bloom is live.
+  private watchdogFx(): void {
+    if (!this.bloomFx) return;
+    this.fxSamples.push(this.game.loop.actualFps);
+    if (shouldDowngradeFx(this.fxSamples, FX.FPS_DOWNGRADE_THRESHOLD, FX.FPS_DOWNGRADE_WINDOW)) {
+      this.cameras.main.postFX.remove(this.bloomFx);
+      this.bloomFx = undefined;
+    }
   }
 
   private createWorldBounds(): void {
@@ -752,6 +787,7 @@ export class GameScene extends Phaser.Scene {
 
   update(time: number, _delta: number): void {
     this.cosmic.update();
+    this.watchdogFx();
     if (this.isWon || this.isDying) return;
 
     this.updateCountdown(time);
