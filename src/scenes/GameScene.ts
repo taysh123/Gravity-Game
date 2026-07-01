@@ -1282,7 +1282,7 @@ export class GameScene extends Phaser.Scene {
     if (showDouble) {
       Analytics.track(rewardedOffered('campaign_2x')); // offer impression, fires once on render
       const onStreak = streakTier(this.winStreakCount).level >= 1;
-      const bw = 210, bh = 42;
+      const bw = 210, bh = 44; // >=44px touch-target minimum (ui-ux lens)
       const bbg = this.add.graphics();
       drawGlass(bbg, bw, bh, bh / 2);
       bbg.lineStyle(2, 0x7affb0, 0.6);
