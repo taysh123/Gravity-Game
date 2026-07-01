@@ -7,9 +7,9 @@ import { THEME } from './theme.config';
 export const RETENTION = {
   // ── Task 2: one-time first-win hero beat (win overlay) ──────────────────
   // How long the hero line stays up before fading — comfortably readable, but
-  // short enough to clear before the standard post-win auto-advance (mirrors
-  // PHYSICS.HINT_DURATION_MS's auto-hide-after-this-long pattern).
-  FIRST_WIN_MS: 2200,
+  // short enough that entrance + hold + fade all complete inside the ~2450ms
+  // post-win auto-advance window (so the fade actually plays, not just gets wiped).
+  FIRST_WIN_MS: 1600,
   FIRST_WIN_FADE_MS: 300, // fade-out tween once FIRST_WIN_MS elapses
   FIRST_WIN_TEXT: 'You brought your first star home ★',
   FIRST_WIN_COLOR: '#ffd166', // gold — distinct from the green LEVEL COMPLETE title

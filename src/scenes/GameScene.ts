@@ -107,6 +107,7 @@ export class GameScene extends Phaser.Scene {
   private newAchievements: AchievementDef[] = [];
   private awardedStardust = 0;
   private isFirstWin = false; // this run is the first-ever campaign win (FTUE hero beat)
+  private hadPriorProgress = false; // had campaign stars at level entry — suppresses the FTUE beat for returning players
   private advanceTimer?: Phaser.Time.TimerEvent; // post-win auto-advance (cancellable by the 2x offer)
   private advanceConsumed = false;
   private isDaily = false; // launched from the Daily Challenge
@@ -180,6 +181,10 @@ export class GameScene extends Phaser.Scene {
     this.gemCollected = false;
     this.winResult = null;
     this.isFirstWin = false;
+    // Snapshot prior progress at entry (before this level's win is recorded) so the
+    // one-time FTUE hero beat only greets a genuine first-timer — never a returning
+    // player who predates the seenFirstWin flag.
+    this.hadPriorProgress = !this.isDaily && ProgressStore.totalStars() > 0;
     this.orbs = [];
     this.collectAllToWin = false;
     this.goalTo = null;
@@ -967,10 +972,11 @@ export class GameScene extends Phaser.Scene {
       });
       Analytics.track(levelComplete(this.currentLevel, this.winResult.stars, this.winTimeMs));
       if (isWorldEnd(this.currentLevel)) Analytics.track(worldComplete(worldOf(this.currentLevel).id));
-      // FTUE: the first-ever campaign win gets a one-time hero beat on the
-      // overlay (distinct from the generic 3★). Gate-then-set — same shape as
-      // the seenTutorial coach-mark guard — so it never re-fires on replay.
-      this.isFirstWin = !SettingsStore.get().seenFirstWin;
+      // FTUE: a genuine first-timer's first campaign win gets a one-time hero beat
+      // (distinct from the generic 3★). Gated on !seenFirstWin AND no prior progress
+      // (a returning player who predates the flag never sees it); set-once so it
+      // never re-fires on replay.
+      this.isFirstWin = !SettingsStore.get().seenFirstWin && !this.hadPriorProgress;
       if (this.isFirstWin) {
         SettingsStore.set('seenFirstWin', true);
         Analytics.track(onboardingComplete());
