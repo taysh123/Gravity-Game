@@ -37,6 +37,11 @@ export const FX = {
   TENDRIL_REDUCED_CAP: 0.6, // reduced-motion: cap charge so the glow stays calm
   LENS_RING_ALPHA: 0.3,     // gravitational-lensing shimmer ring alpha at full charge
   LENS_RING_R: 46,
+
+  // ── Ball & goal polish ──
+  BALL_GLOW_STRENGTH: 4,    // WebGL postFX glow outer strength on the ball body
+  GOAL_SHIMMER_GAIN: 0.4,   // extra halo brightness as the ball closes in
+  GOAL_SHIMMER_RINGS: 2,    // concentric "pull" rings that appear near the goal
 } as const;
 
 export type FxConst = typeof FX;

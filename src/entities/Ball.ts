@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { PHYSICS } from '../config/physics.config';
+import { FX } from '../config/fx.config';
 import { RawMatter } from '../utils/matter';
 import { CosmeticStore } from '../utils/CosmeticStore';
 import { reducedMotionActive } from '../utils/a11y';
@@ -56,6 +57,17 @@ export class Ball {
     // the longer trail give the star a glowing "comet" tail (esp. on fast moves).
     this.trailGraphics = scene.add.graphics().setBlendMode(Phaser.BlendModes.ADD);
     this.graphics = scene.add.graphics();
+    // Premium light-source glow — WebGL only, static (no per-frame animation), so
+    // it is not reduced-motion-gated: reduced-motion governs motion, not brightness.
+    // Graphics objects don't support `preFX` (that's texture-based objects only —
+    // Image/Sprite/TileSprite/Text/RenderTexture/Video; Graphics.preFX is always
+    // null). `postFX` is supported on every Game Object and is the pipeline this
+    // codebase already uses for camera bloom/vignette (see GameScene.applyScenePostFX)
+    // — one cheap postFX pass on one small object, within the perf ceiling. Canvas
+    // or no postFX: silently skipped, no crash, no empty frame.
+    if (scene.game.renderer.type === Phaser.WEBGL && this.graphics.postFX) {
+      this.graphics.postFX.addGlow(this.glow, FX.BALL_GLOW_STRENGTH, 0, false, 0.1, 12);
+    }
     this.draw();
   }
 

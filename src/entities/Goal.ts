@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { PHYSICS } from '../config/physics.config';
+import { FX } from '../config/fx.config';
 
 // The goal = the lost star's "home". It breathes (alive), brightens as the ball
 // nears (the journey paying off), and can drift (moving/chase levels) — x/y are
@@ -41,11 +42,20 @@ export class Goal {
       this.graphics.lineStyle(2, PHYSICS.COLOR_BALL_GLOW, n * 0.5);
       this.graphics.strokeCircle(this.x, this.y, haloR + 8);
     }
+    // Magnetic "pull" shimmer — concentric rings that tighten inward as the ball
+    // closes in, reading as the goal actively reaching for the ball.
+    if (n > 0.15) {
+      for (let i = 0; i < FX.GOAL_SHIMMER_RINGS; i++) {
+        const rr = this.radius + 18 + i * 10 - n * 12;      // rings tighten as the ball nears
+        this.graphics.lineStyle(1.5, PHYSICS.COLOR_GOAL, (n - 0.15) * 0.4);
+        this.graphics.strokeCircle(this.x, this.y, rr);
+      }
+    }
     this.graphics.lineStyle(2, PHYSICS.COLOR_GOAL, haloA);
     this.graphics.strokeCircle(this.x, this.y, haloR);
     this.graphics.lineStyle(3, PHYSICS.COLOR_GOAL, 0.9);
     this.graphics.strokeCircle(this.x, this.y, this.radius);
-    this.graphics.fillStyle(PHYSICS.COLOR_GOAL, 0.15 + n * 0.2);
+    this.graphics.fillStyle(PHYSICS.COLOR_GOAL, 0.15 + n * (0.2 + FX.GOAL_SHIMMER_GAIN));
     this.graphics.fillCircle(this.x, this.y, this.radius);
     this.graphics.fillStyle(PHYSICS.COLOR_GOAL, 0.8);
     this.graphics.fillCircle(this.x, this.y, 5 + n * 3);
