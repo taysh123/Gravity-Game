@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
 import { PHYSICS } from '../config/physics.config';
+import { FX } from '../config/fx.config';
+import { reducedMotionActive } from '../utils/a11y';
 
 const RING_RADIUS = 30;
 
@@ -8,6 +10,7 @@ export class Attractor {
   y: number;
   private phase = 0;
   private spawnT = 1; // 0→1 over SPAWN_PULSE_MS; drives the reach "sonar ping"
+  private charge = 0; // 0..1 hold-charge (visual only) — see attractorCharge.ts
   private readonly graphics: Phaser.GameObjects.Graphics;
   private spawnTween?: Phaser.Tweens.Tween;
 
@@ -55,6 +58,30 @@ export class Attractor {
     // Center dot.
     this.graphics.fillStyle(PHYSICS.COLOR_ATTRACTOR_PULSE, 0.8);
     this.graphics.fillCircle(this.x, this.y, 4);
+
+    // Living charge: escalating energy tendrils + a lensing shimmer ring that
+    // grow with hold duration (visual only — never touches the force formula).
+    const reduced = reducedMotionActive();
+    const c = reduced ? Math.min(this.charge, FX.TENDRIL_REDUCED_CAP) : this.charge;
+    if (c > 0.01) {
+      // Lensing shimmer — a faint ring that tightens + brightens with charge.
+      this.graphics.lineStyle(1.5, PHYSICS.COLOR_ATTRACTOR_PULSE, FX.LENS_RING_ALPHA * c);
+      this.graphics.strokeCircle(this.x, this.y, FX.LENS_RING_R - c * 8 + beat * 2);
+      // Energy tendrils — short arcs around the core, count/alpha rise with charge.
+      // Reduced-motion: fixed angles (no phase term) so they hold still, not spin.
+      const live = Math.max(1, Math.round(FX.TENDRIL_COUNT * c));
+      for (let i = 0; i < live; i++) {
+        const ang = reduced
+          ? (i / FX.TENDRIL_COUNT) * Math.PI * 2
+          : this.phase * 0.6 + (i / FX.TENDRIL_COUNT) * Math.PI * 2;
+        const r0 = RING_RADIUS + 6, r1 = r0 + FX.TENDRIL_LEN * c;
+        this.graphics.lineStyle(2, PHYSICS.COLOR_ATTRACTOR_PULSE, FX.TENDRIL_ALPHA * c);
+        this.graphics.lineBetween(
+          this.x + Math.cos(ang) * r0, this.y + Math.sin(ang) * r0,
+          this.x + Math.cos(ang) * r1, this.y + Math.sin(ang) * r1,
+        );
+      }
+    }
   }
 
   // Animate the live pulse. phase is a continuous value (e.g. time/150).
@@ -67,6 +94,12 @@ export class Attractor {
     this.x = x;
     this.y = y;
     this.draw();
+  }
+
+  // Hold-duration charge (0..1, pre-eased by chargeLevel()) — escalates the
+  // tendril/lensing visuals. Visual only; does not affect the attractor force.
+  setCharge(level01: number): void {
+    this.charge = level01 < 0 ? 0 : level01 > 1 ? 1 : level01;
   }
 
   destroy(): void {

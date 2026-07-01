@@ -29,6 +29,7 @@ import { fadeToScene } from '../utils/transitions';
 import { safeAreaInsetsScaled, reducedMotionActive } from '../utils/a11y';
 import { FX } from '../config/fx.config';
 import { fxCapable, shouldDowngradeFx } from '../utils/fx';
+import { chargeLevel } from '../utils/attractorCharge';
 import { computeStars, type StarResult } from '../utils/scoring';
 import { ProgressStore } from '../utils/ProgressStore';
 import { GhostStore } from '../utils/GhostStore';
@@ -62,6 +63,7 @@ export class GameScene extends Phaser.Scene {
   private ball!: Ball;
   private goal!: Goal;
   private attractor: Attractor | null = null;
+  private attractorDownMs = 0; // this.game.loop.time at press — drives visual hold-charge
   private restartKey!: Phaser.Input.Keyboard.Key;
   private currentLevel = 1;
   private isWon = false;
@@ -450,6 +452,7 @@ export class GameScene extends Phaser.Scene {
       this.haptics(PHYSICS.HAPTIC_TAP_MS); // light "grab" on spawn
       this.attractor?.destroy();
       this.attractor = new Attractor(this, pointer.x, pointer.y);
+      this.attractorDownMs = this.game.loop.time;
       this.cosmic.pulse(1); // press stirs the nebula — cause → effect
     });
 
@@ -807,6 +810,9 @@ export class GameScene extends Phaser.Scene {
     this.goal.pulse(time / 300, nearT);
     this.orbs.forEach((o) => o.pulse(time / 300));
     this.attractor?.pulse(time / 150);
+    if (this.attractor) {
+      this.attractor.setCharge(chargeLevel(this.game.loop.time - this.attractorDownMs, FX.CHARGE_FULL_MS));
+    }
     this.zones.forEach((z) => z.pulse(time / 600));
     this.magnets.forEach((m) => m.pulse(time / 600));
     this.portals.forEach((p) => p.pulse(time / 400));

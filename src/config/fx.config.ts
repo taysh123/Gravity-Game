@@ -28,6 +28,15 @@ export const FX = {
   NEBULA_PULSE_GAIN: 0.5,   // extra nebula alpha multiplier at a full press-pulse
   NEBULA_PULSE_MS: 520,     // ambient nebula-swell decay (eased in-entity); intentionally past the 400ms UI-transition cap — this is atmospheric, not a UI state transition
   NEBULA_PULSE_PARALLAX_PX: 6, // tiny press-reactive nebula position nudge (3rd parallax layer)
+
+  // ── Living attractor (visual only — force formula untouched) ──
+  CHARGE_FULL_MS: 900,      // hold this long → full visual charge
+  TENDRIL_COUNT: 5,         // radial energy arcs at full charge
+  TENDRIL_LEN: 22,          // px reach of a tendril beyond the core ring
+  TENDRIL_ALPHA: 0.55,
+  TENDRIL_REDUCED_CAP: 0.6, // reduced-motion: cap charge so the glow stays calm
+  LENS_RING_ALPHA: 0.3,     // gravitational-lensing shimmer ring alpha at full charge
+  LENS_RING_R: 46,
 } as const;
 
 export type FxConst = typeof FX;
