@@ -65,8 +65,9 @@ export class Attractor {
     const c = reduced ? Math.min(this.charge, FX.TENDRIL_REDUCED_CAP) : this.charge;
     if (c > 0.01) {
       // Lensing shimmer — a faint ring that tightens + brightens with charge.
+      // Reduced-motion: drop the beat breathing so the ring holds still.
       this.graphics.lineStyle(1.5, PHYSICS.COLOR_ATTRACTOR_PULSE, FX.LENS_RING_ALPHA * c);
-      this.graphics.strokeCircle(this.x, this.y, FX.LENS_RING_R - c * 8 + beat * 2);
+      this.graphics.strokeCircle(this.x, this.y, FX.LENS_RING_R - c * 8 + (reduced ? 0 : beat * 2));
       // Energy tendrils — short arcs around the core, count/alpha rise with charge.
       // Reduced-motion: fixed angles (no phase term) so they hold still, not spin.
       const live = Math.max(1, Math.round(FX.TENDRIL_COUNT * c));

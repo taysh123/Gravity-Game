@@ -809,10 +809,12 @@ export class GameScene extends Phaser.Scene {
     );
     this.goal.pulse(time / 300, nearT);
     this.orbs.forEach((o) => o.pulse(time / 300));
-    this.attractor?.pulse(time / 150);
+    // Set charge BEFORE pulse() so the redraw pulse() triggers uses this frame's
+    // charge (no one-frame render lag).
     if (this.attractor) {
       this.attractor.setCharge(chargeLevel(this.game.loop.time - this.attractorDownMs, FX.CHARGE_FULL_MS));
     }
+    this.attractor?.pulse(time / 150);
     this.zones.forEach((z) => z.pulse(time / 600));
     this.magnets.forEach((m) => m.pulse(time / 600));
     this.portals.forEach((p) => p.pulse(time / 400));
