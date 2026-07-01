@@ -35,6 +35,15 @@ export const retry = (level: number): AnalyticsEvent => ({ name: 'retry', params
 export const worldStart = (world: number): AnalyticsEvent => ({ name: 'world_start', params: { world } });
 export const dailyComplete = (streak: number): AnalyticsEvent => ({ name: 'daily_complete', params: { streak } });
 
+// --- Retention funnel -----------------------------------------------------
+export const sessionStart = (): AnalyticsEvent => ({ name: 'session_start', params: {} });
+export const dailyStart = (index: number, modifier: string): AnalyticsEvent => ({
+  name: 'daily_start',
+  params: sanitizeParams({ index, modifier }),
+});
+export const worldComplete = (world: number): AnalyticsEvent => ({ name: 'world_complete', params: { world } });
+export const achievementUnlocked = (id: string): AnalyticsEvent => ({ name: 'achievement_unlocked', params: sanitizeParams({ id }) });
+
 // --- Economy / shop -------------------------------------------------------
 export const shopOpen = (): AnalyticsEvent => ({ name: 'shop_open', params: {} });
 export const cosmeticEquip = (id: string): AnalyticsEvent => ({ name: 'cosmetic_equip', params: sanitizeParams({ id }) });

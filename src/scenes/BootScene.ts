@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
 import { IMAGES } from '../config/assets';
+import { Analytics } from '../utils/Analytics';
+import { sessionStart } from '../utils/analyticsEvents';
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -13,6 +15,8 @@ export class BootScene extends Phaser.Scene {
   }
 
   create(): void {
+    // Fires once per app load (this scene never restarts) — anchors D1/D7 retention.
+    Analytics.track(sessionStart());
     this.generateSparkTexture();
     this.generateGlowTexture();
     // Wait for the custom fonts so the first text rendered to canvas isn't a

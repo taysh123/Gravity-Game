@@ -7,6 +7,10 @@ import {
   dailyComplete,
   cosmeticEquip,
   purchase,
+  sessionStart,
+  dailyStart,
+  achievementUnlocked,
+  worldComplete,
 } from './analyticsEvents';
 
 describe('sanitizeParams', () => {
@@ -39,5 +43,17 @@ describe('event creators', () => {
   it('cosmeticEquip + purchase carry their id/product', () => {
     expect(cosmeticEquip('nebula').params).toEqual({ id: 'nebula' });
     expect(purchase('remove_ads').params).toEqual({ product: 'remove_ads' });
+  });
+  it('sessionStart carries no params', () => {
+    expect(sessionStart()).toEqual({ name: 'session_start', params: {} });
+  });
+  it('dailyStart sanitizes the modifier string', () => {
+    expect(dailyStart(2, 'gemRush')).toEqual({ name: 'daily_start', params: { index: 2, modifier: 'gemRush' } });
+  });
+  it('achievementUnlocked sanitizes the id', () => {
+    expect(achievementUnlocked('first_win')).toEqual({ name: 'achievement_unlocked', params: { id: 'first_win' } });
+  });
+  it('worldComplete carries the world number', () => {
+    expect(worldComplete(3)).toEqual({ name: 'world_complete', params: { world: 3 } });
   });
 });

@@ -39,7 +39,7 @@ import { Analytics } from '../utils/Analytics';
 import { Crash } from '../utils/Crash';
 import { CosmeticStore } from '../utils/CosmeticStore';
 import type { ArrivalStyle } from '../utils/cosmetics';
-import { levelStart, levelComplete, levelFail, retry as retryEvent, worldStart, dailyComplete, rewardDoubleStardust } from '../utils/analyticsEvents';
+import { levelStart, levelComplete, levelFail, retry as retryEvent, worldStart, dailyComplete, dailyStart, worldComplete, achievementUnlocked, hintUsed, rewardDoubleStardust } from '../utils/analyticsEvents';
 import { DailyStore } from '../utils/DailyStore';
 import { StatsStore } from '../utils/StatsStore';
 import { AchievementStore } from '../utils/AchievementStore';
@@ -49,7 +49,7 @@ import { CurrencyStore } from '../utils/CurrencyStore';
 import { stardustForWin } from '../utils/currency';
 import { streakReward, dateKey, type DailyModifier } from '../utils/daily';
 import { DAILY_LEVELS } from '../config/dailyLevels';
-import { worldOf, isWorldStart } from '../utils/world';
+import { worldOf, isWorldStart, isWorldEnd } from '../utils/world';
 import { themeForWorld, type WorldTheme } from '../config/worldThemes';
 import { Leaderboard } from '../utils/Leaderboard';
 import { Ads } from '../utils/Ads';
@@ -207,11 +207,14 @@ export class GameScene extends Phaser.Scene {
     if (!this.isDaily && this.worldTheme && isWorldStart(this.currentLevel)) {
       this.showWorldTitleCard();
     }
-    // Telemetry: level-entry funnel (campaign only; daily is tracked on completion).
+    // Telemetry: level-entry funnel. Campaign tracks level/world start; daily tracks
+    // its own entry here (completion/streak is tracked separately in triggerWin).
     if (!this.isDaily) {
       const wid = worldOf(this.currentLevel).id;
       Analytics.track(levelStart(this.currentLevel, wid));
       if (isWorldStart(this.currentLevel)) Analytics.track(worldStart(wid));
+    } else {
+      Analytics.track(dailyStart(this.dailyIndex, String(this.dailyModifier)));
     }
     Crash.log(`level_start ${this.isDaily ? 'daily' : this.currentLevel}`);
     // Per-world music bed (continuous across same-world restarts; boss = tense).
@@ -735,6 +738,9 @@ export class GameScene extends Phaser.Scene {
   // Onboarding tip near the bottom. Auto-fades, or dismisses on first touch.
   private showHint(hint?: string): void {
     if (!hint) return;
+    // Telemetry: hint exposure (campaign only — this is a shown/auto tip, not a
+    // player-requested action, so it represents exposure rather than a "used" tap).
+    if (!this.isDaily) Analytics.track(hintUsed(this.currentLevel));
     this.hintText = this.add
       .text(this.scale.width / 2, this.scale.height - 70, hint, {
         fontSize: '17px',
@@ -956,6 +962,7 @@ export class GameScene extends Phaser.Scene {
         completed: true,
       });
       Analytics.track(levelComplete(this.currentLevel, this.winResult.stars, this.winTimeMs));
+      if (isWorldEnd(this.currentLevel)) Analytics.track(worldComplete(worldOf(this.currentLevel).id));
     }
     // Award Stardust (soft currency) for the win — spent on cosmetics.
     this.awardedStardust = stardustForWin(this.winResult.stars, this.isDaily);
@@ -975,6 +982,7 @@ export class GameScene extends Phaser.Scene {
     CurrencyStore.add(this.awardedStardust);
     // Achievements reflect this win (progress + daily streak recorded above).
     this.newAchievements = AchievementStore.syncAndGetNew(StatsStore.collectSnapshot());
+    this.newAchievements.forEach((a) => Analytics.track(achievementUnlocked(a.id)));
     // Retention rewards: achievements grant currency; star-milestones + completed
     // collections grant one-time Fragment bonuses (all cosmetic economy).
     grantAchievementRewards(this.newAchievements.map((a) => a.id));

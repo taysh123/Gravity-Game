@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { worldOf, worldIndexOf, isWorldStart } from './world';
+import { worldOf, worldIndexOf, isWorldStart, isWorldEnd } from './world';
 import { WORLDS } from '../config/worlds';
 
 // Derive expectations from WORLDS so the tests stay valid as worlds grow/renumber
@@ -37,6 +37,15 @@ describe('isWorldStart', () => {
     for (const w of WORLDS) {
       expect(isWorldStart(w.from)).toBe(true);
       if (w.from + 1 <= w.to) expect(isWorldStart(w.from + 1)).toBe(false);
+    }
+  });
+});
+
+describe('isWorldEnd', () => {
+  it('is true on every world\'s last level and false just before', () => {
+    for (const w of WORLDS) {
+      expect(isWorldEnd(w.to)).toBe(true);
+      if (w.to - 1 >= w.from) expect(isWorldEnd(w.to - 1)).toBe(false);
     }
   });
 });

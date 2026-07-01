@@ -16,3 +16,8 @@ export function worldIndexOf(level: number): number {
 export function isWorldStart(level: number): boolean {
   return WORLDS.some((w) => w.from === level);
 }
+
+// True when this level is the last of its world (used to fire world-complete telemetry).
+export function isWorldEnd(level: number): boolean {
+  return WORLDS.some((w) => w.to === level);
+}
