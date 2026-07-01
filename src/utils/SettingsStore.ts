@@ -9,6 +9,7 @@ export interface Settings {
   haptics: boolean; // vibration
   reduceMotion: MotionPref; // 'system' follows the OS setting
   seenTutorial: boolean; // first-play coach-mark shown
+  seenFirstWin: boolean; // one-time first-ever campaign win beat shown
 }
 
 const KEY = 'gravity-flow:settings';
@@ -19,6 +20,7 @@ const DEFAULTS: Settings = {
   haptics: true,
   reduceMotion: 'system',
   seenTutorial: false,
+  seenFirstWin: false,
 };
 
 let cache: Settings | null = null;

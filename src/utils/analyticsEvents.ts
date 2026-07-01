@@ -43,6 +43,8 @@ export const dailyStart = (index: number, modifier: string): AnalyticsEvent => (
 });
 export const worldComplete = (world: number): AnalyticsEvent => ({ name: 'world_complete', params: { world } });
 export const achievementUnlocked = (id: string): AnalyticsEvent => ({ name: 'achievement_unlocked', params: sanitizeParams({ id }) });
+// FTUE: fires once, the moment the first-ever campaign win beat is shown.
+export const onboardingComplete = (): AnalyticsEvent => ({ name: 'onboarding_complete', params: {} });
 
 // --- Economy / shop -------------------------------------------------------
 export const shopOpen = (): AnalyticsEvent => ({ name: 'shop_open', params: {} });

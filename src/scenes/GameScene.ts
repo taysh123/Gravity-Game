@@ -39,7 +39,7 @@ import { Analytics } from '../utils/Analytics';
 import { Crash } from '../utils/Crash';
 import { CosmeticStore } from '../utils/CosmeticStore';
 import type { ArrivalStyle } from '../utils/cosmetics';
-import { levelStart, levelComplete, levelFail, retry as retryEvent, worldStart, dailyComplete, dailyStart, worldComplete, achievementUnlocked, hintUsed, rewardDoubleStardust } from '../utils/analyticsEvents';
+import { levelStart, levelComplete, levelFail, retry as retryEvent, worldStart, dailyComplete, dailyStart, worldComplete, achievementUnlocked, hintUsed, rewardDoubleStardust, onboardingComplete } from '../utils/analyticsEvents';
 import { DailyStore } from '../utils/DailyStore';
 import { StatsStore } from '../utils/StatsStore';
 import { AchievementStore } from '../utils/AchievementStore';
@@ -53,6 +53,8 @@ import { worldOf, isWorldStart, isWorldEnd } from '../utils/world';
 import { themeForWorld, type WorldTheme } from '../config/worldThemes';
 import { Leaderboard } from '../utils/Leaderboard';
 import { Ads } from '../utils/Ads';
+import { nextUnlockHint } from '../utils/onboarding';
+import { RETENTION } from '../config/retention.config';
 
 const SAFE_PAD = 12; // minimum padding from any screen edge for HUD/nav
 
@@ -104,6 +106,7 @@ export class GameScene extends Phaser.Scene {
   private ghostLastSampleMs = 0;
   private newAchievements: AchievementDef[] = [];
   private awardedStardust = 0;
+  private isFirstWin = false; // this run is the first-ever campaign win (FTUE hero beat)
   private advanceTimer?: Phaser.Time.TimerEvent; // post-win auto-advance (cancellable by the 2x offer)
   private advanceConsumed = false;
   private isDaily = false; // launched from the Daily Challenge
@@ -176,6 +179,7 @@ export class GameScene extends Phaser.Scene {
     this.parChip = null;
     this.gemCollected = false;
     this.winResult = null;
+    this.isFirstWin = false;
     this.orbs = [];
     this.collectAllToWin = false;
     this.goalTo = null;
@@ -963,6 +967,14 @@ export class GameScene extends Phaser.Scene {
       });
       Analytics.track(levelComplete(this.currentLevel, this.winResult.stars, this.winTimeMs));
       if (isWorldEnd(this.currentLevel)) Analytics.track(worldComplete(worldOf(this.currentLevel).id));
+      // FTUE: the first-ever campaign win gets a one-time hero beat on the
+      // overlay (distinct from the generic 3★). Gate-then-set — same shape as
+      // the seenTutorial coach-mark guard — so it never re-fires on replay.
+      this.isFirstWin = !SettingsStore.get().seenFirstWin;
+      if (this.isFirstWin) {
+        SettingsStore.set('seenFirstWin', true);
+        Analytics.track(onboardingComplete());
+      }
     }
     // Award Stardust (soft currency) for the win — spent on cosmetics.
     this.awardedStardust = stardustForWin(this.winResult.stars, this.isDaily);
@@ -1114,6 +1126,65 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
+    // FTUE: one-time first-win hero beat — a kicker line above the title that
+    // celebrates what just happened (distinct from the generic 3★) rather than
+    // competing with it. Floats above the panel edge, same as PERFECT!. Fades
+    // itself out well before the standard post-win auto-advance.
+    if (this.isFirstWin) {
+      const hero = this.add
+        .text(0, -88, RETENTION.FIRST_WIN_TEXT, {
+          fontFamily: THEME.FONT_DISPLAY,
+          fontSize: '14px',
+          color: RETENTION.FIRST_WIN_COLOR,
+          fontStyle: '700',
+          align: 'center',
+        })
+        .setOrigin(0.5);
+      card.add(hero);
+      if (reduced) {
+        this.time.delayedCall(RETENTION.FIRST_WIN_MS, () => hero.destroy());
+      } else {
+        hero.setScale(0.9).setAlpha(0);
+        this.tweens.add({
+          targets: hero,
+          scale: 1,
+          alpha: 1,
+          duration: 320,
+          ease: THEME.EASE_POP,
+          onComplete: () =>
+            this.time.delayedCall(RETENTION.FIRST_WIN_MS, () =>
+              this.tweens.add({ targets: hero, alpha: 0, duration: RETENTION.FIRST_WIN_FADE_MS, onComplete: () => hero.destroy() }),
+            ),
+        });
+      }
+    }
+
+    // Momentum nudge (early campaign wins, not the first) — the ever-present
+    // "next carrot" so progress toward the next world always reads. Subordinate
+    // to the title/stars (small, muted); mutually exclusive with the hero beat
+    // above so a single win never shows two competing headline moments.
+    const nudgeHint =
+      !this.isFirstWin && !this.isDaily && this.currentLevel <= RETENTION.NUDGE_MAX_LEVEL
+        ? nextUnlockHint(this.currentLevel)
+        : null;
+    if (nudgeHint) {
+      const nudge = this.add
+        .text(0, 70, nudgeHint, {
+          fontFamily: THEME.FONT_BODY,
+          fontSize: '12px',
+          color: RETENTION.NUDGE_COLOR,
+        })
+        .setOrigin(0.5);
+      card.add(nudge);
+      if (!reduced) {
+        nudge.setAlpha(0);
+        this.tweens.add({ targets: nudge, alpha: 1, duration: 300, delay: 300, ease: THEME.EASE });
+      }
+    }
+    // Below-panel elements (2x offer, achievement toast) make room when the
+    // nudge is showing, so nothing overlaps it.
+    const nudgeExtra = nudgeHint ? 30 : 0;
+
     const parStr = fmtTime(this.parTimeMs);
     const timeStr = fmtTime(this.winTimeMs);
     const underPar = this.winResult?.underPar;
@@ -1144,7 +1215,7 @@ export class GameScene extends Phaser.Scene {
       const btxt = this.add.text(0, 0, `▶  2×  +${this.awardedStardust} ✦`, {
         fontFamily: THEME.FONT_DISPLAY, fontSize: '15px', color: '#7affb0', fontStyle: '700',
       }).setOrigin(0.5);
-      const btn = this.add.container(cx, cy + panelH / 2 + 34, [bbg, btxt]).setDepth(51);
+      const btn = this.add.container(cx, cy + panelH / 2 + 34 + nudgeExtra, [bbg, btxt]).setDepth(51);
       btn.setSize(bw, bh);
       btn.setInteractive(new Phaser.Geom.Rectangle(-bw / 2, -bh / 2, bw, bh), Phaser.Geom.Rectangle.Contains);
       btn.once('pointerup', async () => {
@@ -1179,7 +1250,7 @@ export class GameScene extends Phaser.Scene {
       const nm = this.add
         .text(0, 8, nameStr, { fontFamily: THEME.FONT_DISPLAY, fontSize: '14px', color: THEME.TEXT_PRIMARY, fontStyle: '600' })
         .setOrigin(0.5);
-      const toast = this.add.container(cx, cy + panelH / 2 + 40 + (showDouble ? 54 : 0), [tg, head, nm]).setDepth(51);
+      const toast = this.add.container(cx, cy + panelH / 2 + 40 + (showDouble ? 54 : 0) + nudgeExtra, [tg, head, nm]).setDepth(51);
       toast.setScale(0.85).setAlpha(0);
       this.tweens.add({ targets: toast, scale: 1, alpha: 1, delay: 360, duration: 320, ease: THEME.EASE_POP });
     }

@@ -11,6 +11,7 @@ import {
   dailyStart,
   achievementUnlocked,
   worldComplete,
+  onboardingComplete,
 } from './analyticsEvents';
 
 describe('sanitizeParams', () => {
@@ -55,5 +56,8 @@ describe('event creators', () => {
   });
   it('worldComplete carries the world number', () => {
     expect(worldComplete(3)).toEqual({ name: 'world_complete', params: { world: 3 } });
+  });
+  it('onboardingComplete carries no params', () => {
+    expect(onboardingComplete()).toEqual({ name: 'onboarding_complete', params: {} });
   });
 });
