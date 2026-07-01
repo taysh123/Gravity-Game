@@ -450,6 +450,7 @@ export class GameScene extends Phaser.Scene {
       this.haptics(PHYSICS.HAPTIC_TAP_MS); // light "grab" on spawn
       this.attractor?.destroy();
       this.attractor = new Attractor(this, pointer.x, pointer.y);
+      this.cosmic.pulse(1); // press stirs the nebula — cause → effect
     });
 
     this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {

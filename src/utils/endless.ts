@@ -14,8 +14,9 @@ function fnv(str: string): number {
 }
 
 // mulberry32 — a tiny deterministic PRNG seeded from a 32-bit int. Returns a
-// function yielding floats in [0, 1).
-function mulberry32(seed: number): () => number {
+// function yielding floats in [0, 1). Exported so other pure modules (e.g.
+// utils/comets.ts) and their tests can reuse the same deterministic RNG.
+export function mulberry32(seed: number): () => number {
   let a = seed >>> 0;
   return () => {
     a = (a + 0x6d2b79f5) | 0;

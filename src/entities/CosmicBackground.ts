@@ -1,20 +1,48 @@
 import Phaser from 'phaser';
 import { PHYSICS } from '../config/physics.config';
 import { SPLASH } from '../config/splash.config';
+import { FX } from '../config/fx.config';
 import type { WorldTheme } from '../config/worldThemes';
+import { reducedMotionActive } from '../utils/a11y';
+import { clamp } from '../utils/MathUtils';
+import { mulberry32 } from '../utils/endless';
+import { dueForComet, cometProgress, pickCometPath, type CometPath } from '../utils/comets';
 
-// Shared cosmic backdrop: a deep-space fill, two parallax star layers, and a
-// few additive nebula glows. Reused by the intro splash, main menu, and level
-// select so the world feels continuous. Performance: 2 TileSprites + N glow
-// sprites — no per-frame primitive redraw, well within the perf budget.
+interface ActiveComet {
+  path: CometPath;
+  bornMs: number;
+}
+
+// Shared cosmic backdrop: a deep-space fill, two parallax star layers, a few
+// additive nebula glows, and a pooled comet layer. Reused by the intro splash,
+// main menu, level select, and gameplay so the world feels continuous and
+// alive. Performance: 2 TileSprites + N glow sprites + 1 pooled Graphics (the
+// comets — vector strokes, never particles/bodies) — no per-frame primitive
+// redraw beyond that one Graphics, well within the perf budget.
 export class CosmicBackground {
   private readonly scene: Phaser.Scene;
   private readonly farStars: Phaser.GameObjects.TileSprite;
   private readonly nearStars: Phaser.GameObjects.TileSprite;
   private readonly nebula: Phaser.GameObjects.Image[] = [];
+  private readonly nebulaBase: { x: number; y: number }[] = [];
   private readonly objects: Phaser.GameObjects.GameObject[] = [];
-  private elapsed = 0;
+  private elapsed = 0; // seconds — drives the existing star drift / nebula breathing
+  private elapsedMs = 0; // ms — comet scheduling/animation timebase (kept separate, never mixed)
   private readonly intensity: number;
+
+  // Pooled comet layer: one Graphics, additive blend, cleared + redrawn each
+  // frame, hard-capped at FX.COMET_MAX_ACTIVE. RNG is a fixed, non-Math.random
+  // deterministic source so cadence is reproducible; comets still vary because
+  // they are gated by elapsed time.
+  private readonly cometG: Phaser.GameObjects.Graphics;
+  private readonly cometTint: number;
+  private readonly cometRng: () => number;
+  private cometLastMs = 0;
+  private cometGapMs: number;
+  private activeComets: ActiveComet[] = [];
+
+  // Press-reactive nebula pulse (0..1, linear decay to rest over NEBULA_PULSE_MS).
+  private pulseT = 0;
 
   // intensity < 1 dims stars + nebula — used behind gameplay so the backdrop
   // never competes with the ball/goal/obstacles. An optional WorldTheme gives each
@@ -65,19 +93,104 @@ export class CosmicBackground {
         .setScale(2.6 + i * 0.6)
         .setDepth(-85);
       this.nebula.push(glow);
+      this.nebulaBase.push({ x: nx, y: ny });
       this.objects.push(glow);
     }
+
+    // Pooled comet layer — sits between the far and near star layers/nebula so a
+    // streak reads as part of the depth stack, not an overlay. Additive blend,
+    // one Graphics, cleared + redrawn every frame in update().
+    this.cometTint = theme?.starTint ?? FX.COMET_TINT;
+    this.cometRng = mulberry32(Math.floor(scene.game.loop.time) + 1);
+    this.cometGapMs = FX.COMET_MIN_GAP_MS + this.cometRng() * (FX.COMET_MAX_GAP_MS - FX.COMET_MIN_GAP_MS);
+    this.cometG = scene.add.graphics().setBlendMode(Phaser.BlendModes.ADD).setDepth(-88);
+    this.objects.push(this.cometG);
   }
 
-  // Drift the star layers and gently animate the nebula. Call from scene.update().
+  // Drift the star layers, gently animate the nebula (+ press-reactive pulse),
+  // and advance the comet pool. Call from scene.update().
   update(): void {
-    const dt = this.scene.game.loop.delta / 1000;
+    const deltaMs = this.scene.game.loop.delta;
+    const dt = deltaMs / 1000;
     this.elapsed += dt;
+    this.elapsedMs += deltaMs;
     this.farStars.tilePositionY -= SPLASH.STAR_DRIFT_SPEED * 0.4 * dt;
     this.nearStars.tilePositionY -= SPLASH.STAR_DRIFT_SPEED * dt;
+
+    // Press-reactive pulse: linear decay back to rest over NEBULA_PULSE_MS.
+    // pulse() already no-ops under reduced-motion, so this naturally stays 0.
+    if (this.pulseT > 0) {
+      this.pulseT = Math.max(0, this.pulseT - deltaMs / FX.NEBULA_PULSE_MS);
+    }
+
+    const { width, height } = this.scene.scale;
+    const cx = width / 2;
+    const cy = height / 2;
     this.nebula.forEach((n, i) => {
       n.rotation += 0.00015 * (i + 1);
-      n.setAlpha(SPLASH.NEBULA_ALPHA * this.intensity * (0.85 + 0.15 * Math.sin(this.elapsed * 0.5 + i)));
+      n.setAlpha(
+        SPLASH.NEBULA_ALPHA *
+          this.intensity *
+          (0.85 + 0.15 * Math.sin(this.elapsed * 0.5 + i)) *
+          (1 + this.pulseT * FX.NEBULA_PULSE_GAIN),
+      );
+      // Third, subtle parallax motion: a tiny press-reactive nudge away from
+      // each glow's base position — the nebula "swells" outward on a press.
+      const base = this.nebulaBase[i];
+      const bdx = base.x - cx;
+      const bdy = base.y - cy;
+      const blen = Math.hypot(bdx, bdy) || 1;
+      const nudge = this.pulseT * FX.NEBULA_PULSE_PARALLAX_PX;
+      n.setPosition(base.x + (bdx / blen) * nudge, base.y + (bdy / blen) * nudge);
+    });
+
+    this.updateComets();
+  }
+
+  // Press-reactive nebula swell — call on cause (e.g. attractor spawn). A new
+  // press supersedes (never stacks past 1) an in-progress decay. Reduced-motion
+  // keeps the existing calm drift and treats this as a no-op.
+  pulse(strength01: number): void {
+    if (reducedMotionActive()) return;
+    this.pulseT = Math.max(this.pulseT, clamp(strength01, 0, 1));
+  }
+
+  // Schedule + redraw the pooled comet layer. One Graphics, cleared and
+  // redrawn every frame — cheap vector strokes, never particles/bodies.
+  // Reduced-motion: spawn nothing and drain any already-active comets.
+  private updateComets(): void {
+    if (reducedMotionActive()) {
+      if (this.activeComets.length) this.activeComets.length = 0;
+      this.cometG.clear();
+      return;
+    }
+
+    const { width, height } = this.scene.scale;
+    if (
+      this.activeComets.length < FX.COMET_MAX_ACTIVE &&
+      dueForComet(this.cometLastMs, this.elapsedMs, this.cometGapMs)
+    ) {
+      const path = pickCometPath(this.cometRng, width, height, FX.COMET_MIN_LIFE_MS, FX.COMET_MAX_LIFE_MS);
+      this.activeComets.push({ path, bornMs: this.elapsedMs });
+      this.cometLastMs = this.elapsedMs;
+      this.cometGapMs = FX.COMET_MIN_GAP_MS + this.cometRng() * (FX.COMET_MAX_GAP_MS - FX.COMET_MIN_GAP_MS);
+    }
+
+    this.cometG.clear();
+    this.activeComets = this.activeComets.filter((c) => {
+      const p = cometProgress(c.bornMs, this.elapsedMs, c.path.lifeMs);
+      if (p >= 1) return false;
+      const hx = c.path.x0 + (c.path.x1 - c.path.x0) * p;
+      const hy = c.path.y0 + (c.path.y1 - c.path.y0) * p;
+      const a = Math.sin(p * Math.PI) * FX.COMET_ALPHA; // fade in then out
+      const dx = c.path.x1 - c.path.x0;
+      const dy = c.path.y1 - c.path.y0;
+      const len = Math.hypot(dx, dy) || 1;
+      this.cometG.lineStyle(2, this.cometTint, a);
+      this.cometG.lineBetween(hx, hy, hx - (dx / len) * FX.COMET_TAIL_LEN, hy - (dy / len) * FX.COMET_TAIL_LEN);
+      this.cometG.fillStyle(this.cometTint, a);
+      this.cometG.fillCircle(hx, hy, FX.COMET_HEAD_R);
+      return true;
     });
   }
 
@@ -93,6 +206,8 @@ export class CosmicBackground {
     this.objects.forEach((o) => o.destroy());
     this.objects.length = 0;
     this.nebula.length = 0;
+    this.nebulaBase.length = 0;
+    this.activeComets.length = 0;
   }
 }
 
