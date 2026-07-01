@@ -32,3 +32,6 @@ android/app/google-services.json
 android/app/release/
 *.keystore
 *.jks
+
+# Subagent-driven-development scratch (ledger)
+.superpowers/
