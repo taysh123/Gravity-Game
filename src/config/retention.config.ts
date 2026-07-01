@@ -108,5 +108,10 @@ export const RETENTION = {
   LOGIN_CHEST_EXIT_MS: 170, // claim flourish exit — ~65% of enter (timing-token rhythm)
   LOGIN_CHEST_HOLD_MS: 700, // how long the granted-amount text holds before exiting
   LOGIN_CHEST_FLOURISH_RISE_PX: 22, // px the granted-amount text floats up on exit
+  LOGIN_CHEST_GLOW_SCALE: 1.8,      // glow sprite size = chest size × this
+  LOGIN_CHEST_GLOW_ALPHA: 0.5,      // glow alpha while claimable (0 once claimed)
+  LOGIN_CHEST_BOUNCE_SCALE: 1.15,   // claim-success bounce peak scale
+  LOGIN_CHEST_FLOURISH_OFFSET_Y: 34, // px below the chest where the reward toast sits
+  LOGIN_CHEST_POP_START_SCALE: 0.85, // reward toast pop-in initial scale
   PROTECTED_SUFFIX: ' · protected', // appended to the DAILY caption while a freeze is held
 } as const;

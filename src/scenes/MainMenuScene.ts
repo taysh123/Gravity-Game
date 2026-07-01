@@ -271,8 +271,8 @@ export class MainMenuScene extends Phaser.Scene {
       .image(0, 0, 'glow')
       .setBlendMode(Phaser.BlendModes.ADD)
       .setTint(RETENTION.LOGIN_CHEST_GOLD)
-      .setDisplaySize(size * 1.8, size * 1.8)
-      .setAlpha(claimed ? 0 : 0.5);
+      .setDisplaySize(size * RETENTION.LOGIN_CHEST_GLOW_SCALE, size * RETENTION.LOGIN_CHEST_GLOW_SCALE)
+      .setAlpha(claimed ? 0 : RETENTION.LOGIN_CHEST_GLOW_ALPHA);
     const bg = this.add.graphics();
     const glyph = this.add
       .text(0, 0, '✦', {
@@ -309,7 +309,7 @@ export class MainMenuScene extends Phaser.Scene {
         glow.setAlpha(0);
       } else {
         this.tweens.add({ targets: glow, alpha: 0, duration: 300, ease: THEME.EASE });
-        this.tweens.add({ targets: chest, scale: 1.15, duration: 160, yoyo: true, ease: THEME.EASE_POP });
+        this.tweens.add({ targets: chest, scale: RETENTION.LOGIN_CHEST_BOUNCE_SCALE, duration: 160, yoyo: true, ease: THEME.EASE_POP });
       }
       this.showLoginRewardFlourish(x, y, reward, reduced);
     });
@@ -321,7 +321,7 @@ export class MainMenuScene extends Phaser.Scene {
   private showLoginRewardFlourish(x: number, y: number, reward: { sd: number; fr: number }, reduced: boolean): void {
     const label = reward.fr > 0 ? `+${reward.sd} ✦  +${reward.fr} ◆` : `+${reward.sd} ✦`;
     const text = this.add
-      .text(x, y + 34, label, {
+      .text(x, y + RETENTION.LOGIN_CHEST_FLOURISH_OFFSET_Y, label, {
         fontFamily: THEME.FONT_DISPLAY,
         fontSize: '13px',
         color: RETENTION.LOGIN_CHEST_GOLD_TEXT,
@@ -337,11 +337,11 @@ export class MainMenuScene extends Phaser.Scene {
       return;
     }
 
-    text.setAlpha(0).setScale(0.85);
+    text.setAlpha(0).setScale(RETENTION.LOGIN_CHEST_POP_START_SCALE);
     this.tweens.add({ targets: text, alpha: 1, scale: 1, duration: RETENTION.LOGIN_CHEST_CLAIM_POP_MS, ease: THEME.EASE_POP });
     this.tweens.add({
       targets: text,
-      y: y + 34 - RETENTION.LOGIN_CHEST_FLOURISH_RISE_PX,
+      y: y + RETENTION.LOGIN_CHEST_FLOURISH_OFFSET_Y - RETENTION.LOGIN_CHEST_FLOURISH_RISE_PX,
       alpha: 0,
       delay: RETENTION.LOGIN_CHEST_HOLD_MS,
       duration: RETENTION.LOGIN_CHEST_EXIT_MS,
