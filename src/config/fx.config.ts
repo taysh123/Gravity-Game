@@ -9,6 +9,7 @@ export const FX = {
   BLOOM_STEPS: 4,          // KEEP LOW — each step is a GPU pass; 4 is the mid-range budget
   VIGNETTE_RADIUS: 0.82,
   VIGNETTE_STRENGTH: 0.32, // gentle edge darkening focuses the eye on play
+  VIGNETTE_CENTER: 0.5,    // normalized screen center (x=y) for the vignette
   FPS_DOWNGRADE_THRESHOLD: 50, // sustained fps below this disables bloom
   FPS_DOWNGRADE_WINDOW: 180,   // ~3s at 60fps
 } as const;

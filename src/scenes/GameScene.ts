@@ -231,11 +231,12 @@ export class GameScene extends Phaser.Scene {
   // gameplay dependency — the scene renders identically without it.
   private applyScenePostFX(): void {
     this.fxSamples = [];
+    this.bloomFx = undefined; // fresh camera each create()/restart — drop any stale FX ref
     const cam = this.cameras.main;
     const capable = fxCapable(this.game.renderer.type) && !!cam.postFX;
     if (!capable) return;
     // Vignette is cheap — keep it even under reduced-motion for focus/depth.
-    cam.postFX.addVignette(0.5, 0.5, FX.VIGNETTE_RADIUS, FX.VIGNETTE_STRENGTH);
+    cam.postFX.addVignette(FX.VIGNETTE_CENTER, FX.VIGNETTE_CENTER, FX.VIGNETTE_RADIUS, FX.VIGNETTE_STRENGTH);
     if (reducedMotionActive()) return; // motion-sensitive users: no bloom bloom-in
     this.bloomFx = cam.postFX.addBloom(
       FX.BLOOM_COLOR, FX.BLOOM_OFFSET, FX.BLOOM_OFFSET,
@@ -248,6 +249,7 @@ export class GameScene extends Phaser.Scene {
   private watchdogFx(): void {
     if (!this.bloomFx) return;
     this.fxSamples.push(this.game.loop.actualFps);
+    if (this.fxSamples.length > FX.FPS_DOWNGRADE_WINDOW) this.fxSamples.shift(); // bound the buffer
     if (shouldDowngradeFx(this.fxSamples, FX.FPS_DOWNGRADE_THRESHOLD, FX.FPS_DOWNGRADE_WINDOW)) {
       this.cameras.main.postFX.remove(this.bloomFx);
       this.bloomFx = undefined;
