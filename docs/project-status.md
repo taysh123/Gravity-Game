@@ -64,6 +64,17 @@ candidate (milestone `v0.15.0`; `package.json 1.0.0-rc.1`; Android `versionName 
 
 ## Current State
 
+> **Wave 1 — "Make it Alive" premium feel pass (2026-07-01, branch `feat/wave1-make-it-alive`).** Layered on
+> top of the RC **without changing gameplay**: a WebGL bloom+vignette post-FX pipeline (FPS-watchdog +
+> Canvas/reduced-motion fallback), a living `CosmicBackground` (pooled vector comets, deeper parallax,
+> press-reactive nebula), an escalating attractor charge (energy tendrils + lensing ring on hold — **inverse-
+> square force formula untouched**), a light-source ball glow + magnetic near-goal shimmer, and a tiered
+> win-celebration ladder (1★→2★→3★→boss with coordinated shake/flash/haptics/bloom-swell). All new tuning is
+> in `src/config/fx.config.ts`; new pure logic (`utils/fx|comets|attractorCharge|celebration`) is TDD'd
+> (**+15 tests → 118**). `tsc`/build clean, zero console errors across WebGL/reduced-motion/Canvas, perf
+> ceiling held (no new physics bodies; ≤24 burst particles). Plan of record:
+> `docs/superpowers/plans/2026-07-01-wave1-make-it-alive.md`. *(On the feature branch pending merge approval.)*
+
 **Implemented & working (verified in browser via Playwright unless noted):**
 - Full startup presentation: text-only True Story Labs company splash → cosmic intro (energy sphere →
   vortex → GRAVITY FLOW logo reveal, with synth audio) → main menu.
