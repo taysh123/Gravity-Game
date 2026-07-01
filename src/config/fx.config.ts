@@ -42,6 +42,15 @@ export const FX = {
   BALL_GLOW_STRENGTH: 4,    // WebGL postFX glow outer strength on the ball body
   GOAL_SHIMMER_GAIN: 0.4,   // extra halo brightness as the ball closes in
   GOAL_SHIMMER_RINGS: 2,    // concentric "pull" rings that appear near the goal
+
+  // ── Celebration tiers (1★ normal · 2★ great · 3★ perfect · boss) ──
+  // Coordinated set-pieces: shake + optional screen bloom-flash + camera punch +
+  // a transient global-bloom boost. Particle burst stays the equipped Arrival
+  // cosmetic (capped <50). Haptic pattern chosen by tier.
+  CELEB_NORMAL:  { shakeMs: 120, shakeIntensity: 0.004, screenFlash: false, bloomBoost: 0.4, cameraPunch: 1.03 },
+  CELEB_GREAT:   { shakeMs: 150, shakeIntensity: 0.005, screenFlash: false, bloomBoost: 0.7, cameraPunch: 1.04 },
+  CELEB_PERFECT: { shakeMs: 190, shakeIntensity: 0.007, screenFlash: true,  bloomBoost: 1.1, cameraPunch: 1.05 },
+  CELEB_BOSS:    { shakeMs: 220, shakeIntensity: 0.009, screenFlash: true,  bloomBoost: 1.4, cameraPunch: 1.07 },
 } as const;
 
 export type FxConst = typeof FX;

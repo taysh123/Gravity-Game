@@ -31,6 +31,7 @@ import { FX } from '../config/fx.config';
 import { fxCapable, shouldDowngradeFx } from '../utils/fx';
 import { chargeLevel } from '../utils/attractorCharge';
 import { computeStars, type StarResult } from '../utils/scoring';
+import { celebrationTier, celebrationSpec } from '../utils/celebration';
 import { ProgressStore } from '../utils/ProgressStore';
 import { GhostStore } from '../utils/GhostStore';
 import { downsamplePath } from '../utils/ghost';
@@ -983,13 +984,10 @@ export class GameScene extends Phaser.Scene {
     const audio = this.getAudio();
     audio.stopHum();
     audio.playGoalCapture();
-    // Haptics scale with the achievement: boss > perfect (3★) > normal.
-    const winPattern = this.isBoss
-      ? PHYSICS.HAPTIC_BOSS_PATTERN
-      : this.winResult.stars >= 3
-        ? PHYSICS.HAPTIC_PERFECT_PATTERN
-        : PHYSICS.HAPTIC_WIN_PATTERN;
-    this.haptics([...winPattern]);
+    // Tiered celebration ladder: 1★ normal → 2★ great → 3★ perfect → boss — one
+    // spec drives haptics, shake, optional screen flash, camera punch, and bloom.
+    const spec = celebrationSpec(celebrationTier(this.winResult.stars, this.isBoss));
+    this.haptics([...PHYSICS[spec.hapticKey]]);
     this.attractor?.destroy();
     this.attractor = null;
     this.matter.world.pause();
@@ -997,18 +995,20 @@ export class GameScene extends Phaser.Scene {
     const arrival = CosmeticStore.equipped('arrival').arrival;
     this.emitGoalBurst(arrival);
     this.winFlash(arrival?.flash);
-    // Screen-wide bloom on the biggest wins (3★ or boss) — a celebratory moment
-    // beyond the goal-localized flash. Tinted to the world accent.
-    if (this.isBoss || this.winResult.stars >= 3) {
-      this.celebrationFlash(this.worldTheme?.accent ?? PHYSICS.COLOR_STAR);
+    // Screen-wide bloom on the biggest wins (perfect / boss) — a celebratory
+    // moment beyond the goal-localized flash. Tinted to the world accent.
+    if (spec.screenFlash) this.celebrationFlash(this.worldTheme?.accent ?? PHYSICS.COLOR_STAR);
+    // Transient global-bloom swell during the moment, then ease back to base
+    // (WebGL only — this.bloomFx is unset under Canvas/reduced-motion/low-FPS,
+    // so this auto-guards with no extra reduced-motion check needed).
+    if (this.bloomFx) {
+      const base = FX.BLOOM_STRENGTH;
+      this.bloomFx.strength = base + spec.bloomBoost;
+      this.tweens.add({ targets: this.bloomFx, strength: base, duration: 700, ease: 'Quad.easeOut' });
     }
-    // Camera punch — a small zoom kick for impact (bigger for a boss).
-    const punch = this.isBoss ? 1.06 : 1.035;
-    this.tweens.add({ targets: this.cameras.main, zoom: punch, duration: 130, yoyo: true, ease: 'Quad.easeOut' });
-    this.cameras.main.shake(
-      this.isBoss ? PHYSICS.SHAKE_WIN_MS * 1.8 : PHYSICS.SHAKE_WIN_MS,
-      this.isBoss ? PHYSICS.SHAKE_WIN_INTENSITY * 1.8 : PHYSICS.SHAKE_WIN_INTENSITY,
-    );
+    // Camera punch — a small zoom kick for impact, scaled by tier.
+    this.tweens.add({ targets: this.cameras.main, zoom: spec.cameraPunch, duration: 130, yoyo: true, ease: 'Quad.easeOut' });
+    this.cameras.main.shake(spec.shakeMs, spec.shakeIntensity);
 
     this.tweens.add({
       targets: this.ball.graphics,
