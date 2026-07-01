@@ -40,6 +40,8 @@ export const FX = {
 
   // ── Ball & goal polish ──
   BALL_GLOW_STRENGTH: 4,    // WebGL postFX glow outer strength on the ball body
+  BALL_GLOW_QUALITY: 0.1,   // postFX glow sample quality (lower = cheaper)
+  BALL_GLOW_DISTANCE: 12,   // postFX glow spread (px)
   GOAL_SHIMMER_GAIN: 0.4,   // extra halo brightness as the ball closes in
   GOAL_SHIMMER_RINGS: 2,    // concentric "pull" rings that appear near the goal
 

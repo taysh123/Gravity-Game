@@ -66,7 +66,7 @@ export class Ball {
     // — one cheap postFX pass on one small object, within the perf ceiling. Canvas
     // or no postFX: silently skipped, no crash, no empty frame.
     if (scene.game.renderer.type === Phaser.WEBGL && this.graphics.postFX) {
-      this.graphics.postFX.addGlow(this.glow, FX.BALL_GLOW_STRENGTH, 0, false, 0.1, 12);
+      this.graphics.postFX.addGlow(this.glow, FX.BALL_GLOW_STRENGTH, 0, false, FX.BALL_GLOW_QUALITY, FX.BALL_GLOW_DISTANCE);
     }
     this.draw();
   }

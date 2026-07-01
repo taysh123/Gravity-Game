@@ -169,6 +169,10 @@ export class CosmicBackground {
     }
 
     const { width, height } = this.scene.scale;
+    // Cadence relies on the invariant COMET_MIN_GAP_MS (4200) > COMET_MAX_LIFE_MS
+    // (1600): a comet always finishes before the next is due, so we never actually
+    // sit at the COMET_MAX_ACTIVE cap. If that invariant is ever broken, advance
+    // cometLastMs even when at cap so a freed slot can't spawn with no fresh gap.
     if (
       this.activeComets.length < FX.COMET_MAX_ACTIVE &&
       dueForComet(this.cometLastMs, this.elapsedMs, this.cometGapMs)
