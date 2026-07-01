@@ -20,11 +20,23 @@ describe('cometProgress', () => {
 });
 
 describe('pickCometPath', () => {
-  it('is deterministic for a given seed and stays on-screen at the start', () => {
+  it('is deterministic for a given seed', () => {
     const a = pickCometPath(mulberry32(7), 390, 844, 900, 1600);
     const b = pickCometPath(mulberry32(7), 390, 844, 900, 1600);
     expect(a).toEqual(b);
-    expect(a.lifeMs).toBeGreaterThanOrEqual(900);
-    expect(a.lifeMs).toBeLessThanOrEqual(1600);
+  });
+
+  it('enters off-screen, starts in the upper half, drifts downward, and respects the life bounds', () => {
+    const W = 390, H = 844;
+    for (const seed of [1, 7, 42, 1000]) {
+      const c = pickCometPath(mulberry32(seed), W, H, 900, 1600);
+      // crosses the full width from one off-screen edge to the other
+      expect((c.x0 === -40 && c.x1 === W + 40) || (c.x0 === W + 40 && c.x1 === -40)).toBe(true);
+      expect(c.y0).toBeGreaterThanOrEqual(0);
+      expect(c.y0).toBeLessThanOrEqual(H * 0.5); // starts in the upper half
+      expect(c.y1).toBeGreaterThan(c.y0);        // always drifts downward
+      expect(c.lifeMs).toBeGreaterThanOrEqual(900);
+      expect(c.lifeMs).toBeLessThanOrEqual(1600);
+    }
   });
 });

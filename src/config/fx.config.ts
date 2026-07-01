@@ -26,7 +26,7 @@ export const FX = {
   COMET_ALPHA: 0.5,
   COMET_TINT: PHYSICS.COLOR_BALL,   // pale star-white; per-world tint applied in entity
   NEBULA_PULSE_GAIN: 0.5,   // extra nebula alpha multiplier at a full press-pulse
-  NEBULA_PULSE_MS: 520,     // decay time of one pulse (ease-out)
+  NEBULA_PULSE_MS: 520,     // ambient nebula-swell decay (eased in-entity); intentionally past the 400ms UI-transition cap — this is atmospheric, not a UI state transition
   NEBULA_PULSE_PARALLAX_PX: 6, // tiny press-reactive nebula position nudge (3rd parallax layer)
 } as const;
 

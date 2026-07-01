@@ -41,7 +41,8 @@ export class CosmicBackground {
   private cometGapMs: number;
   private activeComets: ActiveComet[] = [];
 
-  // Press-reactive nebula pulse (0..1, linear decay to rest over NEBULA_PULSE_MS).
+  // Press-reactive nebula pulse: raw 0..1 value with a linear decay to rest over
+  // NEBULA_PULSE_MS; the visual contribution is eased (ease-out) in update().
   private pulseT = 0;
 
   // intensity < 1 dims stars + nebula — used behind gameplay so the backdrop
@@ -117,11 +118,13 @@ export class CosmicBackground {
     this.farStars.tilePositionY -= SPLASH.STAR_DRIFT_SPEED * 0.4 * dt;
     this.nearStars.tilePositionY -= SPLASH.STAR_DRIFT_SPEED * dt;
 
-    // Press-reactive pulse: linear decay back to rest over NEBULA_PULSE_MS.
-    // pulse() already no-ops under reduced-motion, so this naturally stays 0.
+    // Press-reactive pulse: raw pulseT decays linearly to rest over NEBULA_PULSE_MS;
+    // its visual contribution below is shaped with a quadratic ease-out so the swell
+    // decelerates as it settles. pulse() no-ops under reduced-motion, so this stays 0.
     if (this.pulseT > 0) {
       this.pulseT = Math.max(0, this.pulseT - deltaMs / FX.NEBULA_PULSE_MS);
     }
+    const pulseEase = this.pulseT * (2 - this.pulseT); // quadratic ease-out on the decay
 
     const { width, height } = this.scene.scale;
     const cx = width / 2;
@@ -132,7 +135,7 @@ export class CosmicBackground {
         SPLASH.NEBULA_ALPHA *
           this.intensity *
           (0.85 + 0.15 * Math.sin(this.elapsed * 0.5 + i)) *
-          (1 + this.pulseT * FX.NEBULA_PULSE_GAIN),
+          (1 + pulseEase * FX.NEBULA_PULSE_GAIN),
       );
       // Third, subtle parallax motion: a tiny press-reactive nudge away from
       // each glow's base position — the nebula "swells" outward on a press.
@@ -140,7 +143,7 @@ export class CosmicBackground {
       const bdx = base.x - cx;
       const bdy = base.y - cy;
       const blen = Math.hypot(bdx, bdy) || 1;
-      const nudge = this.pulseT * FX.NEBULA_PULSE_PARALLAX_PX;
+      const nudge = pulseEase * FX.NEBULA_PULSE_PARALLAX_PX;
       n.setPosition(base.x + (bdx / blen) * nudge, base.y + (bdy / blen) * nudge);
     });
 
