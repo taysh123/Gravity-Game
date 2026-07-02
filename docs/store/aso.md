@@ -11,38 +11,45 @@ Weave naturally into the title / short / full description — **no keyword stuff
   relaxing puzzle game.
 - **Secondary / long-tail:** hold to pull, brain teaser, minimalist puzzle, orbit /
   slingshot, logic puzzle, offline puzzle game, star, cosmic, no wifi game, endless
-  runner, score chase, weekly challenge, leaderboard, star map.
+  runner, score chase, weekly challenge, leaderboard, star map, daily reward, win streak,
+  cosmetic skins (no pay-to-win).
 - **Brand:** GRAVITY FLOW, True Story Labs.
 - **Title slot** carries the strongest term: `GRAVITY FLOW — Physics Puzzle`.
 - **Short description** leads with the verb + fantasy: “Hold to pull a lost star
   home.” (the hook + the core mechanic in one line).
 
-## 2. Screenshot plan (6–8, portrait)
+## 2. Screenshot plan (8, portrait)
 Capture from the web build (`npm run dev`, **1080×2160** device frame — exactly 2:1, within
 Play's "max side ≤ 2× min side" cap; 1080×2340 is over and gets rejected). Each pairs ONE
 moment with ONE short benefit caption (top third, safe-area-aware, high contrast on
-the dark sky). Order = a mini funnel: hook → variety → mastery → depth.
-1. **The Comet** (L2) — the star streaks across on its trail. *“Hold to pull. Guide
-   the star home.”* (teaches the verb in one image)
-2. **Constellation** (L3) — orbs connected into a constellation on win. *“Collect the
-   stars — draw the constellation.”* (screenshot-worthy delight)
-3. **THE GEARWORKS** (L20) — the spinning gear-arm mid-sweep. *“Time the machine.”*
-   (shows the new alive danger)
-4. **THE LOCKWORKS** (L48) — the pulsing laser corridor. *“Thread the gateworks.”*
+the dark sky). Order = a mini funnel: hook → mechanic → tension → spectacle → new-juice →
+retention → store → replay.
+
+**Refreshed 8-shot Play set** (2026-07-02, Wave 4 Task 2 — source + full inventory in
+`docs/media/README.md §B`; files live in `docs/store/assets/screenshots/`):
+1. `01-star-map.png` — The Cosmos world map. *“Journey 150 levels across 15 worlds.”*
+   (scope, hook)
+2. `02-gameplay-pull.png` — hold-to-pull with portals + currents (Rifts). *“Hold to
+   pull. Guide the star home.”* (teaches the verb in one image)
+3. `03-boss-finale.png` — boss “THE BREACH”. *“15 worlds. 15 bosses, all different.”*
    (tension + spectacle)
-5. **A boss STAR FREED** beat (e.g. THE MAELSTROM/HOMECOMING) — red arena + banner.
-   *“15 worlds. 15 bosses, all different.”* (scope)
-6. **GRAVITY RUN** — the endless climb mid-run, score ticking. *“Endless mode + a weekly
-   challenge leaderboard.”* (replayability / score-chase hook)
-7. **THE STAR MAP** — the constellation of worlds with star badges. *“Journey 150 levels
-   across 15 worlds.”* *(re-capture for v0.15.0 — shows the new map)*
-8. *(optional)* **Cosmetics / Mastery HUD** — a star skin + the par chip + ghost trail.
-   *“Chase 3 stars. Earn cosmetic skins, trails & effects.”*
+4. `04-three-star-win.png` — 3-star LEVEL COMPLETE + `×5 BLAZE` streak + a milestone
+   toast. *“Master every level. Perfect every run.”* (the new celebratory juice, legible
+   in a still)
+5. `05-daily-rewards.png` — main menu, gold DAILY REWARD chest + a streak-protected
+   badge. *“Daily rewards. Never lose your streak.”* (retention hook)
+6. `06-cosmetics-bundle.png` — store, Bundles tab, the one honest BEST VALUE tag.
+   *“Cosmetic bundles — no pay-to-win, ever.”* (honest-store framing)
+7. `07-hazards-peril.png` — hazard saw + timer (Peril). *“Dodge the hazards. Beat the
+   clock.”* (variety + tension)
+8. `08-gravity-run.png` — the Gravity Run hub. *“Endless mode + a weekly challenge.”*
+   (replayability / score-chase hook)
 
 Caption spec: Orbitron display for the headline word, Exo 2 for the rest; ≥40px type
 at export size; keep text clear of the top notch + bottom gesture bar (~10% insets);
-one accent-glow color per shot matched to that world’s palette; never cover the focal
-moment.
+one accent-glow color per shot matched to that world’s or system's palette; never cover
+the focal moment. Every caption above is a literal description of what's on screen — no
+claim a still can't back up.
 
 ## 3. App icon variants checklist
 > **Generated concepts:** `docs/store/assets/icon-concepts/{orbit,vortex,minimal}.png` (512²).

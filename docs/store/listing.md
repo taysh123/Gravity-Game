@@ -14,9 +14,12 @@ into Play Console (tune lengths to Play limits: title ≤30, short ≤80, full �
 ```
 Bring the lost star home.
 
-GRAVITY FLOW is a one-touch physics puzzle set in deep space. You never move the
-star directly — press and hold to create a point of gravity, and the star is pulled
-toward it. Drag to steer, release to let go. Hold to pull, guide the star home.
+GRAVITY FLOW is a one-touch physics puzzle set in a living deep-space cosmos. You never
+move the star directly — press and hold to create a point of gravity, and the star is
+pulled toward it. Drag to steer, release to let go. Every hold feels like real gravity:
+a glowing lensing ring and energy tendrils build around your fingertip as you charge the
+pull, against a reactive nebula backdrop with drifting comets and a distinct palette for
+every world.
 
 Journey across a living star map of 15 worlds and 150 hand-tuned levels. Every world
 teaches a new way to think — currents that sweep you off course, clockwork that opens
@@ -30,15 +33,21 @@ Chase your best in Endless mode (a fresh run every time), or take on the Weekly
 Challenge, where everyone races the same seeded course for the leaderboard.
 
 • Pure one-thumb control — easy to learn, deep to master
-• 150 hand-tuned levels across 15 distinct worlds, on a cosmic star map
+• 150 hand-tuned levels across 15 distinct worlds, on a living cosmic star map
 • GRAVITY RUN: an endless score-chase + a weekly challenge leaderboard
 • A new mechanic and a memorable boss in every world
 • 3-star mastery: finish, grab the gem, beat par — chase your best with a ghost trail
-• Daily challenge + streaks, achievements, and unlockable cosmetic star skins, trails & arrival effects
+• Build momentum — chain clean wins into FLOW, BLAZE, and NOVA streak tiers, and
+  every win, from a 1-star clear to a full 3-star finish, gets its own celebration
+• A Daily Challenge with its own streak — protected by an earned, never-purchasable
+  streak-protection token if you miss a day — plus a separate daily login reward
+• Achievements and unlockable cosmetic star skins, trails & arrival effects
 • Premium cosmic visuals and audio; relaxing or thrilling, your pace
 
-No pay-to-win. Optional ads are rewarded and never required to progress. Remove ads
-any time. Play offline.
+GRAVITY FLOW's store is cosmetic-only: skins, trails, and arrival effects, plus one
+straightforward Best Value bundle and an optional Remove-Ads. No pay-to-win, ever —
+rewarded ads are always optional and never required to progress. Remove ads any time.
+Play offline.
 
 Hold to pull. Find the flow. Bring the star home.
 ```
@@ -70,8 +79,9 @@ checklist (contact email, studio/legal name, jurisdiction) before publishing.
 - **App icon 512×512** (32-bit PNG) → `docs/store/assets/icon-512.png` *(ready; alternatives in `icon-concepts/`)*
 - **Feature graphic 1024×500** → `docs/store/assets/feature-1024x500.png` *(ready; alternatives in `feature-concepts/`)*
 - **Phone screenshots ×8** (portrait 1080×2160, Play-compliant) → `docs/store/assets/screenshots/`
-  *(✅ refreshed 2026-06-14 for the Star Map + 150-level build: Star Map, gameplay, boss, Gravity Run,
-  hazards, cosmetics, achievements, 3-star win. Full package + captions in `docs/media/README.md`.)*
+  *(✅ refreshed 2026-07-02 for the Waves 1-3 feel/retention/store polish: star map, gameplay pull,
+  boss finale, 3-star win + streak, daily rewards, cosmetic bundle, hazards, Gravity Run. Full
+  package + captions in `docs/media/README.md`.)*
 - (Optional) 30s promo video — not produced
 - Adaptive in-build launcher icon (branded vortex, replaces the Capacitor robot) — **done** (`@capacitor/assets`, all densities)
 - Catalog of finals vs. alternatives: `docs/store/assets/README.md`
