@@ -43,17 +43,21 @@ export class CosmeticsScene extends Phaser.Scene {
   private cosmic!: CosmicBackground;
   private tab: Tab = 'skin';
   private dragging = false;
+  private enteredViaTab = false; // true when restarted for a tab switch — suppresses a redundant shop_open
 
   constructor() {
     super({ key: 'CosmeticsScene' });
   }
 
-  init(data: { tab?: Tab }): void {
+  init(data: { tab?: Tab; viaTab?: boolean }): void {
     this.tab = data?.tab ?? 'skin';
+    this.enteredViaTab = data?.viaTab ?? false;
   }
 
   create(): void {
-    Analytics.track(shopOpen(this.tab));
+    // shop_open marks a genuine store ENTRY only — a tab switch fires storeTab, not
+    // a fresh shop_open (else every tab tap would inflate the store-session count).
+    if (!this.enteredViaTab) Analytics.track(shopOpen(this.tab));
     const { width, height } = this.scale;
     const cx = width / 2;
     const sx = this.scale.displaySize.width / this.scale.gameSize.width;
@@ -99,7 +103,7 @@ export class CosmeticsScene extends Phaser.Scene {
       txt.on('pointerup', () => {
         if (this.dragging || t.key === this.tab) return;
         Analytics.track(storeTab(t.key)); // tab-switch intent (Bundles = strongest IAP signal)
-        this.scene.restart({ tab: t.key });
+        this.scene.restart({ tab: t.key, viaTab: true });
       });
     });
 

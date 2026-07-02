@@ -150,6 +150,10 @@ export const IAP = {
       const result = await rc.purchasePackage({ aPackage: pkg });
       CosmeticStore.grant(bundle.grants); // entitlement also gates re-grant on restore
       if (bundle.premium) setCachedPremium(hasEntitlement(result) || true);
+      // Bundle completion = the purchase resolved (RevenueCat throws on cancel/failure).
+      // Unlike buyRemoveAds we deliberately do NOT gate on hasEntitlement: bundles grant
+      // cosmetics, and a non-premium bundle never activates the `premium` entitlement —
+      // gating on it would wrongly mark a successful cosmetic-bundle purchase as failed.
       trackPurchaseCompleted(product);
       return true;
     } catch {
