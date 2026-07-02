@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
 import { THEME } from '../config/theme.config';
 import { SPLASH } from '../config/splash.config';
-import { RARITY } from '../config/cosmetics.config';
-import { BUNDLES, type BundleDef } from '../config/monetization.config';
+import { RARITY, type Rarity } from '../config/cosmetics.config';
+import { BUNDLES, STORE, REMOVE_ADS_PRICE_LABEL, type BundleDef } from '../config/monetization.config';
 import { CosmicBackground } from '../entities/CosmicBackground';
 import { Button } from '../ui/Button';
 import { drawGlass } from '../ui/glass';
@@ -44,14 +44,16 @@ export class CosmeticsScene extends Phaser.Scene {
   private tab: Tab = 'skin';
   private dragging = false;
   private enteredViaTab = false; // true when restarted for a tab switch — suppresses a redundant shop_open
+  private highlightBundle?: string; // bundle id to pulse — set by a locked bundle-cosmetic cross-sell tap
 
   constructor() {
     super({ key: 'CosmeticsScene' });
   }
 
-  init(data: { tab?: Tab; viaTab?: boolean }): void {
+  init(data: { tab?: Tab; viaTab?: boolean; highlightBundle?: string }): void {
     this.tab = data?.tab ?? 'skin';
     this.enteredViaTab = data?.viaTab ?? false;
+    this.highlightBundle = data?.highlightBundle;
   }
 
   create(): void {
@@ -116,7 +118,7 @@ export class CosmeticsScene extends Phaser.Scene {
 
     const listC = this.add.container(cx, contentTop);
     const cards = this.tab === 'bundle'
-      ? [this.freeFragmentsCard(rowW, 0), this.removeAdsCard(rowW, 1), ...BUNDLES.map((b, i) => this.bundleCard(b, rowW, i + 2))]
+      ? [this.freeFragmentsCard(rowW, 0), this.removeAdsCard(rowW, 1), ...BUNDLES.map((b, i) => this.bundleCard(b, rowW, i + 2, b.id === this.highlightBundle))]
       : cosmeticsByCategory(this.tab as Category).map((c, i) => this.itemCard(c, rowW, i));
     let yy = CARD_H / 2;
     cards.forEach((card) => { card.y = yy; listC.add(card); yy += card.height + CARD_GAP; });
@@ -202,6 +204,12 @@ export class CosmeticsScene extends Phaser.Scene {
       card.setInteractive(new Phaser.Geom.Rectangle(-w / 2, -CARD_H / 2, w, CARD_H), Phaser.Geom.Rectangle.Contains);
       card.on('pointerup', () => {
         if (this.dragging) return;
+        // Bundle-only cosmetics can't be bought/equipped directly — route to the
+        // bundle that grants them instead of the generic cantAfford/locked shake.
+        if (!owned && c.acquire === 'bundle' && c.bundleId) {
+          this.scene.restart({ tab: 'bundle', viaTab: true, highlightBundle: c.bundleId });
+          return;
+        }
         const result = CosmeticStore.buyOrEquip(c.id);
         if (result === 'cantAfford' || result === 'locked') { this.cameras.main.shake(110, 0.004); return; }
         Analytics.track(cosmeticEquip(c.id));
@@ -266,7 +274,7 @@ export class CosmeticsScene extends Phaser.Scene {
     const blurb = this.add.text(-w / 2 + 18, 6, premium ? 'Ads removed — thank you!' : 'No interstitials, ever. Rewarded ads stay optional.', {
       fontFamily: THEME.FONT_BODY, fontSize: '12px', color: THEME.TEXT_MUTED, wordWrap: { width: w - 120 },
     }).setOrigin(0, 0.5);
-    const price = this.add.text(w / 2 - 18, -h / 2 + 18, premium ? 'OWNED' : '$1.99', {
+    const price = this.add.text(w / 2 - 18, -h / 2 + 18, premium ? 'OWNED' : REMOVE_ADS_PRICE_LABEL, {
       fontFamily: THEME.FONT_DISPLAY, fontSize: '15px', color: premium ? THEME.TEXT_MUTED : '#7affb0', fontStyle: '700',
     }).setOrigin(1, 0.5);
     const card = this.add.container(0, 0, [bg, name, blurb, price]);
@@ -284,27 +292,65 @@ export class CosmeticsScene extends Phaser.Scene {
     return card;
   }
 
+  // A truthful, one-line value summary of a bundle's real contents (e.g.
+  // "2 Legendary items + Remove Ads") — derived from the actual catalog, never
+  // invented numbers. Wave 3 Task 4 bundle-framing requirement.
+  private bundleValueLine(b: BundleDef): string {
+    const counts = new Map<Rarity, number>();
+    for (const id of b.grants) {
+      const c = cosmeticById(id);
+      if (c) counts.set(c.rarity, (counts.get(c.rarity) ?? 0) + 1);
+    }
+    const parts = [...counts.entries()].map(
+      ([rarity, n]) => `${n} ${RARITY[rarity].label} item${n > 1 ? 's' : ''}`,
+    );
+    const itemsStr = parts.join(' + ') || `${b.grants.length} item${b.grants.length === 1 ? '' : 's'}`;
+    return b.premium ? `${itemsStr} + Remove Ads` : itemsStr;
+  }
+
   // A premium bundle card (price button -> IAP.buyBundle; web stub grants).
-  private bundleCard(b: BundleDef, w: number, i: number): Phaser.GameObjects.Container {
-    const h = CARD_H + 22;
+  // `highlighted` = arrived here via a locked bundle-cosmetic cross-sell tap —
+  // pulses to draw the eye to the ONE bundle that grants the tapped item.
+  private bundleCard(b: BundleDef, w: number, i: number, highlighted: boolean): Phaser.GameObjects.Container {
+    const h = CARD_H + 40; // + the new value-framing line
     const owned = b.grants.every((id) => CosmeticStore.isOwned(id));
     const bg = this.add.graphics();
     drawGlass(bg, w, h, THEME.RADIUS_SM);
-    bg.lineStyle(2, THEME.ACCENT_GOLD, owned ? 0.4 : 0.7);
+    bg.lineStyle(
+      highlighted ? 3 : 2,
+      highlighted ? THEME.ACCENT_CYAN : THEME.ACCENT_GOLD,
+      owned ? 0.4 : highlighted ? 1 : 0.7,
+    );
     bg.strokeRoundedRect(-w / 2, -h / 2, w, h, THEME.RADIUS_SM);
 
     const name = this.add.text(-w / 2 + 18, -h / 2 + 16, b.name, {
       fontFamily: THEME.FONT_DISPLAY, fontSize: '16px', color: STARDUST, fontStyle: '700',
     }).setOrigin(0, 0.5);
-    const blurb = this.add.text(-w / 2 + 18, 6, b.blurb, {
+    const children: Phaser.GameObjects.GameObject[] = [bg, name];
+
+    // The ONE truthful "BEST VALUE" tag (config-flagged) — no fake savings math.
+    if (b.bestValue) {
+      const tag = this.add.text(name.x + name.width + 10, name.y, STORE.BEST_VALUE_LABEL, {
+        fontFamily: THEME.FONT_BODY, fontSize: '10px', color: '#0d0d1a',
+        backgroundColor: STORE.BEST_VALUE_COLOR, fontStyle: '700', padding: { x: 5, y: 2 },
+      }).setOrigin(0, 0.5);
+      children.push(tag);
+    }
+
+    const blurb = this.add.text(-w / 2 + 18, -8, b.blurb, {
       fontFamily: THEME.FONT_BODY, fontSize: '12px', color: THEME.TEXT_MUTED,
+      wordWrap: { width: w - 120 },
+    }).setOrigin(0, 0.5);
+    const valueLine = this.add.text(-w / 2 + 18, 15, this.bundleValueLine(b), {
+      fontFamily: THEME.FONT_BODY, fontSize: '11px', color: THEME.TEXT_MUTED,
       wordWrap: { width: w - 120 },
     }).setOrigin(0, 0.5);
     const priceTxt = this.add.text(w / 2 - 18, -h / 2 + 18, owned ? 'OWNED' : b.priceLabel, {
       fontFamily: THEME.FONT_DISPLAY, fontSize: '15px', color: owned ? THEME.TEXT_MUTED : '#7affb0', fontStyle: '700',
     }).setOrigin(1, 0.5);
+    children.push(blurb, valueLine, priceTxt);
 
-    const card = this.add.container(0, 0, [bg, name, blurb, priceTxt]);
+    const card = this.add.container(0, 0, children);
     card.setSize(w, h);
     if (!owned) {
       card.setInteractive(new Phaser.Geom.Rectangle(-w / 2, -h / 2, w, h), Phaser.Geom.Rectangle.Contains);
@@ -315,7 +361,14 @@ export class CosmeticsScene extends Phaser.Scene {
         else this.cameras.main.shake(110, 0.004);
       });
     }
-    this.entrance(card, i);
+    if (highlighted) {
+      card.setAlpha(1).setScale(1);
+      if (!reducedMotionActive()) {
+        this.tweens.add({ targets: card, scale: 1.035, duration: 420, yoyo: true, repeat: -1, ease: THEME.EASE_SOFT });
+      }
+    } else {
+      this.entrance(card, i);
+    }
     return card;
   }
 

@@ -25,6 +25,8 @@ import {
   purchaseCompleted,
   purchaseFailed,
   firstPurchase,
+  storeNudgeShown,
+  storeNudgeTapped,
 } from './analyticsEvents';
 
 describe('sanitizeParams', () => {
@@ -116,5 +118,11 @@ describe('event creators', () => {
   });
   it('rewardedOffered sanitizes the surface source', () => {
     expect(rewardedOffered('free_fragments')).toEqual({ name: 'rewarded_offered', params: { source: 'free_fragments' } });
+  });
+  it('storeNudgeShown carries no params', () => {
+    expect(storeNudgeShown()).toEqual({ name: 'store_nudge_shown', params: {} });
+  });
+  it('storeNudgeTapped carries no params', () => {
+    expect(storeNudgeTapped()).toEqual({ name: 'store_nudge_tapped', params: {} });
   });
 });

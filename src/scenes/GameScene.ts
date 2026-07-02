@@ -38,8 +38,10 @@ import { downsamplePath } from '../utils/ghost';
 import { Analytics } from '../utils/Analytics';
 import { Crash } from '../utils/Crash';
 import { CosmeticStore } from '../utils/CosmeticStore';
-import type { ArrivalStyle } from '../utils/cosmetics';
-import { levelStart, levelComplete, levelFail, retry as retryEvent, worldStart, dailyComplete, dailyStart, worldComplete, achievementUnlocked, hintUsed, rewardDoubleStardust, onboardingComplete, winStreak, streakBroken, rewardedOffered } from '../utils/analyticsEvents';
+import { COSMETICS, type ArrivalStyle } from '../utils/cosmetics';
+import { purchaseCost } from '../utils/cosmeticsLogic';
+import { canAffordAnyUnowned, nudgeDue } from '../utils/storeNudge';
+import { levelStart, levelComplete, levelFail, retry as retryEvent, worldStart, dailyComplete, dailyStart, worldComplete, achievementUnlocked, hintUsed, rewardDoubleStardust, onboardingComplete, winStreak, streakBroken, rewardedOffered, storeNudgeShown, storeNudgeTapped } from '../utils/analyticsEvents';
 import { DailyStore } from '../utils/DailyStore';
 import { StatsStore } from '../utils/StatsStore';
 import { AchievementStore } from '../utils/AchievementStore';
@@ -56,6 +58,7 @@ import { Leaderboard } from '../utils/Leaderboard';
 import { Ads } from '../utils/Ads';
 import { nextUnlockHint } from '../utils/onboarding';
 import { RETENTION } from '../config/retention.config';
+import { STORE } from '../config/monetization.config';
 import { StreakStore } from '../utils/StreakStore';
 import { streakTier } from '../utils/streak';
 import { nearMiss } from '../utils/nearMiss';
@@ -64,6 +67,29 @@ const SAFE_PAD = 12; // minimum padding from any screen edge for HUD/nav
 
 function fmtTime(ms: number): string {
   return `${(ms / 1000).toFixed(1)}s`;
+}
+
+// Persisted store-nudge cooldown counter (Wave 3 Task 4) — counts ELIGIBLE
+// campaign wins (non-daily, non-first-win) since the spend nudge last showed,
+// so a cold start doesn't re-arm it (mirrors Ads.ts's persisted interstitial
+// cooldown). storeNudge.ts owns the pure boundary check (nudgeDue); this is
+// just the impure localStorage glue, colocated at the one call site.
+const STORE_NUDGE_KEY = 'gravity-flow:storeNudge:v1';
+function loadWinsSinceStoreNudge(): number {
+  try {
+    const raw = localStorage.getItem(STORE_NUDGE_KEY);
+    const n = raw ? Number(JSON.parse(raw)) : 0;
+    return Number.isFinite(n) && n >= 0 ? n : 0;
+  } catch {
+    return 0;
+  }
+}
+function persistWinsSinceStoreNudge(n: number): void {
+  try {
+    localStorage.setItem(STORE_NUDGE_KEY, JSON.stringify(n));
+  } catch {
+    // storage disabled — cooldown just resets each session; never blocks gameplay
+  }
 }
 
 export class GameScene extends Phaser.Scene {
@@ -1167,6 +1193,9 @@ export class GameScene extends Phaser.Scene {
     // celebrates what just happened (distinct from the generic 3★) rather than
     // competing with it. Floats above the panel edge, same as PERFECT!. Fades
     // itself out well before the standard post-win auto-advance.
+    // (streakShowing is hoisted so the spend-nudge gating below can reuse it —
+    // a single win never shows the streak flourish AND the spend nudge.)
+    const streakShowing = !this.isDaily && streakTier(this.winStreakCount).level >= 1;
     if (this.isFirstWin) {
       const hero = this.add
         .text(0, -88, RETENTION.FIRST_WIN_TEXT, {
@@ -1194,7 +1223,7 @@ export class GameScene extends Phaser.Scene {
             ),
         });
       }
-    } else if (!this.isDaily && streakTier(this.winStreakCount).level >= 1) {
+    } else if (streakShowing) {
       // Win-streak momentum flourish — the same kicker slot as the FTUE hero
       // beat above (mutually exclusive with it: a single win never shows two
       // competing headline moments). Escalates size + color with the tier.
@@ -1273,12 +1302,42 @@ export class GameScene extends Phaser.Scene {
     card.setScale(0.8).setAlpha(0);
     this.tweens.add({ targets: card, scale: 1, alpha: 1, duration: 360, ease: THEME.EASE_POP });
 
+    // Milestone / collection-complete text (hoisted above the 2x-offer/spend-
+    // nudge gating below, which needs to know whether it will render this win —
+    // rendered further down, in its usual spot after the achievement toast).
+    const milestoneText = this.milestoneClaimed
+      ? `★ ${this.milestoneClaimed.stars} STARS — ${RETENTION.MILESTONE_LABEL[this.milestoneClaimed.stars] ?? 'Milestone'}`
+      : this.collectionsClaimed.length
+        ? `${RETENTION.COLLECTION_TEXT_PREFIX}${COLLECTIONS[this.collectionsClaimed[0]].label}${
+            this.collectionsClaimed.length > 1 ? `  +${this.collectionsClaimed.length - 1} more` : ''
+          }`
+        : null;
+
+    // Win-overlay spend nudge (Wave 3 Task 4) — an honest, infrequent reminder
+    // that Stardust can be spent. Occupies the SAME below-panel CTA slot as the
+    // "2x Stardust" offer below (mutually exclusive with it — a win overlay
+    // never carries two competing CTAs) and is ALSO gated off whenever any
+    // other optional line this win (FTUE beat / streak flourish / near-miss /
+    // next-unlock nudge / milestone toast) is already showing. Retention-first:
+    // err toward NOT showing — a persisted cooldown of ELIGIBLE (campaign,
+    // non-first-win) wins must elapse, and the player must genuinely be able to
+    // afford something. eligibleWin also drives the cooldown counter itself.
+    const eligibleWin = !this.isDaily && !this.isFirstWin;
+    const winsSinceNudge = loadWinsSinceStoreNudge();
+    const noCompetingLine = !streakShowing && !secondLine && !milestoneText;
+    const showNudge =
+      eligibleWin &&
+      noCompetingLine &&
+      nudgeDue(winsSinceNudge, STORE.NUDGE_COOLDOWN_WINS) &&
+      canAffordAnyUnowned(CurrencyStore.balance(), this.purchasableCosmetics(), new Set(CosmeticStore.ownedIds()));
+    if (eligibleWin) persistWinsSinceStoreNudge(showNudge ? 0 : winsSinceNudge + 1);
+
     // Optional "2x Stardust" rewarded offer (campaign wins) — cancels the
     // auto-advance, runs an ad, doubles the reward. Always opt-in. Copy names
     // "Stardust" explicitly so "2×" always reads as doubling the currency
     // (never ambiguous with stars/time); on a live win streak it honestly nods
     // to that already-banked momentum — the ad itself never affects the streak.
-    const showDouble = !this.isDaily && this.awardedStardust > 0;
+    const showDouble = !showNudge && !this.isDaily && this.awardedStardust > 0;
     if (showDouble) {
       Analytics.track(rewardedOffered('campaign_2x')); // offer impression, fires once on render
       const onStreak = streakTier(this.winStreakCount).level >= 1;
@@ -1308,6 +1367,33 @@ export class GameScene extends Phaser.Scene {
         }
       });
       if (!reduced) { btn.setScale(0.85).setAlpha(0); this.tweens.add({ targets: btn, scale: 1, alpha: 1, delay: 500, duration: 300, ease: THEME.EASE_POP }); }
+    } else if (showNudge) {
+      Analytics.track(storeNudgeShown()); // fires once on render, mirrors rewardedOffered above
+      const bw = 250, bh = 50; // >=44px touch-target minimum (ui-ux lens)
+      const nudgeLabel = `You've earned ${this.awardedStardust} ✦ — ${STORE.NUDGE_TEXT_SUFFIX}`;
+      const bbg = this.add.graphics();
+      drawGlass(bbg, bw, bh, bh / 2);
+      bbg.lineStyle(2, STORE.NUDGE_BORDER, 0.5);
+      bbg.strokeRoundedRect(-bw / 2, -bh / 2, bw, bh, bh / 2);
+      const btxt = this.add.text(0, 0, nudgeLabel, {
+        fontFamily: THEME.FONT_BODY, fontSize: '13px', color: STORE.NUDGE_COLOR, fontStyle: '700',
+        align: 'center', wordWrap: { width: bw - 24 },
+      }).setOrigin(0.5);
+      const btn = this.add.container(cx, cy + panelH / 2 + 34 + nudgeExtra, [bbg, btxt]).setDepth(51);
+      btn.setSize(bw, bh);
+      btn.setInteractive(new Phaser.Geom.Rectangle(-bw / 2, -bh / 2, bw, bh), Phaser.Geom.Rectangle.Contains);
+      btn.once('pointerup', () => {
+        Analytics.track(storeNudgeTapped());
+        this.advanceTimer?.remove();
+        this.advanceConsumed = true;
+        this.leaving = true;
+        this.getAudio().stopHum();
+        this.getAudio().stopWorldTheme();
+        this.attractor?.destroy();
+        this.attractor = null;
+        fadeToScene(this, 'CosmeticsScene');
+      });
+      if (!reduced) { btn.setScale(0.85).setAlpha(0); this.tweens.add({ targets: btn, scale: 1, alpha: 1, delay: 500, duration: 300, ease: THEME.EASE_POP }); }
     }
 
     // Newly-unlocked achievement(s) → a glass toast below the panel.
@@ -1326,7 +1412,7 @@ export class GameScene extends Phaser.Scene {
       const nm = this.add
         .text(0, 8, nameStr, { fontFamily: THEME.FONT_DISPLAY, fontSize: '14px', color: THEME.TEXT_PRIMARY, fontStyle: '600' })
         .setOrigin(0.5);
-      const toast = this.add.container(cx, cy + panelH / 2 + 40 + (showDouble ? 54 : 0) + nudgeExtra, [tg, head, nm]).setDepth(51);
+      const toast = this.add.container(cx, cy + panelH / 2 + 40 + ((showDouble || showNudge) ? 54 : 0) + nudgeExtra, [tg, head, nm]).setDepth(51);
       toast.setScale(0.85).setAlpha(0);
       this.tweens.add({ targets: toast, scale: 1, alpha: 1, delay: 360, duration: 320, ease: THEME.EASE_POP });
     }
@@ -1336,14 +1422,9 @@ export class GameScene extends Phaser.Scene {
     // one shown per win: a total-stars milestone (rarer — 4 ever) takes
     // priority over a collection completion (6 ever) in the vanishingly rare
     // case both land on the same win. Stacks below the achievement toast (if
-    // also shown) rather than overlapping it.
-    const milestoneText = this.milestoneClaimed
-      ? `★ ${this.milestoneClaimed.stars} STARS — ${RETENTION.MILESTONE_LABEL[this.milestoneClaimed.stars] ?? 'Milestone'}`
-      : this.collectionsClaimed.length
-        ? `${RETENTION.COLLECTION_TEXT_PREFIX}${COLLECTIONS[this.collectionsClaimed[0]].label}${
-            this.collectionsClaimed.length > 1 ? `  +${this.collectionsClaimed.length - 1} more` : ''
-          }`
-        : null;
+    // also shown) rather than overlapping it. (milestoneText itself is computed
+    // earlier, above the spend-nudge gating, which needs to know whether this
+    // will render this win.)
     if (milestoneText) {
       const isMilestone = !!this.milestoneClaimed;
       const mw = Math.min(width * 0.82, 280);
@@ -1363,13 +1444,25 @@ export class GameScene extends Phaser.Scene {
         .setOrigin(0.5);
       const achievementExtra = this.newAchievements.length ? 54 : 0;
       const mToast = this.add
-        .container(cx, cy + panelH / 2 + 40 + (showDouble ? 54 : 0) + nudgeExtra + achievementExtra, [mg, mHead, mName])
+        .container(cx, cy + panelH / 2 + 40 + ((showDouble || showNudge) ? 54 : 0) + nudgeExtra + achievementExtra, [mg, mHead, mName])
         .setDepth(51);
       if (!reduced) {
         mToast.setScale(0.85).setAlpha(0);
         this.tweens.add({ targets: mToast, scale: 1, alpha: 1, delay: 420, duration: 320, ease: THEME.EASE_POP });
       }
     }
+  }
+
+  // Every directly-purchasable (Stardust or Fragments) cosmetic, reduced to the
+  // shape storeNudge.canAffordAnyUnowned needs. Free/bundle/achievement-only
+  // items have no purchaseCost and are naturally excluded.
+  private purchasableCosmetics(): Array<{ id: string; cost: number; currency: string }> {
+    const out: Array<{ id: string; cost: number; currency: string }> = [];
+    for (const c of COSMETICS) {
+      const price = purchaseCost(c);
+      if (price) out.push({ id: c.id, cost: price.cost, currency: price.currency });
+    }
+    return out;
   }
 
   // Screen-wide radial bloom for the biggest wins (3★ / boss) — the "screen-

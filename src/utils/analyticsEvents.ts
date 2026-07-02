@@ -66,6 +66,10 @@ export const streakFrozen = (streak: number): AnalyticsEvent => ({ name: 'streak
 // switches — the Bundles-tab switch is the strongest IAP-intent signal.
 export const shopOpen = (tab: string): AnalyticsEvent => ({ name: 'shop_open', params: sanitizeParams({ tab }) });
 export const storeTab = (tab: string): AnalyticsEvent => ({ name: 'store_tab', params: sanitizeParams({ tab }) });
+// Wave 3 Task 4: the win-overlay spend nudge — shown fires every time the honest,
+// cooldown-gated line renders (GameScene.showWinOverlay); tapped fires on its CTA.
+export const storeNudgeShown = (): AnalyticsEvent => ({ name: 'store_nudge_shown', params: {} });
+export const storeNudgeTapped = (): AnalyticsEvent => ({ name: 'store_nudge_tapped', params: {} });
 export const cosmeticEquip = (id: string): AnalyticsEvent => ({ name: 'cosmetic_equip', params: sanitizeParams({ id }) });
 export const purchaseInitiated = (product: string): AnalyticsEvent => ({ name: 'purchase_initiated', params: sanitizeParams({ product }) });
 export const purchaseCompleted = (product: string): AnalyticsEvent => ({ name: 'purchase_completed', params: sanitizeParams({ product }) });

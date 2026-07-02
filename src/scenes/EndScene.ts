@@ -73,6 +73,23 @@ export class EndScene extends Phaser.Scene {
       { fill: SPLASH.MENU_FILL_SECONDARY, fontFamily: THEME.FONT_DISPLAY, fontSize: 18 },
     );
 
+    // Optional store link (Wave 3 Task 4) — a subordinate, honest shortcut for
+    // a player who just finished the whole campaign and might want to spend
+    // their Stardust. Never a popup, never required.
+    const storeY = menu.container.y + SPLASH.MENU_BTN_H / 2 + 30;
+    const store = this.add
+      .text(cx, storeY, 'Visit the Store', {
+        fontFamily: THEME.FONT_BODY,
+        fontSize: '14px',
+        color: THEME.TEXT_MUTED,
+        fontStyle: '600',
+      })
+      .setOrigin(0.5);
+    // Explicit >=44px hit area — the text glyphs alone are shorter than that.
+    store.setInteractive(new Phaser.Geom.Rectangle(-110, -22, 220, 44), Phaser.Geom.Rectangle.Contains);
+    if (store.input) store.input.cursor = 'pointer';
+    store.on('pointerup', () => fadeToScene(this, 'CosmeticsScene'));
+
     if (reduced) return;
 
     // Staggered entrance.
@@ -89,6 +106,8 @@ export class EndScene extends Phaser.Scene {
         ease: THEME.EASE,
       });
     });
+    store.setAlpha(0);
+    this.tweens.add({ targets: store, alpha: 1, delay: 260 + 2 * 110, duration: 480, ease: THEME.EASE });
   }
 
   update(): void {
