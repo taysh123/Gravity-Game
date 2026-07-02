@@ -19,7 +19,7 @@ import { IAP } from '../utils/IAP';
 import { Ads } from '../utils/Ads';
 import { RewardStore } from '../utils/RewardStore';
 import { Analytics } from '../utils/Analytics';
-import { shopOpen, cosmeticEquip, fragmentEarned, rewardedOffered } from '../utils/analyticsEvents';
+import { shopOpen, storeTab, cosmeticEquip, fragmentEarned, rewardedOffered } from '../utils/analyticsEvents';
 
 const FREE_FRAGMENTS = 5; // daily rewarded grant
 
@@ -53,7 +53,7 @@ export class CosmeticsScene extends Phaser.Scene {
   }
 
   create(): void {
-    Analytics.track(shopOpen());
+    Analytics.track(shopOpen(this.tab));
     const { width, height } = this.scale;
     const cx = width / 2;
     const sx = this.scale.displaySize.width / this.scale.gameSize.width;
@@ -96,7 +96,11 @@ export class CosmeticsScene extends Phaser.Scene {
         color: active ? STARDUST : THEME.TEXT_MUTED, fontStyle: '600',
       }).setOrigin(0.5);
       txt.setInteractive({ useHandCursor: true });
-      txt.on('pointerup', () => { if (!this.dragging && t.key !== this.tab) this.scene.restart({ tab: t.key }); });
+      txt.on('pointerup', () => {
+        if (this.dragging || t.key === this.tab) return;
+        Analytics.track(storeTab(t.key)); // tab-switch intent (Bundles = strongest IAP signal)
+        this.scene.restart({ tab: t.key });
+      });
     });
 
     // Scrollable content viewport.

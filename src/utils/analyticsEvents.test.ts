@@ -6,7 +6,6 @@ import {
   levelFail,
   dailyComplete,
   cosmeticEquip,
-  purchase,
   sessionStart,
   dailyStart,
   achievementUnlocked,
@@ -20,6 +19,12 @@ import {
   rewardedShown,
   rewardedEarned,
   rewardedOffered,
+  shopOpen,
+  storeTab,
+  purchaseInitiated,
+  purchaseCompleted,
+  purchaseFailed,
+  firstPurchase,
 } from './analyticsEvents';
 
 describe('sanitizeParams', () => {
@@ -49,9 +54,29 @@ describe('event creators', () => {
   it('dailyComplete carries the streak', () => {
     expect(dailyComplete(4).params).toEqual({ streak: 4 });
   });
-  it('cosmeticEquip + purchase carry their id/product', () => {
+  it('cosmeticEquip carries the id', () => {
     expect(cosmeticEquip('nebula').params).toEqual({ id: 'nebula' });
-    expect(purchase('remove_ads').params).toEqual({ product: 'remove_ads' });
+  });
+  it('shopOpen sanitizes the tab', () => {
+    expect(shopOpen('bundle')).toEqual({ name: 'shop_open', params: { tab: 'bundle' } });
+  });
+  it('storeTab sanitizes the tab', () => {
+    expect(storeTab('bundle')).toEqual({ name: 'store_tab', params: { tab: 'bundle' } });
+  });
+  it('purchaseInitiated sanitizes the product', () => {
+    expect(purchaseInitiated('remove_ads')).toEqual({ name: 'purchase_initiated', params: { product: 'remove_ads' } });
+  });
+  it('purchaseCompleted sanitizes the product', () => {
+    expect(purchaseCompleted('starter_pack')).toEqual({ name: 'purchase_completed', params: { product: 'starter_pack' } });
+  });
+  it('purchaseFailed sanitizes the product + reason', () => {
+    expect(purchaseFailed('remove_ads', 'cancelled_or_failed')).toEqual({
+      name: 'purchase_failed',
+      params: { product: 'remove_ads', reason: 'cancelled_or_failed' },
+    });
+  });
+  it('firstPurchase sanitizes the product', () => {
+    expect(firstPurchase('remove_ads')).toEqual({ name: 'first_purchase', params: { product: 'remove_ads' } });
   });
   it('sessionStart carries no params', () => {
     expect(sessionStart()).toEqual({ name: 'session_start', params: {} });

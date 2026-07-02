@@ -7,17 +7,41 @@
 import { Capacitor } from '@capacitor/core';
 import { REVENUECAT, bundleById } from '../config/monetization.config';
 import { Analytics } from './Analytics';
-import { purchase as purchaseEvent, restore as restoreEvent } from './analyticsEvents';
+import {
+  purchaseInitiated,
+  purchaseCompleted,
+  purchaseFailed,
+  firstPurchase,
+  restore as restoreEvent,
+} from './analyticsEvents';
 import { CosmeticStore } from './CosmeticStore';
 import type { PurchasesPlugin } from './native/revenueCat';
 
 const PREMIUM_KEY = 'gravity-flow:premium';
+const FIRST_PURCHASE_KEY = 'gravity-flow:firstPurchase';
 
 function setCachedPremium(v: boolean): void {
   try {
     localStorage.setItem(PREMIUM_KEY, v ? '1' : '0');
   } catch {
     // storage disabled — premium not persisted
+  }
+}
+
+// Fires purchaseCompleted, and — the first time this device ever completes a
+// purchase — firstPurchase too (measure-only, no reward; mirrors the
+// SettingsStore.seenFirstWin one-time-flag pattern but persisted directly in
+// localStorage like PREMIUM_KEY, since IAP has no SettingsStore dependency).
+// If storage is unavailable we can't dedupe, so we skip firstPurchase
+// attribution rather than risk re-firing it on every purchase.
+function trackPurchaseCompleted(product: string): void {
+  Analytics.track(purchaseCompleted(product));
+  try {
+    if (localStorage.getItem(FIRST_PURCHASE_KEY) === '1') return;
+    localStorage.setItem(FIRST_PURCHASE_KEY, '1');
+    Analytics.track(firstPurchase(product));
+  } catch {
+    // storage disabled — skip first-purchase attribution
   }
 }
 
@@ -67,24 +91,35 @@ export const IAP = {
 
   // Resolves true on a successful purchase. Web stub grants it immediately.
   async buyRemoveAds(): Promise<boolean> {
-    Analytics.track(purchaseEvent(REVENUECAT.removeAdsProductId));
+    const product = REVENUECAT.removeAdsProductId;
+    Analytics.track(purchaseInitiated(product));
     if (!Capacitor.isNativePlatform()) {
       setCachedPremium(true);
+      trackPurchaseCompleted(product);
       return true;
     }
-    if (!(await ensureRC()) || !rc) return false;
+    if (!(await ensureRC()) || !rc) {
+      Analytics.track(purchaseFailed(product, 'rc_unavailable'));
+      return false;
+    }
     try {
       const offerings = await rc.getOfferings();
       const pkg =
         offerings.current?.availablePackages.find(
-          (a) => a.product.identifier === REVENUECAT.removeAdsProductId,
+          (a) => a.product.identifier === product,
         ) ?? offerings.current?.availablePackages[0];
-      if (!pkg) return false;
+      if (!pkg) {
+        Analytics.track(purchaseFailed(product, 'no_package'));
+        return false;
+      }
       const ok = hasEntitlement(await rc.purchasePackage({ aPackage: pkg }));
       setCachedPremium(ok);
+      if (ok) trackPurchaseCompleted(product);
+      else Analytics.track(purchaseFailed(product, 'not_entitled'));
       return ok;
     } catch {
-      return false; // user cancelled or purchase failed
+      Analytics.track(purchaseFailed(product, 'cancelled_or_failed')); // user cancelled or purchase failed
+      return false;
     }
   },
 
@@ -93,28 +128,42 @@ export const IAP = {
   async buyBundle(id: string): Promise<boolean> {
     const bundle = bundleById(id);
     if (!bundle) return false;
-    Analytics.track(purchaseEvent(bundle.productId));
+    const product = bundle.productId;
+    Analytics.track(purchaseInitiated(product));
     if (!Capacitor.isNativePlatform()) {
       CosmeticStore.grant(bundle.grants);
       if (bundle.premium) setCachedPremium(true);
+      trackPurchaseCompleted(product);
       return true;
     }
-    if (!(await ensureRC()) || !rc) return false;
+    if (!(await ensureRC()) || !rc) {
+      Analytics.track(purchaseFailed(product, 'rc_unavailable'));
+      return false;
+    }
     try {
       const offerings = await rc.getOfferings();
-      const pkg = offerings.current?.availablePackages.find((a) => a.product.identifier === bundle.productId);
-      if (!pkg) return false;
+      const pkg = offerings.current?.availablePackages.find((a) => a.product.identifier === product);
+      if (!pkg) {
+        Analytics.track(purchaseFailed(product, 'no_package'));
+        return false;
+      }
       const result = await rc.purchasePackage({ aPackage: pkg });
       CosmeticStore.grant(bundle.grants); // entitlement also gates re-grant on restore
       if (bundle.premium) setCachedPremium(hasEntitlement(result) || true);
+      trackPurchaseCompleted(product);
       return true;
     } catch {
+      Analytics.track(purchaseFailed(product, 'cancelled_or_failed'));
       return false;
     }
   },
 
   // Restore a prior purchase (required by stores). Returns the resulting premium state.
   async restorePurchases(): Promise<boolean> {
+    // restore() is outcome-agnostic by design (fires whether or not an
+    // entitlement was actually found) — out of scope for this task's
+    // completed/failed split, which is specifically about buy-flow taps vs
+    // revenue. Restore has no "attempt vs completed" ambiguity to fix.
     Analytics.track(restoreEvent());
     if (!Capacitor.isNativePlatform()) return this.isPremium();
     if (!(await ensureRC()) || !rc) return this.isPremium();

@@ -56,9 +56,21 @@ export const loginBonus = (day: number): AnalyticsEvent => ({ name: 'login_bonus
 export const streakFrozen = (streak: number): AnalyticsEvent => ({ name: 'streak_frozen', params: { streak } });
 
 // --- Economy / shop -------------------------------------------------------
-export const shopOpen = (): AnalyticsEvent => ({ name: 'shop_open', params: {} });
+// Wave 3 Task 3: the old `purchase` event fired at *attempt* — the first
+// statement in IAP.buyRemoveAds/buyBundle, before the native dialog even opens
+// — so it measured buy-button taps, not revenue. Replaced by a real lifecycle:
+// purchaseInitiated (attempt) -> purchaseCompleted (gated on the real result) /
+// purchaseFailed (cancel/throw/no-package, carries a reason). firstPurchase
+// fires once, on the first-ever completion (persisted flag lives in IAP.ts).
+// shopOpen now carries which tab the store opened on; storeTab fires on tab
+// switches — the Bundles-tab switch is the strongest IAP-intent signal.
+export const shopOpen = (tab: string): AnalyticsEvent => ({ name: 'shop_open', params: sanitizeParams({ tab }) });
+export const storeTab = (tab: string): AnalyticsEvent => ({ name: 'store_tab', params: sanitizeParams({ tab }) });
 export const cosmeticEquip = (id: string): AnalyticsEvent => ({ name: 'cosmetic_equip', params: sanitizeParams({ id }) });
-export const purchase = (product: string): AnalyticsEvent => ({ name: 'purchase', params: sanitizeParams({ product }) });
+export const purchaseInitiated = (product: string): AnalyticsEvent => ({ name: 'purchase_initiated', params: sanitizeParams({ product }) });
+export const purchaseCompleted = (product: string): AnalyticsEvent => ({ name: 'purchase_completed', params: sanitizeParams({ product }) });
+export const purchaseFailed = (product: string, reason: string): AnalyticsEvent => ({ name: 'purchase_failed', params: sanitizeParams({ product, reason }) });
+export const firstPurchase = (product: string): AnalyticsEvent => ({ name: 'first_purchase', params: sanitizeParams({ product }) });
 export const restore = (): AnalyticsEvent => ({ name: 'restore', params: {} });
 
 // --- Ads ------------------------------------------------------------------
