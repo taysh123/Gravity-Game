@@ -42,4 +42,13 @@ export const THEME = {
   TEXT_PRIMARY: '#EDEDF2',
   TEXT_MUTED: '#8A8F98',
   TEXT_ON_PRIMARY: '#06231a', // dark text on bright green
+
+  // Text-fit (long boss/signature titles must shrink/truncate, never collide
+  // with fixed HUD chrome or overflow the screen — see utils/textFit.ts).
+  HUD_LABEL_MIN_SCALE: 0.8, // floor for the HUD title chip (14px * 0.8 = 11.2px, still legible)
+  HUD_CHIP_PAD: 28, // chip horizontal padding around the label (label width + this)
+  HUD_CHIP_NAV_GAP: 16, // minimum breathing room between the HUD chip and the top-right nav toolbar
+  TITLE_CARD_MIN_SCALE: 0.6, // floor for the centered signature/boss title card
+  TITLE_CARD_SAFE_MARGIN: 24, // horizontal margin the title card text must stay within, per side
+  ELLIPSIS: '…',
 } as const;
