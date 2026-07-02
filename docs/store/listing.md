@@ -37,7 +37,7 @@ Challenge, where everyone races the same seeded course for the leaderboard.
 • GRAVITY RUN: an endless score-chase + a weekly challenge leaderboard
 • A new mechanic and a memorable boss in every world
 • 3-star mastery: finish, grab the gem, beat par — chase your best with a ghost trail
-• Build momentum — chain clean wins into FLOW, BLAZE, and NOVA streak tiers, and
+• Build momentum — chain wins in a row into FLOW, BLAZE, and NOVA streak tiers, and
   every win, from a 1-star clear to a full 3-star finish, gets its own celebration
 • A Daily Challenge with its own streak — protected by an earned, never-purchasable
   streak-protection token if you miss a day — plus a separate daily login reward

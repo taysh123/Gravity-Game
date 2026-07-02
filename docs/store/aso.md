@@ -48,7 +48,7 @@ retention → store → replay.
 Caption spec: Orbitron display for the headline word, Exo 2 for the rest; ≥40px type
 at export size; keep text clear of the top notch + bottom gesture bar (~10% insets);
 one accent-glow color per shot matched to that world’s or system's palette; never cover
-the focal moment. Every caption above is a literal description of what's on screen — no
+the focal moment. Every caption above is honest — a literal description or a fair, still-backed framing of what's on screen — no
 claim a still can't back up.
 
 ## 3. App icon variants checklist
