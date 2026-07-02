@@ -9,29 +9,53 @@
 
 ## CURRENT PROJECT STATUS
 
-*Snapshot for instant resume — see the sections below for full detail. Last synced 2026-06-16 (Android
-launch-prep pass: signed AAB rebuilt + verified, docs reconciled, git hygiene cleaned).*
+*Snapshot for instant resume — see the sections below for full detail. Last synced 2026-07-02 (Wave 4
+"Launch Readiness Polish" media refresh + this docs-reconciliation pass; Waves 1-3 already merged to
+`master`).*
 
 **Product:** GRAVITY FLOW by True Story Labs — a one-touch cosmic physics puzzler. **`v1.0.0-rc.1`** launch
-candidate (milestone `v0.15.0`; `package.json 1.0.0-rc.1`; Android `versionName 1.0.0` / `versionCode 1`).
+candidate (milestone `v0.15.0`; `package.json 1.0.0-rc.1`; Android `versionName 1.0.0` / `versionCode 1`),
+now layered with **four post-RC feel/retention/monetization/media waves** on top of the content-complete
+150-level campaign:
+- **Wave 1 — "Make it Alive"** (merged to `master`): WebGL bloom+vignette post-FX, living `CosmicBackground`,
+  escalating attractor charge, ball/goal glow, tiered win-celebration ladder — no gameplay-formula changes.
+- **Wave 2 — "Make it Addictive"** (merged to `master`): win-streak momentum, first-win/onboarding beats,
+  milestone/collection-complete celebrations, daily login bonus + earned streak protection, retention
+  funnel analytics.
+- **Wave 3 — "Monetization Tuning"** (merged to `master`): flow-aware + first-session-grace interstitial
+  gating, per-surface rewarded-ad analytics + honest value-prop copy, purchase-lifecycle analytics,
+  win-overlay spend nudge + honest bundle value framing. No P2W throughout.
+- **Wave 4 — "Launch Readiness Polish"** (media refresh; branch `feat/wave4-launch-media`, **Task 4 of 4 —
+  this docs pass — done, pending branch finish/merge**): refreshed capture pipeline + re-curated the 8-shot
+  Google Play set + 2 new hero GIFs to showcase the Wave 1-3 juice (`docs/media/README.md`).
 
 - **✅ Finished (repo-side):** 150 levels / 15 worlds · Star Map (`WorldMapScene`) · Gravity Run — Endless +
   Weekly (`EndlessScene`/`RunSelectScene`) · Daily Challenge · 14 achievements · 28-item cosmetics store ·
   dual currency (Stardust + Cosmic Fragments) · AdMob / RevenueCat / Firebase **guarded seams** · Android
-  signing pipeline + branded launcher icon · privacy policy (hosted) · **store assets + full media package +
-  portfolio README**.
-- **✅ Verified:** `tsc` clean · **103 tests** · `npm run build` clean · all 150 levels boot with **zero
-  console errors** (`scripts/smoke_levels.py`). *(Caveat: per-level solvability/fairness is **not** device-
-  verified — see Open Issues.)*
-- **✅ Committed & pushed:** branch `master`, **synced** with `origin`, HEAD **`2779d48`**. Tags include
-  `v0.15.0` + `v1.0.0-rc.1`.
+  signing pipeline + branded launcher icon · privacy policy (hosted) · **store assets + refreshed media
+  package + portfolio README** · the four waves above.
+- **✅ Verified:** `tsc` clean · **210 tests** (was 103 pre-wave) · `npm run build` clean · all 150 levels
+  boot with **zero console errors** (`scripts/smoke_levels.py`); Playwright boot = zero console errors;
+  perf ceiling held (no new physics bodies added by Waves 1-4); reduced-motion honored; no new dependency.
+  *(Caveat: per-level solvability/fairness is **not** device-verified — see Open Issues.)*
+- **✅ Committed:** Waves 1-3 + the Wave 4 plan are on `master`. Wave 4's implementation (media Tasks 1-2)
+  + this docs-reconciliation (Task 4) are on `feat/wave4-launch-media`, **pending merge** — finishing the
+  branch is a separate, later step.
+- **🚨 The signed AAB is now STALE:** the last build (2026-06-16) predates all four waves — it **must be
+  rebuilt** before any Play upload. See `docs/LAUNCH-READINESS.md` → EXTERNAL-LAUNCH CHECKLIST.
+- **🐞 Known filed bug (open polish item, not fixed this wave):** the long boss/signature title card (e.g.
+  "THE LONG WAY HOME", "THE SINGULARITY") overflows its pill and collides with the HUD icon cluster at
+  1080×2160 — documented in `docs/media/README.md §E`, routed around in the current media set (short-title
+  levels substituted / frames cropped rather than shipping a clipped frame). Game code was frozen for
+  Wave 4, so this is a candidate for a future gameplay/polish pass, not fixed here.
 - **🚀 Deployed:** nothing to Play yet. GitHub Pages serves the privacy policy
   (https://taysh123.github.io/Gravity-Game/). An older Vercel web build exists (not the release artifact).
 - **⛔ Needs external accounts (you):** Play Console (app, App-content, listing, tracks, billing products,
   uploads) · real AdMob app/ad-unit ids + UMP message · RevenueCat SDK key/product/entitlement.
-- **📱 Needs a physical Android device (you):** upload the **freshly-rebuilt** signed AAB (rebuilt
-  2026-06-16, verified) · the **1★ fairness + Endless/Star-Map feel playtest** · on-device
-  ad/IAP/Restore/Analytics/Crashlytics smoke.
+- **📱 Needs a physical Android device (you):** **rebuild + upload** the signed AAB (stale since
+  2026-06-16) · the **1★ fairness + Endless/Star-Map feel playtest** — now also covering a device feel
+  pass on the Wave 1-3 additions (celebrations, streaks, daily reward, interstitial cadence, store nudge)
+  · on-device ad/IAP/Restore/Analytics/Crashlytics smoke.
 - **🍎 Needs macOS/iOS (future):** no `ios/` platform exists — adding it needs macOS + Xcode + Apple
   Developer ($99/yr). App Store readiness ~10%.
 
@@ -73,7 +97,35 @@ candidate (milestone `v0.15.0`; `package.json 1.0.0-rc.1`; Android `versionName 
 > in `src/config/fx.config.ts`; new pure logic (`utils/fx|comets|attractorCharge|celebration`) is TDD'd
 > (**+15 tests → 118**). `tsc`/build clean, zero console errors across WebGL/reduced-motion/Canvas, perf
 > ceiling held (no new physics bodies; ≤24 burst particles). Plan of record:
-> `docs/superpowers/plans/2026-07-01-wave1-make-it-alive.md`. *(On the feature branch pending merge approval.)*
+> `docs/superpowers/plans/2026-07-01-wave1-make-it-alive.md`. **(Merged to `master`.)**
+
+> **Wave 2 — "Make it Addictive" retention pass (2026-07-01, branch `feat/wave2-make-it-addictive`, merged
+> to `master`).** Retention funnel analytics (`utils/analyticsEvents.ts` — session/daily/world/achievement
+> events, `isWorldEnd`, `hintUsed`) + a one-time first-win/early-unlock FTUE beat; **win-streak momentum**
+> (consecutive-win counter + near-miss encouragement with a "×N BLAZE" flourish, broken only by a campaign
+> death — a daily death spares it); silent **milestone + collection-complete celebrations** surfaced
+> idempotently; a **daily login bonus** with earned-only streak protection (`retention.config.ts` — no
+> P2W). New pure logic TDD'd (`utils/streak`, `utils/loginBonus`, `utils/onboarding`, `utils/achievements`).
+> Plan of record: `docs/superpowers/plans/2026-07-01-wave2-make-it-addictive.md`.
+
+> **Wave 3 — "Monetization Tuning" pass (2026-07-01, branch `feat/wave3-monetization-tuning`, merged to
+> `master`).** **Flow-aware interstitial gating** — first-session grace + a persisted cooldown so
+> interstitials never interrupt an active attempt (`utils/interstitialGate`); **per-surface rewarded-ad
+> analytics** (offered/shown/earned, tagged by surface) + honest value-prop copy on rewarded offers (incl.
+> a 44px touch-target fix); **purchase-lifecycle analytics** (initiated/completed/failed/first_purchase) +
+> shop-tab events; a win-overlay **spend nudge** + honest per-bundle value framing (one config-flagged BEST
+> VALUE tag, no fake urgency) + locked-cosmetic cross-sell. Cosmetic/Remove-Ads only — no P2W. Plan of
+> record: `docs/superpowers/plans/2026-07-01-wave3-monetization-tuning.md`.
+
+> **Wave 4 — "Launch Readiness Polish" media refresh (2026-07-02, branch `feat/wave4-launch-media`,
+> **pending merge**).** Game code frozen for this wave (touches only `scripts/*`, `docs/media/*`,
+> `docs/store/*`, `docs/*`). Refreshed the capture pipeline's seed for the Wave 2-3 store/retention
+> surfaces + added new-juice capture targets, then re-curated the committed finals: the 8-shot Google Play
+> set now leads with the 3-star celebration escalation, the daily-reward chest + streak protection, and the
+> honest bundle/BEST VALUE framing, plus 2 new/refreshed hero GIFs (win-celebration escalation, living-world
+> background) — `docs/media/README.md`. **Filed (not fixed) a title-card overflow bug** — see Open Issues.
+> This CURRENT STATE + `LAUNCH-READINESS.md` reconciliation is Task 4. Plan of record:
+> `docs/superpowers/plans/2026-07-01-wave4-launch-readiness-polish.md`.
 
 **Implemented & working (verified in browser via Playwright unless noted):**
 - Full startup presentation: text-only True Story Labs company splash → cosmic intro (energy sphere →
@@ -104,15 +156,19 @@ candidate (milestone `v0.15.0`; `package.json 1.0.0-rc.1`; Android `versionName 
 - UI/UX: glassmorphic design system, Orbitron+Exo 2 fonts, in-game glass toolbar (Home/Settings/Restart),
   settings overlay (Sound/Music/Haptics/Reduce-Motion), one-time Level-1 coach-mark, win/death feedback,
   full-surface button hit areas + press feedback, safe-area handling.
-- Quality gates green: `npx tsc --noEmit` clean · `npm test` **103 tests pass (16 files)** · `npm run build`
-  clean · full flow **no console errors**.
+- Quality gates green: `npx tsc --noEmit` clean · `npm test` **210 tests pass (27 files)** (was 103/16
+  before Waves 1-4) · `npm run build` clean · full flow **no console errors**.
 
-**Media package (2026-06-14):** a full multi-destination visual package was auto-captured from the
-150-level build into `docs/media/` (Google Play, App Store iPhone/iPad, GitHub, portfolio, LinkedIn) +
-3 animated README GIFs; the root `README.md` was rewritten portfolio-grade and the Play
-`docs/store/assets/screenshots/` set refreshed for the Star Map + 150 levels. Strategy, full inventory,
-ordering, and captions: `docs/media/README.md`. Tooling (reproducible): `scripts/capture_media.py`,
-`capture_frames.py`, `assemble_gifs.mjs`, `curate_media.mjs`.
+**Media package (built 2026-06-14; refreshed 2026-07-02 — Wave 4 Tasks 1-2):** a full multi-destination
+visual package auto-captured from the 150-level build into `docs/media/` (Google Play, App Store
+iPhone/iPad, GitHub, portfolio, LinkedIn) + GIFs; the root `README.md` is portfolio-grade and the Play
+`docs/store/assets/screenshots/` set is now refreshed to showcase the Wave 1-3 juice — the 3-star
+celebration escalation (`×N BLAZE` streak flourish + milestone toast), the daily-reward chest + streak
+protection, and the honest bundle/BEST VALUE framing — alongside 2 new/refreshed hero GIFs (win-celebration
+escalation, living-world background). Strategy, full inventory, ordering, and captions:
+`docs/media/README.md` (**§E also files the boss title-card overflow bug**, routed around in the committed
+set, not fixed — see Open Issues). Tooling (reproducible): `scripts/capture_media.py`, `capture_frames.py`,
+`assemble_gifs.mjs`, `curate_media.mjs`.
 
 **Caveat:** automated Playwright scripts verified that mechanics *function* (zone lifts, saw sweeps,
 hazard kills, countdown fails). They **cannot** reproduce precise finger input, so per-level
@@ -131,10 +187,11 @@ Pages, served from `docs/index.html`).
   `android/keystore.properties`; upload key **`gravityflow-upload`** (`C:\Keys\gravityflow-upload.jks`,
   valid to 2051). `./gradlew signingReport` → release variant **Valid**. (`b79e849`)
 - **Signed AAB** built + `jarsigner`-verified at
-  `android/app/build/outputs/bundle/release/app-release.aab`. ✅ **Rebuilt 2026-06-16** (11.4 MB, signed
-  `gravityflow-upload`, `jarsigner` verified) so it now reflects the UMP consent + branded icon + all
-  150 levels — ready to upload (rebuild again only on real-id/version change; Gradle 8.14 needs the
-  Android Studio JBR / JDK 21, not the system JDK 25).
+  `android/app/build/outputs/bundle/release/app-release.aab`. Built 2026-06-16 (11.4 MB, signed
+  `gravityflow-upload`, `jarsigner` verified), reflecting the UMP consent + branded icon + all 150 levels.
+  🚨 **Now STALE** — it predates Waves 1-4 (feel/retention/monetization/media, merged 2026-07-01/02), so it
+  **must be rebuilt** before any Play upload (rebuild again only on real-id/version change thereafter;
+  Gradle 8.14 needs the Android Studio JBR / JDK 21, not the system JDK 25).
 - **UMP (GDPR) consent** gathered before `AdMob.initialize()` (`utils/Ads.ts` + `utils/native/admob.ts`),
   guarded + web-safe. (`dd49e3e`)
 - **Privacy policy finalized**: source `docs/store/privacy-policy.md` + hosted HTML `docs/index.html`
@@ -142,11 +199,13 @@ Pages, served from `docs/index.html`).
   legal-requests / disclaimer / retention-exceptions clauses. (`cb13ff0`, `fe0bfc7`, `ddcfe8e`)
 - **Store assets** in `docs/store/assets/`: **8 screenshots @ 1080×2160** (Play-compliant), **32-bit
   `icon-512.png`**, **`feature-1024x500.png`**, + concept alternatives (`icon-concepts/`,
-  `feature-concepts/`); catalog `docs/store/assets/README.md`. (`693a2c9`)
+  `feature-concepts/`); catalog `docs/store/assets/README.md`. (`693a2c9`; **screenshots refreshed
+  2026-07-02 for the Wave 1-3 juice** — icon/feature unchanged — see Wave 4 in Current State above.)
 - **Branded launcher icon** (vortex) replaces the default Capacitor robot — adaptive + legacy mipmaps
   at all densities via `@capacitor/assets` from `assets/icon-{foreground,background,only}.png`. (`a354492`)
 - Firebase real `google-services.json` in `android/app/` (project `gravity-flow-e8dff`).
-- Quality: `tsc` clean · **103 tests** · web build clean (firebase/admob/RC **not** bundled).
+- Quality: `tsc` clean · **210 tests** (was 103 before Waves 1-4) · web build clean (firebase/admob/RC
+  **not** bundled).
 
 **Readiness by track:**
 - **Internal Testing — code & assets READY; blocked only on user/Play-Console steps:** confirm Pages
@@ -162,15 +221,23 @@ Pages, served from `docs/index.html`).
   promote → submit for review.
 
 **Known issues / risks / blockers:**
-- ✅ **The signed AAB was rebuilt 2026-06-16** (UMP + branded icon + 150 levels; `jarsigner` verified) —
-  ready to upload. Rebuild again only on real-id/version change (use the Android Studio JBR — Gradle 8.14
-  rejects the system JDK 25).
+- 🚨 **The signed AAB is now STALE** (last built 2026-06-16 — predates Waves 1-4). **Rebuild required**
+  before any Play upload: `npm run build && npx cap sync android && cd android && ./gradlew bundleRelease`
+  (use the Android Studio JBR / JDK 21 — Gradle 8.14 rejects the system JDK 25). Runbook:
+  `docs/release-android.md`.
 - **GitHub Pages source must be `master` → `/docs`** so `…/Gravity-Game/` serves `docs/index.html`
   (otherwise that URL hits the game's root `index.html`). Verify after enabling Pages.
 - **Jekyll exposure:** serving `/docs` publishes *all* of `docs/` (status, handoff, plans,
   monetization-review). No secrets — keystore + `google-services.json` are gitignored. Optional:
   add `docs/.nojekyll` or relocate internal docs.
-- **1★ device fairness** is still unverified (long-standing gameplay gate; runnable on the internal build).
+- **1★ device fairness** is still unverified (long-standing gameplay gate; runnable on the internal build)
+  — now also needs a device **feel pass on the Wave 1-3 additions** (celebrations, streaks, daily reward,
+  interstitial cadence, store nudge) at 60fps on a mid-range Android.
+- 🐞 **Filed (not fixed) visual bug:** the long boss/signature title card ("THE LONG WAY HOME", "THE
+  SINGULARITY", …) overflows its pill and collides with the HUD icon cluster at 1080×2160
+  (`docs/media/README.md §E`). Routed around in the current media set (short-title levels substituted /
+  frames cropped); a real fix (chip max-width + ellipsis, or reserving toolbar clearance) is a candidate
+  for a future gameplay/polish wave — game code was frozen for Wave 4.
 - ✅ `android/.idea/*` is now untracked + gitignored (the IDE churn is resolved); `.vscode/` and
   `android/.kotlin/` are also ignored.
 
@@ -372,6 +439,12 @@ History lives in `docs/superpowers/plans/`. Summary:
   on a phone.
 - **Out-of-bounds death is rare** (walled arena) — hazards/timeouts are now the real fail paths.
 - **Audio "Music"** is a subtle ambient pad only; no real soundtrack yet.
+- **Filed visual polish bug (not fixed — game code frozen for Wave 4):** long boss/signature titles
+  ("THE LONG WAY HOME", "THE SINGULARITY", …) overflow their pill and collide with the HUD icon cluster at
+  1080×2160 (`docs/media/README.md §E`). Routed around in the current media set; a real fix belongs in a
+  future gameplay/polish wave.
+- **The signed AAB is stale** (built 2026-06-16, predates Waves 1-4) — rebuild before any Play upload (see
+  `docs/LAUNCH-READINESS.md` → EXTERNAL-LAUNCH CHECKLIST).
 
 ---
 
@@ -382,9 +455,12 @@ The content/mechanic roadmap is **paused** — the game is content-complete and 
 above for the authoritative current state, and `docs/session-handoff.md` → *Next Session Quick Start*
 for the immediate next actions. Release checklists per track live in `docs/release-prep.md`.
 
-**Immediate next action:** the signed AAB is **rebuilt + verified (2026-06-16)** — proceed to the
-user-side Play Console steps (create app → App content → listing → upload the AAB to Internal Testing).
-The **device 1★ fairness playtest** remains the open gameplay gate and can run on the internal build.
+**Immediate next action:** **rebuild the signed AAB** — the 2026-06-16 build predates Waves 1-4 and is now
+stale (runbook: `docs/release-android.md`; consolidated checklist: `docs/LAUNCH-READINESS.md` →
+EXTERNAL-LAUNCH CHECKLIST). Then proceed to the user-side Play Console steps (create app → App content →
+paste the refreshed listing + upload the refreshed screenshots → upload the rebuilt AAB to Internal
+Testing). The **device 1★ fairness playtest** remains the open gameplay gate — now also covering a feel
+pass on the Wave 1-3 additions — and can run on the internal build.
 
 *(Content backlog kept for after launch: gameplay tuning from the device playtest, real soundtrack,
 the retired "Expert" level packs on disk. Mechanic roadmap: `docs/superpowers/plans/`.)*
@@ -409,7 +485,7 @@ Ranked in `docs/superpowers/plans/2026-06-01-mechanics-roadmap.md`. Highlights:
 1. **Read this file first.** It is the single source of truth.
 2. Skim `docs/session-handoff.md` for the 30-second version.
 3. Continue from **[Release Readiness — Play Store Launch Prep](#release-readiness--play-store-launch-prep-current-phase)**
-   (AAB rebuilt 2026-06-16; next is the user-side Play Console steps for Internal Testing).
+   (the AAB is now stale — rebuild it first, then the user-side Play Console steps for Internal Testing).
 4. Working conventions: plan first (`writing-plans` → `docs/superpowers/plans/`), one entity + one
    `LevelConfig` field per mechanic, all constants in config, verify in-browser before "done"
    (`npm run dev` + Playwright `--disable-gpu --use-gl=swiftshader`), keep `tsc`/tests/build green.
