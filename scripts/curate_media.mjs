@@ -25,16 +25,15 @@ const web = async (src, dst, width) => {
   await sharp(src).resize({ width }).png({ quality: 90 }).toFile(dst);
 };
 
-// Some boss/signature levels carry a long title ("THE LONG WAY HOME", "THE
-// SINGULARITY" at L50/L140) whose HUD chip overlaps the top-right icon
-// toolbar on portrait viewports — a real layout bug (chip width = text width,
-// independent of the fixed-position icon row), filed for a future gameplay
-// wave (game code is FROZEN this media wave). Non-clipping boss levels are
-// preferred everywhere (see PLAY/GH/PF below); the ONE spot that specifically
-// wants the campaign-FINALE boss (L150, "every mechanic on screen") crops the
-// clipped top strip instead of swapping levels. ~9.5% of height clears the
-// chip/icon row on every captured profile (icons sit at the same top fraction
-// regardless of a profile's horizontal pillarboxing).
+// The long-title HUD-chip overlap ("THE LONG WAY HOME", "THE SINGULARITY", …
+// running under the top-right icon toolbar) is now FIXED in-game — GameScene
+// shrinks/ellipsises the chip and shrink-fits the title card (src/utils/textFit.ts).
+// The Google Play set is re-captured against that fix (see PLAY below). The
+// crop helpers here remain ONLY for the iOS/iPad preview + portfolio-hero
+// frames that were captured on the pre-fix build and are NOT re-captured this
+// pass (preview-quality; regenerate on a real device). ~9.5% of height clears
+// the chip/icon row on every captured profile (icons sit at the same top
+// fraction regardless of a profile's horizontal pillarboxing).
 const CROP_TOP_FRAC = 0.095;
 const cropTop = (meta) => Math.round(meta.height * CROP_TOP_FRAC);
 const copyCropTop = async (src, dst) => {
@@ -59,17 +58,20 @@ const webCropTop = async (src, dst, width) => {
 
 // --- Google Play (full-res 1080x2160, store order) -------------------------
 // Funnel: hook -> mechanic -> spectacle -> new-juice -> retention -> store ->
-// tension -> replay. boss-l060 ("THE BREACH") replaces the old boss-l050
-// ("THE SINGULARITY") source — l050's title chip clips the icon toolbar (see
-// CROP_TOP_FRAC note); l060 has a short, non-clipping title and a strong
-// teal/orange contrast. 24/25 are the Wave 2-3 retention + honest-store shots
-// (daily chest + streak-protected, bundle BEST VALUE) called out for this set;
-// achievements is dropped to hold the count at a strong 8 (still shown in the
-// GitHub/portfolio galleries for players/recruiters who want more depth).
+// tension -> replay. boss-l150 ("THE LONG WAY HOME") is the true campaign
+// finale — restored to this slot now that the long-title HUD-fit fix has
+// landed (GameScene shrinks/ellipsises the chip + shrink-fits the title card,
+// so long titles no longer clip the icon toolbar; see src/utils/textFit.ts).
+// Earlier media waves routed this slot around the bug with the short-title
+// boss-l060 ("THE BREACH"). 24/25 are the Wave 2-3 retention + honest-store
+// shots (daily chest + streak-protected, bundle BEST VALUE) called out for
+// this set; achievements is dropped to hold the count at a strong 8 (still
+// shown in the GitHub/portfolio galleries for players/recruiters who want
+// more depth).
 const PLAY = [
   ['02-star-map', '01-star-map'],
   ['play-l055', '02-gameplay-pull'],
-  ['boss-l060', '03-boss-finale'],
+  ['boss-l150', '03-boss-finale'],
   ['11-win-overlay', '04-three-star-win'],
   ['24-daily-reward-chest', '05-daily-rewards'],
   ['25-cosmetics-bundle', '06-cosmetics-bundle'],

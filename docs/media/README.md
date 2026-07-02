@@ -6,6 +6,9 @@ captured automatically from the live build, then curated.
 
 - **Captured:** 2026-07-02 from `v1.0.0-rc.1` (150 levels / 15 worlds) — Wave 4 Task 2 refresh
   (2 new/refreshed hero GIFs + a re-curated Google Play set; see §B/§C below).
+- **Boss shot re-captured:** 2026-07-02, after the long-title HUD-fit fix landed on `master` — the
+  Google Play `03-boss-finale.png` now shows the true campaign finale **"THE LONG WAY HOME" (L150)**
+  with its title fitting cleanly (no icon-toolbar collision). See §B row 3 / §E (resolved).
 - **Source of truth for state:** [`../project-status.md`](../project-status.md).
 - **Caption / ASO strategy reference:** [`../store/aso.md`](../store/aso.md) · [`../store/listing.md`](../store/listing.md).
 
@@ -60,7 +63,7 @@ Play console editor (top third, safe-area, one accent glow per shot — see `../
 |---|------|-------|---------|
 | 1 | `01-star-map.png` | The Cosmos world map | **Journey 150 levels across 15 worlds.** |
 | 2 | `02-gameplay-pull.png` | Hold-to-pull, portals + currents (Rifts) | **Hold to pull. Guide the star home.** |
-| 3 | `03-boss-finale.png` | Boss "THE BREACH" | **15 worlds. 15 bosses, all different.** |
+| 3 | `03-boss-finale.png` | Boss finale "THE LONG WAY HOME" (L150) | **15 worlds. 15 bosses, all different.** |
 | 4 | `04-three-star-win.png` | 3-star LEVEL COMPLETE + `×5 BLAZE` + milestone toast | **Master every level. Perfect every run.** |
 | 5 | `05-daily-rewards.png` | Main menu, gold DAILY REWARD chest + streak-protected | **Daily rewards. Never lose your streak.** |
 | 6 | `06-cosmetics-bundle.png` | Store, Bundles tab, honest BEST VALUE tag | **Cosmetic bundles — no pay-to-win, ever.** |
@@ -69,9 +72,11 @@ Play console editor (top third, safe-area, one accent glow per shot — see `../
 
 Dropped `achievements` from this set to hold the Play count at a strong 8 while making room for the
 Wave 2-3 retention/store shots (5-6 above) — achievements stays in the GitHub/portfolio galleries
-below for players/recruiters who want more depth. `03`/`gallery-02-boss`/portfolio `04` all switched
-from the old `boss-l050` ("THE SINGULARITY") source to `boss-l060` ("THE BREACH") — `l050`'s title
-chip clips the icon toolbar (see the known-issue note in §E); `l060` doesn't and reads just as strong.
+below for players/recruiters who want more depth. `03-boss-finale.png` now sources `boss-l150`
+("THE LONG WAY HOME", the true campaign finale) — re-captured once the long-title HUD-fit fix landed
+(§E), so the chip fits/ellipsises clear of the icons and the title card shrink-fits on-screen. (The
+GitHub `gallery-02-boss` and portfolio `04` still use the short-title `boss-l060` "THE BREACH" as a
+distinct, equally strong boss moment — untouched this pass.)
 
 ### App Store iPhone 6.7" — `store/ios/iphone-6.7/` (1290×2796, full-res)
 Mirrors the Play order (`01`…`08`, still the pre-refresh 8-shot layout — preview-quality only, not
@@ -147,17 +152,19 @@ Automation drives scenes via the dev hook but cannot reproduce finger input or t
 
 ---
 
-## E. Known issue — filed, NOT fixed this wave (game code frozen)
+## E. Resolved — long-title HUD clip fixed (2026-07-02)
 
-**Long boss/signature titles clip the top-right icon toolbar.** `GameScene.createHud()`'s title chip
-sizes itself to `label.width + 28` and sits at a fixed top-left position; the home/settings/restart
-icon row sits at an independent fixed top-right position. Neither accounts for the other, so a long
-title (`THE LONG WAY HOME` at L150, `THE SINGULARITY` at L50/L140, `THE MAELSTROM` at L20, `THE EYE
-OF THE STORM` at L120, …) overlaps the icons instead of staying clear of them like the comment at
-that call site claims. Confirmed by direct comparison: `THE COLLAPSE` (12 chars, L10) and `THE
-BREACH` (10 chars, L60/L80) don't clip; `THE SINGULARITY` (15 chars) and `THE LONG WAY HOME` (17
-chars) do. **No committed Play/store/portfolio asset ships a clipped-title frame this wave** — every
-boss slot either sources a short-title level instead (`03-boss-finale.png` etc. now use `boss-l060`)
-or crops the clipped strip off frames that specifically need the true L150 campaign finale
-(`hero-boss-finale.png`, the iOS/iPad `*-boss-finale.png`). A real fix (chip max-width + ellipsis, or
-reserving toolbar clearance) belongs in a future gameplay wave, not a media-only one.
+**Long boss/signature titles no longer clip the top-right icon toolbar.** Previously
+`GameScene.createHud()`'s title chip sized itself to `label.width + 28` at a fixed top-left position
+while the home/settings/restart icon row sat at an independent fixed top-right position, so a long
+title (`THE LONG WAY HOME` L150, `THE SINGULARITY` L50/L140, `THE EYE OF THE STORM` L120, …) ran under
+the icons. **Fixed** on `master` (branch `feat/fix-boss-title-overflow`, merged): the chip now
+shrink-fits then ellipsises to the space before the icon row, and the centre title card shrink-fits
+to the safe-area width — pure, tested helpers in `src/utils/textFit.ts`, tuned via `theme.config.ts`
+(no gameplay/physics touched). Verified by rendering the worst cases (`THE LONG WAY HOME` L150 and the
+20-char `THE EYE OF THE STORM` L120): chip truncates clear of the icons, title card stays on-screen.
+
+The Google Play `03-boss-finale.png` was re-captured against the fix and now ships the true campaign
+finale `boss-l150` ("THE LONG WAY HOME") with its title fitting cleanly. **Not re-captured this pass**
+(still legacy pre-fix frames, crop-fixed as before — regenerate on a real device before an iOS
+submission): the iOS/iPad `*-boss-finale.png` previews and the portfolio `hero-boss-finale.png`.
