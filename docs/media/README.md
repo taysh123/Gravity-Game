@@ -4,7 +4,8 @@ The complete, commercially-publishable visual package for **GRAVITY FLOW** (True
 Google Play, the App Store (future), GitHub, a portfolio site, and LinkedIn/CV. Everything here is
 captured automatically from the live build, then curated.
 
-- **Captured:** 2026-06-14 from `v1.0.0-rc.1` (150 levels / 15 worlds).
+- **Captured:** 2026-07-02 from `v1.0.0-rc.1` (150 levels / 15 worlds) — Wave 4 Task 2 refresh
+  (2 new/refreshed hero GIFs + a re-curated Google Play set; see §B/§C below).
 - **Source of truth for state:** [`../project-status.md`](../project-status.md).
 - **Caption / ASO strategy reference:** [`../store/aso.md`](../store/aso.md) · [`../store/listing.md`](../store/listing.md).
 
@@ -37,52 +38,71 @@ What the game actually shows, ranked for impact on **players** and **recruiters*
 | Core | **Core mechanic in motion** | hold-to-pull arc + trail + sonar reach ring | gameplay + held attractor |
 | Core | **Cosmetics store** | 28 cosmetics, 5 rarities, locked previews — monetization, not intrusive | `CosmeticsScene {tab}` |
 | Core | **Achievements** | 14 achievements, progression depth | `AchievementsScene` |
-| Support | **3-star win** | "PERFECT! LEVEL COMPLETE ★★★" + rewarded 2× | win overlay |
-| Support | **Daily Challenge** | live-service retention (streak + badge on the menu) | `MainMenuScene` |
+| Core | **3-star celebration (new juice)** | "PERFECT! LEVEL COMPLETE ★★★" + `×5 BLAZE` streak + a star-milestone toast, escalating in | win overlay |
+| Support | **Daily reward + streak protection** | gold DAILY REWARD chest on the menu + an earned streak-freeze ("· protected") | `MainMenuScene` |
+| Support | **Honest bundle framing** | truthful per-bundle value lines + one config-flagged BEST VALUE tag (cosmetic-only, no P2W) | `CosmeticsScene {tab:'bundle'}` |
+| Support | **Living world** | reactive nebula background, a held attractor's tendrils/lensing at full charge, and drifting comets | gameplay (long hold) |
 
 **Deliberately not shown:** splash/boot frames, empty arenas, debug overlays, near-duplicate world
-panels, bare settings as a "feature", locked/greyed content as the focus.
+panels, bare settings as a "feature", locked/greyed content as the focus, or any clipped-title frame
+(see the known-issue note in §E).
 
 ---
 
 ## B. Final sets — recommended order, why, and captions
 
 ### Google Play — `store/android/` (1080×2160, full-res)
-Funnel: hook → mechanic → spectacle → replay → stakes → depth → mastery. Captions go in the Play
-console editor (top third, safe-area, one accent glow per shot — see `../store/aso.md §2`).
+Mirrored 1:1 into `docs/store/assets/screenshots/` (the Play Console submission folder). Funnel:
+hook → mechanic → tension → spectacle → new-juice → retention → store → replay. Captions go in the
+Play console editor (top third, safe-area, one accent glow per shot — see `../store/aso.md §2`).
 
 | # | File | Shows | Caption |
 |---|------|-------|---------|
 | 1 | `01-star-map.png` | The Cosmos world map | **Journey 150 levels across 15 worlds.** |
 | 2 | `02-gameplay-pull.png` | Hold-to-pull, portals + currents (Rifts) | **Hold to pull. Guide the star home.** |
-| 3 | `03-boss-singularity.png` | Boss "THE SINGULARITY" | **15 worlds. 15 bosses, all different.** |
-| 4 | `04-gravity-run.png` | Gravity Run hub | **Endless mode + a weekly challenge.** |
-| 5 | `05-hazards-peril.png` | Hazard saw + timer (Peril) | **Dodge the hazards. Beat the clock.** |
-| 6 | `06-cosmetics.png` | Cosmetics store, rarities | **Unlock 28 skins, trails & effects.** |
-| 7 | `07-achievements.png` | Achievements list | **Chase 3 stars and 14 achievements.** |
-| 8 | `08-three-star-win.png` | 3-star LEVEL COMPLETE | **Master every level. Perfect every run.** |
+| 3 | `03-boss-finale.png` | Boss "THE BREACH" | **15 worlds. 15 bosses, all different.** |
+| 4 | `04-three-star-win.png` | 3-star LEVEL COMPLETE + `×5 BLAZE` + milestone toast | **Master every level. Perfect every run.** |
+| 5 | `05-daily-rewards.png` | Main menu, gold DAILY REWARD chest + streak-protected | **Daily rewards. Never lose your streak.** |
+| 6 | `06-cosmetics-bundle.png` | Store, Bundles tab, honest BEST VALUE tag | **Cosmetic bundles — no pay-to-win, ever.** |
+| 7 | `07-hazards-peril.png` | Hazard saw + timer (Peril) | **Dodge the hazards. Beat the clock.** |
+| 8 | `08-gravity-run.png` | Gravity Run hub | **Endless mode + a weekly challenge.** |
+
+Dropped `achievements` from this set to hold the Play count at a strong 8 while making room for the
+Wave 2-3 retention/store shots (5-6 above) — achievements stays in the GitHub/portfolio galleries
+below for players/recruiters who want more depth. `03`/`gallery-02-boss`/portfolio `04` all switched
+from the old `boss-l050` ("THE SINGULARITY") source to `boss-l060` ("THE BREACH") — `l050`'s title
+chip clips the icon toolbar (see the known-issue note in §E); `l060` doesn't and reads just as strong.
 
 ### App Store iPhone 6.7" — `store/ios/iphone-6.7/` (1290×2796, full-res)
-Mirrors the Play order (`01`…`08`). The game's 0.462 aspect matches the 6.7" frame almost exactly,
-so these are clean. *Apple wants real-device/simulator captures for submission — regenerate there;
-these are publish-quality previews.*
+Mirrors the Play order (`01`…`08`, still the pre-refresh 8-shot layout — preview-quality only, not
+re-funneled this wave). The game's 0.462 aspect matches the 6.7" frame almost exactly, so these are
+clean. `03-boss-finale.png` crops the clipped title strip off the L150 raw frame (see §E) rather than
+re-capturing a whole extra iOS profile shot for a media-only wave. *Apple wants real-device/simulator
+captures for submission — regenerate there; these are publish-quality previews.*
 
 ### App Store iPad 12.9" — `store/ios/ipad-12.9/` (2048×2732)
 ⚠️ **Letterboxed previews.** The portrait game (0.462) sits centred on the iPad's 0.75 frame with
 seamless cosmic side bars. Usable as placeholders; **regenerate on a real iPad/simulator** before
 an iOS submission. Order: `01-star-map`, `02-gameplay`, `03-world-currents`, `04-gravity-run`,
-`05-boss-finale`.
+`05-boss-finale` (also crop-fixed, same clipped-title strip as iPhone above).
 
 ### GitHub README — `github/`
-- **GIFs** (autoplay in markdown): `gravity-pull.gif` (the mechanic), `endless-climb.gif` (Gravity
-  Run), `win-celebration.gif` (absorb + burst + overlay pop).
+- **2 hero GIFs** (autoplay in markdown): `win-celebration.gif` — the 3-star celebration
+  ESCALATION (absorb → card pop → stars-in → PERFECT! → `×5 BLAZE` + milestone toast settling in);
+  `living-world.gif` — World 15's reactive background + a held attractor at full charge
+  (tendrils/lensing) + a drifting comet. Both refreshed/added this wave; kept lean (545-800 KB).
+- **2 supporting GIFs** (unchanged mechanics, not superseded): `gravity-pull.gif` (the core
+  mechanic), `endless-climb.gif` (Gravity Run).
 - **`hero-star-map.png`** — top-of-README banner.
-- **`gallery-01…06`** — gameplay · boss · gravity-run · cosmetics · achievements · win.
+- **`gallery-01…06`** — gameplay · boss ("THE BREACH") · gravity-run · cosmetics · achievements · win.
 
 ### Portfolio — `portfolio/`
-- **`hero-boss-finale.png`** — wide hero (boss "THE LONG WAY HOME", every mechanic on screen).
-- **Gameplay gallery** `01…08`: star-map · gameplay (Rifts) · gameplay (Peril) · boss · gravity-run
-  · cosmetics · achievements · world-select. Shows variety, polish, and systems depth.
+- **`hero-boss-finale.png`** — wide hero (boss "THE LONG WAY HOME", every mechanic on screen). Its
+  raw source has the same clipped-title chip as the Play boss shot (see §E) — cropped off the top
+  ~9.5% of the frame here instead of switching levels, since this ONE spot specifically wants the
+  true campaign finale.
+- **Gameplay gallery** `01…08`: star-map · gameplay (Rifts) · gameplay (Peril) · boss ("THE BREACH")
+  · gravity-run · cosmetics · achievements · world-select. Shows variety, polish, and systems depth.
 
 ### LinkedIn / CV — `linkedin/`
 - **`01-design-star-map.png`** — game-design quality (the world-journey at a glance).
@@ -98,12 +118,17 @@ docs/media/
   store/android/            8  1080×2160  Google Play
   store/ios/iphone-6.7/     8  1290×2796  App Store 6.7" (clean)
   store/ios/ipad-12.9/      5  2048×2732  App Store 12.9" (letterboxed previews)
-  github/                  10  hero + 6 gallery (640–900w) + 3 GIFs
+  github/                  11  hero + 6 gallery (640–900w) + 4 GIFs (2 hero + 2 supporting)
   portfolio/                9  hero + 8 gallery (760–1000w)
   linkedin/                 2  design + engineering picks (820w)
   raw/                     —  full capture dump (GITIGNORED; regenerate any time)
+
+docs/store/assets/
+  screenshots/              8  1080×2160  Google Play Console submission (mirrors store/android/)
+  icon-512.png, feature-1024x500.png      unchanged this wave
 ```
-Total committed ≈ 15 MB. The `raw/` dump (android 53 · iPhone 12 · iPad 5 · GIF frames) stays local.
+Total committed ≈ 16 MB (`docs/media` ~15.9 MB + `docs/store/assets` ~5.4 MB, some overlap via the
+Play mirror). The `raw/` dump (android 59 · iPhone 12 · iPad 5 · 4 GIF frame sequences) stays local.
 
 ---
 
@@ -119,3 +144,20 @@ Automation drives scenes via the dev hook but cannot reproduce finger input or t
    from a screen recording if wanted.
 5. **Daily/Weekly "live" states** — seeded here; a real streak/leaderboard screenshot is nicer once
    there's real play history.
+
+---
+
+## E. Known issue — filed, NOT fixed this wave (game code frozen)
+
+**Long boss/signature titles clip the top-right icon toolbar.** `GameScene.createHud()`'s title chip
+sizes itself to `label.width + 28` and sits at a fixed top-left position; the home/settings/restart
+icon row sits at an independent fixed top-right position. Neither accounts for the other, so a long
+title (`THE LONG WAY HOME` at L150, `THE SINGULARITY` at L50/L140, `THE MAELSTROM` at L20, `THE EYE
+OF THE STORM` at L120, …) overlaps the icons instead of staying clear of them like the comment at
+that call site claims. Confirmed by direct comparison: `THE COLLAPSE` (12 chars, L10) and `THE
+BREACH` (10 chars, L60/L80) don't clip; `THE SINGULARITY` (15 chars) and `THE LONG WAY HOME` (17
+chars) do. **No committed Play/store/portfolio asset ships a clipped-title frame this wave** — every
+boss slot either sources a short-title level instead (`03-boss-finale.png` etc. now use `boss-l060`)
+or crops the clipped strip off frames that specifically need the true L150 campaign finale
+(`hero-boss-finale.png`, the iOS/iPad `*-boss-finale.png`). A real fix (chip max-width + ellipsis, or
+reserving toolbar clearance) belongs in a future gameplay wave, not a media-only one.
