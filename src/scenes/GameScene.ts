@@ -62,8 +62,21 @@ import { STORE } from '../config/monetization.config';
 import { StreakStore } from '../utils/StreakStore';
 import { streakTier } from '../utils/streak';
 import { nearMiss } from '../utils/nearMiss';
+import { fitScale, truncateToWidth } from '../utils/textFit';
 
 const SAFE_PAD = 12; // minimum padding from any screen edge for HUD/nav
+
+// Top-right nav toolbar geometry (Home/Settings/Restart) — shared by createNav()
+// (which draws it) and createHud() (which must size the title chip so it never
+// grows into it, however long the title). Keeping these in one place means the
+// two can never drift out of sync.
+const NAV_SLOT = 48;
+const NAV_GAP = 4;
+const NAV_PAD_X = 10;
+const NAV_ICON_COUNT = 3;
+function navBarWidth(): number {
+  return NAV_ICON_COUNT * NAV_SLOT + (NAV_ICON_COUNT - 1) * NAV_GAP + NAV_PAD_X * 2;
+}
 
 function fmtTime(ms: number): string {
   return `${(ms / 1000).toFixed(1)}s`;
@@ -530,8 +543,9 @@ export class GameScene extends Phaser.Scene {
 
     // HUD title: BOSS / signature name / DAILY / LEVEL N — bosses + signatures
     // get a gold accent so they read as special.
-    // Signature levels show a gold title; bosses a red one — kept short so the
-    // chip stays clear of the top-right toolbar.
+    // Long titles (e.g. boss/signature names) are shrunk, then truncated with
+    // an ellipsis as a last resort, so the chip's width is always bounded
+    // clear of the top-right nav toolbar (see NAV_* geometry above + textFit.ts).
     const labelStr = this.isDaily ? 'DAILY' : this.levelTitle || `LEVEL ${this.currentLevel}`;
     const labelColor = this.isBoss ? '#ff5a6a' : this.levelTitle ? '#ffd166' : THEME.TEXT_PRIMARY;
     const label = this.add
@@ -544,7 +558,28 @@ export class GameScene extends Phaser.Scene {
       .setOrigin(0.5);
     label.setLetterSpacing(2);
 
-    const w = label.width + 28;
+    // The nav toolbar hasn't been created yet (createNav() runs after createHud()),
+    // but its geometry is deterministic — compute its left edge here.
+    const navRightPad = Math.max(SAFE_PAD, insets.right) + 8;
+    const navLeftEdge = this.scale.width - navRightPad - navBarWidth();
+    const availableTextWidth = navLeftEdge - THEME.HUD_CHIP_NAV_GAP - padX - THEME.HUD_CHIP_PAD;
+
+    const scale = fitScale(label.width, availableTextWidth, THEME.HUD_LABEL_MIN_SCALE);
+    label.setScale(scale);
+    if (label.displayWidth > availableTextWidth) {
+      const truncated = truncateToWidth(
+        labelStr,
+        availableTextWidth,
+        (candidate) => {
+          label.setText(candidate);
+          return label.displayWidth;
+        },
+        THEME.ELLIPSIS,
+      );
+      label.setText(truncated);
+    }
+
+    const w = label.displayWidth + THEME.HUD_CHIP_PAD;
     const h = 34;
     const chip = this.add.graphics();
     drawGlass(chip, w, h, h / 2);
@@ -652,9 +687,9 @@ export class GameScene extends Phaser.Scene {
   // component, not loose squares. Safe-area aware; generous targets.
   private createNav(): void {
     const insets = this.safeInsets;
-    const slot = 48;
-    const gap = 4;
-    const padX = 10;
+    const slot = NAV_SLOT;
+    const gap = NAV_GAP;
+    const padX = NAV_PAD_X;
     const barH = slot + 8;
     const rightPad = Math.max(SAFE_PAD, insets.right) + 8;
     const topPad = Math.max(SAFE_PAD, insets.top) + 8;
@@ -665,7 +700,7 @@ export class GameScene extends Phaser.Scene {
       { icon: 'restart', onClick: () => { if (!this.isWon && !this.isDying) this.triggerRestart(); } },
     ];
 
-    const barW = defs.length * slot + (defs.length - 1) * gap + padX * 2;
+    const barW = navBarWidth();
     const barX = this.scale.width - rightPad - barW / 2;
     const barY = topPad + barH / 2;
 
@@ -727,6 +762,11 @@ export class GameScene extends Phaser.Scene {
     const name = this.add
       .text(cx, cy + 6, this.levelTitle, { fontFamily: THEME.FONT_DISPLAY, fontSize: '28px', color: accent, fontStyle: '700' })
       .setOrigin(0.5).setDepth(60).setLetterSpacing(2);
+    // Defensive shrink: a very long boss/signature title (e.g. "THE LONG WAY
+    // HOME") must stay within the screen width, centered — no ellipsis needed,
+    // a smaller centered title still reads fine.
+    const titleMaxWidth = width - THEME.TITLE_CARD_SAFE_MARGIN * 2;
+    name.setScale(fitScale(name.width, titleMaxWidth, THEME.TITLE_CARD_MIN_SCALE));
     const group = [tag, name];
     if (reducedMotionActive()) {
       this.time.delayedCall(1500, () => group.forEach((g) => g.destroy()));
