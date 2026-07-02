@@ -31,5 +31,7 @@ export function truncateToWidth(
     const candidate = text.slice(0, len) + ellipsis;
     if (measure(candidate) <= maxWidth) return candidate;
   }
-  return ellipsis;
+  // Even the bare ellipsis must fit — otherwise return nothing rather than
+  // let a still-too-wide glyph overflow (keeps the no-collision guarantee absolute).
+  return measure(ellipsis) <= maxWidth ? ellipsis : '';
 }

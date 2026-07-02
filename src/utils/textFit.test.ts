@@ -50,7 +50,14 @@ describe('truncateToWidth', () => {
     expect(measure(result)).toBeLessThanOrEqual(80);
   });
 
-  it('falls back to the bare ellipsis when even one character will not fit', () => {
-    expect(truncateToWidth('THE SINGULARITY', 5, measure, '…')).toBe('…');
+  it('falls back to the bare ellipsis when a char will not fit but the ellipsis does', () => {
+    // maxWidth 15 fits the ellipsis (10) but not one char + ellipsis (20).
+    expect(truncateToWidth('THE SINGULARITY', 15, measure, '…')).toBe('…');
+  });
+
+  it('returns empty when even the bare ellipsis will not fit (never overflows)', () => {
+    // maxWidth 5 < ellipsis width 10 -> nothing fits, so return '' rather than an
+    // overflowing glyph (keeps the chip-vs-nav no-collision guarantee absolute).
+    expect(truncateToWidth('THE SINGULARITY', 5, measure, '…')).toBe('');
   });
 });
