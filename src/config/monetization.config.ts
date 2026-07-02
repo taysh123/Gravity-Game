@@ -42,9 +42,13 @@ export interface BundleDef {
   premium: boolean;
   blurb: string;
   // ONE bundle only — an honest "BEST VALUE" tag (Wave 3 Task 4). Never fake
-  // savings math: 'starter' is flagged because it's the cheapest bundle that
-  // includes Remove Ads (the same benefit 'founders' charges $5 more for),
-  // plus an exclusive Legendary cosmetic — the best $/benefit of the three.
+  // savings math: 'starter' is flagged as the best value-PER-DOLLAR entry deal —
+  // the lowest-priced bundle that includes Remove Ads (a $1.99 standalone) AND an
+  // exclusive Legendary cosmetic, so the cosmetic effectively costs ~$1 on top of
+  // Remove Ads. This is a deliberate value-per-dollar framing, NOT a claim it
+  // dominates on every axis (Founders has higher-tier Mythic skins; Premium
+  // Collection has two Legendaries) — those trade more content/rarity for a
+  // higher price. Every fact in the framing is true; there is no fake discount.
   bestValue?: boolean;
 }
 
@@ -65,7 +69,8 @@ export const REMOVE_ADS_PRICE_LABEL = '$1.99';
 // Store discoverability (Wave 3 Task 4) — an honest win-overlay spend nudge +
 // truthful bundle value framing. No dark patterns: no countdowns, no fake
 // urgency, no fake savings math. The BEST VALUE tag above is the only
-// persuasive element anywhere in this feature, and it's genuinely true.
+// persuasive element anywhere in this feature, and it's an honest value-per-
+// dollar framing (see BundleDef.bestValue), not a fabricated claim.
 export const STORE = {
   // Win-overlay spend nudge: shown only when a persisted cooldown of ELIGIBLE
   // (campaign, non-first-win) wins has elapsed since it last showed, the
