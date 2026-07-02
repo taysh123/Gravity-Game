@@ -19,7 +19,7 @@ import { IAP } from '../utils/IAP';
 import { Ads } from '../utils/Ads';
 import { RewardStore } from '../utils/RewardStore';
 import { Analytics } from '../utils/Analytics';
-import { shopOpen, storeTab, cosmeticEquip, fragmentEarned, rewardedOffered } from '../utils/analyticsEvents';
+import { shopOpen, storeTab, bundleCrossSell, cosmeticEquip, fragmentEarned, rewardedOffered } from '../utils/analyticsEvents';
 
 const FREE_FRAGMENTS = 5; // daily rewarded grant
 
@@ -43,23 +43,25 @@ export class CosmeticsScene extends Phaser.Scene {
   private cosmic!: CosmicBackground;
   private tab: Tab = 'skin';
   private dragging = false;
-  private enteredViaTab = false; // true when restarted for a tab switch — suppresses a redundant shop_open
+  private enteredInternally = false; // true on an internal refresh restart (tab switch / post-purchase) — suppresses a redundant shop_open
   private highlightBundle?: string; // bundle id to pulse — set by a locked bundle-cosmetic cross-sell tap
 
   constructor() {
     super({ key: 'CosmeticsScene' });
   }
 
-  init(data: { tab?: Tab; viaTab?: boolean; highlightBundle?: string }): void {
+  init(data: { tab?: Tab; internal?: boolean; highlightBundle?: string }): void {
     this.tab = data?.tab ?? 'skin';
-    this.enteredViaTab = data?.viaTab ?? false;
+    this.enteredInternally = data?.internal ?? false;
     this.highlightBundle = data?.highlightBundle;
   }
 
   create(): void {
-    // shop_open marks a genuine store ENTRY only — a tab switch fires storeTab, not
-    // a fresh shop_open (else every tab tap would inflate the store-session count).
-    if (!this.enteredViaTab) Analytics.track(shopOpen(this.tab));
+    // shop_open marks a genuine store ENTRY only. Every INTERNAL refresh restart —
+    // a tab switch, a cross-sell jump, or a post-purchase/claim redraw — passes
+    // internal:true, so it fires storeTab (switches) or nothing, never a phantom
+    // shop_open that would inflate the store-session count around conversions.
+    if (!this.enteredInternally) Analytics.track(shopOpen(this.tab));
     const { width, height } = this.scale;
     const cx = width / 2;
     const sx = this.scale.displaySize.width / this.scale.gameSize.width;
@@ -105,7 +107,7 @@ export class CosmeticsScene extends Phaser.Scene {
       txt.on('pointerup', () => {
         if (this.dragging || t.key === this.tab) return;
         Analytics.track(storeTab(t.key)); // tab-switch intent (Bundles = strongest IAP signal)
-        this.scene.restart({ tab: t.key, viaTab: true });
+        this.scene.restart({ tab: t.key, internal: true });
       });
     });
 
@@ -128,7 +130,7 @@ export class CosmeticsScene extends Phaser.Scene {
         fontFamily: THEME.FONT_BODY, fontSize: '13px', color: THEME.TEXT_MUTED, fontStyle: '600',
       }).setOrigin(0.5);
       restore.setInteractive({ useHandCursor: true });
-      restore.on('pointerup', async () => { if (this.dragging) return; await IAP.restorePurchases(); this.scene.restart({ tab: 'bundle' }); });
+      restore.on('pointerup', async () => { if (this.dragging) return; await IAP.restorePurchases(); this.scene.restart({ tab: 'bundle', internal: true }); });
       listC.add(restore); yy += 36;
     }
     const totalH = yy;
@@ -207,7 +209,8 @@ export class CosmeticsScene extends Phaser.Scene {
         // Bundle-only cosmetics can't be bought/equipped directly — route to the
         // bundle that grants them instead of the generic cantAfford/locked shake.
         if (!owned && c.acquire === 'bundle' && c.bundleId) {
-          this.scene.restart({ tab: 'bundle', viaTab: true, highlightBundle: c.bundleId });
+          Analytics.track(bundleCrossSell(c.bundleId)); // per-item IAP intent — before the (internal) restart
+          this.scene.restart({ tab: 'bundle', internal: true, highlightBundle: c.bundleId });
           return;
         }
         const result = CosmeticStore.buyOrEquip(c.id);
@@ -215,8 +218,8 @@ export class CosmeticsScene extends Phaser.Scene {
         Analytics.track(cosmeticEquip(c.id));
         claimCollectionRewards();
         // A new unlock gets a celebratory moment; a re-equip just refreshes.
-        if (result === 'bought') this.playUnlockFanfare(c, () => this.scene.restart({ tab: this.tab }));
-        else this.scene.restart({ tab: this.tab });
+        if (result === 'bought') this.playUnlockFanfare(c, () => this.scene.restart({ tab: this.tab, internal: true }));
+        else this.scene.restart({ tab: this.tab, internal: true });
       });
     }
     this.entrance(card, i);
@@ -252,7 +255,7 @@ export class CosmeticsScene extends Phaser.Scene {
           FragmentStore.add(FREE_FRAGMENTS);
           RewardStore.claim('free_fragments');
           Analytics.track(fragmentEarned(FREE_FRAGMENTS, 'rewarded'));
-          this.scene.restart({ tab: 'bundle' });
+          this.scene.restart({ tab: 'bundle', internal: true });
         }
       });
     }
@@ -284,7 +287,7 @@ export class CosmeticsScene extends Phaser.Scene {
       card.on('pointerup', async () => {
         if (this.dragging) return;
         const ok = await IAP.buyRemoveAds();
-        if (ok) this.scene.restart({ tab: 'bundle' });
+        if (ok) this.scene.restart({ tab: 'bundle', internal: true });
         else this.cameras.main.shake(110, 0.004);
       });
     }
@@ -357,7 +360,7 @@ export class CosmeticsScene extends Phaser.Scene {
       card.on('pointerup', async () => {
         if (this.dragging) return;
         const ok = await IAP.buyBundle(b.id);
-        if (ok) { claimCollectionRewards(); this.scene.restart({ tab: 'bundle' }); }
+        if (ok) { claimCollectionRewards(); this.scene.restart({ tab: 'bundle', internal: true }); }
         else this.cameras.main.shake(110, 0.004);
       });
     }

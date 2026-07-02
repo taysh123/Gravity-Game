@@ -21,6 +21,7 @@ import {
   rewardedOffered,
   shopOpen,
   storeTab,
+  bundleCrossSell,
   purchaseInitiated,
   purchaseCompleted,
   purchaseFailed,
@@ -64,6 +65,10 @@ describe('event creators', () => {
   });
   it('storeTab sanitizes the tab', () => {
     expect(storeTab('bundle')).toEqual({ name: 'store_tab', params: { tab: 'bundle' } });
+  });
+
+  it('bundleCrossSell carries the bundle id', () => {
+    expect(bundleCrossSell('founders')).toEqual({ name: 'bundle_cross_sell', params: { bundleId: 'founders' } });
   });
   it('purchaseInitiated sanitizes the product', () => {
     expect(purchaseInitiated('remove_ads')).toEqual({ name: 'purchase_initiated', params: { product: 'remove_ads' } });
