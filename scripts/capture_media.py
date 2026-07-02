@@ -30,8 +30,9 @@ OUT = Path("docs/media/raw")
 # ---------------------------------------------------------------------------
 # Seed localStorage so the whole game reads as a polished, fully-progressed
 # save: every level 3-starred, healthy currency, a lively owned/locked store,
-# a live daily streak, and every achievement unlocked. Keys verified against
-# src/utils/*Store.ts (progress is v9 / 150 levels; cosmetics v2).
+# a live daily streak + win streak, an unclaimed milestone/login ledger, and
+# every achievement unlocked. Keys verified against src/utils/*Store.ts AFTER
+# Waves 2-3 (progress is v9 / 150 levels; cosmetics v2).
 # ---------------------------------------------------------------------------
 SEED = """()=>{
   const set=(k,v)=>{try{localStorage.setItem(k,typeof v==='string'?v:JSON.stringify(v));}catch(e){}};
@@ -49,10 +50,28 @@ SEED = """()=>{
            'trail_fire','trail_ice','trail_lightning','arrival_starburst','arrival_portal','arrival_nova'],
     equipped:{skin:'cosmic_supernova',trail:'trail_lightning',arrival:'arrival_nova'}
   });
-  set('gravity-flow:rewards:v1', {dailyFreeClaimedDate:''});
-  // Daily: played YESTERDAY (so the gold DAILY badge still shows today) with a live streak.
+  // One-time reward ledger (RewardStore: 'login:<date>' / 'stars:<n>' /
+  // 'collection:<id>' keys). Left EMPTY (was a stale, never-read
+  // 'dailyFreeClaimedDate' field before) so: (a) the MainMenu DAILY REWARD
+  // chest reads claimable, and (b) a forced campaign win fires a fresh
+  // star-milestone celebration toast (Rewards.claimMilestoneRewards).
+  set('gravity-flow:rewards:v1', {});
+  // Daily Challenge streak: played YESTERDAY (so the gold DAILY badge still
+  // shows today) with a live streak. Wave 2b Task 5 adds an earned
+  // streak-freeze token (freezeCount — surfaces the "· protected" suffix) and
+  // a SEPARATE consecutive-login-day counter (loginStreak/lastLoginDate —
+  // independent of the challenge streak, since opening the app isn't playing
+  // the daily) also last-seen yesterday, so DailyStore.loginBonusClaimedToday()
+  // reads false today (chest gold/claimable) once claimed it would continue
+  // the ladder from day 5.
   const y=new Date(Date.now()-864e5); const yk=`${y.getFullYear()}-${String(y.getMonth()+1).padStart(2,'0')}-${String(y.getDate()).padStart(2,'0')}`;
-  set('gravity-flow:daily', {lastPlayedDate:yk, streak:7, bestStreak:12});
+  set('gravity-flow:daily', {lastPlayedDate:yk, streak:7, bestStreak:12, freezeCount:2, loginStreak:4, lastLoginDate:yk});
+  // Win-streak (Wave 2a StreakStore — campaign wins only, separate from the
+  // Daily Challenge streak above; broken only by a death). Seeded ONE below
+  // the BLAZE tier (RETENTION.STREAK_BLAZE_MIN=5) so a single forced win
+  // (StreakStore.win() increments before display) renders the exact
+  // `x5 BLAZE` win-overlay flourish.
+  set('gravity-flow:streak:v1', {current:4, best:9});
   // Lifetime stats + every achievement unlocked.
   set('gravity-flow:stats', {deaths:42, portalJumps:88});
   set('gravity-flow:achievements', ['first_win','ten_done','half_done','all_done','stars_30',
@@ -60,8 +79,12 @@ SEED = """()=>{
   // Leaderboards — a personal Endless best for the Gravity Run hub.
   set('gravity-flow:leaderboard:endless','1840');
   set('gravity-flow:run:coached','1');
-  // Skip the one-time L1 coach-mark / tutorial so gameplay frames are clean.
-  set('gravity-flow:settings:v1', {seenTutorial:true});
+  // Skip the one-time L1 coach-mark + first-ever-win FTUE beat so gameplay/win
+  // frames are clean. NOTE: the live SettingsStore key has NO ':v1' suffix —
+  // the previous seed wrote to a key the store never reads (a silent no-op
+  // masked by the seeded progress already suppressing the FTUE beat via
+  // hadPriorProgress); fixed here to the real key + real field names.
+  set('gravity-flow:settings', {seenTutorial:true, seenFirstWin:true});
 }"""
 
 # Stop every running scene, then start the target one cleanly.
@@ -92,6 +115,19 @@ ENDLESS_BALL = """()=>{const g=window.__game; const s=g.scene.getScene('EndlessS
 # under par right after start), then fire the scene's own win flow.
 WIN = """()=>{const g=window.__game; const s=g.scene.getScene('GameScene');
   if(!s) return false; try{ s.gemCollected=true; s.triggerWin(); return true; }catch(e){ return false; }}"""
+
+
+def reseed(pg):
+    """Fresh SEED + reload. RewardStore/StreakStore cache their state in page
+    memory for the life of the page — every scene navigation done via START
+    reuses that SAME memory, so one forced win's claims (milestones, streak
+    count) leak into every later forced win in the same page. Dedicated
+    "wow"-moment captures (milestone toast, streak flourish, boss celebration)
+    each need a clean, deterministic ledger, so they reseed+reload right
+    before forcing their win — isolated from whatever earlier shots did."""
+    pg.evaluate(SEED)
+    pg.reload(wait_until="load")
+    pg.wait_for_timeout(2600)
 
 
 def hold_and_shot(pg, hold_game_xy, settle, path, hold_ms=380, release=True):
@@ -128,12 +164,15 @@ def shoot_gameplay(pg, level, settle, path, win=False):
 
 # ---------------------------------------------------------------------------
 # Shot lists. Each entry: (kind, *args, name). Kinds:
-#   scene   (key, data, settle)
-#   game    (level, settle)                  -> gameplay w/ attractor pull
-#   win     (level, settle)                  -> LEVEL COMPLETE overlay
-#   endless (settle)                         -> Gravity Run mid-climb (held)
-#   runover (wait)                           -> RUN OVER overlay (let it die)
+#   scene       (key, data, settle)
+#   game        (level, settle)              -> gameplay w/ attractor pull
+#   win         (level, settle)              -> LEVEL COMPLETE overlay
+#   endless     (settle)                     -> Gravity Run mid-climb (held)
+#   runover     (wait)                       -> RUN OVER overlay (let it die)
 #   settings()
+#   living      (level, hold_ms)             -> long-held full-charge pull + comet dwell
+#   win-fresh   (level, settle)              -> reseed()'d win overlay (isolated ledger)
+#   scene-fresh (key, data, settle)          -> reseed()'d scene (isolated ledger)
 # ---------------------------------------------------------------------------
 WORLD_NAMES = ["foundations","currents","clockwork","peril","wells","rifts","gates",
                "convergence","gauntlet","binary","labyrinth","tempest","ascension",
@@ -165,6 +204,32 @@ def android_shots():
     # Boss finales (static arenas).
     for lv in BOSS_LEVELS:
         s.append(("game-static", lv, 1100, f"boss-l{lv:03d}"))
+    # ── Wave 2-3 "new juice" targets (Wave 4 Task 1) — each forced-win shot
+    # below reseeds first (see `reseed`) so it renders deterministically no
+    # matter what any earlier shot in this run already claimed/incremented.
+    # Living gameplay: World 15 (HOMECOMING, the richest starAlpha/nebula
+    # theme) with a long-held attractor at full charge (tendrils + lensing
+    # ring cap at 900ms hold) and enough dwell time (comet cadence tops out
+    # at 9s) for a drifting comet to enter — a "premium in motion" still.
+    s.append(("living", 145, 9700, "20-living-world15"))
+    # 3-star / boss celebration: the campaign finale (level163 "THE LONG WAY
+    # HOME", boss:true) — the tiered celebration ladder's top rung (screen
+    # bloom + camera punch + STAR FREED + PERFECT!).
+    s.append(("win-fresh", 150, 1100, "21-boss-celebration"))
+    # Win-streak flourish: a non-first, non-boss level — the seeded streak
+    # renders the `x5 BLAZE` kicker on the win overlay.
+    s.append(("win-fresh", 65, 950, "22-streak-flourish"))
+    # Milestone toast: a non-first, non-boss level, fresh RewardStore — the
+    # total-stars milestone (450/450 stars seeded → the highest, 150 "Celestial")
+    # celebration toast below the panel.
+    s.append(("win-fresh", 45, 950, "23-milestone-toast"))
+    # Daily reward + streak protection: MainMenu's gold DAILY REWARD chest
+    # (claimable — no 'login:<today>' claim) + the "· protected" suffix on the
+    # DAILY caption (an earned streak-freeze token held).
+    s.append(("scene-fresh", "MainMenuScene", None, 1200, "24-daily-reward-chest"))
+    # Honest store framing: the Bundles tab — truthful per-bundle value lines
+    # + the single config-flagged BEST VALUE tag (no fake-savings math).
+    s.append(("scene", "CosmeticsScene", {"tab": "bundle"}, 1100, "25-cosmetics-bundle"))
     return s
 
 def ios_shots():
@@ -207,9 +272,7 @@ def run_profile(browser, name, cfg, errs):
     pg.on("pageerror", lambda e: errs.append(f"[{name}] {e}"))
     pg.goto(URL, wait_until="load")
     pg.wait_for_timeout(2200)
-    pg.evaluate(SEED)
-    pg.reload(wait_until="load")
-    pg.wait_for_timeout(2600)
+    reseed(pg)
 
     for shot in cfg["shots"]():
         kind = shot[0]
@@ -249,6 +312,31 @@ def run_profile(browser, name, cfg, errs):
             pg.evaluate(SETTINGS_OVERLAY)
             pg.wait_for_timeout(900)
             pg.evaluate(SETTINGS_RUN)
+            pg.wait_for_timeout(settle)
+            pg.screenshot(path=str(path))
+        elif kind == "living":
+            # Long-held attractor (full tendril/lensing charge) + enough dwell
+            # time for a comet to drift through. Hold point is offset SIDEWAYS
+            # from the ball (not toward the goal) so a multi-second hold can
+            # never accidentally win the level or drift into a hazard.
+            _, lv, hold_ms, _ = shot
+            pg.evaluate(START, ["GameScene", {"level": lv}])
+            pg.wait_for_timeout(900)
+            pos = pg.evaluate(GAME_POS)
+            if pos:
+                hx = min(pos["bx"] + 70, 340)
+                hy = pos["by"] + 40
+                hold_and_shot(pg, (hx, hy), 0, path, hold_ms=hold_ms)
+            else:
+                pg.screenshot(path=str(path))
+        elif kind == "win-fresh":
+            _, lv, settle, _ = shot
+            reseed(pg)
+            shoot_gameplay(pg, lv, settle, path, win=True)
+        elif kind == "scene-fresh":
+            _, key, data, settle, _ = shot
+            reseed(pg)
+            pg.evaluate(START, [key, data])
             pg.wait_for_timeout(settle)
             pg.screenshot(path=str(path))
         print(f"  [{name}] {path.name}")
