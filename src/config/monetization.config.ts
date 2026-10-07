@@ -22,21 +22,46 @@ export const INTERSTITIAL = {
 } as const;
 
 export const REVENUECAT = {
-  // Public Android SDK key from the RevenueCat dashboard — set before release.
+  // Public Android SDK key from the RevenueCat dashboard — set before release. Empty = IAP "unconfigured": every
+  // purchase/restore resolves 'unavailable' (never a crash). The release guard that refuses an empty or Test Store key
+  // is P00-T20.
   apiKey: '',
-  // Product id (Play Console) + entitlement id (RevenueCat) for Remove-Ads / premium.
+  // Play Console product id of the standalone Remove-Ads purchase.
   removeAdsProductId: 'remove_ads',
-  premiumEntitlementId: 'premium',
 } as const;
 
-// Premium bundles (IAP). `grants` = cosmetic ids unlocked; `premium` = also grants
-// Remove-Ads. `productId` is the Play Console / RevenueCat product. Purchase logic
-// is in services/IAP.buyBundle (web stub grants); the store surfaces these. No P2W —
-// everything granted is purely cosmetic (plus the optional Remove-Ads convenience).
+// RevenueCat entitlement ids (D-09, MONETIZATION.md A.2). They are the ONLY source of truth for what a player owns:
+// `no_ads` turns interstitials off and each `pack_*` derives its bundle cosmetics (services/entitlements.ts). The
+// pre-launch `premium` entitlement was renamed to `no_ads`. A new product or pack is a data change: add its id here,
+// its row to services/entitlements.ts PRODUCTS / ENTITLEMENT_COSMETICS, and (for a bundle) a BUNDLES row.
+export const ENTITLEMENTS = {
+  NO_ADS: 'no_ads',
+  PACK_STARTER: 'pack_starter',
+  PACK_PREMIUM_COLLECTION: 'pack_premium_collection',
+  PACK_FOUNDERS: 'pack_founders',
+} as const;
+export type Entitlement = (typeof ENTITLEMENTS)[keyof typeof ENTITLEMENTS];
+
+// RevenueCat package ids (custom ids) in the current offering `default` (MONETIZATION.md A.14 R7).
+export const PACKAGES = {
+  REMOVE_ADS: 'remove_ads',
+  STARTER: 'starter',
+  PREMIUM_COLLECTION: 'premium_collection',
+  FOUNDERS: 'founders',
+} as const;
+export type PackageId = (typeof PACKAGES)[keyof typeof PACKAGES];
+
+// Premium bundles (IAP). `productId` is the Play Console product, `packageId` its RevenueCat package and
+// `entitlement` the pack entitlement it grants. `grants` = the cosmetics that entitlement derives and `premium` = the
+// product also grants `no_ads`; both are display data here and must match services/entitlements.ts (a test pins it).
+// Ownership is never granted locally: it is derived from the active entitlements (D-09). No P2W — everything granted
+// is purely cosmetic (plus the optional Remove-Ads convenience).
 export interface BundleDef {
   id: string;
   name: string;
   productId: string;
+  packageId: PackageId;
+  entitlement: Entitlement;
   priceLabel: string; // display only — real price comes from the store at runtime
   grants: string[];
   premium: boolean;
@@ -53,9 +78,9 @@ export interface BundleDef {
 }
 
 export const BUNDLES: BundleDef[] = [
-  { id: 'starter', name: 'Starter Pack', productId: 'starter_pack', priceLabel: '$2.99', premium: true, grants: ['trail_galaxy'], blurb: 'Remove Ads + the exclusive Galaxy Trail', bestValue: true },
-  { id: 'premium_collection', name: 'Premium Collection', productId: 'premium_collection_pack', priceLabel: '$4.99', premium: false, grants: ['cosmic_blackhole', 'arrival_bolt'], blurb: 'Black Hole skin + Lightning Strike arrival' },
-  { id: 'founders', name: "Founder's Pack", productId: 'founders_pack', priceLabel: '$7.99', premium: true, grants: ['mythic_phoenix', 'mythic_dragon'], blurb: 'Remove Ads + two exclusive Mythic skins: Phoenix Core & Dragon Heart' },
+  { id: 'starter', name: 'Starter Pack', productId: 'starter_pack', packageId: PACKAGES.STARTER, entitlement: ENTITLEMENTS.PACK_STARTER, priceLabel: '$2.99', premium: true, grants: ['trail_galaxy'], blurb: 'Remove Ads + the exclusive Galaxy Trail', bestValue: true },
+  { id: 'premium_collection', name: 'Premium Collection', productId: 'premium_collection_pack', packageId: PACKAGES.PREMIUM_COLLECTION, entitlement: ENTITLEMENTS.PACK_PREMIUM_COLLECTION, priceLabel: '$4.99', premium: false, grants: ['cosmic_blackhole', 'arrival_bolt'], blurb: 'Black Hole skin + Lightning Strike arrival' },
+  { id: 'founders', name: "Founder's Pack", productId: 'founders_pack', packageId: PACKAGES.FOUNDERS, entitlement: ENTITLEMENTS.PACK_FOUNDERS, priceLabel: '$7.99', premium: true, grants: ['mythic_phoenix', 'mythic_dragon'], blurb: 'Remove Ads + two exclusive Mythic skins: Phoenix Core & Dragon Heart' },
 ];
 
 export function bundleById(id: string): BundleDef | undefined {

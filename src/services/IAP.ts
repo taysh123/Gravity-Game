@@ -5,7 +5,7 @@
 // entitlement to localStorage (refreshed on init / purchase / restore), so callers
 // (e.g. Ads.maybeInterstitial) are unchanged.
 import { Capacitor } from '@capacitor/core';
-import { REVENUECAT, bundleById } from '../config/monetization.config';
+import { ENTITLEMENTS, REVENUECAT, bundleById } from '../config/monetization.config';
 import { Analytics } from './Analytics';
 import {
   purchaseInitiated,
@@ -48,7 +48,7 @@ function trackPurchaseCompleted(product: string): void {
 }
 
 function hasEntitlement(info: { customerInfo: { entitlements: { active: Record<string, unknown> } } }): boolean {
-  return Boolean(info?.customerInfo?.entitlements?.active?.[REVENUECAT.premiumEntitlementId]);
+  return Boolean(info?.customerInfo?.entitlements?.active?.[ENTITLEMENTS.NO_ADS]);
 }
 
 let rc: PurchasesPlugin | null = null;
