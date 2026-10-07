@@ -1,0 +1,924 @@
+{
+ "exactDupes": [],
+ "sharedArena": [
+  {
+   "arenaFingerprint": "f8b90bdc",
+   "levels": [
+    "L45",
+    "L97"
+   ]
+  },
+  {
+   "arenaFingerprint": "75b4a691",
+   "levels": [
+    "L53",
+    "L103"
+   ]
+  },
+  {
+   "arenaFingerprint": "5ff53d82",
+   "levels": [
+    "L67",
+    "L106"
+   ]
+  },
+  {
+   "arenaFingerprint": "cadcd750",
+   "levels": [
+    "L84",
+    "L116"
+   ]
+  },
+  {
+   "arenaFingerprint": "495e0789",
+   "levels": [
+    "L101",
+    "L143"
+   ]
+  }
+ ],
+ "simPairs": [
+  {
+   "a": "L43",
+   "b": "L91",
+   "sets": "campaign/campaign",
+   "sim": 1,
+   "simMirror": 0,
+   "elementsA": 4,
+   "elementsB": 4,
+   "fileA": "src/config/levels/level24.ts",
+   "fileB": "src/config/levels/level104.ts"
+  },
+  {
+   "a": "L43",
+   "b": "L142",
+   "sets": "campaign/campaign",
+   "sim": 1,
+   "simMirror": 0,
+   "elementsA": 4,
+   "elementsB": 4,
+   "fileA": "src/config/levels/level24.ts",
+   "fileB": "src/config/levels/level155.ts"
+  },
+  {
+   "a": "L45",
+   "b": "L97",
+   "sets": "campaign/campaign",
+   "sim": 1,
+   "simMirror": 0,
+   "elementsA": 5,
+   "elementsB": 5,
+   "fileA": "src/config/levels/level26.ts",
+   "fileB": "src/config/levels/level110.ts"
+  },
+  {
+   "a": "L53",
+   "b": "L103",
+   "sets": "campaign/campaign",
+   "sim": 1,
+   "simMirror": 0,
+   "elementsA": 6,
+   "elementsB": 6,
+   "fileA": "src/config/levels/level42.ts",
+   "fileB": "src/config/levels/level116.ts"
+  },
+  {
+   "a": "L63",
+   "b": "L102",
+   "sets": "campaign/campaign",
+   "sim": 1,
+   "simMirror": 0.75,
+   "elementsA": 4,
+   "elementsB": 4,
+   "fileA": "src/config/levels/level49.ts",
+   "fileB": "src/config/levels/level115.ts"
+  },
+  {
+   "a": "L65",
+   "b": "D6",
+   "sets": "campaign/daily",
+   "sim": 1,
+   "simMirror": 0,
+   "elementsA": 5,
+   "elementsB": 5,
+   "fileA": "src/config/levels/level52.ts",
+   "fileB": "src/config/dailyLevels.ts"
+  },
+  {
+   "a": "L67",
+   "b": "L106",
+   "sets": "campaign/campaign",
+   "sim": 1,
+   "simMirror": 0.83,
+   "elementsA": 6,
+   "elementsB": 6,
+   "fileA": "src/config/levels/level53.ts",
+   "fileB": "src/config/levels/level119.ts"
+  },
+  {
+   "a": "L84",
+   "b": "L116",
+   "sets": "campaign/campaign",
+   "sim": 1,
+   "simMirror": 0.6,
+   "elementsA": 5,
+   "elementsB": 5,
+   "fileA": "src/config/levels/level97.ts",
+   "fileB": "src/config/levels/level129.ts"
+  },
+  {
+   "a": "L91",
+   "b": "L142",
+   "sets": "campaign/campaign",
+   "sim": 1,
+   "simMirror": 0,
+   "elementsA": 4,
+   "elementsB": 4,
+   "fileA": "src/config/levels/level104.ts",
+   "fileB": "src/config/levels/level155.ts"
+  },
+  {
+   "a": "L101",
+   "b": "L143",
+   "sets": "campaign/campaign",
+   "sim": 1,
+   "simMirror": 0.8,
+   "elementsA": 5,
+   "elementsB": 5,
+   "fileA": "src/config/levels/level114.ts",
+   "fileB": "src/config/levels/level156.ts"
+  },
+  {
+   "a": "L122",
+   "b": "L136",
+   "sets": "campaign/campaign",
+   "sim": 1,
+   "simMirror": 0.17,
+   "elementsA": 6,
+   "elementsB": 6,
+   "fileA": "src/config/levels/level135.ts",
+   "fileB": "src/config/levels/level149.ts"
+  },
+  {
+   "a": "level39",
+   "b": "D7",
+   "sets": "retired/daily",
+   "sim": 1,
+   "simMirror": 0,
+   "elementsA": 6,
+   "elementsB": 6,
+   "fileA": "src/config/levels/level39.ts",
+   "fileB": "src/config/dailyLevels.ts"
+  },
+  {
+   "a": "L149",
+   "b": "L150",
+   "sets": "campaign/campaign",
+   "sim": 0.94,
+   "simMirror": 0.59,
+   "elementsA": 8,
+   "elementsB": 9,
+   "fileA": "src/config/levels/level162.ts",
+   "fileB": "src/config/levels/level163.ts"
+  },
+  {
+   "a": "L77",
+   "b": "L106",
+   "sets": "campaign/campaign",
+   "sim": 0.92,
+   "simMirror": 0.77,
+   "elementsA": 7,
+   "elementsB": 6,
+   "fileA": "src/config/levels/level61.ts",
+   "fileB": "src/config/levels/level119.ts"
+  },
+  {
+   "a": "L108",
+   "b": "L138",
+   "sets": "campaign/campaign",
+   "sim": 0.92,
+   "simMirror": 0.15,
+   "elementsA": 6,
+   "elementsB": 7,
+   "fileA": "src/config/levels/level121.ts",
+   "fileB": "src/config/levels/level151.ts"
+  },
+  {
+   "a": "L108",
+   "b": "level48",
+   "sets": "campaign/retired",
+   "sim": 0.92,
+   "simMirror": 0.15,
+   "elementsA": 6,
+   "elementsB": 7,
+   "fileA": "src/config/levels/level121.ts",
+   "fileB": "src/config/levels/level48.ts"
+  },
+  {
+   "a": "L108",
+   "b": "D8",
+   "sets": "campaign/daily",
+   "sim": 0.92,
+   "simMirror": 0.15,
+   "elementsA": 6,
+   "elementsB": 7,
+   "fileA": "src/config/levels/level121.ts",
+   "fileB": "src/config/dailyLevels.ts"
+  },
+  {
+   "a": "L45",
+   "b": "D7",
+   "sets": "campaign/daily",
+   "sim": 0.91,
+   "simMirror": 0,
+   "elementsA": 5,
+   "elementsB": 6,
+   "fileA": "src/config/levels/level26.ts",
+   "fileB": "src/config/dailyLevels.ts"
+  },
+  {
+   "a": "L73",
+   "b": "L144",
+   "sets": "campaign/campaign",
+   "sim": 0.91,
+   "simMirror": 0.73,
+   "elementsA": 6,
+   "elementsB": 5,
+   "fileA": "src/config/levels/level57.ts",
+   "fileB": "src/config/levels/level157.ts"
+  },
+  {
+   "a": "L97",
+   "b": "D7",
+   "sets": "campaign/daily",
+   "sim": 0.91,
+   "simMirror": 0,
+   "elementsA": 5,
+   "elementsB": 6,
+   "fileA": "src/config/levels/level110.ts",
+   "fileB": "src/config/dailyLevels.ts"
+  },
+  {
+   "a": "L16",
+   "b": "D2",
+   "sets": "campaign/daily",
+   "sim": 0.89,
+   "simMirror": 0,
+   "elementsA": 4,
+   "elementsB": 5,
+   "fileA": "src/config/levels/level93.ts",
+   "fileB": "src/config/dailyLevels.ts"
+  },
+  {
+   "a": "L82",
+   "b": "L113",
+   "sets": "campaign/campaign",
+   "sim": 0.89,
+   "simMirror": 0,
+   "elementsA": 5,
+   "elementsB": 4,
+   "fileA": "src/config/levels/level95.ts",
+   "fileB": "src/config/levels/level126.ts"
+  },
+  {
+   "a": "L92",
+   "b": "L112",
+   "sets": "campaign/campaign",
+   "sim": 0.86,
+   "simMirror": 0.57,
+   "elementsA": 4,
+   "elementsB": 3,
+   "fileA": "src/config/levels/level105.ts",
+   "fileB": "src/config/levels/level125.ts"
+  },
+  {
+   "a": "L138",
+   "b": "D8",
+   "sets": "campaign/daily",
+   "sim": 0.86,
+   "simMirror": 0.14,
+   "elementsA": 7,
+   "elementsB": 7,
+   "fileA": "src/config/levels/level151.ts",
+   "fileB": "src/config/dailyLevels.ts"
+  },
+  {
+   "a": "level48",
+   "b": "D8",
+   "sets": "retired/daily",
+   "sim": 0.86,
+   "simMirror": 0.14,
+   "elementsA": 7,
+   "elementsB": 7,
+   "fileA": "src/config/levels/level48.ts",
+   "fileB": "src/config/dailyLevels.ts"
+  },
+  {
+   "a": "L88",
+   "b": "level22",
+   "sets": "campaign/retired",
+   "sim": 0.83,
+   "simMirror": 0,
+   "elementsA": 6,
+   "elementsB": 6,
+   "fileA": "src/config/levels/level101.ts",
+   "fileB": "src/config/levels/level22.ts"
+  },
+  {
+   "a": "L117",
+   "b": "level63",
+   "sets": "campaign/retired",
+   "sim": 0.83,
+   "simMirror": 0.33,
+   "elementsA": 6,
+   "elementsB": 6,
+   "fileA": "src/config/levels/level130.ts",
+   "fileB": "src/config/levels/level63.ts"
+  },
+  {
+   "a": "level56",
+   "b": "level64",
+   "sets": "retired/retired",
+   "sim": 0.82,
+   "simMirror": 0.24,
+   "elementsA": 8,
+   "elementsB": 9,
+   "fileA": "src/config/levels/level56.ts",
+   "fileB": "src/config/levels/level64.ts"
+  },
+  {
+   "a": "L5",
+   "b": "L131",
+   "sets": "campaign/campaign",
+   "sim": 0.8,
+   "simMirror": 0.8,
+   "elementsA": 5,
+   "elementsB": 5,
+   "fileA": "src/config/levels/level3.ts",
+   "fileB": "src/config/levels/level144.ts"
+  },
+  {
+   "a": "L25",
+   "b": "L83",
+   "sets": "campaign/campaign",
+   "sim": 0.8,
+   "simMirror": 0.4,
+   "elementsA": 5,
+   "elementsB": 5,
+   "fileA": "src/config/levels/level16.ts",
+   "fileB": "src/config/levels/level96.ts"
+  },
+  {
+   "a": "L45",
+   "b": "D2",
+   "sets": "campaign/daily",
+   "sim": 0.8,
+   "simMirror": 0,
+   "elementsA": 5,
+   "elementsB": 5,
+   "fileA": "src/config/levels/level26.ts",
+   "fileB": "src/config/dailyLevels.ts"
+  },
+  {
+   "a": "L87",
+   "b": "level31",
+   "sets": "campaign/retired",
+   "sim": 0.8,
+   "simMirror": 0.2,
+   "elementsA": 5,
+   "elementsB": 5,
+   "fileA": "src/config/levels/level100.ts",
+   "fileB": "src/config/levels/level31.ts"
+  },
+  {
+   "a": "L97",
+   "b": "D2",
+   "sets": "campaign/daily",
+   "sim": 0.8,
+   "simMirror": 0,
+   "elementsA": 5,
+   "elementsB": 5,
+   "fileA": "src/config/levels/level110.ts",
+   "fileB": "src/config/dailyLevels.ts"
+  },
+  {
+   "a": "L98",
+   "b": "L133",
+   "sets": "campaign/campaign",
+   "sim": 0.8,
+   "simMirror": 0.4,
+   "elementsA": 5,
+   "elementsB": 5,
+   "fileA": "src/config/levels/level111.ts",
+   "fileB": "src/config/levels/level146.ts"
+  },
+  {
+   "a": "L100",
+   "b": "L139",
+   "sets": "campaign/campaign",
+   "sim": 0.8,
+   "simMirror": 0.6,
+   "elementsA": 5,
+   "elementsB": 5,
+   "fileA": "src/config/levels/level113.ts",
+   "fileB": "src/config/levels/level152.ts"
+  },
+  {
+   "a": "L21",
+   "b": "L28",
+   "sets": "campaign/campaign",
+   "sim": 0.77,
+   "simMirror": 0.62,
+   "elementsA": 6,
+   "elementsB": 7,
+   "fileA": "src/config/levels/level12.ts",
+   "fileB": "src/config/levels/level33.ts"
+  },
+  {
+   "a": "L47",
+   "b": "level40",
+   "sets": "campaign/retired",
+   "sim": 0.77,
+   "simMirror": 0,
+   "elementsA": 6,
+   "elementsB": 7,
+   "fileA": "src/config/levels/level27.ts",
+   "fileB": "src/config/levels/level40.ts"
+  },
+  {
+   "a": "L67",
+   "b": "L77",
+   "sets": "campaign/campaign",
+   "sim": 0.77,
+   "simMirror": 0.62,
+   "elementsA": 6,
+   "elementsB": 7,
+   "fileA": "src/config/levels/level53.ts",
+   "fileB": "src/config/levels/level61.ts"
+  },
+  {
+   "a": "L90",
+   "b": "L120",
+   "sets": "campaign/campaign",
+   "sim": 0.77,
+   "simMirror": 0.62,
+   "elementsA": 6,
+   "elementsB": 7,
+   "fileA": "src/config/levels/level103.ts",
+   "fileB": "src/config/levels/level133.ts"
+  },
+  {
+   "a": "L106",
+   "b": "L147",
+   "sets": "campaign/campaign",
+   "sim": 0.62,
+   "simMirror": 0.77,
+   "elementsA": 6,
+   "elementsB": 7,
+   "fileA": "src/config/levels/level119.ts",
+   "fileB": "src/config/levels/level160.ts"
+  },
+  {
+   "a": "L108",
+   "b": "L124",
+   "sets": "campaign/campaign",
+   "sim": 0.77,
+   "simMirror": 0.15,
+   "elementsA": 6,
+   "elementsB": 7,
+   "fileA": "src/config/levels/level121.ts",
+   "fileB": "src/config/levels/level137.ts"
+  },
+  {
+   "a": "L63",
+   "b": "L114",
+   "sets": "campaign/campaign",
+   "sim": 0.75,
+   "simMirror": 0.5,
+   "elementsA": 4,
+   "elementsB": 4,
+   "fileA": "src/config/levels/level49.ts",
+   "fileB": "src/config/levels/level127.ts"
+  },
+  {
+   "a": "L81",
+   "b": "L111",
+   "sets": "campaign/campaign",
+   "sim": 0.75,
+   "simMirror": 0.5,
+   "elementsA": 4,
+   "elementsB": 4,
+   "fileA": "src/config/levels/level94.ts",
+   "fileB": "src/config/levels/level124.ts"
+  },
+  {
+   "a": "L81",
+   "b": "L141",
+   "sets": "campaign/campaign",
+   "sim": 0.75,
+   "simMirror": 0.5,
+   "elementsA": 4,
+   "elementsB": 4,
+   "fileA": "src/config/levels/level94.ts",
+   "fileB": "src/config/levels/level154.ts"
+  },
+  {
+   "a": "L102",
+   "b": "L114",
+   "sets": "campaign/campaign",
+   "sim": 0.75,
+   "simMirror": 0.5,
+   "elementsA": 4,
+   "elementsB": 4,
+   "fileA": "src/config/levels/level115.ts",
+   "fileB": "src/config/levels/level127.ts"
+  },
+  {
+   "a": "L110",
+   "b": "L149",
+   "sets": "campaign/campaign",
+   "sim": 0.75,
+   "simMirror": 0.5,
+   "elementsA": 8,
+   "elementsB": 8,
+   "fileA": "src/config/levels/level123.ts",
+   "fileB": "src/config/levels/level162.ts"
+  },
+  {
+   "a": "L111",
+   "b": "L141",
+   "sets": "campaign/campaign",
+   "sim": 0.75,
+   "simMirror": 0.5,
+   "elementsA": 4,
+   "elementsB": 4,
+   "fileA": "src/config/levels/level124.ts",
+   "fileB": "src/config/levels/level154.ts"
+  },
+  {
+   "a": "L113",
+   "b": "L132",
+   "sets": "campaign/campaign",
+   "sim": 0.75,
+   "simMirror": 0,
+   "elementsA": 4,
+   "elementsB": 4,
+   "fileA": "src/config/levels/level126.ts",
+   "fileB": "src/config/levels/level145.ts"
+  },
+  {
+   "a": "L114",
+   "b": "L118",
+   "sets": "campaign/campaign",
+   "sim": 0.75,
+   "simMirror": 0.5,
+   "elementsA": 4,
+   "elementsB": 4,
+   "fileA": "src/config/levels/level127.ts",
+   "fileB": "src/config/levels/level131.ts"
+  }
+ ],
+ "repeatedElements": [
+  {
+   "token": "O(180,430,360,20,0)",
+   "levels": 9,
+   "indices": [
+    58,
+    70,
+    80,
+    101,
+    105,
+    110,
+    121,
+    143,
+    150
+   ]
+  },
+  {
+   "token": "T0,-1(180,560,360,20)",
+   "levels": 5,
+   "indices": [
+    67,
+    75,
+    106,
+    127,
+    147
+   ]
+  },
+  {
+   "token": "Mattract(300,200)",
+   "levels": 4,
+   "indices": [
+    57,
+    72,
+    128,
+    148
+   ]
+  },
+  {
+   "token": "O(180,430,200,20,0)",
+   "levels": 4,
+   "indices": [
+    78,
+    90,
+    120,
+    130
+   ]
+  }
+ ],
+ "repeatedBall": [
+  {
+   "pos": "(180,660)",
+   "count": 30,
+   "indices": [
+    4,
+    5,
+    6,
+    9,
+    13,
+    14,
+    21,
+    22,
+    24,
+    25,
+    26,
+    28,
+    31,
+    32,
+    34,
+    35,
+    37,
+    42,
+    54,
+    57,
+    58,
+    63,
+    67,
+    71,
+    73,
+    74,
+    75,
+    77,
+    101,
+    102
+   ]
+  },
+  {
+   "pos": "(180,690)",
+   "count": 23,
+   "indices": [
+    50,
+    59,
+    79,
+    80,
+    81,
+    83,
+    84,
+    89,
+    94,
+    98,
+    105,
+    115,
+    118,
+    121,
+    123,
+    126,
+    127,
+    131,
+    133,
+    135,
+    137,
+    141,
+    147
+   ]
+  },
+  {
+   "pos": "(180,680)",
+   "count": 13,
+   "indices": [
+    38,
+    60,
+    70,
+    87,
+    92,
+    106,
+    111,
+    112,
+    114,
+    116,
+    117,
+    143,
+    144
+   ]
+  },
+  {
+   "pos": "(180,700)",
+   "count": 10,
+   "indices": [
+    19,
+    29,
+    40,
+    90,
+    99,
+    100,
+    110,
+    119,
+    120,
+    139
+   ]
+  },
+  {
+   "pos": "(90,660)",
+   "count": 7,
+   "indices": [
+    15,
+    16,
+    33,
+    53,
+    62,
+    66,
+    103
+   ]
+  },
+  {
+   "pos": "(180,670)",
+   "count": 6,
+   "indices": [
+    8,
+    41,
+    44,
+    46,
+    49,
+    78
+   ]
+  },
+  {
+   "pos": "(80,660)",
+   "count": 6,
+   "indices": [
+    43,
+    51,
+    52,
+    72,
+    76,
+    97
+   ]
+  },
+  {
+   "pos": "(70,680)",
+   "count": 5,
+   "indices": [
+    64,
+    91,
+    95,
+    108,
+    142
+   ]
+  }
+ ],
+ "repeatedGoal": [
+  {
+   "pos": "(180,120)",
+   "count": 24,
+   "indices": [
+    9,
+    19,
+    22,
+    28,
+    31,
+    34,
+    46,
+    58,
+    73,
+    75,
+    77,
+    78,
+    81,
+    84,
+    98,
+    114,
+    115,
+    116,
+    117,
+    121,
+    123,
+    126,
+    127,
+    131
+   ]
+  },
+  {
+   "pos": "(180,110)",
+   "count": 19,
+   "indices": [
+    8,
+    24,
+    25,
+    29,
+    32,
+    33,
+    37,
+    44,
+    49,
+    54,
+    60,
+    79,
+    83,
+    99,
+    109,
+    118,
+    133,
+    137,
+    139
+   ]
+  },
+  {
+   "pos": "(300,130)",
+   "count": 12,
+   "indices": [
+    18,
+    48,
+    55,
+    57,
+    72,
+    86,
+    88,
+    105,
+    108,
+    113,
+    122,
+    146
+   ]
+  },
+  {
+   "pos": "(180,140)",
+   "count": 9,
+   "indices": [
+    5,
+    11,
+    21,
+    63,
+    92,
+    101,
+    102,
+    106,
+    143
+   ]
+  },
+  {
+   "pos": "(300,140)",
+   "count": 9,
+   "indices": [
+    47,
+    52,
+    71,
+    93,
+    95,
+    96,
+    107,
+    134,
+    142
+   ]
+  },
+  {
+   "pos": "(180,90)",
+   "count": 8,
+   "indices": [
+    30,
+    40,
+    59,
+    69,
+    80,
+    129,
+    130,
+    150
+   ]
+  },
+  {
+   "pos": "(180,130)",
+   "count": 7,
+   "indices": [
+    42,
+    94,
+    111,
+    112,
+    141,
+    144,
+    147
+   ]
+  },
+  {
+   "pos": "(180,100)",
+   "count": 7,
+   "indices": [
+    50,
+    90,
+    100,
+    110,
+    120,
+    140,
+    149
+   ]
+  }
+ ]
+}

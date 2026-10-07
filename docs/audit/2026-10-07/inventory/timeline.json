@@ -1,0 +1,258 @@
+[
+ {
+  "feature": "walls (obstacles)",
+  "firstIndex": 4,
+  "firstWorld": 1,
+  "firstFile": "src/config/levels/level2.ts",
+  "firstTitle": "",
+  "levelsUsing": 68
+ },
+ {
+  "feature": "gem (collectible)",
+  "firstIndex": 1,
+  "firstWorld": 1,
+  "firstFile": "src/config/levels/level1.ts",
+  "firstTitle": "",
+  "levelsUsing": 150
+ },
+ {
+  "feature": "constellation orbs",
+  "firstIndex": 3,
+  "firstWorld": 1,
+  "firstFile": "src/config/levels/level91.ts",
+  "firstTitle": "",
+  "levelsUsing": 2
+ },
+ {
+  "feature": "collectAllToWin",
+  "firstIndex": 3,
+  "firstWorld": 1,
+  "firstFile": "src/config/levels/level91.ts",
+  "firstTitle": "",
+  "levelsUsing": 2
+ },
+ {
+  "feature": "startVelocity",
+  "firstIndex": null,
+  "firstWorld": null,
+  "firstFile": null,
+  "firstTitle": "",
+  "levelsUsing": 0
+ },
+ {
+  "feature": "camera introZoom",
+  "firstIndex": 8,
+  "firstWorld": 1,
+  "firstFile": "src/config/levels/level65.ts",
+  "firstTitle": "THE GAUNTLET",
+  "levelsUsing": 20
+ },
+ {
+  "feature": "title (signature/boss name)",
+  "firstIndex": 8,
+  "firstWorld": 1,
+  "firstFile": "src/config/levels/level65.ts",
+  "firstTitle": "THE GAUNTLET",
+  "levelsUsing": 31
+ },
+ {
+  "feature": "boss flag",
+  "firstIndex": 10,
+  "firstWorld": 1,
+  "firstFile": "src/config/levels/level66.ts",
+  "firstTitle": "THE COLLAPSE",
+  "levelsUsing": 15
+ },
+ {
+  "feature": "zone: up",
+  "firstIndex": 11,
+  "firstWorld": 2,
+  "firstFile": "src/config/levels/level7.ts",
+  "firstTitle": "",
+  "levelsUsing": 36
+ },
+ {
+  "feature": "zone: down",
+  "firstIndex": 17,
+  "firstWorld": 2,
+  "firstFile": "src/config/levels/level8.ts",
+  "firstTitle": "THE WHIRLPOOL",
+  "levelsUsing": 2
+ },
+ {
+  "feature": "zone: side",
+  "firstIndex": 13,
+  "firstWorld": 2,
+  "firstFile": "src/config/levels/level9.ts",
+  "firstTitle": "",
+  "levelsUsing": 10
+ },
+ {
+  "feature": "zone: diagonal",
+  "firstIndex": 12,
+  "firstWorld": 2,
+  "firstFile": "src/config/levels/level11.ts",
+  "firstTitle": "",
+  "levelsUsing": 1
+ },
+ {
+  "feature": "moving platform",
+  "firstIndex": 21,
+  "firstWorld": 3,
+  "firstFile": "src/config/levels/level12.ts",
+  "firstTitle": "",
+  "levelsUsing": 18
+ },
+ {
+  "feature": "hazard: static",
+  "firstIndex": 10,
+  "firstWorld": 1,
+  "firstFile": "src/config/levels/level66.ts",
+  "firstTitle": "THE COLLAPSE",
+  "levelsUsing": 16
+ },
+ {
+  "feature": "hazard: sweep (to)",
+  "firstIndex": 20,
+  "firstWorld": 2,
+  "firstFile": "src/config/levels/level68.ts",
+  "firstTitle": "THE MAELSTROM",
+  "levelsUsing": 46
+ },
+ {
+  "feature": "hazard: rotating arm (pivot)",
+  "firstIndex": 29,
+  "firstWorld": 3,
+  "firstFile": "src/config/levels/level69.ts",
+  "firstTitle": "THE GEARWORKS",
+  "levelsUsing": 12
+ },
+ {
+  "feature": "hazard: laser beam (pulseMs)",
+  "firstIndex": 28,
+  "firstWorld": 3,
+  "firstFile": "src/config/levels/level33.ts",
+  "firstTitle": "",
+  "levelsUsing": 7
+ },
+ {
+  "feature": "hazard: phased beams (phaseMs)",
+  "firstIndex": 120,
+  "firstWorld": 12,
+  "firstFile": "src/config/levels/level133.ts",
+  "firstTitle": "THE EYE OF THE STORM",
+  "levelsUsing": 1
+ },
+ {
+  "feature": "hazard: rect bar",
+  "firstIndex": 28,
+  "firstWorld": 3,
+  "firstFile": "src/config/levels/level33.ts",
+  "firstTitle": "",
+  "levelsUsing": 7
+ },
+ {
+  "feature": "timer (timeLimitMs)",
+  "firstIndex": 34,
+  "firstWorld": 4,
+  "firstFile": "src/config/levels/level19.ts",
+  "firstTitle": "",
+  "levelsUsing": 12
+ },
+ {
+  "feature": "magnet: attract",
+  "firstIndex": 41,
+  "firstWorld": 5,
+  "firstFile": "src/config/levels/level23.ts",
+  "firstTitle": "",
+  "levelsUsing": 32
+ },
+ {
+  "feature": "magnet: repel",
+  "firstIndex": 42,
+  "firstWorld": 5,
+  "firstFile": "src/config/levels/level25.ts",
+  "firstTitle": "",
+  "levelsUsing": 13
+ },
+ {
+  "feature": "magnet: custom strength/radius",
+  "firstIndex": 50,
+  "firstWorld": 5,
+  "firstFile": "src/config/levels/level78.ts",
+  "firstTitle": "THE SINGULARITY",
+  "levelsUsing": 1
+ },
+ {
+  "feature": "portal",
+  "firstIndex": 51,
+  "firstWorld": 6,
+  "firstFile": "src/config/levels/level41.ts",
+  "firstTitle": "",
+  "levelsUsing": 41
+ },
+ {
+  "feature": "multiple portal pairs",
+  "firstIndex": 58,
+  "firstWorld": 6,
+  "firstFile": "src/config/levels/level47.ts",
+  "firstTitle": "",
+  "levelsUsing": 6
+ },
+ {
+  "feature": "gate (any)",
+  "firstIndex": 61,
+  "firstWorld": 7,
+  "firstFile": "src/config/levels/level50.ts",
+  "firstTitle": "",
+  "levelsUsing": 27
+ },
+ {
+  "feature": "gate: up",
+  "firstIndex": 63,
+  "firstWorld": 7,
+  "firstFile": "src/config/levels/level49.ts",
+  "firstTitle": "",
+  "levelsUsing": 22
+ },
+ {
+  "feature": "gate: down",
+  "firstIndex": 62,
+  "firstWorld": 7,
+  "firstFile": "src/config/levels/level51.ts",
+  "firstTitle": "",
+  "levelsUsing": 3
+ },
+ {
+  "feature": "gate: side",
+  "firstIndex": 61,
+  "firstWorld": 7,
+  "firstFile": "src/config/levels/level50.ts",
+  "firstTitle": "",
+  "levelsUsing": 5
+ },
+ {
+  "feature": "moving goal",
+  "firstIndex": 20,
+  "firstWorld": 2,
+  "firstFile": "src/config/levels/level68.ts",
+  "firstTitle": "THE MAELSTROM",
+  "levelsUsing": 1
+ },
+ {
+  "feature": "3+ distinct mechanics",
+  "firstIndex": 71,
+  "firstWorld": 8,
+  "firstFile": "src/config/levels/level58.ts",
+  "firstTitle": "",
+  "levelsUsing": 26
+ },
+ {
+  "feature": "5+ distinct mechanics",
+  "firstIndex": 80,
+  "firstWorld": 8,
+  "firstFile": "src/config/levels/level90.ts",
+  "firstTitle": "HOMECOMING",
+  "levelsUsing": 2
+ }
+]

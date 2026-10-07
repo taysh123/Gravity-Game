@@ -1,0 +1,337 @@
+campaign 150 retired 13 level6.ts level22.ts level31.ts level35.ts level37.ts level39.ts level40.ts level45.ts level48.ts level55.ts level56.ts level63.ts level64.ts daily 8
+MASS 0.7837 A_MAX px/frame² 0.1638 terminal px/s 491
+
+WORLD SUMMARY
+{"id":1,"name":"FOUNDATIONS","range":"1-10","levels":10,"introduced":["walls (obstacles)","gem (collectible)","constellation orbs","collectAllToWin","camera introZoom","title (signature/boss name)","boss flag","hazard: static"],"used":{"obstacles":7,"gravityZones":0,"magnets":0,"portals":0,"gates":0,"movingPlatforms":0,"hazards":1,"timed":0,"gems":10},"boss":"10 THE COLLAPSE","bossD":4.61,"signatures":["8 THE GAUNTLET"],"Dmin":0.6,"Dmed":2.1,"Dmax":4.6,"DnonBossMed":2.1,"D3med":2.7,"gems":10,"timed":0,"avgGoalR":36.2,"avgPar":16600,"avgBodies":7.3,"maxBodies":10,"avgEntities":5.8,"avgPathLen":531}
+{"id":2,"name":"CURRENTS","range":"11-20","levels":10,"introduced":["zone: up","zone: down","zone: side","zone: diagonal","hazard: sweep (to)","moving goal"],"used":{"obstacles":2,"gravityZones":10,"magnets":0,"portals":0,"gates":0,"movingPlatforms":0,"hazards":1,"timed":0,"gems":10},"boss":"20 THE MAELSTROM","bossD":4.35,"signatures":["17 THE WHIRLPOOL","19 THE EYE"],"Dmin":1.3,"Dmed":2.6,"Dmax":4.4,"DnonBossMed":2.6,"D3med":3.1,"gems":10,"timed":0,"avgGoalR":34.6,"avgPar":15400,"avgBodies":5.2,"maxBodies":6,"avgEntities":5.4,"avgPathLen":485}
+{"id":3,"name":"CLOCKWORK","range":"21-30","levels":10,"introduced":["moving platform","hazard: rotating arm (pivot)","hazard: laser beam (pulseMs)","hazard: rect bar"],"used":{"obstacles":2,"gravityZones":1,"magnets":0,"portals":0,"gates":0,"movingPlatforms":10,"hazards":3,"timed":0,"gems":10},"boss":"30 THE MACHINE","bossD":6.49,"signatures":["29 THE GEARWORKS"],"Dmin":2.1,"Dmed":3,"Dmax":6.5,"DnonBossMed":2.9,"D3med":3.3,"gems":10,"timed":0,"avgGoalR":32.8,"avgPar":17400,"avgBodies":7.2,"maxBodies":9,"avgEntities":6.1,"avgPathLen":526}
+{"id":4,"name":"PERIL","range":"31-40","levels":10,"introduced":["timer (timeLimitMs)"],"used":{"obstacles":3,"gravityZones":2,"magnets":0,"portals":0,"gates":0,"movingPlatforms":0,"hazards":10,"timed":1,"gems":10},"boss":"40 THE INFERNO","bossD":7.14,"signatures":["39 THE FORGE"],"Dmin":2.9,"Dmed":3.8,"Dmax":7.1,"DnonBossMed":3.7,"D3med":4.2,"gems":10,"timed":1,"avgGoalR":35.2,"avgPar":12900,"avgBodies":5.4,"maxBodies":7,"avgEntities":5.7,"avgPathLen":553}
+{"id":5,"name":"WELLS","range":"41-50","levels":10,"introduced":["magnet: attract","magnet: repel","magnet: custom strength/radius"],"used":{"obstacles":3,"gravityZones":1,"magnets":10,"portals":0,"gates":0,"movingPlatforms":0,"hazards":4,"timed":0,"gems":10},"boss":"50 THE SINGULARITY","bossD":4.27,"signatures":["49 THE BINARY STAR"],"Dmin":2.1,"Dmed":3,"Dmax":4.3,"DnonBossMed":3,"D3med":3.4,"gems":10,"timed":0,"avgGoalR":33.2,"avgPar":14000,"avgBodies":5.3,"maxBodies":6,"avgEntities":5.4,"avgPathLen":554}
+{"id":6,"name":"RIFTS","range":"51-60","levels":10,"introduced":["portal","multiple portal pairs"],"used":{"obstacles":10,"gravityZones":1,"magnets":1,"portals":10,"gates":0,"movingPlatforms":0,"hazards":3,"timed":0,"gems":10},"boss":"60 THE BREACH","bossD":2.69,"signatures":["59 HALL OF MIRRORS"],"Dmin":2,"Dmed":2.8,"Dmax":4.2,"DnonBossMed":2.8,"D3med":3.2,"gems":10,"timed":0,"avgGoalR":32.8,"avgPar":15400,"avgBodies":6.8,"maxBodies":8,"avgEntities":6.8,"avgPathLen":245}
+{"id":7,"name":"GATES","range":"61-70","levels":10,"introduced":["gate (any)","gate: up","gate: down","gate: side"],"used":{"obstacles":6,"gravityZones":1,"magnets":0,"portals":2,"gates":10,"movingPlatforms":0,"hazards":4,"timed":0,"gems":10},"boss":"70 THE VAULT","bossD":4.09,"signatures":["69 THE LOCKWORKS"],"Dmin":1.4,"Dmed":3,"Dmax":5.3,"DnonBossMed":3,"D3med":3.5,"gems":10,"timed":0,"avgGoalR":34.2,"avgPar":16100,"avgBodies":7.5,"maxBodies":12,"avgEntities":6.2,"avgPathLen":379}
+{"id":8,"name":"CONVERGENCE","range":"71-80","levels":10,"introduced":["3+ distinct mechanics","5+ distinct mechanics"],"used":{"obstacles":6,"gravityZones":6,"magnets":5,"portals":7,"gates":5,"movingPlatforms":2,"hazards":7,"timed":1,"gems":10},"boss":"80 HOMECOMING","bossD":5.81,"signatures":["79 THE CONFLUENCE"],"Dmin":3.5,"Dmed":4.1,"Dmax":5.8,"DnonBossMed":4.1,"D3med":4.6,"gems":10,"timed":1,"avgGoalR":27.4,"avgPar":16900,"avgBodies":6.3,"maxBodies":7,"avgEntities":7.1,"avgPathLen":377}
+{"id":9,"name":"GAUNTLET","range":"81-90","levels":10,"introduced":[],"used":{"obstacles":3,"gravityZones":4,"magnets":0,"portals":0,"gates":0,"movingPlatforms":4,"hazards":8,"timed":0,"gems":10},"boss":"90 THE CRUCIBLE","bossD":5.17,"signatures":["89 THE GAUNTLET"],"Dmin":2.8,"Dmed":3.9,"Dmax":5.2,"DnonBossMed":3.9,"D3med":4.3,"gems":10,"timed":0,"avgGoalR":30.6,"avgPar":16100,"avgBodies":5.9,"maxBodies":7,"avgEntities":5.3,"avgPathLen":597}
+{"id":10,"name":"BINARY","range":"91-100","levels":10,"introduced":[],"used":{"obstacles":2,"gravityZones":1,"magnets":10,"portals":0,"gates":0,"movingPlatforms":0,"hazards":2,"timed":0,"gems":10},"boss":"100 THE PULSAR","bossD":4.19,"signatures":["99 THE BINARY STAR"],"Dmin":2.6,"Dmed":3,"Dmax":4.2,"DnonBossMed":2.9,"D3med":3.3,"gems":10,"timed":0,"avgGoalR":30.4,"avgPar":15700,"avgBodies":5.3,"maxBodies":7,"avgEntities":4.9,"avgPathLen":569}
+{"id":11,"name":"LABYRINTH","range":"101-110","levels":10,"introduced":[],"used":{"obstacles":7,"gravityZones":0,"magnets":1,"portals":8,"gates":5,"movingPlatforms":0,"hazards":2,"timed":0,"gems":10},"boss":"110 THE WARDEN","bossD":4.95,"signatures":["109 HALL OF ECHOES"],"Dmin":2.3,"Dmed":2.9,"Dmax":5,"DnonBossMed":2.8,"D3med":3.3,"gems":10,"timed":0,"avgGoalR":30.4,"avgPar":15800,"avgBodies":6.4,"maxBodies":7,"avgEntities":5.7,"avgPathLen":291}
+{"id":12,"name":"TEMPEST","range":"111-120","levels":10,"introduced":["hazard: phased beams (phaseMs)"],"used":{"obstacles":2,"gravityZones":2,"magnets":0,"portals":1,"gates":0,"movingPlatforms":0,"hazards":9,"timed":7,"gems":10},"boss":"120 THE EYE OF THE STORM","bossD":6.6,"signatures":["119 THE TEMPEST"],"Dmin":3,"Dmed":4.7,"Dmax":6.8,"DnonBossMed":4.6,"D3med":5.1,"gems":10,"timed":7,"avgGoalR":29,"avgPar":13200,"avgBodies":5.2,"maxBodies":6,"avgEntities":4.9,"avgPathLen":543}
+{"id":13,"name":"ASCENSION","range":"121-130","levels":10,"introduced":[],"used":{"obstacles":5,"gravityZones":6,"magnets":5,"portals":6,"gates":2,"movingPlatforms":1,"hazards":7,"timed":1,"gems":10},"boss":"130 THE SUMMIT","bossD":5.92,"signatures":["129 THE ASCENT"],"Dmin":2.9,"Dmed":4.1,"Dmax":5.9,"DnonBossMed":4,"D3med":4.5,"gems":10,"timed":1,"avgGoalR":27,"avgPar":18200,"avgBodies":5.9,"maxBodies":7,"avgEntities":6.6,"avgPathLen":403}
+{"id":14,"name":"SINGULARITY","range":"131-140","levels":10,"introduced":[],"used":{"obstacles":4,"gravityZones":1,"magnets":5,"portals":2,"gates":1,"movingPlatforms":1,"hazards":6,"timed":1,"gems":10},"boss":"140 THE SINGULARITY","bossD":5.33,"signatures":["139 THE EVENT HORIZON"],"Dmin":2.7,"Dmed":4.4,"Dmax":5.3,"DnonBossMed":4.3,"D3med":4.8,"gems":10,"timed":1,"avgGoalR":23,"avgPar":16900,"avgBodies":5.9,"maxBodies":7,"avgEntities":5.5,"avgPathLen":526}
+{"id":15,"name":"HOMECOMING","range":"141-150","levels":10,"introduced":[],"used":{"obstacles":6,"gravityZones":6,"magnets":6,"portals":5,"gates":4,"movingPlatforms":0,"hazards":4,"timed":1,"gems":10},"boss":"150 THE LONG WAY HOME","bossD":5.72,"signatures":["149 THE HOMEWARD PATH"],"Dmin":2.6,"Dmed":4,"Dmax":5.7,"DnonBossMed":3.8,"D3med":4.4,"gems":10,"timed":1,"avgGoalR":27.6,"avgPar":16500,"avgBodies":6,"maxBodies":7,"avgEntities":6.1,"avgPathLen":465}
+
+TIMELINE
+walls (obstacles): L4 (W1) src/config/levels/level2.ts  — used in 68
+gem (collectible): L1 (W1) src/config/levels/level1.ts  — used in 150
+constellation orbs: L3 (W1) src/config/levels/level91.ts  — used in 2
+collectAllToWin: L3 (W1) src/config/levels/level91.ts  — used in 2
+startVelocity: Lnull (Wnull) null  — used in 0
+camera introZoom: L8 (W1) src/config/levels/level65.ts THE GAUNTLET — used in 20
+title (signature/boss name): L8 (W1) src/config/levels/level65.ts THE GAUNTLET — used in 31
+boss flag: L10 (W1) src/config/levels/level66.ts THE COLLAPSE — used in 15
+zone: up: L11 (W2) src/config/levels/level7.ts  — used in 36
+zone: down: L17 (W2) src/config/levels/level8.ts THE WHIRLPOOL — used in 2
+zone: side: L13 (W2) src/config/levels/level9.ts  — used in 10
+zone: diagonal: L12 (W2) src/config/levels/level11.ts  — used in 1
+moving platform: L21 (W3) src/config/levels/level12.ts  — used in 18
+hazard: static: L10 (W1) src/config/levels/level66.ts THE COLLAPSE — used in 16
+hazard: sweep (to): L20 (W2) src/config/levels/level68.ts THE MAELSTROM — used in 46
+hazard: rotating arm (pivot): L29 (W3) src/config/levels/level69.ts THE GEARWORKS — used in 12
+hazard: laser beam (pulseMs): L28 (W3) src/config/levels/level33.ts  — used in 7
+hazard: phased beams (phaseMs): L120 (W12) src/config/levels/level133.ts THE EYE OF THE STORM — used in 1
+hazard: rect bar: L28 (W3) src/config/levels/level33.ts  — used in 7
+timer (timeLimitMs): L34 (W4) src/config/levels/level19.ts  — used in 12
+magnet: attract: L41 (W5) src/config/levels/level23.ts  — used in 32
+magnet: repel: L42 (W5) src/config/levels/level25.ts  — used in 13
+magnet: custom strength/radius: L50 (W5) src/config/levels/level78.ts THE SINGULARITY — used in 1
+portal: L51 (W6) src/config/levels/level41.ts  — used in 41
+multiple portal pairs: L58 (W6) src/config/levels/level47.ts  — used in 6
+gate (any): L61 (W7) src/config/levels/level50.ts  — used in 27
+gate: up: L63 (W7) src/config/levels/level49.ts  — used in 22
+gate: down: L62 (W7) src/config/levels/level51.ts  — used in 3
+gate: side: L61 (W7) src/config/levels/level50.ts  — used in 5
+moving goal: L20 (W2) src/config/levels/level68.ts THE MAELSTROM — used in 1
+3+ distinct mechanics: L71 (W8) src/config/levels/level58.ts  — used in 26
+5+ distinct mechanics: L80 (W8) src/config/levels/level90.ts HOMECOMING — used in 2
+
+FLAGS
+
+## staticImpossible (0)
+
+## spawnDanger (0)
+
+## goalDanger (10)
+  L30 level70.ts [THE MACHINE] — hazard 2 within 24px of a ball sitting at goal center (swept path)
+  L52 level43.ts — hazard 0 within 17px of a ball sitting at goal center (swept path)
+  L74 level87.ts — hazard 0 within 3px of a ball sitting at goal center (swept path)
+  L77 level61.ts — hazard 0 within 32px of a ball sitting at goal center (swept path)
+  L79 level89.ts [THE CONFLUENCE] — hazard 0 within 8px of a ball sitting at goal center (swept path)
+  L88 level101.ts — hazard 0 within 15px of a ball sitting at goal center (swept path)
+  L120 level133.ts [THE EYE OF THE STORM] — hazard 2 within 38px of a ball sitting at goal center (swept path)
+  L122 level135.ts — hazard 0 within 32px of a ball sitting at goal center (swept path)
+  L129 level142.ts [THE ASCENT] — hazard 0 within 24.1px of a ball sitting at goal center (swept path)
+  L136 level149.ts — hazard 0 within 34px of a ball sitting at goal center (swept path)
+
+## outOfBounds (7)
+  L52 level43.ts — soft: hazard0 (sweep) swept extent leaves arena [178,362]x[173,217]
+  L53 level42.ts — soft: obstacle1 extends past arena
+  L56 level80.ts — soft: obstacle0 extends past arena
+  L69 level85.ts [THE LOCKWORKS] — soft: obstacle0 extends past arena
+  L69 level85.ts [THE LOCKWORKS] — soft: obstacle3 extends past arena
+  L78 level88.ts — soft: hazard1 (sweep) swept extent leaves arena [234,366]x[584,616]
+  L103 level116.ts — soft: obstacle1 extends past arena
+
+## unfairTimers (1)
+  L34 level19.ts — timeLimit − par = 2000ms (small buffer)
+
+## trivial (6)
+  L41 level23.ts — D=2.11 is in the campaign's bottom decile (≤2.25) despite index 41
+  L51 level41.ts — D=2 is in the campaign's bottom decile (≤2.25) despite index 51
+  L53 level42.ts — D=2.04 is in the campaign's bottom decile (≤2.25) despite index 53
+  L61 level50.ts — D=1.4 is in the campaign's bottom decile (≤2.25) despite index 61
+  L62 level51.ts — D=1.61 is in the campaign's bottom decile (≤2.25) despite index 62
+  L101 level114.ts — D=2.25 is in the campaign's bottom decile (≤2.25) despite index 101
+
+## spikes (0)
+
+## dips (0)
+
+## bodyCeiling (0)
+
+## missingParGemHint (0)
+
+## simpleBosses (5)
+  L20 level68.ts [THE MAELSTROM] — boss has 6 entities ≤ world median 6
+  L60 level82.ts [THE BREACH] — boss D=2.69 < world non-boss median 2.8
+  L60 level82.ts [THE BREACH] — boss D=2.69 is >1 below the world's hardest non-boss (4.15)
+  L70 level86.ts [THE VAULT] — boss D=4.09 is >1 below the world's hardest non-boss (5.25)
+  L100 level113.ts [THE PULSAR] — boss has 5 entities ≤ world median 5
+
+## idleOutcomes (2)
+  L11 level7.ts — IDLE WIN: with zero input the ball reaches the goal at ~1400ms (zones/magnets/startVelocity carry it)
+  L12 level11.ts — IDLE WIN: with zero input the ball reaches the goal at ~1817ms (zones/magnets/startVelocity carry it)
+
+## portalExitDeep (16)
+  L53 level42.ts — portal0 a→b: 12/16 feasible approach directions exit into wall/obstacle overlap (4 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/45/68/90/113/135/158/180/202/315/337)
+  L54 level79.ts — portal0 a→b: 12/16 feasible approach directions exit into wall/obstacle overlap (2 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/45/135/158/180/202/225/247/293/315/337)
+  L56 level80.ts — portal0 b→a: 5/16 feasible approach directions exit into wall/obstacle overlap (3 with exit centre INSIDE an obstacle/beyond arena; dirs° 45/68/90/113/135)
+  L58 level47.ts — portal0 a→b: 5/16 feasible approach directions exit into wall/obstacle overlap (3 with exit centre INSIDE an obstacle/beyond arena; dirs° 225/247/270/293/315)
+  L59 level81.ts [HALL OF MIRRORS] — portal0 a→b: 8/16 feasible approach directions exit into wall/obstacle overlap (3 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/45/68/90/113/135/337)
+  L59 level81.ts [HALL OF MIRRORS] — portal1 b→a: 5/16 feasible approach directions exit into wall/obstacle overlap (4 with exit centre INSIDE an obstacle/beyond arena; dirs° 225/247/270/293/315)
+  L59 level81.ts [HALL OF MIRRORS] — portal2 a→b: 5/16 feasible approach directions exit into wall/obstacle overlap (3 with exit centre INSIDE an obstacle/beyond arena; dirs° 45/68/90/113/135)
+  L60 level82.ts [THE BREACH] — portal2 a→b: 5/16 feasible approach directions exit into wall/obstacle overlap (3 with exit centre INSIDE an obstacle/beyond arena; dirs° 45/68/90/113/135)
+  L71 level58.ts — portal0 b→a: 5/16 feasible approach directions exit into wall/obstacle overlap (1 with exit centre INSIDE an obstacle/beyond arena; dirs° 225/247/270/293/315)
+  L78 level88.ts — portal0 b→a: 5/16 feasible approach directions exit into wall/obstacle overlap (3 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/45/315/337)
+  L80 level90.ts [HOMECOMING] — portal0 b→a: 5/16 feasible approach directions exit into wall/obstacle overlap (1 with exit centre INSIDE an obstacle/beyond arena; dirs° 225/247/270/293/315)
+  L103 level116.ts — portal0 a→b: 12/16 feasible approach directions exit into wall/obstacle overlap (4 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/45/68/90/113/135/158/180/202/315/337)
+  L109 level122.ts [HALL OF ECHOES] — portal0 a→b: 5/16 feasible approach directions exit into wall/obstacle overlap (3 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/45/315/337)
+  L109 level122.ts [HALL OF ECHOES] — portal1 b→a: 9/16 feasible approach directions exit into wall/obstacle overlap (4 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/45/225/247/270/293/315/337)
+  L129 level142.ts [THE ASCENT] — portal1 b→a: 8/16 feasible approach directions exit into wall/obstacle overlap (1 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/225/247/270/293/315/337)
+  L134 level147.ts — portal0 a→b: 8/16 feasible approach directions exit into wall/obstacle overlap (1 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/45/68/90/113/135/337)
+
+## portalExit (30)
+  L51 level41.ts — portal0 a→b: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)
+  L55 level44.ts — portal0 a→b: 6/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/158/180/202/337)
+  L56 level80.ts — portal0 a→b: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)
+  L57 level46.ts — portal0 a→b: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)
+  L58 level47.ts — portal1 a→b: 1/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0)
+  L59 level81.ts [HALL OF MIRRORS] — portal0 b→a: 1/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 270)
+  L59 level81.ts [HALL OF MIRRORS] — portal1 a→b: 5/13 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/45/135/337)
+  L59 level81.ts [HALL OF MIRRORS] — portal2 b→a: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 247/270/293)
+  L60 level82.ts [THE BREACH] — portal0 a→b: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)
+  L60 level82.ts [THE BREACH] — portal1 b→a: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)
+  L60 level82.ts [THE BREACH] — portal2 b→a: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)
+  L71 level58.ts — portal0 a→b: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)
+  L72 level60.ts — portal0 a→b: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)
+  L74 level87.ts — portal0 a→b: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)
+  L80 level90.ts [HOMECOMING] — portal0 a→b: 6/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/68/90/113/337)
+  L105 level118.ts — portal1 a→b: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)
+  L107 level120.ts — portal0 a→b: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)
+  L108 level121.ts — portal0 a→b: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)
+  L110 level123.ts [THE WARDEN] — portal0 a→b: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)
+  L117 level130.ts — portal0 a→b: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)
+  L121 level134.ts — portal0 b→a: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 247/270/293)
+  L124 level137.ts — portal0 a→b: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)
+  L125 level138.ts — portal0 a→b: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)
+  L128 level141.ts — portal0 a→b: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)
+  L129 level142.ts [THE ASCENT] — portal0 a→b: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)
+  L138 level151.ts — portal0 a→b: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)
+  L147 level160.ts — portal0 a→b: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)
+  L148 level161.ts — portal0 a→b: 6/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/158/180/202/337)
+  L149 level162.ts [THE HOMEWARD PATH] — portal0 a→b: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)
+  L150 level163.ts [THE LONG WAY HOME] — portal0 a→b: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)
+
+## gemIssues (38)
+  L1 level1.ts — gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route
+  L2 level4.ts — gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route
+  L5 level3.ts — gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route
+  L6 level5.ts — gem effectively ON the shortest route (path detour 9.9px) — rubric says gems must be off-route
+  L11 level7.ts — gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route
+  L21 level12.ts — gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route
+  L23 level13.ts — gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route
+  L25 level16.ts — gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route
+  L32 level21.ts — gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route
+  L38 level72.ts — gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route
+  L42 level25.ts — gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route
+  L43 level24.ts — gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route
+  L44 level38.ts — gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route
+  L46 level75.ts — gem effectively ON the shortest route (path detour 1.4px) — rubric says gems must be off-route
+  L49 level77.ts [THE BINARY STAR] — gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route
+  L50 level78.ts [THE SINGULARITY] — gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route
+  L54 level79.ts — gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route
+  L58 level47.ts — gem pickup point is swept by a hazard (clearance -11px)
+  L83 level96.ts — gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route
+  L89 level102.ts [THE GAUNTLET] — gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route
+  L90 level103.ts [THE CRUCIBLE] — gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route
+  L90 level103.ts [THE CRUCIBLE] — gem pickup point is swept by a hazard (clearance -3.9px)
+  L91 level104.ts — gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route
+  L95 level108.ts — gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route
+  L99 level112.ts [THE BINARY STAR] — gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route
+  L100 level113.ts [THE PULSAR] — gem pickup point is swept by a hazard (clearance -31.8px)
+  L115 level128.ts — gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route
+  L119 level132.ts [THE TEMPEST] — gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route
+  L120 level133.ts [THE EYE OF THE STORM] — gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route
+  L120 level133.ts [THE EYE OF THE STORM] — gem pickup point is swept by a hazard (clearance -8px)
+  L122 level135.ts — gem effectively ON the shortest route (path detour 11.7px) — rubric says gems must be off-route
+  L130 level143.ts [THE SUMMIT] — gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route
+  L130 level143.ts [THE SUMMIT] — gem pickup point is swept by a hazard (clearance -38px)
+  L131 level144.ts — gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route
+  L136 level149.ts — gem effectively ON the shortest route (path detour 2.3px) — rubric says gems must be off-route
+  L139 level152.ts [THE EVENT HORIZON] — gem pickup point is swept by a hazard (clearance -29.8px)
+  L142 level155.ts — gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route
+  L145 level158.ts — gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route
+
+## headerWorldMismatch (0)
+
+## bypass (33)
+  L51 level41.ts — goal reachable with portals DISABLED (route 576px vs 293px with portals) — rift is optional
+  L52 level43.ts — goal reachable with portals DISABLED (route 621px vs 140px with portals) — rift is optional
+  L53 level42.ts — goal reachable with portals DISABLED (route 805px vs 216px with portals) — rift is optional
+  L55 level44.ts — goal reachable with portals DISABLED (route 573px vs 453px with portals) — rift is optional
+  L56 level80.ts — goal reachable with portals DISABLED (route 762px vs 85px with portals) — rift is optional
+  L57 level46.ts — goal reachable with portals DISABLED (route 570px vs 214px with portals) — rift is optional
+  L61 level50.ts — goal reachable with all gates SOLID (route 721px vs 188px) — gate is optional for 1-star
+  L62 level51.ts — goal reachable with all gates SOLID (route 210px vs 210px) — gate is optional for 1-star
+  L64 level83.ts — goal reachable with all gates SOLID (route 167px vs 167px) — gate is optional for 1-star
+  L65 level52.ts — goal reachable with all gates SOLID (route 573px vs 480px) — gate is optional for 1-star
+  L66 level84.ts — goal reachable with all gates SOLID (route 518px vs 518px) — gate is optional for 1-star
+  L68 level54.ts — goal reachable with all gates SOLID (route 634px vs 554px) — gate is optional for 1-star
+  L71 level58.ts — goal reachable with portals DISABLED (route 580px vs 192px with portals) — rift is optional
+  L72 level60.ts — goal reachable with portals DISABLED (route 594px vs 509px with portals) — rift is optional
+  L73 level57.ts — goal reachable with all gates SOLID (route 607px vs 516px) — gate is optional for 1-star
+  L74 level87.ts — goal reachable with portals DISABLED (route 533px vs 337px with portals) — rift is optional
+  L76 level62.ts — goal reachable with all gates SOLID (route 606px vs 606px) — gate is optional for 1-star
+  L78 level88.ts — goal reachable with portals DISABLED (route 617px vs 198px with portals) — rift is optional
+  L79 level89.ts [THE CONFLUENCE] — goal reachable with portals DISABLED (route 556px vs 257px with portals) — rift is optional
+  L80 level90.ts [HOMECOMING] — goal reachable with all gates SOLID (route 438px vs 405px) — gate is optional for 1-star
+  L103 level116.ts — goal reachable with portals DISABLED (route 814px vs 216px with portals) — rift is optional
+  L107 level120.ts — goal reachable with portals DISABLED (route 595px vs 401px with portals) — rift is optional
+  L107 level120.ts — goal reachable with all gates SOLID (route 514px vs 401px) — gate is optional for 1-star
+  L109 level122.ts [HALL OF ECHOES] — goal reachable with portals DISABLED (route 821px vs 122px with portals) — rift is optional
+  L122 level135.ts — goal reachable with all gates SOLID (route 625px vs 625px) — gate is optional for 1-star
+  L126 level139.ts — goal reachable with portals DISABLED (route 548px vs 209px with portals) — rift is optional
+  L128 level141.ts — goal reachable with portals DISABLED (route 638px vs 473px with portals) — rift is optional
+  L134 level147.ts — goal reachable with portals DISABLED (route 613px vs 141px with portals) — rift is optional
+  L136 level149.ts — goal reachable with all gates SOLID (route 653px vs 653px) — gate is optional for 1-star
+  L144 level157.ts — goal reachable with all gates SOLID (route 617px vs 524px) — gate is optional for 1-star
+  L148 level161.ts — goal reachable with portals DISABLED (route 654px vs 489px with portals) — rift is optional
+  L149 level162.ts [THE HOMEWARD PATH] — goal reachable with all gates SOLID (route 385px vs 353px) — gate is optional for 1-star
+  L150 level163.ts [THE LONG WAY HOME] — goal reachable with all gates SOLID (route 402px vs 371px) — gate is optional for 1-star
+
+## misc (0)
+
+worldTrend [
+  'W5 WELLS median D 3 < W4 median 3.8',
+  'W10 BINARY median D 3 < W9 median 3.9',
+  'W13 ASCENSION median D 4.1 < W12 median 4.7'
+]
+
+EXACT DUPES []
+SHARED ARENA [{"arenaFingerprint":"f8b90bdc","levels":["L45","L97"]},{"arenaFingerprint":"75b4a691","levels":["L53","L103"]},{"arenaFingerprint":"5ff53d82","levels":["L67","L106"]},{"arenaFingerprint":"cadcd750","levels":["L84","L116"]},{"arenaFingerprint":"495e0789","levels":["L101","L143"]}]
+SIM PAIRS >=0.85
+  L43 ~ L91 sim 1 mirror 0 (4/4 el) campaign/campaign
+  L43 ~ L142 sim 1 mirror 0 (4/4 el) campaign/campaign
+  L45 ~ L97 sim 1 mirror 0 (5/5 el) campaign/campaign
+  L53 ~ L103 sim 1 mirror 0 (6/6 el) campaign/campaign
+  L63 ~ L102 sim 1 mirror 0.75 (4/4 el) campaign/campaign
+  L65 ~ D6 sim 1 mirror 0 (5/5 el) campaign/daily
+  L67 ~ L106 sim 1 mirror 0.83 (6/6 el) campaign/campaign
+  L84 ~ L116 sim 1 mirror 0.6 (5/5 el) campaign/campaign
+  L91 ~ L142 sim 1 mirror 0 (4/4 el) campaign/campaign
+  L101 ~ L143 sim 1 mirror 0.8 (5/5 el) campaign/campaign
+  L122 ~ L136 sim 1 mirror 0.17 (6/6 el) campaign/campaign
+  level39 ~ D7 sim 1 mirror 0 (6/6 el) retired/daily
+  L149 ~ L150 sim 0.94 mirror 0.59 (8/9 el) campaign/campaign
+  L77 ~ L106 sim 0.92 mirror 0.77 (7/6 el) campaign/campaign
+  L108 ~ L138 sim 0.92 mirror 0.15 (6/7 el) campaign/campaign
+  L108 ~ level48 sim 0.92 mirror 0.15 (6/7 el) campaign/retired
+  L108 ~ D8 sim 0.92 mirror 0.15 (6/7 el) campaign/daily
+  L45 ~ D7 sim 0.91 mirror 0 (5/6 el) campaign/daily
+  L73 ~ L144 sim 0.91 mirror 0.73 (6/5 el) campaign/campaign
+  L97 ~ D7 sim 0.91 mirror 0 (5/6 el) campaign/daily
+  L16 ~ D2 sim 0.89 mirror 0 (4/5 el) campaign/daily
+  L82 ~ L113 sim 0.89 mirror 0 (5/4 el) campaign/campaign
+  L92 ~ L112 sim 0.86 mirror 0.57 (4/3 el) campaign/campaign
+  L138 ~ D8 sim 0.86 mirror 0.14 (7/7 el) campaign/daily
+  level48 ~ D8 sim 0.86 mirror 0.14 (7/7 el) retired/daily
+SIM PAIRS 0.75-0.85 count 24
+
+REPEATED ELEMENTS
+  O(180,430,360,20,0) ×9: 58,70,80,101,105,110,121,143,150
+  T0,-1(180,560,360,20) ×5: 67,75,106,127,147
+  Mattract(300,200) ×4: 57,72,128,148
+  O(180,430,200,20,0) ×4: 78,90,120,130
+BALL [{"pos":"(180,660)","count":30,"indices":[4,5,6,9,13,14,21,22,24,25,26,28,31,32,34,35,37,42,54,57,58,63,67,71,73,74,75,77,101,102]},{"pos":"(180,690)","count":23,"indices":[50,59,79,80,81,83,84,89,94,98,105,115,118,121,123,126,127,131,133,135,137,141,147]},{"pos":"(180,680)","count":13,"indices":[38,60,70,87,92,106,111,112,114,116,117,143,144]},{"pos":"(180,700)","count":10,"indices":[19,29,40,90,99,100,110,119,120,139]},{"pos":"(90,660)","count":7,"indices":[15,16,33,53,62,66,103]},{"pos":"(180,670)","count":6,"indices":[8,41,44,46,49,78]},{"pos":"(80,660)","count":6,"indices":[43,51,52,72,76,97]},{"pos":"(70,680)","count":5,"indices":[64,91,95,108,142]}]
+GOAL [{"pos":"(180,120)","count":24,"indices":[9,19,22,28,31,34,46,58,73,75,77,78,81,84,98,114,115,116,117,121,123,126,127,131]},{"pos":"(180,110)","count":19,"indices":[8,24,25,29,32,33,37,44,49,54,60,79,83,99,109,118,133,137,139]},{"pos":"(300,130)","count":12,"indices":[18,48,55,57,72,86,88,105,108,113,122,146]},{"pos":"(180,140)","count":9,"indices":[5,11,21,63,92,101,102,106,143]},{"pos":"(300,140)","count":9,"indices":[47,52,71,93,95,96,107,134,142]},{"pos":"(180,90)","count":8,"indices":[30,40,59,69,80,129,130,150]},{"pos":"(180,130)","count":7,"indices":[42,94,111,112,141,144,147]},{"pos":"(180,100)","count":7,"indices":[50,90,100,110,120,140,149]}]
+
+RETIRED
+{"f":"level6.ts","title":"","boss":false,"mech":["hazards"],"ent":4,"bodies":5,"goalR":46,"d":500,"path":456,"reach":true,"par":12000,"lim":null,"tr":null,"D":1.84,"fit":{"mechanicWorld":4,"difficultyWorld":1,"closestMatches":[]},"hw":1,"geo":[],"idle":"none","head":"World 1 — Foundations · FIRST STAKES (optional risk): a lone spike guards the gem off to the right. The straight path up the centre to a gen"}
+{"f":"level22.ts","title":"","boss":false,"mech":["hazards"],"ent":6,"bodies":7,"goalR":28,"d":586.9,"path":745,"reach":true,"par":10000,"lim":16000,"tr":7.01,"D":5.49,"fit":{"mechanicWorld":4,"difficultyWorld":12,"closestMatches":["L88~level22 0.83"]},"hw":4,"geo":[],"idle":"none","head":"World 4 — Peril · master capstone: weave a zigzag, dodge a sweeping saw near the goal, and beat the clock. Everything at once."}
+{"f":"level31.ts","title":"","boss":false,"mech":["gravityZones","hazards"],"ent":5,"bodies":5,"goalR":32,"d":540.8,"path":519,"reach":true,"par":14000,"lim":null,"tr":null,"D":2.99,"fit":{"mechanicWorld":4,"difficultyWorld":10,"closestMatches":["L87~level31 0.8"]},"hw":2,"geo":[],"idle":"none","head":"World 2 · combine (predict drift under threat): a crosswind shoves you toward a spike on the right. Read the drift and counter it as you cli"}
+{"f":"level35.ts","title":"","boss":false,"mech":["gravityZones","movingPlatforms"],"ent":7,"bodies":8,"goalR":26,"d":596.2,"path":732,"reach":true,"par":20000,"lim":null,"tr":null,"D":4.29,"fit":{"mechanicWorld":3,"difficultyWorld":14,"closestMatches":[]},"hw":3,"geo":[],"idle":"none","head":"World 3 · AHA (sequencing): a maze with a sweeping guard at the top and a lift on the right. The route only works in one order — thread the "}
+{"f":"level37.ts","title":"","boss":false,"mech":["gravityZones","hazards"],"ent":6,"bodies":6,"goalR":26,"d":586.9,"path":607,"reach":true,"par":11000,"lim":15000,"tr":7.56,"D":5.24,"fit":{"mechanicWorld":4,"difficultyWorld":12,"closestMatches":[]},"hw":4,"geo":[],"idle":"none","head":"World 4 — Peril · master: a hard countdown, a wall gap, an updraft to the goal, and a saw guarding it. Everything under the clock — the peri"}
+{"f":"level39.ts","title":"","boss":false,"mech":["gravityZones","magnets","hazards"],"ent":6,"bodies":5,"goalR":30,"d":564.6,"path":580,"reach":true,"par":15000,"lim":null,"tr":null,"D":4.19,"fit":{"mechanicWorld":8,"difficultyWorld":8,"closestMatches":["level39~D7 1"]},"hw":5,"geo":[],"idle":"none","head":"World 5 — Wells · combine: an updraft lifts you on the left, an attract well reels you right toward the goal — but a spike sits on the line "}
+{"f":"level40.ts","title":"","boss":false,"mech":["magnets","hazards"],"ent":7,"bodies":6,"goalR":24,"d":586.9,"path":612,"reach":true,"par":18000,"lim":null,"tr":null,"D":3.66,"fit":{"mechanicWorld":5,"difficultyWorld":4,"closestMatches":["L47~level40 0.77"]},"hw":5,"geo":[],"idle":"none","head":"World 5 — Wells · master: a repeller and a spike guard the way up; an attract well near the goal reels you home once past them. The gem is t"}
+{"f":"level45.ts","title":"","boss":false,"mech":["portals","movingPlatforms"],"ent":6,"bodies":7,"goalR":32,"d":540,"path":193,"reach":true,"par":16000,"lim":null,"tr":null,"D":2.95,"fit":{"mechanicWorld":6,"difficultyWorld":3,"closestMatches":[]},"hw":6,"geo":[],"idle":"none","head":"World 6 — Rifts · combine: through the rift, then a sliding gate guards the way to the goal. Jump across, then time the gate."}
+{"f":"level48.ts","title":"","boss":false,"mech":["gravityZones","portals","hazards"],"ent":7,"bodies":6,"goalR":24,"d":586.9,"path":224,"reach":true,"par":16000,"lim":null,"tr":null,"D":4.36,"fit":{"mechanicWorld":8,"difficultyWorld":14,"closestMatches":["L108~level48 0.92","level48~D8 0.86"]},"hw":6,"geo":[],"idle":"none","head":"World 6 — Rifts · master: jump the rift across the wall, ride an updraft toward the goal, and dodge a saw guarding it. A small goal under a "}
+{"f":"level55.ts","title":"","boss":false,"mech":["gates","hazards"],"ent":5,"bodies":6,"goalR":28,"d":520,"path":496,"reach":true,"par":17000,"lim":null,"tr":null,"D":4.33,"fit":{"mechanicWorld":7,"difficultyWorld":14,"closestMatches":[]},"hw":7,"geo":[],"idle":"none","head":"World 7 — Gates · combine: commit up through the gate, then time a sweeping saw to reach the goal — no dropping back to reset your approach."}
+{"f":"level56.ts","title":"","boss":false,"mech":["magnets","portals","gates","hazards"],"ent":8,"bodies":7,"goalR":24,"d":586.9,"path":256,"reach":true,"par":18000,"lim":null,"tr":null,"D":5.03,"fit":{"mechanicWorld":8,"difficultyWorld":12,"closestMatches":["level56~level64 0.82"]},"hw":7,"geo":[],"idle":"none","head":"World 7 — Gates · master: commit up through the gate, rift across the sealed wall, dodge a saw, and let the well reel you into a small goal."}
+{"f":"level63.ts","title":"","boss":false,"mech":["magnets","portals","hazards"],"ent":6,"bodies":5,"goalR":24,"d":540,"path":289,"reach":true,"par":12000,"lim":16000,"tr":12.97,"D":4.96,"fit":{"mechanicWorld":8,"difficultyWorld":12,"closestMatches":["L117~level63 0.83"]},"hw":8,"geo":[],"idle":"none","head":"World 8 — Convergence · timed: portals + repel well + saw, against the clock. Rift across, weave the push, dodge the saw — fast."}
+{"f":"level64.ts","title":"","boss":false,"mech":["gravityZones","magnets","portals","gates","hazards"],"ent":9,"bodies":7,"goalR":22,"d":596.2,"path":288,"reach":true,"par":18000,"lim":20000,"tr":16.44,"D":5.86,"fit":{"mechanicWorld":8,"difficultyWorld":12,"closestMatches":["level56~level64 0.82"]},"hw":8,"geo":[],"idle":"none","head":"World 8 — Convergence · master capstone: gate, rift, current, well, saw — and a clock. Plan the whole route in advance; small goal, tight pa"}
+
+DAILY
+{"i":0,"mech":["hazards"],"goalR":34,"path":623,"par":15000,"D":3.6,"pct":57,"gemDet":0,"gemHaz":38,"geo":[],"idle":"none","ballHaz":388.1,"goalHaz":119.2}
+{"i":1,"mech":["gravityZones"],"goalR":34,"path":561,"par":15000,"D":2.76,"pct":23,"gemDet":86.7,"gemHaz":null,"geo":[],"idle":"none","ballHaz":null,"goalHaz":null}
+{"i":2,"mech":["magnets"],"goalR":32,"path":512,"par":15000,"D":2.66,"pct":17,"gemDet":31.5,"gemHaz":null,"geo":[],"idle":"none","ballHaz":null,"goalHaz":null}
+{"i":3,"mech":["portals"],"goalR":34,"path":189,"par":14000,"D":2.29,"pct":11,"gemDet":94,"gemHaz":null,"geo":[],"idle":"none","ballHaz":null,"goalHaz":null}
+{"i":4,"mech":["movingPlatforms","hazards"],"goalR":32,"path":512,"par":16000,"D":3.21,"pct":48,"gemDet":76.6,"gemHaz":60,"geo":[],"idle":"none","ballHaz":339.5,"goalHaz":176.3}
+{"i":5,"mech":["gravityZones","gates"],"goalR":32,"path":500,"par":16000,"D":3.23,"pct":48,"gemDet":112.7,"gemHaz":null,"geo":[],"idle":"none","ballHaz":null,"goalHaz":null}
+{"i":6,"mech":["gravityZones","magnets","hazards"],"goalR":30,"path":582,"par":16000,"D":4.2,"pct":73,"gemDet":75,"gemHaz":176.3,"geo":[],"idle":"none","ballHaz":273.8,"goalHaz":210.8}
+{"i":7,"mech":["magnets","portals","hazards"],"goalR":28,"path":212,"par":18000,"D":4.14,"pct":71,"gemDet":232.9,"gemHaz":92.4,"geo":[],"idle":"none","ballHaz":411.2,"goalHaz":72}
+[{"daily":"D1","par":15000,"timedLimit":18000,"pathLen":623,"idealMs":2017,"ratio":8.92,"gemReachable":true,"gemPathDetour":0,"gemHazClear":38,"D":3.6},{"daily":"D2","par":15000,"timedLimit":18000,"pathLen":561,"idealMs":1883,"ratio":9.56,"gemReachable":true,"gemPathDetour":86.7,"gemHazClear":null,"D":2.76},{"daily":"D3","par":15000,"timedLimit":18000,"pathLen":512,"idealMs":1767,"ratio":10.19,"gemReachable":true,"gemPathDetour":31.5,"gemHazClear":null,"D":2.66},{"daily":"D4","par":14000,"timedLimit":17000,"pathLen":189,"idealMs":950,"ratio":17.89,"gemReachable":true,"gemPathDetour":94,"gemHazClear":null,"D":2.29},{"daily":"D5","par":16000,"timedLimit":19000,"pathLen":512,"idealMs":1767,"ratio":10.75,"gemReachable":true,"gemPathDetour":76.6,"gemHazClear":60,"D":3.21},{"daily":"D6","par":16000,"timedLimit":19000,"pathLen":500,"idealMs":1750,"ratio":10.86,"gemReachable":true,"gemPathDetour":112.7,"gemHazClear":null,"D":3.23},{"daily":"D7","par":16000,"timedLimit":19000,"pathLen":582,"idealMs":1933,"ratio":9.83,"gemReachable":true,"gemPathDetour":75,"gemHazClear":176.3,"D":4.2},{"daily":"D8","par":18000,"timedLimit":21000,"pathLen":212,"idealMs":1017,"ratio":20.65,"gemReachable":true,"gemPathDetour":232.9,"gemHazClear":92.4,"D":4.14}]
+idx {"0":15,"1":16,"2":13,"3":17,"4":14,"5":14,"6":18,"7":13} mod {"none":59,"timed":31,"gemRush":30} consecutive same 2
+
+ENDLESS
+{"id":"breather","tier":0,"tag":"open","height":560,"obstacles":0,"hazards":0,"hazardKinds":[],"gravityZones":0,"magnets":[],"stars":1,"bodies":0,"mechanics":[],"obstacleRows":[],"hazardRows":[],"minObstacleLane":null,"minHazardSafeGap":null}
+{"id":"starfield","tier":0,"tag":"open","height":560,"obstacles":0,"hazards":0,"hazardKinds":[],"gravityZones":0,"magnets":[],"stars":3,"bodies":0,"mechanics":[],"obstacleRows":[],"hazardRows":[],"minObstacleLane":null,"minHazardSafeGap":null}
+{"id":"drift","tier":0,"tag":"zone","height":560,"obstacles":0,"hazards":0,"hazardKinds":[],"gravityZones":1,"magnets":[],"stars":2,"bodies":0,"mechanics":["gravityZones"],"obstacleRows":[],"hazardRows":[],"minObstacleLane":null,"minHazardSafeGap":null}
+{"id":"lanes","tier":0,"tag":"wall","height":560,"obstacles":1,"hazards":0,"hazardKinds":[],"gravityZones":0,"magnets":[],"stars":1,"bodies":1,"mechanics":["obstacles"],"obstacleRows":[{"y":280,"widestGap":222}],"hazardRows":[],"minObstacleLane":222,"minHazardSafeGap":null}
+{"id":"sawSweep","tier":1,"tag":"saw","height":560,"obstacles":0,"hazards":1,"hazardKinds":["sweep"],"gravityZones":0,"magnets":[],"stars":1,"bodies":0,"mechanics":["hazards"],"obstacleRows":[],"hazardRows":[{"y":280,"kind":"sweep","alwaysSafeGap":56,"timed":false}],"minObstacleLane":null,"minHazardSafeGap":56}
+{"id":"pillars","tier":1,"tag":"wall","height":560,"obstacles":2,"hazards":0,"hazardKinds":[],"gravityZones":0,"magnets":[],"stars":2,"bodies":2,"mechanics":["obstacles"],"obstacleRows":[{"y":200,"widestGap":205},{"y":360,"widestGap":205}],"hazardRows":[],"minObstacleLane":205,"minHazardSafeGap":null}
+{"id":"updraftLane","tier":1,"tag":"zone","height":560,"obstacles":0,"hazards":0,"hazardKinds":[],"gravityZones":1,"magnets":[],"stars":1,"bodies":0,"mechanics":["gravityZones"],"obstacleRows":[],"hazardRows":[],"minObstacleLane":null,"minHazardSafeGap":null}
+{"id":"swingWell","tier":1,"tag":"magnet","height":560,"obstacles":0,"hazards":0,"hazardKinds":[],"gravityZones":0,"magnets":["attract"],"stars":1,"bodies":0,"mechanics":["magnets"],"obstacleRows":[],"hazardRows":[],"minObstacleLane":null,"minHazardSafeGap":null}
+{"id":"downGap","tier":1,"tag":"wall","height":560,"obstacles":1,"hazards":0,"hazardKinds":[],"gravityZones":0,"magnets":[],"stars":1,"bodies":1,"mechanics":["obstacles"],"obstacleRows":[{"y":280,"widestGap":140}],"hazardRows":[],"minObstacleLane":140,"minHazardSafeGap":null}
+{"id":"twinSaws","tier":2,"tag":"saw","height":560,"obstacles":0,"hazards":2,"hazardKinds":["sweep","sweep"],"gravityZones":0,"magnets":[],"stars":1,"bodies":0,"mechanics":["hazards"],"obstacleRows":[],"hazardRows":[{"y":200,"kind":"sweep","alwaysSafeGap":38,"timed":false},{"y":360,"kind":"sweep","alwaysSafeGap":38,"timed":false}],"minObstacleLane":null,"minHazardSafeGap":38}
+{"id":"magnetSlalom","tier":2,"tag":"magnet","height":560,"obstacles":0,"hazards":0,"hazardKinds":[],"gravityZones":0,"magnets":["repel","repel"],"stars":2,"bodies":0,"mechanics":["magnets"],"obstacleRows":[],"hazardRows":[],"minObstacleLane":null,"minHazardSafeGap":null}
+{"id":"zigzag","tier":2,"tag":"wall","height":560,"obstacles":2,"hazards":0,"hazardKinds":[],"gravityZones":0,"magnets":[],"stars":2,"bodies":2,"mechanics":["obstacles"],"obstacleRows":[{"y":360,"widestGap":120},{"y":200,"widestGap":140}],"hazardRows":[],"minObstacleLane":120,"minHazardSafeGap":null}
+{"id":"windSaw","tier":2,"tag":"zone","height":560,"obstacles":0,"hazards":1,"hazardKinds":["sweep"],"gravityZones":1,"magnets":[],"stars":1,"bodies":0,"mechanics":["hazards","gravityZones"],"obstacleRows":[],"hazardRows":[{"y":200,"kind":"sweep","alwaysSafeGap":98,"timed":false}],"minObstacleLane":null,"minHazardSafeGap":98}
+{"id":"repelGate","tier":2,"tag":"magnet","height":560,"obstacles":1,"hazards":0,"hazardKinds":[],"gravityZones":0,"magnets":["repel"],"stars":1,"bodies":1,"mechanics":["obstacles","magnets"],"obstacleRows":[{"y":300,"widestGap":140}],"hazardRows":[],"minObstacleLane":140,"minHazardSafeGap":null}
+{"id":"beamSlot","tier":2,"tag":"beam","height":560,"obstacles":0,"hazards":1,"hazardKinds":["beam"],"gravityZones":0,"magnets":[],"stars":2,"bodies":0,"mechanics":["hazards"],"obstacleRows":[],"hazardRows":[{"y":280,"kind":"beam","alwaysSafeGap":170,"timed":true}],"minObstacleLane":null,"minHazardSafeGap":170}
+{"id":"gauntlet","tier":3,"tag":"saw","height":560,"obstacles":1,"hazards":1,"hazardKinds":["sweep"],"gravityZones":1,"magnets":[],"stars":1,"bodies":1,"mechanics":["obstacles","hazards","gravityZones"],"obstacleRows":[{"y":200,"widestGap":190}],"hazardRows":[{"y":360,"kind":"sweep","alwaysSafeGap":58,"timed":false}],"minObstacleLane":190,"minHazardSafeGap":58}
+{"id":"beamRun","tier":3,"tag":"beam","height":560,"obstacles":0,"hazards":1,"hazardKinds":["beam"],"gravityZones":0,"magnets":[],"stars":2,"bodies":0,"mechanics":["hazards"],"obstacleRows":[],"hazardRows":[{"y":280,"kind":"beam","alwaysSafeGap":0,"timed":true}],"minObstacleLane":null,"minHazardSafeGap":0}
+{"id":"doubleBeam","tier":3,"tag":"beam","height":560,"obstacles":0,"hazards":2,"hazardKinds":["beam","beam"],"gravityZones":0,"magnets":[],"stars":2,"bodies":0,"mechanics":["hazards"],"obstacleRows":[],"hazardRows":[{"y":220,"kind":"beam","alwaysSafeGap":170,"timed":true},{"y":380,"kind":"beam","alwaysSafeGap":170,"timed":true}],"minObstacleLane":null,"minHazardSafeGap":170}
+{"id":"sawMaze","tier":3,"tag":"wall","height":560,"obstacles":2,"hazards":1,"hazardKinds":["sweep"],"gravityZones":0,"magnets":[],"stars":1,"bodies":2,"mechanics":["obstacles","hazards"],"obstacleRows":[{"y":360,"widestGap":120},{"y":200,"widestGap":140}],"hazardRows":[{"y":280,"kind":"sweep","alwaysSafeGap":70,"timed":false}],"minObstacleLane":120,"minHazardSafeGap":70}
+{"id":"binaryWell","tier":3,"tag":"magnet","height":560,"obstacles":0,"hazards":0,"hazardKinds":[],"gravityZones":0,"magnets":["repel","attract"],"stars":1,"bodies":0,"mechanics":["magnets"],"obstacleRows":[],"hazardRows":[],"minObstacleLane":null,"minHazardSafeGap":null}
+weekly {"seeds":26,"count":400,"freqFirst":{"lanes":50,"drift":70,"starfield":62,"updraftLane":45,"pillars":41,"swingWell":49,"downGap":38,"gauntlet":14,"breather":54,"magnetSlalom":16,"repelGate":24,"sawSweep":43,"beamSlot":22,"doubleBeam":16,"zigzag":12,"beamRun":12,"twinSaws":18,"windSaw":18,"sawMaze":9,"binaryWell":11},"violSameTag":0,"violHardHard":0,"violRecency":0,"openNotTier0":0} {"lanes":50,"drift":70,"starfield":62,"updraftLane":45,"pillars":41,"swingWell":49,"downGap":38,"gauntlet":14,"breather":54,"magnetSlalom":16,"repelGate":24,"sawSweep":43,"beamSlot":22,"doubleBeam":16,"zigzag":12,"beamRun":12,"twinSaws":18,"windSaw":18,"sawMaze":9,"binaryWell":11}
+endless {"seeds":500,"count":400,"freqFirst":{"drift":1153,"breather":1126,"lanes":1051,"swingWell":842,"starfield":1104,"sawSweep":887,"windSaw":330,"zigzag":285,"magnetSlalom":366,"downGap":780,"beamSlot":379,"updraftLane":854,"doubleBeam":312,"repelGate":358,"beamRun":281,"sawMaze":188,"pillars":778,"twinSaws":360,"gauntlet":296,"binaryWell":270},"violSameTag":0,"violHardHard":0,"violRecency":0,"openNotTier0":0} {"drift":1153,"breather":1126,"lanes":1051,"swingWell":842,"starfield":1104,"sawSweep":887,"windSaw":330,"zigzag":285,"magnetSlalom":366,"downGap":780,"beamSlot":379,"updraftLane":854,"doubleBeam":312,"repelGate":358,"beamRun":281,"sawMaze":188,"pillars":778,"twinSaws":360,"gauntlet":296,"binaryWell":270} {"drift":14552,"breather":15200,"lanes":13112,"swingWell":13462,"starfield":15203,"sawSweep":14117,"windSaw":6158,"zigzag":5251,"magnetSlalom":7047,"downGap":12791,"beamSlot":7654,"updraftLane":14426,"doubleBeam":7547,"repelGate":6922,"beamRun":7603,"sawMaze":5317,"twinSaws":7056,"binaryWell":6961,"pillars":12728,"gauntlet":6893}
+[{"chunkIndex":0,"maxTierAllowed":0,"cameraTravelPx":40,"approxSeconds":0.5,"scoreAtDistance":4},{"chunkIndex":3,"maxTierAllowed":1,"cameraTravelPx":1720,"approxSeconds":17.5,"scoreAtDistance":172},{"chunkIndex":6,"maxTierAllowed":2,"cameraTravelPx":3400,"approxSeconds":28.4,"scoreAtDistance":340},{"chunkIndex":9,"maxTierAllowed":3,"cameraTravelPx":5080,"approxSeconds":37.1,"scoreAtDistance":508},{"chunkIndex":12,"maxTierAllowed":3,"cameraTravelPx":6760,"approxSeconds":44.6,"scoreAtDistance":676},{"chunkIndex":20,"maxTierAllowed":3,"cameraTravelPx":11240,"approxSeconds":62.5,"scoreAtDistance":1124},{"chunkIndex":40,"maxTierAllowed":3,"cameraTravelPx":22440,"approxSeconds":107.3,"scoreAtDistance":2244}]
+week boundary first change date Thu Oct 08 2026
+[{"seed":"gw2961","first24":["lanes(t0)","drift(t0)","starfield(t0)","updraftLane(t1)","pillars(t1)","swingWell(t1)","downGap(t1)","drift(t0)","starfield(t0)","gauntlet(t3)","breather(t0)","pillars(t1)","magnetSlalom(t2)","updraftLane(t1)","repelGate(t2)","sawSweep(t1)","swingWell(t1)","beamSlot(t2)","downGap(t1)","doubleBeam(t3)","pillars(t1)","starfield(t0)","magnetSlalom(t2)","drift(t0)"]},{"seed":"gw2962","first24":["lanes(t0)","breather(t0)","drift(t0)","downGap(t1)","updraftLane(t1)","swingWell(t1)","breather(t0)","zigzag(t2)","starfield(t0)","magnetSlalom(t2)","sawSweep(t1)","lanes(t0)","repelGate(t2)","drift(t0)","pillars(t1)","magnetSlalom(t2)","starfield(t0)","swingWell(t1)","beamSlot(t2)","updraftLane(t1)","gauntlet(t3)","starfield(t0)","beamRun(t3)","downGap(t1)"]}]

@@ -1,0 +1,1862 @@
+{
+ "pool": [
+  {
+   "campaignIndex": null,
+   "dailyIndex": 0,
+   "sourceFile": "src/config/dailyLevels.ts",
+   "exportName": "DAILY_LEVELS[0]",
+   "fingerprint": "3757935a",
+   "arenaFingerprint": "072c60b5",
+   "title": "",
+   "hint": "Daily — pick your route to the goal",
+   "boss": false,
+   "signature": false,
+   "mech": {
+    "obstacles": 1,
+    "angledObstacles": 0,
+    "gravityZones": 0,
+    "zoneUp": 0,
+    "zoneDown": 0,
+    "zoneSide": 0,
+    "zoneDiag": 0,
+    "magnets": 0,
+    "magnetAttract": 0,
+    "magnetRepel": 0,
+    "magnetCustom": 0,
+    "portals": 0,
+    "gates": 0,
+    "gateUp": 0,
+    "gateDown": 0,
+    "gateSide": 0,
+    "gateDiag": 0,
+    "movingPlatforms": 0,
+    "hazards": 1,
+    "hazStatic": 1,
+    "hazSweep": 0,
+    "hazArm": 0,
+    "hazBeam": 0,
+    "hazBeamMoving": 0,
+    "hazBeamPhased": 0,
+    "hazCircle": 1,
+    "hazRect": 0,
+    "orbs": 0,
+    "collectAllToWin": false,
+    "gem": true,
+    "timed": false,
+    "movingGoal": false,
+    "startVelocity": false,
+    "cameraIntro": false
+   },
+   "distinctMechanics": [
+    "hazards"
+   ],
+   "entityCount": 5,
+   "bodies": 6,
+   "ball": {
+    "x": 70,
+    "y": 650
+   },
+   "goal": {
+    "x": 300,
+    "y": 140,
+    "radius": 34,
+    "to": null,
+    "durationMs": null
+   },
+   "dStraight": 559.5,
+   "withinReach": false,
+   "withinReachEdge": false,
+   "parTimeMs": 15000,
+   "timeLimitMs": null,
+   "collectible": {
+    "x": 320,
+    "y": 220
+   },
+   "gemEuclidDetour": 20.4,
+   "gemPathDetour": 0,
+   "gemReachable": true,
+   "ballHazClearPath": 388.1,
+   "ballHazClearT0": 388.1,
+   "ballHazIdx": 0,
+   "goalHazClear": 119.2,
+   "goalHazIdx": 0,
+   "gemHazClear": 38,
+   "spawnContactMs": null,
+   "oob": [],
+   "oobSoft": [],
+   "geo": [],
+   "portalExitRisk": [],
+   "portalExitDetail": [],
+   "goalCaptureFrac": 100,
+   "gemPickupFrac": 96.3,
+   "obsOnLine": 1,
+   "gatesOnLine": 0,
+   "reachable": true,
+   "pathLen": 623,
+   "tortuosity": 1.19,
+   "routeUsesPortal": false,
+   "gatesCrossed": 0,
+   "platformsCrossed": 0,
+   "reachPlatStart": null,
+   "reachPlatEnd": null,
+   "reachAvoidHazPaths": null,
+   "reachNoPortals": null,
+   "reachGatesSolid": null,
+   "hazNearRoute": 1,
+   "hazCrossRoute": 0,
+   "routeHazClear": [
+    2
+   ],
+   "orbsReachable": null,
+   "idealMs": 2017,
+   "timerRatio": null,
+   "parRatio": 7.44,
+   "limReqSpeed": null,
+   "parReqSpeed": 41.5,
+   "limMinusPar": null,
+   "idle": {
+    "outcome": "none",
+    "ms": 8000,
+    "x": 70,
+    "y": 650,
+    "travelled": 0,
+    "gem": false,
+    "beamTouch": null
+   },
+   "D": 3.6,
+   "D3": 3.92,
+   "Dcomp": {
+    "route": 1.28,
+    "bend": 0.22,
+    "goalSize": 0.9,
+    "hazards": 0.6,
+    "mechanics": 0.3,
+    "portal": 0,
+    "gates": 0,
+    "platformGate": 0,
+    "timer": 0,
+    "movingGoal": 0,
+    "beyondReach": 0.3,
+    "orbs": 0
+   },
+   "campaignPercentile": 57
+  },
+  {
+   "campaignIndex": null,
+   "dailyIndex": 1,
+   "sourceFile": "src/config/dailyLevels.ts",
+   "exportName": "DAILY_LEVELS[1]",
+   "fingerprint": "4c2380b9",
+   "arenaFingerprint": "6b9273fd",
+   "title": "",
+   "hint": "Daily — updraft then crosswind",
+   "boss": false,
+   "signature": false,
+   "mech": {
+    "obstacles": 0,
+    "angledObstacles": 0,
+    "gravityZones": 2,
+    "zoneUp": 1,
+    "zoneDown": 0,
+    "zoneSide": 1,
+    "zoneDiag": 0,
+    "magnets": 0,
+    "magnetAttract": 0,
+    "magnetRepel": 0,
+    "magnetCustom": 0,
+    "portals": 0,
+    "gates": 0,
+    "gateUp": 0,
+    "gateDown": 0,
+    "gateSide": 0,
+    "gateDiag": 0,
+    "movingPlatforms": 0,
+    "hazards": 0,
+    "hazStatic": 0,
+    "hazSweep": 0,
+    "hazArm": 0,
+    "hazBeam": 0,
+    "hazBeamMoving": 0,
+    "hazBeamPhased": 0,
+    "hazCircle": 0,
+    "hazRect": 0,
+    "orbs": 0,
+    "collectAllToWin": false,
+    "gem": true,
+    "timed": false,
+    "movingGoal": false,
+    "startVelocity": false,
+    "cameraIntro": false
+   },
+   "distinctMechanics": [
+    "gravityZones"
+   ],
+   "entityCount": 5,
+   "bodies": 5,
+   "ball": {
+    "x": 70,
+    "y": 650
+   },
+   "goal": {
+    "x": 300,
+    "y": 150,
+    "radius": 34,
+    "to": null,
+    "durationMs": null
+   },
+   "dStraight": 550.4,
+   "withinReach": false,
+   "withinReachEdge": false,
+   "parTimeMs": 15000,
+   "timeLimitMs": null,
+   "collectible": {
+    "x": 70,
+    "y": 190
+   },
+   "gemEuclidDetour": 143.1,
+   "gemPathDetour": 86.7,
+   "gemReachable": true,
+   "ballHazClearPath": null,
+   "ballHazClearT0": null,
+   "ballHazIdx": -1,
+   "goalHazClear": null,
+   "goalHazIdx": -1,
+   "gemHazClear": null,
+   "spawnContactMs": null,
+   "oob": [],
+   "oobSoft": [],
+   "geo": [],
+   "portalExitRisk": [],
+   "portalExitDetail": [],
+   "goalCaptureFrac": 100,
+   "gemPickupFrac": 100,
+   "obsOnLine": 0,
+   "gatesOnLine": 0,
+   "reachable": true,
+   "pathLen": 561,
+   "tortuosity": 1.09,
+   "routeUsesPortal": false,
+   "gatesCrossed": 0,
+   "platformsCrossed": 0,
+   "reachPlatStart": null,
+   "reachPlatEnd": null,
+   "reachAvoidHazPaths": null,
+   "reachNoPortals": null,
+   "reachGatesSolid": null,
+   "hazNearRoute": 0,
+   "hazCrossRoute": 0,
+   "routeHazClear": [],
+   "orbsReachable": null,
+   "idealMs": 1883,
+   "timerRatio": null,
+   "parRatio": 7.96,
+   "limReqSpeed": null,
+   "parReqSpeed": 37.4,
+   "limMinusPar": null,
+   "idle": {
+    "outcome": "none",
+    "ms": 8000,
+    "x": 70,
+    "y": 650,
+    "travelled": 0,
+    "gem": false,
+    "beamTouch": null
+   },
+   "D": 2.76,
+   "D3": 3.2,
+   "Dcomp": {
+    "route": 1.15,
+    "bend": 0.1,
+    "goalSize": 0.9,
+    "hazards": 0,
+    "mechanics": 0.3,
+    "portal": 0,
+    "gates": 0,
+    "platformGate": 0,
+    "timer": 0,
+    "movingGoal": 0,
+    "beyondReach": 0.3,
+    "orbs": 0
+   },
+   "campaignPercentile": 23
+  },
+  {
+   "campaignIndex": null,
+   "dailyIndex": 2,
+   "sourceFile": "src/config/dailyLevels.ts",
+   "exportName": "DAILY_LEVELS[2]",
+   "fingerprint": "4aab4187",
+   "arenaFingerprint": "c7debbdd",
+   "title": "",
+   "hint": "Daily — weave the wells",
+   "boss": false,
+   "signature": false,
+   "mech": {
+    "obstacles": 0,
+    "angledObstacles": 0,
+    "gravityZones": 0,
+    "zoneUp": 0,
+    "zoneDown": 0,
+    "zoneSide": 0,
+    "zoneDiag": 0,
+    "magnets": 2,
+    "magnetAttract": 1,
+    "magnetRepel": 1,
+    "magnetCustom": 0,
+    "portals": 0,
+    "gates": 0,
+    "gateUp": 0,
+    "gateDown": 0,
+    "gateSide": 0,
+    "gateDiag": 0,
+    "movingPlatforms": 0,
+    "hazards": 0,
+    "hazStatic": 0,
+    "hazSweep": 0,
+    "hazArm": 0,
+    "hazBeam": 0,
+    "hazBeamMoving": 0,
+    "hazBeamPhased": 0,
+    "hazCircle": 0,
+    "hazRect": 0,
+    "orbs": 0,
+    "collectAllToWin": false,
+    "gem": true,
+    "timed": false,
+    "movingGoal": false,
+    "startVelocity": false,
+    "cameraIntro": false
+   },
+   "distinctMechanics": [
+    "magnets"
+   ],
+   "entityCount": 5,
+   "bodies": 5,
+   "ball": {
+    "x": 180,
+    "y": 660
+   },
+   "goal": {
+    "x": 180,
+    "y": 120,
+    "radius": 32,
+    "to": null,
+    "durationMs": null
+   },
+   "dStraight": 540,
+   "withinReach": false,
+   "withinReachEdge": false,
+   "parTimeMs": 15000,
+   "timeLimitMs": null,
+   "collectible": {
+    "x": 110,
+    "y": 250
+   },
+   "gemEuclidDetour": 23.6,
+   "gemPathDetour": 31.5,
+   "gemReachable": true,
+   "ballHazClearPath": null,
+   "ballHazClearT0": null,
+   "ballHazIdx": -1,
+   "goalHazClear": null,
+   "goalHazIdx": -1,
+   "gemHazClear": null,
+   "spawnContactMs": null,
+   "oob": [],
+   "oobSoft": [],
+   "geo": [],
+   "portalExitRisk": [],
+   "portalExitDetail": [],
+   "goalCaptureFrac": 100,
+   "gemPickupFrac": 100,
+   "obsOnLine": 0,
+   "gatesOnLine": 0,
+   "reachable": true,
+   "pathLen": 512,
+   "tortuosity": 1.01,
+   "routeUsesPortal": false,
+   "gatesCrossed": 0,
+   "platformsCrossed": 0,
+   "reachPlatStart": null,
+   "reachPlatEnd": null,
+   "reachAvoidHazPaths": null,
+   "reachNoPortals": null,
+   "reachGatesSolid": null,
+   "hazNearRoute": 0,
+   "hazCrossRoute": 0,
+   "routeHazClear": [],
+   "orbsReachable": null,
+   "idealMs": 1767,
+   "timerRatio": null,
+   "parRatio": 8.49,
+   "limReqSpeed": null,
+   "parReqSpeed": 34.1,
+   "limMinusPar": null,
+   "idle": {
+    "outcome": "none",
+    "ms": 8000,
+    "x": 180,
+    "y": 660,
+    "travelled": 0,
+    "gem": false,
+    "beamTouch": null
+   },
+   "D": 2.66,
+   "D3": 2.99,
+   "Dcomp": {
+    "route": 1.05,
+    "bend": 0.01,
+    "goalSize": 1,
+    "hazards": 0,
+    "mechanics": 0.3,
+    "portal": 0,
+    "gates": 0,
+    "platformGate": 0,
+    "timer": 0,
+    "movingGoal": 0,
+    "beyondReach": 0.3,
+    "orbs": 0
+   },
+   "campaignPercentile": 17
+  },
+  {
+   "campaignIndex": null,
+   "dailyIndex": 3,
+   "sourceFile": "src/config/dailyLevels.ts",
+   "exportName": "DAILY_LEVELS[3]",
+   "fingerprint": "2d947d40",
+   "arenaFingerprint": "dd472632",
+   "title": "",
+   "hint": "Daily — take the rift",
+   "boss": false,
+   "signature": false,
+   "mech": {
+    "obstacles": 1,
+    "angledObstacles": 0,
+    "gravityZones": 0,
+    "zoneUp": 0,
+    "zoneDown": 0,
+    "zoneSide": 0,
+    "zoneDiag": 0,
+    "magnets": 0,
+    "magnetAttract": 0,
+    "magnetRepel": 0,
+    "magnetCustom": 0,
+    "portals": 1,
+    "gates": 0,
+    "gateUp": 0,
+    "gateDown": 0,
+    "gateSide": 0,
+    "gateDiag": 0,
+    "movingPlatforms": 0,
+    "hazards": 0,
+    "hazStatic": 0,
+    "hazSweep": 0,
+    "hazArm": 0,
+    "hazBeam": 0,
+    "hazBeamMoving": 0,
+    "hazBeamPhased": 0,
+    "hazCircle": 0,
+    "hazRect": 0,
+    "orbs": 0,
+    "collectAllToWin": false,
+    "gem": true,
+    "timed": false,
+    "movingGoal": false,
+    "startVelocity": false,
+    "cameraIntro": false
+   },
+   "distinctMechanics": [
+    "portals"
+   ],
+   "entityCount": 5,
+   "bodies": 6,
+   "ball": {
+    "x": 180,
+    "y": 660
+   },
+   "goal": {
+    "x": 180,
+    "y": 130,
+    "radius": 34,
+    "to": null,
+    "durationMs": null
+   },
+   "dStraight": 530,
+   "withinReach": false,
+   "withinReachEdge": false,
+   "parTimeMs": 14000,
+   "timeLimitMs": null,
+   "collectible": {
+    "x": 300,
+    "y": 580
+   },
+   "gemEuclidDetour": 79.9,
+   "gemPathDetour": 94,
+   "gemReachable": true,
+   "ballHazClearPath": null,
+   "ballHazClearT0": null,
+   "ballHazIdx": -1,
+   "goalHazClear": null,
+   "goalHazIdx": -1,
+   "gemHazClear": null,
+   "spawnContactMs": null,
+   "oob": [],
+   "oobSoft": [],
+   "geo": [],
+   "portalExitRisk": [],
+   "portalExitDetail": [],
+   "goalCaptureFrac": 100,
+   "gemPickupFrac": 100,
+   "obsOnLine": 1,
+   "gatesOnLine": 0,
+   "reachable": true,
+   "pathLen": 189,
+   "tortuosity": 0.38,
+   "routeUsesPortal": true,
+   "gatesCrossed": 0,
+   "platformsCrossed": 0,
+   "reachPlatStart": null,
+   "reachPlatEnd": null,
+   "reachAvoidHazPaths": null,
+   "reachNoPortals": false,
+   "reachGatesSolid": null,
+   "hazNearRoute": 0,
+   "hazCrossRoute": 0,
+   "routeHazClear": [],
+   "orbsReachable": null,
+   "idealMs": 950,
+   "timerRatio": null,
+   "parRatio": 14.74,
+   "limReqSpeed": null,
+   "parReqSpeed": 13.5,
+   "limMinusPar": null,
+   "idle": {
+    "outcome": "none",
+    "ms": 8000,
+    "x": 180,
+    "y": 660,
+    "travelled": 0,
+    "gem": false,
+    "beamTouch": null
+   },
+   "D": 2.29,
+   "D3": 2.61,
+   "Dcomp": {
+    "route": 0.39,
+    "bend": 0,
+    "goalSize": 0.9,
+    "hazards": 0,
+    "mechanics": 0.3,
+    "portal": 0.4,
+    "gates": 0,
+    "platformGate": 0,
+    "timer": 0,
+    "movingGoal": 0,
+    "beyondReach": 0.3,
+    "orbs": 0
+   },
+   "campaignPercentile": 11
+  },
+  {
+   "campaignIndex": null,
+   "dailyIndex": 4,
+   "sourceFile": "src/config/dailyLevels.ts",
+   "exportName": "DAILY_LEVELS[4]",
+   "fingerprint": "026a28a2",
+   "arenaFingerprint": "7eea22ba",
+   "title": "",
+   "hint": "Daily — time the gap",
+   "boss": false,
+   "signature": false,
+   "mech": {
+    "obstacles": 0,
+    "angledObstacles": 0,
+    "gravityZones": 0,
+    "zoneUp": 0,
+    "zoneDown": 0,
+    "zoneSide": 0,
+    "zoneDiag": 0,
+    "magnets": 0,
+    "magnetAttract": 0,
+    "magnetRepel": 0,
+    "magnetCustom": 0,
+    "portals": 0,
+    "gates": 0,
+    "gateUp": 0,
+    "gateDown": 0,
+    "gateSide": 0,
+    "gateDiag": 0,
+    "movingPlatforms": 1,
+    "hazards": 1,
+    "hazStatic": 1,
+    "hazSweep": 0,
+    "hazArm": 0,
+    "hazBeam": 0,
+    "hazBeamMoving": 0,
+    "hazBeamPhased": 0,
+    "hazCircle": 1,
+    "hazRect": 0,
+    "orbs": 0,
+    "collectAllToWin": false,
+    "gem": true,
+    "timed": false,
+    "movingGoal": false,
+    "startVelocity": false,
+    "cameraIntro": false
+   },
+   "distinctMechanics": [
+    "movingPlatforms",
+    "hazards"
+   ],
+   "entityCount": 5,
+   "bodies": 6,
+   "ball": {
+    "x": 180,
+    "y": 660
+   },
+   "goal": {
+    "x": 180,
+    "y": 120,
+    "radius": 32,
+    "to": null,
+    "durationMs": null
+   },
+   "dStraight": 540,
+   "withinReach": false,
+   "withinReachEdge": false,
+   "parTimeMs": 16000,
+   "timeLimitMs": null,
+   "collectible": {
+    "x": 300,
+    "y": 200
+   },
+   "gemEuclidDetour": 79.6,
+   "gemPathDetour": 76.6,
+   "gemReachable": true,
+   "ballHazClearPath": 339.5,
+   "ballHazClearT0": 339.5,
+   "ballHazIdx": 0,
+   "goalHazClear": 176.3,
+   "goalHazIdx": 0,
+   "gemHazClear": 60,
+   "spawnContactMs": null,
+   "oob": [],
+   "oobSoft": [],
+   "geo": [],
+   "portalExitRisk": [],
+   "portalExitDetail": [],
+   "goalCaptureFrac": 100,
+   "gemPickupFrac": 100,
+   "obsOnLine": 0,
+   "gatesOnLine": 0,
+   "reachable": true,
+   "pathLen": 512,
+   "tortuosity": 1.01,
+   "routeUsesPortal": false,
+   "gatesCrossed": 0,
+   "platformsCrossed": 1,
+   "reachPlatStart": true,
+   "reachPlatEnd": true,
+   "reachAvoidHazPaths": null,
+   "reachNoPortals": null,
+   "reachGatesSolid": null,
+   "hazNearRoute": 0,
+   "hazCrossRoute": 0,
+   "routeHazClear": [
+    80
+   ],
+   "orbsReachable": null,
+   "idealMs": 1767,
+   "timerRatio": null,
+   "parRatio": 9.06,
+   "limReqSpeed": null,
+   "parReqSpeed": 32,
+   "limMinusPar": null,
+   "idle": {
+    "outcome": "none",
+    "ms": 8000,
+    "x": 180,
+    "y": 660,
+    "travelled": 0,
+    "gem": false,
+    "beamTouch": null
+   },
+   "D": 3.21,
+   "D3": 3.6,
+   "Dcomp": {
+    "route": 1.05,
+    "bend": 0.01,
+    "goalSize": 1,
+    "hazards": 0,
+    "mechanics": 0.6,
+    "portal": 0,
+    "gates": 0,
+    "platformGate": 0.25,
+    "timer": 0,
+    "movingGoal": 0,
+    "beyondReach": 0.3,
+    "orbs": 0
+   },
+   "campaignPercentile": 48
+  },
+  {
+   "campaignIndex": null,
+   "dailyIndex": 5,
+   "sourceFile": "src/config/dailyLevels.ts",
+   "exportName": "DAILY_LEVELS[5]",
+   "fingerprint": "9609e0d7",
+   "arenaFingerprint": "09cc62fa",
+   "title": "",
+   "hint": "Daily — lift through the gate",
+   "boss": false,
+   "signature": false,
+   "mech": {
+    "obstacles": 0,
+    "angledObstacles": 0,
+    "gravityZones": 1,
+    "zoneUp": 1,
+    "zoneDown": 0,
+    "zoneSide": 0,
+    "zoneDiag": 0,
+    "magnets": 0,
+    "magnetAttract": 0,
+    "magnetRepel": 0,
+    "magnetCustom": 0,
+    "portals": 0,
+    "gates": 1,
+    "gateUp": 1,
+    "gateDown": 0,
+    "gateSide": 0,
+    "gateDiag": 0,
+    "movingPlatforms": 0,
+    "hazards": 0,
+    "hazStatic": 0,
+    "hazSweep": 0,
+    "hazArm": 0,
+    "hazBeam": 0,
+    "hazBeamMoving": 0,
+    "hazBeamPhased": 0,
+    "hazCircle": 0,
+    "hazRect": 0,
+    "orbs": 0,
+    "collectAllToWin": false,
+    "gem": true,
+    "timed": false,
+    "movingGoal": false,
+    "startVelocity": false,
+    "cameraIntro": false
+   },
+   "distinctMechanics": [
+    "gravityZones",
+    "gates"
+   ],
+   "entityCount": 5,
+   "bodies": 6,
+   "ball": {
+    "x": 110,
+    "y": 660
+   },
+   "goal": {
+    "x": 110,
+    "y": 130,
+    "radius": 32,
+    "to": null,
+    "durationMs": null
+   },
+   "dStraight": 530,
+   "withinReach": false,
+   "withinReachEdge": false,
+   "parTimeMs": 16000,
+   "timeLimitMs": null,
+   "collectible": {
+    "x": 280,
+    "y": 520
+   },
+   "gemEuclidDetour": 115.7,
+   "gemPathDetour": 112.7,
+   "gemReachable": true,
+   "ballHazClearPath": null,
+   "ballHazClearT0": null,
+   "ballHazIdx": -1,
+   "goalHazClear": null,
+   "goalHazIdx": -1,
+   "gemHazClear": null,
+   "spawnContactMs": null,
+   "oob": [],
+   "oobSoft": [],
+   "geo": [],
+   "portalExitRisk": [],
+   "portalExitDetail": [],
+   "goalCaptureFrac": 100,
+   "gemPickupFrac": 100,
+   "obsOnLine": 0,
+   "gatesOnLine": 1,
+   "reachable": true,
+   "pathLen": 500,
+   "tortuosity": 1,
+   "routeUsesPortal": false,
+   "gatesCrossed": 1,
+   "platformsCrossed": 0,
+   "reachPlatStart": null,
+   "reachPlatEnd": null,
+   "reachAvoidHazPaths": null,
+   "reachNoPortals": null,
+   "reachGatesSolid": 593,
+   "hazNearRoute": 0,
+   "hazCrossRoute": 0,
+   "routeHazClear": [],
+   "orbsReachable": null,
+   "idealMs": 1750,
+   "timerRatio": null,
+   "parRatio": 9.14,
+   "limReqSpeed": null,
+   "parReqSpeed": 31.3,
+   "limMinusPar": null,
+   "idle": {
+    "outcome": "none",
+    "ms": 8000,
+    "x": 110,
+    "y": 660,
+    "travelled": 0,
+    "gem": false,
+    "beamTouch": null
+   },
+   "D": 3.23,
+   "D3": 3.68,
+   "Dcomp": {
+    "route": 1.03,
+    "bend": 0,
+    "goalSize": 1,
+    "hazards": 0,
+    "mechanics": 0.6,
+    "portal": 0,
+    "gates": 0.3,
+    "platformGate": 0,
+    "timer": 0,
+    "movingGoal": 0,
+    "beyondReach": 0.3,
+    "orbs": 0
+   },
+   "campaignPercentile": 48
+  },
+  {
+   "campaignIndex": null,
+   "dailyIndex": 6,
+   "sourceFile": "src/config/dailyLevels.ts",
+   "exportName": "DAILY_LEVELS[6]",
+   "fingerprint": "de789ef0",
+   "arenaFingerprint": "edb2ec71",
+   "title": "",
+   "hint": "Daily — lift, swing, dodge",
+   "boss": false,
+   "signature": false,
+   "mech": {
+    "obstacles": 0,
+    "angledObstacles": 0,
+    "gravityZones": 1,
+    "zoneUp": 1,
+    "zoneDown": 0,
+    "zoneSide": 0,
+    "zoneDiag": 0,
+    "magnets": 1,
+    "magnetAttract": 1,
+    "magnetRepel": 0,
+    "magnetCustom": 0,
+    "portals": 0,
+    "gates": 0,
+    "gateUp": 0,
+    "gateDown": 0,
+    "gateSide": 0,
+    "gateDiag": 0,
+    "movingPlatforms": 0,
+    "hazards": 1,
+    "hazStatic": 1,
+    "hazSweep": 0,
+    "hazArm": 0,
+    "hazBeam": 0,
+    "hazBeamMoving": 0,
+    "hazBeamPhased": 0,
+    "hazCircle": 1,
+    "hazRect": 0,
+    "orbs": 0,
+    "collectAllToWin": false,
+    "gem": true,
+    "timed": false,
+    "movingGoal": false,
+    "startVelocity": false,
+    "cameraIntro": false
+   },
+   "distinctMechanics": [
+    "gravityZones",
+    "magnets",
+    "hazards"
+   ],
+   "entityCount": 6,
+   "bodies": 5,
+   "ball": {
+    "x": 80,
+    "y": 650
+   },
+   "goal": {
+    "x": 300,
+    "y": 130,
+    "radius": 30,
+    "to": null,
+    "durationMs": null
+   },
+   "dStraight": 564.6,
+   "withinReach": false,
+   "withinReachEdge": false,
+   "parTimeMs": 16000,
+   "timeLimitMs": null,
+   "collectible": {
+    "x": 80,
+    "y": 180
+   },
+   "gemEuclidDetour": 131,
+   "gemPathDetour": 75,
+   "gemReachable": true,
+   "ballHazClearPath": 273.8,
+   "ballHazClearT0": 273.8,
+   "ballHazIdx": 0,
+   "goalHazClear": 210.8,
+   "goalHazIdx": 0,
+   "gemHazClear": 176.3,
+   "spawnContactMs": null,
+   "oob": [],
+   "oobSoft": [],
+   "geo": [],
+   "portalExitRisk": [],
+   "portalExitDetail": [],
+   "goalCaptureFrac": 100,
+   "gemPickupFrac": 100,
+   "obsOnLine": 0,
+   "gatesOnLine": 0,
+   "reachable": true,
+   "pathLen": 582,
+   "tortuosity": 1.09,
+   "routeUsesPortal": false,
+   "gatesCrossed": 0,
+   "platformsCrossed": 0,
+   "reachPlatStart": null,
+   "reachPlatEnd": null,
+   "reachAvoidHazPaths": null,
+   "reachNoPortals": null,
+   "reachGatesSolid": null,
+   "hazNearRoute": 1,
+   "hazCrossRoute": 0,
+   "routeHazClear": [
+    0.2
+   ],
+   "orbsReachable": null,
+   "idealMs": 1933,
+   "timerRatio": null,
+   "parRatio": 8.28,
+   "limReqSpeed": null,
+   "parReqSpeed": 36.4,
+   "limMinusPar": null,
+   "idle": {
+    "outcome": "none",
+    "ms": 8000,
+    "x": 80,
+    "y": 650,
+    "travelled": 0,
+    "gem": false,
+    "beamTouch": null
+   },
+   "D": 4.2,
+   "D3": 4.62,
+   "Dcomp": {
+    "route": 1.19,
+    "bend": 0.11,
+    "goalSize": 1.1,
+    "hazards": 0.6,
+    "mechanics": 0.9,
+    "portal": 0,
+    "gates": 0,
+    "platformGate": 0,
+    "timer": 0,
+    "movingGoal": 0,
+    "beyondReach": 0.3,
+    "orbs": 0
+   },
+   "campaignPercentile": 73
+  },
+  {
+   "campaignIndex": null,
+   "dailyIndex": 7,
+   "sourceFile": "src/config/dailyLevels.ts",
+   "exportName": "DAILY_LEVELS[7]",
+   "fingerprint": "d8feedff",
+   "arenaFingerprint": "2cf3f306",
+   "title": "",
+   "hint": "Daily — rift, dodge, and home",
+   "boss": false,
+   "signature": false,
+   "mech": {
+    "obstacles": 1,
+    "angledObstacles": 0,
+    "gravityZones": 0,
+    "zoneUp": 0,
+    "zoneDown": 0,
+    "zoneSide": 0,
+    "zoneDiag": 0,
+    "magnets": 1,
+    "magnetAttract": 1,
+    "magnetRepel": 0,
+    "magnetCustom": 0,
+    "portals": 1,
+    "gates": 0,
+    "gateUp": 0,
+    "gateDown": 0,
+    "gateSide": 0,
+    "gateDiag": 0,
+    "movingPlatforms": 0,
+    "hazards": 1,
+    "hazStatic": 0,
+    "hazSweep": 1,
+    "hazArm": 0,
+    "hazBeam": 0,
+    "hazBeamMoving": 0,
+    "hazBeamPhased": 0,
+    "hazCircle": 1,
+    "hazRect": 0,
+    "orbs": 0,
+    "collectAllToWin": false,
+    "gem": true,
+    "timed": false,
+    "movingGoal": false,
+    "startVelocity": false,
+    "cameraIntro": false
+   },
+   "distinctMechanics": [
+    "magnets",
+    "portals",
+    "hazards"
+   ],
+   "entityCount": 7,
+   "bodies": 6,
+   "ball": {
+    "x": 70,
+    "y": 660
+   },
+   "goal": {
+    "x": 300,
+    "y": 120,
+    "radius": 28,
+    "to": null,
+    "durationMs": null
+   },
+   "dStraight": 586.9,
+   "withinReach": false,
+   "withinReachEdge": false,
+   "parTimeMs": 18000,
+   "timeLimitMs": null,
+   "collectible": {
+    "x": 90,
+    "y": 300
+   },
+   "gemEuclidDetour": 50.2,
+   "gemPathDetour": 232.9,
+   "gemReachable": true,
+   "ballHazClearPath": 411.2,
+   "ballHazClearT0": 411.2,
+   "ballHazIdx": 0,
+   "goalHazClear": 72,
+   "goalHazIdx": 0,
+   "gemHazClear": 92.4,
+   "spawnContactMs": null,
+   "oob": [],
+   "oobSoft": [],
+   "geo": [],
+   "portalExitRisk": [
+    "portal0 a→b: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)"
+   ],
+   "portalExitDetail": [
+    {
+     "portal": 0,
+     "dir": "a→b",
+     "feasibleApproaches": 16,
+     "badExits": 3,
+     "deepExits": 0,
+     "badDirsDeg": [
+      0,
+      23,
+      337
+     ]
+    }
+   ],
+   "goalCaptureFrac": 100,
+   "gemPickupFrac": 100,
+   "obsOnLine": 1,
+   "gatesOnLine": 0,
+   "reachable": true,
+   "pathLen": 212,
+   "tortuosity": 0.38,
+   "routeUsesPortal": true,
+   "gatesCrossed": 0,
+   "platformsCrossed": 0,
+   "reachPlatStart": null,
+   "reachPlatEnd": null,
+   "reachAvoidHazPaths": true,
+   "reachNoPortals": false,
+   "reachGatesSolid": null,
+   "hazNearRoute": 1,
+   "hazCrossRoute": 1,
+   "routeHazClear": [
+    -34.8
+   ],
+   "orbsReachable": null,
+   "idealMs": 1017,
+   "timerRatio": null,
+   "parRatio": 17.7,
+   "limReqSpeed": null,
+   "parReqSpeed": 11.8,
+   "limMinusPar": null,
+   "idle": {
+    "outcome": "none",
+    "ms": 8000,
+    "x": 70,
+    "y": 660,
+    "travelled": 0,
+    "gem": false,
+    "beamTouch": null
+   },
+   "D": 4.14,
+   "D3": 4.66,
+   "Dcomp": {
+    "route": 0.44,
+    "bend": 0,
+    "goalSize": 1.2,
+    "hazards": 0.9,
+    "mechanics": 0.9,
+    "portal": 0.4,
+    "gates": 0,
+    "platformGate": 0,
+    "timer": 0,
+    "movingGoal": 0,
+    "beyondReach": 0.3,
+    "orbs": 0
+   },
+   "campaignPercentile": 71
+  }
+ ],
+ "timedModifier": [
+  {
+   "daily": "D1",
+   "par": 15000,
+   "timedLimit": 18000,
+   "pathLen": 623,
+   "idealMs": 2017,
+   "ratio": 8.92,
+   "gemReachable": true,
+   "gemPathDetour": 0,
+   "gemHazClear": 38,
+   "D": 3.6
+  },
+  {
+   "daily": "D2",
+   "par": 15000,
+   "timedLimit": 18000,
+   "pathLen": 561,
+   "idealMs": 1883,
+   "ratio": 9.56,
+   "gemReachable": true,
+   "gemPathDetour": 86.7,
+   "gemHazClear": null,
+   "D": 2.76
+  },
+  {
+   "daily": "D3",
+   "par": 15000,
+   "timedLimit": 18000,
+   "pathLen": 512,
+   "idealMs": 1767,
+   "ratio": 10.19,
+   "gemReachable": true,
+   "gemPathDetour": 31.5,
+   "gemHazClear": null,
+   "D": 2.66
+  },
+  {
+   "daily": "D4",
+   "par": 14000,
+   "timedLimit": 17000,
+   "pathLen": 189,
+   "idealMs": 950,
+   "ratio": 17.89,
+   "gemReachable": true,
+   "gemPathDetour": 94,
+   "gemHazClear": null,
+   "D": 2.29
+  },
+  {
+   "daily": "D5",
+   "par": 16000,
+   "timedLimit": 19000,
+   "pathLen": 512,
+   "idealMs": 1767,
+   "ratio": 10.75,
+   "gemReachable": true,
+   "gemPathDetour": 76.6,
+   "gemHazClear": 60,
+   "D": 3.21
+  },
+  {
+   "daily": "D6",
+   "par": 16000,
+   "timedLimit": 19000,
+   "pathLen": 500,
+   "idealMs": 1750,
+   "ratio": 10.86,
+   "gemReachable": true,
+   "gemPathDetour": 112.7,
+   "gemHazClear": null,
+   "D": 3.23
+  },
+  {
+   "daily": "D7",
+   "par": 16000,
+   "timedLimit": 19000,
+   "pathLen": 582,
+   "idealMs": 1933,
+   "ratio": 9.83,
+   "gemReachable": true,
+   "gemPathDetour": 75,
+   "gemHazClear": 176.3,
+   "D": 4.2
+  },
+  {
+   "daily": "D8",
+   "par": 18000,
+   "timedLimit": 21000,
+   "pathLen": 212,
+   "idealMs": 1017,
+   "ratio": 20.65,
+   "gemReachable": true,
+   "gemPathDetour": 232.9,
+   "gemHazClear": 92.4,
+   "D": 4.14
+  }
+ ],
+ "picks120d": [
+  {
+   "date": "2026-10-07",
+   "index": 3,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-10-08",
+   "index": 2,
+   "modifier": "timed"
+  },
+  {
+   "date": "2026-10-09",
+   "index": 5,
+   "modifier": "gemRush"
+  },
+  {
+   "date": "2026-10-10",
+   "index": 3,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-10-11",
+   "index": 0,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-10-12",
+   "index": 1,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-10-13",
+   "index": 6,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-10-14",
+   "index": 7,
+   "modifier": "timed"
+  },
+  {
+   "date": "2026-10-15",
+   "index": 4,
+   "modifier": "timed"
+  },
+  {
+   "date": "2026-10-16",
+   "index": 5,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-10-17",
+   "index": 2,
+   "modifier": "gemRush"
+  },
+  {
+   "date": "2026-10-18",
+   "index": 3,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-10-19",
+   "index": 0,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-10-20",
+   "index": 0,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-10-21",
+   "index": 5,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-10-22",
+   "index": 2,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-10-23",
+   "index": 7,
+   "modifier": "gemRush"
+  },
+  {
+   "date": "2026-10-24",
+   "index": 4,
+   "modifier": "timed"
+  },
+  {
+   "date": "2026-10-25",
+   "index": 1,
+   "modifier": "timed"
+  },
+  {
+   "date": "2026-10-26",
+   "index": 6,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-10-27",
+   "index": 3,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-10-28",
+   "index": 0,
+   "modifier": "timed"
+  },
+  {
+   "date": "2026-10-29",
+   "index": 5,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-10-30",
+   "index": 1,
+   "modifier": "gemRush"
+  },
+  {
+   "date": "2026-10-31",
+   "index": 6,
+   "modifier": "timed"
+  },
+  {
+   "date": "2026-11-01",
+   "index": 4,
+   "modifier": "gemRush"
+  },
+  {
+   "date": "2026-11-02",
+   "index": 5,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-11-03",
+   "index": 2,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-11-04",
+   "index": 3,
+   "modifier": "timed"
+  },
+  {
+   "date": "2026-11-05",
+   "index": 0,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-11-06",
+   "index": 1,
+   "modifier": "gemRush"
+  },
+  {
+   "date": "2026-11-07",
+   "index": 6,
+   "modifier": "timed"
+  },
+  {
+   "date": "2026-11-08",
+   "index": 7,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-11-09",
+   "index": 4,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-11-10",
+   "index": 6,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-11-11",
+   "index": 1,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-11-12",
+   "index": 0,
+   "modifier": "gemRush"
+  },
+  {
+   "date": "2026-11-13",
+   "index": 3,
+   "modifier": "gemRush"
+  },
+  {
+   "date": "2026-11-14",
+   "index": 2,
+   "modifier": "timed"
+  },
+  {
+   "date": "2026-11-15",
+   "index": 5,
+   "modifier": "gemRush"
+  },
+  {
+   "date": "2026-11-16",
+   "index": 4,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-11-17",
+   "index": 7,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-11-18",
+   "index": 6,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-11-19",
+   "index": 1,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-11-20",
+   "index": 5,
+   "modifier": "timed"
+  },
+  {
+   "date": "2026-11-21",
+   "index": 2,
+   "modifier": "timed"
+  },
+  {
+   "date": "2026-11-22",
+   "index": 7,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-11-23",
+   "index": 4,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-11-24",
+   "index": 1,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-11-25",
+   "index": 6,
+   "modifier": "gemRush"
+  },
+  {
+   "date": "2026-11-26",
+   "index": 3,
+   "modifier": "gemRush"
+  },
+  {
+   "date": "2026-11-27",
+   "index": 0,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-11-28",
+   "index": 3,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-11-29",
+   "index": 6,
+   "modifier": "timed"
+  },
+  {
+   "date": "2026-11-30",
+   "index": 4,
+   "modifier": "timed"
+  },
+  {
+   "date": "2026-12-01",
+   "index": 1,
+   "modifier": "gemRush"
+  },
+  {
+   "date": "2026-12-02",
+   "index": 6,
+   "modifier": "timed"
+  },
+  {
+   "date": "2026-12-03",
+   "index": 3,
+   "modifier": "timed"
+  },
+  {
+   "date": "2026-12-04",
+   "index": 0,
+   "modifier": "timed"
+  },
+  {
+   "date": "2026-12-05",
+   "index": 5,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-12-06",
+   "index": 2,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-12-07",
+   "index": 7,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-12-08",
+   "index": 4,
+   "modifier": "gemRush"
+  },
+  {
+   "date": "2026-12-09",
+   "index": 1,
+   "modifier": "timed"
+  },
+  {
+   "date": "2026-12-10",
+   "index": 3,
+   "modifier": "gemRush"
+  },
+  {
+   "date": "2026-12-11",
+   "index": 6,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-12-12",
+   "index": 1,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-12-13",
+   "index": 4,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-12-14",
+   "index": 7,
+   "modifier": "timed"
+  },
+  {
+   "date": "2026-12-15",
+   "index": 2,
+   "modifier": "timed"
+  },
+  {
+   "date": "2026-12-16",
+   "index": 5,
+   "modifier": "gemRush"
+  },
+  {
+   "date": "2026-12-17",
+   "index": 0,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-12-18",
+   "index": 3,
+   "modifier": "gemRush"
+  },
+  {
+   "date": "2026-12-19",
+   "index": 6,
+   "modifier": "gemRush"
+  },
+  {
+   "date": "2026-12-20",
+   "index": 6,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-12-21",
+   "index": 1,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-12-22",
+   "index": 0,
+   "modifier": "gemRush"
+  },
+  {
+   "date": "2026-12-23",
+   "index": 3,
+   "modifier": "gemRush"
+  },
+  {
+   "date": "2026-12-24",
+   "index": 2,
+   "modifier": "timed"
+  },
+  {
+   "date": "2026-12-25",
+   "index": 5,
+   "modifier": "gemRush"
+  },
+  {
+   "date": "2026-12-26",
+   "index": 4,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-12-27",
+   "index": 7,
+   "modifier": "timed"
+  },
+  {
+   "date": "2026-12-28",
+   "index": 6,
+   "modifier": "gemRush"
+  },
+  {
+   "date": "2026-12-29",
+   "index": 1,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-12-30",
+   "index": 7,
+   "modifier": "none"
+  },
+  {
+   "date": "2026-12-31",
+   "index": 4,
+   "modifier": "none"
+  },
+  {
+   "date": "2027-01-01",
+   "index": 0,
+   "modifier": "gemRush"
+  },
+  {
+   "date": "2027-01-02",
+   "index": 1,
+   "modifier": "none"
+  },
+  {
+   "date": "2027-01-03",
+   "index": 6,
+   "modifier": "none"
+  },
+  {
+   "date": "2027-01-04",
+   "index": 7,
+   "modifier": "timed"
+  },
+  {
+   "date": "2027-01-05",
+   "index": 4,
+   "modifier": "none"
+  },
+  {
+   "date": "2027-01-06",
+   "index": 5,
+   "modifier": "gemRush"
+  },
+  {
+   "date": "2027-01-07",
+   "index": 2,
+   "modifier": "timed"
+  },
+  {
+   "date": "2027-01-08",
+   "index": 3,
+   "modifier": "gemRush"
+  },
+  {
+   "date": "2027-01-09",
+   "index": 0,
+   "modifier": "timed"
+  },
+  {
+   "date": "2027-01-10",
+   "index": 6,
+   "modifier": "none"
+  },
+  {
+   "date": "2027-01-11",
+   "index": 3,
+   "modifier": "gemRush"
+  },
+  {
+   "date": "2027-01-12",
+   "index": 4,
+   "modifier": "none"
+  },
+  {
+   "date": "2027-01-13",
+   "index": 1,
+   "modifier": "none"
+  },
+  {
+   "date": "2027-01-14",
+   "index": 2,
+   "modifier": "timed"
+  },
+  {
+   "date": "2027-01-15",
+   "index": 7,
+   "modifier": "timed"
+  },
+  {
+   "date": "2027-01-16",
+   "index": 0,
+   "modifier": "none"
+  },
+  {
+   "date": "2027-01-17",
+   "index": 5,
+   "modifier": "gemRush"
+  },
+  {
+   "date": "2027-01-18",
+   "index": 6,
+   "modifier": "gemRush"
+  },
+  {
+   "date": "2027-01-19",
+   "index": 3,
+   "modifier": "gemRush"
+  },
+  {
+   "date": "2027-01-20",
+   "index": 7,
+   "modifier": "none"
+  },
+  {
+   "date": "2027-01-21",
+   "index": 2,
+   "modifier": "none"
+  },
+  {
+   "date": "2027-01-22",
+   "index": 5,
+   "modifier": "none"
+  },
+  {
+   "date": "2027-01-23",
+   "index": 0,
+   "modifier": "timed"
+  },
+  {
+   "date": "2027-01-24",
+   "index": 3,
+   "modifier": "timed"
+  },
+  {
+   "date": "2027-01-25",
+   "index": 6,
+   "modifier": "timed"
+  },
+  {
+   "date": "2027-01-26",
+   "index": 1,
+   "modifier": "gemRush"
+  },
+  {
+   "date": "2027-01-27",
+   "index": 4,
+   "modifier": "none"
+  },
+  {
+   "date": "2027-01-28",
+   "index": 7,
+   "modifier": "gemRush"
+  },
+  {
+   "date": "2027-01-29",
+   "index": 2,
+   "modifier": "none"
+  },
+  {
+   "date": "2027-01-30",
+   "index": 0,
+   "modifier": "none"
+  },
+  {
+   "date": "2027-01-31",
+   "index": 5,
+   "modifier": "none"
+  },
+  {
+   "date": "2027-02-01",
+   "index": 3,
+   "modifier": "none"
+  },
+  {
+   "date": "2027-02-02",
+   "index": 6,
+   "modifier": "none"
+  },
+  {
+   "date": "2027-02-03",
+   "index": 1,
+   "modifier": "timed"
+  }
+ ],
+ "indexHistogram": {
+  "0": 15,
+  "1": 16,
+  "2": 13,
+  "3": 17,
+  "4": 14,
+  "5": 14,
+  "6": 18,
+  "7": 13
+ },
+ "modifierHistogram": {
+  "none": 59,
+  "timed": 31,
+  "gemRush": 30
+ },
+ "consecutiveSameIndexDays": 2,
+ "legacyCampaignDailyUsed": false
+}

@@ -1,0 +1,923 @@
+{
+ "staticImpossible": [],
+ "spawnDanger": [],
+ "goalDanger": [
+  {
+   "campaignIndex": 30,
+   "file": "src/config/levels/level70.ts",
+   "title": "THE MACHINE",
+   "reason": "hazard 2 within 24px of a ball sitting at goal center (swept path)"
+  },
+  {
+   "campaignIndex": 52,
+   "file": "src/config/levels/level43.ts",
+   "title": "",
+   "reason": "hazard 0 within 17px of a ball sitting at goal center (swept path)"
+  },
+  {
+   "campaignIndex": 74,
+   "file": "src/config/levels/level87.ts",
+   "title": "",
+   "reason": "hazard 0 within 3px of a ball sitting at goal center (swept path)"
+  },
+  {
+   "campaignIndex": 77,
+   "file": "src/config/levels/level61.ts",
+   "title": "",
+   "reason": "hazard 0 within 32px of a ball sitting at goal center (swept path)"
+  },
+  {
+   "campaignIndex": 79,
+   "file": "src/config/levels/level89.ts",
+   "title": "THE CONFLUENCE",
+   "reason": "hazard 0 within 8px of a ball sitting at goal center (swept path)"
+  },
+  {
+   "campaignIndex": 88,
+   "file": "src/config/levels/level101.ts",
+   "title": "",
+   "reason": "hazard 0 within 15px of a ball sitting at goal center (swept path)"
+  },
+  {
+   "campaignIndex": 120,
+   "file": "src/config/levels/level133.ts",
+   "title": "THE EYE OF THE STORM",
+   "reason": "hazard 2 within 38px of a ball sitting at goal center (swept path)"
+  },
+  {
+   "campaignIndex": 122,
+   "file": "src/config/levels/level135.ts",
+   "title": "",
+   "reason": "hazard 0 within 32px of a ball sitting at goal center (swept path)"
+  },
+  {
+   "campaignIndex": 129,
+   "file": "src/config/levels/level142.ts",
+   "title": "THE ASCENT",
+   "reason": "hazard 0 within 24.1px of a ball sitting at goal center (swept path)"
+  },
+  {
+   "campaignIndex": 136,
+   "file": "src/config/levels/level149.ts",
+   "title": "",
+   "reason": "hazard 0 within 34px of a ball sitting at goal center (swept path)"
+  }
+ ],
+ "outOfBounds": [
+  {
+   "campaignIndex": 52,
+   "file": "src/config/levels/level43.ts",
+   "title": "",
+   "reason": "soft: hazard0 (sweep) swept extent leaves arena [178,362]x[173,217]"
+  },
+  {
+   "campaignIndex": 53,
+   "file": "src/config/levels/level42.ts",
+   "title": "",
+   "reason": "soft: obstacle1 extends past arena"
+  },
+  {
+   "campaignIndex": 56,
+   "file": "src/config/levels/level80.ts",
+   "title": "",
+   "reason": "soft: obstacle0 extends past arena"
+  },
+  {
+   "campaignIndex": 69,
+   "file": "src/config/levels/level85.ts",
+   "title": "THE LOCKWORKS",
+   "reason": "soft: obstacle0 extends past arena"
+  },
+  {
+   "campaignIndex": 69,
+   "file": "src/config/levels/level85.ts",
+   "title": "THE LOCKWORKS",
+   "reason": "soft: obstacle3 extends past arena"
+  },
+  {
+   "campaignIndex": 78,
+   "file": "src/config/levels/level88.ts",
+   "title": "",
+   "reason": "soft: hazard1 (sweep) swept extent leaves arena [234,366]x[584,616]"
+  },
+  {
+   "campaignIndex": 103,
+   "file": "src/config/levels/level116.ts",
+   "title": "",
+   "reason": "soft: obstacle1 extends past arena"
+  }
+ ],
+ "unfairTimers": [
+  {
+   "campaignIndex": 34,
+   "file": "src/config/levels/level19.ts",
+   "title": "",
+   "reason": "timeLimit − par = 2000ms (small buffer)"
+  }
+ ],
+ "trivial": [
+  {
+   "campaignIndex": 41,
+   "file": "src/config/levels/level23.ts",
+   "title": "",
+   "reason": "D=2.11 is in the campaign's bottom decile (≤2.25) despite index 41"
+  },
+  {
+   "campaignIndex": 51,
+   "file": "src/config/levels/level41.ts",
+   "title": "",
+   "reason": "D=2 is in the campaign's bottom decile (≤2.25) despite index 51"
+  },
+  {
+   "campaignIndex": 53,
+   "file": "src/config/levels/level42.ts",
+   "title": "",
+   "reason": "D=2.04 is in the campaign's bottom decile (≤2.25) despite index 53"
+  },
+  {
+   "campaignIndex": 61,
+   "file": "src/config/levels/level50.ts",
+   "title": "",
+   "reason": "D=1.4 is in the campaign's bottom decile (≤2.25) despite index 61"
+  },
+  {
+   "campaignIndex": 62,
+   "file": "src/config/levels/level51.ts",
+   "title": "",
+   "reason": "D=1.61 is in the campaign's bottom decile (≤2.25) despite index 62"
+  },
+  {
+   "campaignIndex": 101,
+   "file": "src/config/levels/level114.ts",
+   "title": "",
+   "reason": "D=2.25 is in the campaign's bottom decile (≤2.25) despite index 101"
+  }
+ ],
+ "spikes": [],
+ "dips": [],
+ "bodyCeiling": [],
+ "missingParGemHint": [],
+ "simpleBosses": [
+  {
+   "campaignIndex": 20,
+   "file": "src/config/levels/level68.ts",
+   "title": "THE MAELSTROM",
+   "reason": "boss has 6 entities ≤ world median 6"
+  },
+  {
+   "campaignIndex": 60,
+   "file": "src/config/levels/level82.ts",
+   "title": "THE BREACH",
+   "reason": "boss D=2.69 < world non-boss median 2.8"
+  },
+  {
+   "campaignIndex": 60,
+   "file": "src/config/levels/level82.ts",
+   "title": "THE BREACH",
+   "reason": "boss D=2.69 is >1 below the world's hardest non-boss (4.15)"
+  },
+  {
+   "campaignIndex": 70,
+   "file": "src/config/levels/level86.ts",
+   "title": "THE VAULT",
+   "reason": "boss D=4.09 is >1 below the world's hardest non-boss (5.25)"
+  },
+  {
+   "campaignIndex": 100,
+   "file": "src/config/levels/level113.ts",
+   "title": "THE PULSAR",
+   "reason": "boss has 5 entities ≤ world median 5"
+  }
+ ],
+ "idleOutcomes": [
+  {
+   "campaignIndex": 11,
+   "file": "src/config/levels/level7.ts",
+   "title": "",
+   "reason": "IDLE WIN: with zero input the ball reaches the goal at ~1400ms (zones/magnets/startVelocity carry it)"
+  },
+  {
+   "campaignIndex": 12,
+   "file": "src/config/levels/level11.ts",
+   "title": "",
+   "reason": "IDLE WIN: with zero input the ball reaches the goal at ~1817ms (zones/magnets/startVelocity carry it)"
+  }
+ ],
+ "portalExitDeep": [
+  {
+   "campaignIndex": 53,
+   "file": "src/config/levels/level42.ts",
+   "title": "",
+   "reason": "portal0 a→b: 12/16 feasible approach directions exit into wall/obstacle overlap (4 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/45/68/90/113/135/158/180/202/315/337)"
+  },
+  {
+   "campaignIndex": 54,
+   "file": "src/config/levels/level79.ts",
+   "title": "",
+   "reason": "portal0 a→b: 12/16 feasible approach directions exit into wall/obstacle overlap (2 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/45/135/158/180/202/225/247/293/315/337)"
+  },
+  {
+   "campaignIndex": 56,
+   "file": "src/config/levels/level80.ts",
+   "title": "",
+   "reason": "portal0 b→a: 5/16 feasible approach directions exit into wall/obstacle overlap (3 with exit centre INSIDE an obstacle/beyond arena; dirs° 45/68/90/113/135)"
+  },
+  {
+   "campaignIndex": 58,
+   "file": "src/config/levels/level47.ts",
+   "title": "",
+   "reason": "portal0 a→b: 5/16 feasible approach directions exit into wall/obstacle overlap (3 with exit centre INSIDE an obstacle/beyond arena; dirs° 225/247/270/293/315)"
+  },
+  {
+   "campaignIndex": 59,
+   "file": "src/config/levels/level81.ts",
+   "title": "HALL OF MIRRORS",
+   "reason": "portal0 a→b: 8/16 feasible approach directions exit into wall/obstacle overlap (3 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/45/68/90/113/135/337)"
+  },
+  {
+   "campaignIndex": 59,
+   "file": "src/config/levels/level81.ts",
+   "title": "HALL OF MIRRORS",
+   "reason": "portal1 b→a: 5/16 feasible approach directions exit into wall/obstacle overlap (4 with exit centre INSIDE an obstacle/beyond arena; dirs° 225/247/270/293/315)"
+  },
+  {
+   "campaignIndex": 59,
+   "file": "src/config/levels/level81.ts",
+   "title": "HALL OF MIRRORS",
+   "reason": "portal2 a→b: 5/16 feasible approach directions exit into wall/obstacle overlap (3 with exit centre INSIDE an obstacle/beyond arena; dirs° 45/68/90/113/135)"
+  },
+  {
+   "campaignIndex": 60,
+   "file": "src/config/levels/level82.ts",
+   "title": "THE BREACH",
+   "reason": "portal2 a→b: 5/16 feasible approach directions exit into wall/obstacle overlap (3 with exit centre INSIDE an obstacle/beyond arena; dirs° 45/68/90/113/135)"
+  },
+  {
+   "campaignIndex": 71,
+   "file": "src/config/levels/level58.ts",
+   "title": "",
+   "reason": "portal0 b→a: 5/16 feasible approach directions exit into wall/obstacle overlap (1 with exit centre INSIDE an obstacle/beyond arena; dirs° 225/247/270/293/315)"
+  },
+  {
+   "campaignIndex": 78,
+   "file": "src/config/levels/level88.ts",
+   "title": "",
+   "reason": "portal0 b→a: 5/16 feasible approach directions exit into wall/obstacle overlap (3 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/45/315/337)"
+  },
+  {
+   "campaignIndex": 80,
+   "file": "src/config/levels/level90.ts",
+   "title": "HOMECOMING",
+   "reason": "portal0 b→a: 5/16 feasible approach directions exit into wall/obstacle overlap (1 with exit centre INSIDE an obstacle/beyond arena; dirs° 225/247/270/293/315)"
+  },
+  {
+   "campaignIndex": 103,
+   "file": "src/config/levels/level116.ts",
+   "title": "",
+   "reason": "portal0 a→b: 12/16 feasible approach directions exit into wall/obstacle overlap (4 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/45/68/90/113/135/158/180/202/315/337)"
+  },
+  {
+   "campaignIndex": 109,
+   "file": "src/config/levels/level122.ts",
+   "title": "HALL OF ECHOES",
+   "reason": "portal0 a→b: 5/16 feasible approach directions exit into wall/obstacle overlap (3 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/45/315/337)"
+  },
+  {
+   "campaignIndex": 109,
+   "file": "src/config/levels/level122.ts",
+   "title": "HALL OF ECHOES",
+   "reason": "portal1 b→a: 9/16 feasible approach directions exit into wall/obstacle overlap (4 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/45/225/247/270/293/315/337)"
+  },
+  {
+   "campaignIndex": 129,
+   "file": "src/config/levels/level142.ts",
+   "title": "THE ASCENT",
+   "reason": "portal1 b→a: 8/16 feasible approach directions exit into wall/obstacle overlap (1 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/225/247/270/293/315/337)"
+  },
+  {
+   "campaignIndex": 134,
+   "file": "src/config/levels/level147.ts",
+   "title": "",
+   "reason": "portal0 a→b: 8/16 feasible approach directions exit into wall/obstacle overlap (1 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/45/68/90/113/135/337)"
+  }
+ ],
+ "portalExit": [
+  {
+   "campaignIndex": 51,
+   "file": "src/config/levels/level41.ts",
+   "title": "",
+   "reason": "portal0 a→b: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)"
+  },
+  {
+   "campaignIndex": 55,
+   "file": "src/config/levels/level44.ts",
+   "title": "",
+   "reason": "portal0 a→b: 6/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/158/180/202/337)"
+  },
+  {
+   "campaignIndex": 56,
+   "file": "src/config/levels/level80.ts",
+   "title": "",
+   "reason": "portal0 a→b: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)"
+  },
+  {
+   "campaignIndex": 57,
+   "file": "src/config/levels/level46.ts",
+   "title": "",
+   "reason": "portal0 a→b: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)"
+  },
+  {
+   "campaignIndex": 58,
+   "file": "src/config/levels/level47.ts",
+   "title": "",
+   "reason": "portal1 a→b: 1/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0)"
+  },
+  {
+   "campaignIndex": 59,
+   "file": "src/config/levels/level81.ts",
+   "title": "HALL OF MIRRORS",
+   "reason": "portal0 b→a: 1/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 270)"
+  },
+  {
+   "campaignIndex": 59,
+   "file": "src/config/levels/level81.ts",
+   "title": "HALL OF MIRRORS",
+   "reason": "portal1 a→b: 5/13 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/45/135/337)"
+  },
+  {
+   "campaignIndex": 59,
+   "file": "src/config/levels/level81.ts",
+   "title": "HALL OF MIRRORS",
+   "reason": "portal2 b→a: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 247/270/293)"
+  },
+  {
+   "campaignIndex": 60,
+   "file": "src/config/levels/level82.ts",
+   "title": "THE BREACH",
+   "reason": "portal0 a→b: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)"
+  },
+  {
+   "campaignIndex": 60,
+   "file": "src/config/levels/level82.ts",
+   "title": "THE BREACH",
+   "reason": "portal1 b→a: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)"
+  },
+  {
+   "campaignIndex": 60,
+   "file": "src/config/levels/level82.ts",
+   "title": "THE BREACH",
+   "reason": "portal2 b→a: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)"
+  },
+  {
+   "campaignIndex": 71,
+   "file": "src/config/levels/level58.ts",
+   "title": "",
+   "reason": "portal0 a→b: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)"
+  },
+  {
+   "campaignIndex": 72,
+   "file": "src/config/levels/level60.ts",
+   "title": "",
+   "reason": "portal0 a→b: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)"
+  },
+  {
+   "campaignIndex": 74,
+   "file": "src/config/levels/level87.ts",
+   "title": "",
+   "reason": "portal0 a→b: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)"
+  },
+  {
+   "campaignIndex": 80,
+   "file": "src/config/levels/level90.ts",
+   "title": "HOMECOMING",
+   "reason": "portal0 a→b: 6/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/68/90/113/337)"
+  },
+  {
+   "campaignIndex": 105,
+   "file": "src/config/levels/level118.ts",
+   "title": "",
+   "reason": "portal1 a→b: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)"
+  },
+  {
+   "campaignIndex": 107,
+   "file": "src/config/levels/level120.ts",
+   "title": "",
+   "reason": "portal0 a→b: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)"
+  },
+  {
+   "campaignIndex": 108,
+   "file": "src/config/levels/level121.ts",
+   "title": "",
+   "reason": "portal0 a→b: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)"
+  },
+  {
+   "campaignIndex": 110,
+   "file": "src/config/levels/level123.ts",
+   "title": "THE WARDEN",
+   "reason": "portal0 a→b: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)"
+  },
+  {
+   "campaignIndex": 117,
+   "file": "src/config/levels/level130.ts",
+   "title": "",
+   "reason": "portal0 a→b: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)"
+  },
+  {
+   "campaignIndex": 121,
+   "file": "src/config/levels/level134.ts",
+   "title": "",
+   "reason": "portal0 b→a: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 247/270/293)"
+  },
+  {
+   "campaignIndex": 124,
+   "file": "src/config/levels/level137.ts",
+   "title": "",
+   "reason": "portal0 a→b: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)"
+  },
+  {
+   "campaignIndex": 125,
+   "file": "src/config/levels/level138.ts",
+   "title": "",
+   "reason": "portal0 a→b: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)"
+  },
+  {
+   "campaignIndex": 128,
+   "file": "src/config/levels/level141.ts",
+   "title": "",
+   "reason": "portal0 a→b: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)"
+  },
+  {
+   "campaignIndex": 129,
+   "file": "src/config/levels/level142.ts",
+   "title": "THE ASCENT",
+   "reason": "portal0 a→b: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)"
+  },
+  {
+   "campaignIndex": 138,
+   "file": "src/config/levels/level151.ts",
+   "title": "",
+   "reason": "portal0 a→b: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)"
+  },
+  {
+   "campaignIndex": 147,
+   "file": "src/config/levels/level160.ts",
+   "title": "",
+   "reason": "portal0 a→b: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)"
+  },
+  {
+   "campaignIndex": 148,
+   "file": "src/config/levels/level161.ts",
+   "title": "",
+   "reason": "portal0 a→b: 6/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/158/180/202/337)"
+  },
+  {
+   "campaignIndex": 149,
+   "file": "src/config/levels/level162.ts",
+   "title": "THE HOMEWARD PATH",
+   "reason": "portal0 a→b: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)"
+  },
+  {
+   "campaignIndex": 150,
+   "file": "src/config/levels/level163.ts",
+   "title": "THE LONG WAY HOME",
+   "reason": "portal0 a→b: 3/16 feasible approach directions exit into wall/obstacle overlap (0 with exit centre INSIDE an obstacle/beyond arena; dirs° 0/23/337)"
+  }
+ ],
+ "gemIssues": [
+  {
+   "campaignIndex": 1,
+   "file": "src/config/levels/level1.ts",
+   "title": "",
+   "reason": "gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route"
+  },
+  {
+   "campaignIndex": 2,
+   "file": "src/config/levels/level4.ts",
+   "title": "",
+   "reason": "gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route"
+  },
+  {
+   "campaignIndex": 5,
+   "file": "src/config/levels/level3.ts",
+   "title": "",
+   "reason": "gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route"
+  },
+  {
+   "campaignIndex": 6,
+   "file": "src/config/levels/level5.ts",
+   "title": "",
+   "reason": "gem effectively ON the shortest route (path detour 9.9px) — rubric says gems must be off-route"
+  },
+  {
+   "campaignIndex": 11,
+   "file": "src/config/levels/level7.ts",
+   "title": "",
+   "reason": "gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route"
+  },
+  {
+   "campaignIndex": 21,
+   "file": "src/config/levels/level12.ts",
+   "title": "",
+   "reason": "gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route"
+  },
+  {
+   "campaignIndex": 23,
+   "file": "src/config/levels/level13.ts",
+   "title": "",
+   "reason": "gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route"
+  },
+  {
+   "campaignIndex": 25,
+   "file": "src/config/levels/level16.ts",
+   "title": "",
+   "reason": "gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route"
+  },
+  {
+   "campaignIndex": 32,
+   "file": "src/config/levels/level21.ts",
+   "title": "",
+   "reason": "gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route"
+  },
+  {
+   "campaignIndex": 38,
+   "file": "src/config/levels/level72.ts",
+   "title": "",
+   "reason": "gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route"
+  },
+  {
+   "campaignIndex": 42,
+   "file": "src/config/levels/level25.ts",
+   "title": "",
+   "reason": "gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route"
+  },
+  {
+   "campaignIndex": 43,
+   "file": "src/config/levels/level24.ts",
+   "title": "",
+   "reason": "gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route"
+  },
+  {
+   "campaignIndex": 44,
+   "file": "src/config/levels/level38.ts",
+   "title": "",
+   "reason": "gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route"
+  },
+  {
+   "campaignIndex": 46,
+   "file": "src/config/levels/level75.ts",
+   "title": "",
+   "reason": "gem effectively ON the shortest route (path detour 1.4px) — rubric says gems must be off-route"
+  },
+  {
+   "campaignIndex": 49,
+   "file": "src/config/levels/level77.ts",
+   "title": "THE BINARY STAR",
+   "reason": "gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route"
+  },
+  {
+   "campaignIndex": 50,
+   "file": "src/config/levels/level78.ts",
+   "title": "THE SINGULARITY",
+   "reason": "gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route"
+  },
+  {
+   "campaignIndex": 54,
+   "file": "src/config/levels/level79.ts",
+   "title": "",
+   "reason": "gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route"
+  },
+  {
+   "campaignIndex": 58,
+   "file": "src/config/levels/level47.ts",
+   "title": "",
+   "reason": "gem pickup point is swept by a hazard (clearance -11px)"
+  },
+  {
+   "campaignIndex": 83,
+   "file": "src/config/levels/level96.ts",
+   "title": "",
+   "reason": "gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route"
+  },
+  {
+   "campaignIndex": 89,
+   "file": "src/config/levels/level102.ts",
+   "title": "THE GAUNTLET",
+   "reason": "gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route"
+  },
+  {
+   "campaignIndex": 90,
+   "file": "src/config/levels/level103.ts",
+   "title": "THE CRUCIBLE",
+   "reason": "gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route"
+  },
+  {
+   "campaignIndex": 90,
+   "file": "src/config/levels/level103.ts",
+   "title": "THE CRUCIBLE",
+   "reason": "gem pickup point is swept by a hazard (clearance -3.9px)"
+  },
+  {
+   "campaignIndex": 91,
+   "file": "src/config/levels/level104.ts",
+   "title": "",
+   "reason": "gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route"
+  },
+  {
+   "campaignIndex": 95,
+   "file": "src/config/levels/level108.ts",
+   "title": "",
+   "reason": "gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route"
+  },
+  {
+   "campaignIndex": 99,
+   "file": "src/config/levels/level112.ts",
+   "title": "THE BINARY STAR",
+   "reason": "gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route"
+  },
+  {
+   "campaignIndex": 100,
+   "file": "src/config/levels/level113.ts",
+   "title": "THE PULSAR",
+   "reason": "gem pickup point is swept by a hazard (clearance -31.8px)"
+  },
+  {
+   "campaignIndex": 115,
+   "file": "src/config/levels/level128.ts",
+   "title": "",
+   "reason": "gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route"
+  },
+  {
+   "campaignIndex": 119,
+   "file": "src/config/levels/level132.ts",
+   "title": "THE TEMPEST",
+   "reason": "gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route"
+  },
+  {
+   "campaignIndex": 120,
+   "file": "src/config/levels/level133.ts",
+   "title": "THE EYE OF THE STORM",
+   "reason": "gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route"
+  },
+  {
+   "campaignIndex": 120,
+   "file": "src/config/levels/level133.ts",
+   "title": "THE EYE OF THE STORM",
+   "reason": "gem pickup point is swept by a hazard (clearance -8px)"
+  },
+  {
+   "campaignIndex": 122,
+   "file": "src/config/levels/level135.ts",
+   "title": "",
+   "reason": "gem effectively ON the shortest route (path detour 11.7px) — rubric says gems must be off-route"
+  },
+  {
+   "campaignIndex": 130,
+   "file": "src/config/levels/level143.ts",
+   "title": "THE SUMMIT",
+   "reason": "gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route"
+  },
+  {
+   "campaignIndex": 130,
+   "file": "src/config/levels/level143.ts",
+   "title": "THE SUMMIT",
+   "reason": "gem pickup point is swept by a hazard (clearance -38px)"
+  },
+  {
+   "campaignIndex": 131,
+   "file": "src/config/levels/level144.ts",
+   "title": "",
+   "reason": "gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route"
+  },
+  {
+   "campaignIndex": 136,
+   "file": "src/config/levels/level149.ts",
+   "title": "",
+   "reason": "gem effectively ON the shortest route (path detour 2.3px) — rubric says gems must be off-route"
+  },
+  {
+   "campaignIndex": 139,
+   "file": "src/config/levels/level152.ts",
+   "title": "THE EVENT HORIZON",
+   "reason": "gem pickup point is swept by a hazard (clearance -29.8px)"
+  },
+  {
+   "campaignIndex": 142,
+   "file": "src/config/levels/level155.ts",
+   "title": "",
+   "reason": "gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route"
+  },
+  {
+   "campaignIndex": 145,
+   "file": "src/config/levels/level158.ts",
+   "title": "",
+   "reason": "gem effectively ON the shortest route (path detour 0px) — rubric says gems must be off-route"
+  }
+ ],
+ "headerWorldMismatch": [],
+ "bypass": [
+  {
+   "campaignIndex": 51,
+   "file": "src/config/levels/level41.ts",
+   "title": "",
+   "reason": "goal reachable with portals DISABLED (route 576px vs 293px with portals) — rift is optional"
+  },
+  {
+   "campaignIndex": 52,
+   "file": "src/config/levels/level43.ts",
+   "title": "",
+   "reason": "goal reachable with portals DISABLED (route 621px vs 140px with portals) — rift is optional"
+  },
+  {
+   "campaignIndex": 53,
+   "file": "src/config/levels/level42.ts",
+   "title": "",
+   "reason": "goal reachable with portals DISABLED (route 805px vs 216px with portals) — rift is optional"
+  },
+  {
+   "campaignIndex": 55,
+   "file": "src/config/levels/level44.ts",
+   "title": "",
+   "reason": "goal reachable with portals DISABLED (route 573px vs 453px with portals) — rift is optional"
+  },
+  {
+   "campaignIndex": 56,
+   "file": "src/config/levels/level80.ts",
+   "title": "",
+   "reason": "goal reachable with portals DISABLED (route 762px vs 85px with portals) — rift is optional"
+  },
+  {
+   "campaignIndex": 57,
+   "file": "src/config/levels/level46.ts",
+   "title": "",
+   "reason": "goal reachable with portals DISABLED (route 570px vs 214px with portals) — rift is optional"
+  },
+  {
+   "campaignIndex": 61,
+   "file": "src/config/levels/level50.ts",
+   "title": "",
+   "reason": "goal reachable with all gates SOLID (route 721px vs 188px) — gate is optional for 1-star"
+  },
+  {
+   "campaignIndex": 62,
+   "file": "src/config/levels/level51.ts",
+   "title": "",
+   "reason": "goal reachable with all gates SOLID (route 210px vs 210px) — gate is optional for 1-star"
+  },
+  {
+   "campaignIndex": 64,
+   "file": "src/config/levels/level83.ts",
+   "title": "",
+   "reason": "goal reachable with all gates SOLID (route 167px vs 167px) — gate is optional for 1-star"
+  },
+  {
+   "campaignIndex": 65,
+   "file": "src/config/levels/level52.ts",
+   "title": "",
+   "reason": "goal reachable with all gates SOLID (route 573px vs 480px) — gate is optional for 1-star"
+  },
+  {
+   "campaignIndex": 66,
+   "file": "src/config/levels/level84.ts",
+   "title": "",
+   "reason": "goal reachable with all gates SOLID (route 518px vs 518px) — gate is optional for 1-star"
+  },
+  {
+   "campaignIndex": 68,
+   "file": "src/config/levels/level54.ts",
+   "title": "",
+   "reason": "goal reachable with all gates SOLID (route 634px vs 554px) — gate is optional for 1-star"
+  },
+  {
+   "campaignIndex": 71,
+   "file": "src/config/levels/level58.ts",
+   "title": "",
+   "reason": "goal reachable with portals DISABLED (route 580px vs 192px with portals) — rift is optional"
+  },
+  {
+   "campaignIndex": 72,
+   "file": "src/config/levels/level60.ts",
+   "title": "",
+   "reason": "goal reachable with portals DISABLED (route 594px vs 509px with portals) — rift is optional"
+  },
+  {
+   "campaignIndex": 73,
+   "file": "src/config/levels/level57.ts",
+   "title": "",
+   "reason": "goal reachable with all gates SOLID (route 607px vs 516px) — gate is optional for 1-star"
+  },
+  {
+   "campaignIndex": 74,
+   "file": "src/config/levels/level87.ts",
+   "title": "",
+   "reason": "goal reachable with portals DISABLED (route 533px vs 337px with portals) — rift is optional"
+  },
+  {
+   "campaignIndex": 76,
+   "file": "src/config/levels/level62.ts",
+   "title": "",
+   "reason": "goal reachable with all gates SOLID (route 606px vs 606px) — gate is optional for 1-star"
+  },
+  {
+   "campaignIndex": 78,
+   "file": "src/config/levels/level88.ts",
+   "title": "",
+   "reason": "goal reachable with portals DISABLED (route 617px vs 198px with portals) — rift is optional"
+  },
+  {
+   "campaignIndex": 79,
+   "file": "src/config/levels/level89.ts",
+   "title": "THE CONFLUENCE",
+   "reason": "goal reachable with portals DISABLED (route 556px vs 257px with portals) — rift is optional"
+  },
+  {
+   "campaignIndex": 80,
+   "file": "src/config/levels/level90.ts",
+   "title": "HOMECOMING",
+   "reason": "goal reachable with all gates SOLID (route 438px vs 405px) — gate is optional for 1-star"
+  },
+  {
+   "campaignIndex": 103,
+   "file": "src/config/levels/level116.ts",
+   "title": "",
+   "reason": "goal reachable with portals DISABLED (route 814px vs 216px with portals) — rift is optional"
+  },
+  {
+   "campaignIndex": 107,
+   "file": "src/config/levels/level120.ts",
+   "title": "",
+   "reason": "goal reachable with portals DISABLED (route 595px vs 401px with portals) — rift is optional"
+  },
+  {
+   "campaignIndex": 107,
+   "file": "src/config/levels/level120.ts",
+   "title": "",
+   "reason": "goal reachable with all gates SOLID (route 514px vs 401px) — gate is optional for 1-star"
+  },
+  {
+   "campaignIndex": 109,
+   "file": "src/config/levels/level122.ts",
+   "title": "HALL OF ECHOES",
+   "reason": "goal reachable with portals DISABLED (route 821px vs 122px with portals) — rift is optional"
+  },
+  {
+   "campaignIndex": 122,
+   "file": "src/config/levels/level135.ts",
+   "title": "",
+   "reason": "goal reachable with all gates SOLID (route 625px vs 625px) — gate is optional for 1-star"
+  },
+  {
+   "campaignIndex": 126,
+   "file": "src/config/levels/level139.ts",
+   "title": "",
+   "reason": "goal reachable with portals DISABLED (route 548px vs 209px with portals) — rift is optional"
+  },
+  {
+   "campaignIndex": 128,
+   "file": "src/config/levels/level141.ts",
+   "title": "",
+   "reason": "goal reachable with portals DISABLED (route 638px vs 473px with portals) — rift is optional"
+  },
+  {
+   "campaignIndex": 134,
+   "file": "src/config/levels/level147.ts",
+   "title": "",
+   "reason": "goal reachable with portals DISABLED (route 613px vs 141px with portals) — rift is optional"
+  },
+  {
+   "campaignIndex": 136,
+   "file": "src/config/levels/level149.ts",
+   "title": "",
+   "reason": "goal reachable with all gates SOLID (route 653px vs 653px) — gate is optional for 1-star"
+  },
+  {
+   "campaignIndex": 144,
+   "file": "src/config/levels/level157.ts",
+   "title": "",
+   "reason": "goal reachable with all gates SOLID (route 617px vs 524px) — gate is optional for 1-star"
+  },
+  {
+   "campaignIndex": 148,
+   "file": "src/config/levels/level161.ts",
+   "title": "",
+   "reason": "goal reachable with portals DISABLED (route 654px vs 489px with portals) — rift is optional"
+  },
+  {
+   "campaignIndex": 149,
+   "file": "src/config/levels/level162.ts",
+   "title": "THE HOMEWARD PATH",
+   "reason": "goal reachable with all gates SOLID (route 385px vs 353px) — gate is optional for 1-star"
+  },
+  {
+   "campaignIndex": 150,
+   "file": "src/config/levels/level163.ts",
+   "title": "THE LONG WAY HOME",
+   "reason": "goal reachable with all gates SOLID (route 402px vs 371px) — gate is optional for 1-star"
+  }
+ ],
+ "misc": [],
+ "worldTrend": [
+  "W5 WELLS median D 3 < W4 median 3.8",
+  "W10 BINARY median D 3 < W9 median 3.9",
+  "W13 ASCENSION median D 4.1 < W12 median 4.7"
+ ]
+}

@@ -1,0 +1,959 @@
+{
+ "chunks": [
+  {
+   "id": "breather",
+   "tier": 0,
+   "tag": "open",
+   "height": 560,
+   "obstacles": 0,
+   "hazards": 0,
+   "hazardKinds": [],
+   "gravityZones": 0,
+   "magnets": [],
+   "stars": 1,
+   "bodies": 0,
+   "mechanics": [],
+   "obstacleRows": [],
+   "hazardRows": [],
+   "minObstacleLane": null,
+   "minHazardSafeGap": null
+  },
+  {
+   "id": "starfield",
+   "tier": 0,
+   "tag": "open",
+   "height": 560,
+   "obstacles": 0,
+   "hazards": 0,
+   "hazardKinds": [],
+   "gravityZones": 0,
+   "magnets": [],
+   "stars": 3,
+   "bodies": 0,
+   "mechanics": [],
+   "obstacleRows": [],
+   "hazardRows": [],
+   "minObstacleLane": null,
+   "minHazardSafeGap": null
+  },
+  {
+   "id": "drift",
+   "tier": 0,
+   "tag": "zone",
+   "height": 560,
+   "obstacles": 0,
+   "hazards": 0,
+   "hazardKinds": [],
+   "gravityZones": 1,
+   "magnets": [],
+   "stars": 2,
+   "bodies": 0,
+   "mechanics": [
+    "gravityZones"
+   ],
+   "obstacleRows": [],
+   "hazardRows": [],
+   "minObstacleLane": null,
+   "minHazardSafeGap": null
+  },
+  {
+   "id": "lanes",
+   "tier": 0,
+   "tag": "wall",
+   "height": 560,
+   "obstacles": 1,
+   "hazards": 0,
+   "hazardKinds": [],
+   "gravityZones": 0,
+   "magnets": [],
+   "stars": 1,
+   "bodies": 1,
+   "mechanics": [
+    "obstacles"
+   ],
+   "obstacleRows": [
+    {
+     "y": 280,
+     "widestGap": 222
+    }
+   ],
+   "hazardRows": [],
+   "minObstacleLane": 222,
+   "minHazardSafeGap": null
+  },
+  {
+   "id": "sawSweep",
+   "tier": 1,
+   "tag": "saw",
+   "height": 560,
+   "obstacles": 0,
+   "hazards": 1,
+   "hazardKinds": [
+    "sweep"
+   ],
+   "gravityZones": 0,
+   "magnets": [],
+   "stars": 1,
+   "bodies": 0,
+   "mechanics": [
+    "hazards"
+   ],
+   "obstacleRows": [],
+   "hazardRows": [
+    {
+     "y": 280,
+     "kind": "sweep",
+     "alwaysSafeGap": 56,
+     "timed": false
+    }
+   ],
+   "minObstacleLane": null,
+   "minHazardSafeGap": 56
+  },
+  {
+   "id": "pillars",
+   "tier": 1,
+   "tag": "wall",
+   "height": 560,
+   "obstacles": 2,
+   "hazards": 0,
+   "hazardKinds": [],
+   "gravityZones": 0,
+   "magnets": [],
+   "stars": 2,
+   "bodies": 2,
+   "mechanics": [
+    "obstacles"
+   ],
+   "obstacleRows": [
+    {
+     "y": 200,
+     "widestGap": 205
+    },
+    {
+     "y": 360,
+     "widestGap": 205
+    }
+   ],
+   "hazardRows": [],
+   "minObstacleLane": 205,
+   "minHazardSafeGap": null
+  },
+  {
+   "id": "updraftLane",
+   "tier": 1,
+   "tag": "zone",
+   "height": 560,
+   "obstacles": 0,
+   "hazards": 0,
+   "hazardKinds": [],
+   "gravityZones": 1,
+   "magnets": [],
+   "stars": 1,
+   "bodies": 0,
+   "mechanics": [
+    "gravityZones"
+   ],
+   "obstacleRows": [],
+   "hazardRows": [],
+   "minObstacleLane": null,
+   "minHazardSafeGap": null
+  },
+  {
+   "id": "swingWell",
+   "tier": 1,
+   "tag": "magnet",
+   "height": 560,
+   "obstacles": 0,
+   "hazards": 0,
+   "hazardKinds": [],
+   "gravityZones": 0,
+   "magnets": [
+    "attract"
+   ],
+   "stars": 1,
+   "bodies": 0,
+   "mechanics": [
+    "magnets"
+   ],
+   "obstacleRows": [],
+   "hazardRows": [],
+   "minObstacleLane": null,
+   "minHazardSafeGap": null
+  },
+  {
+   "id": "downGap",
+   "tier": 1,
+   "tag": "wall",
+   "height": 560,
+   "obstacles": 1,
+   "hazards": 0,
+   "hazardKinds": [],
+   "gravityZones": 0,
+   "magnets": [],
+   "stars": 1,
+   "bodies": 1,
+   "mechanics": [
+    "obstacles"
+   ],
+   "obstacleRows": [
+    {
+     "y": 280,
+     "widestGap": 140
+    }
+   ],
+   "hazardRows": [],
+   "minObstacleLane": 140,
+   "minHazardSafeGap": null
+  },
+  {
+   "id": "twinSaws",
+   "tier": 2,
+   "tag": "saw",
+   "height": 560,
+   "obstacles": 0,
+   "hazards": 2,
+   "hazardKinds": [
+    "sweep",
+    "sweep"
+   ],
+   "gravityZones": 0,
+   "magnets": [],
+   "stars": 1,
+   "bodies": 0,
+   "mechanics": [
+    "hazards"
+   ],
+   "obstacleRows": [],
+   "hazardRows": [
+    {
+     "y": 200,
+     "kind": "sweep",
+     "alwaysSafeGap": 38,
+     "timed": false
+    },
+    {
+     "y": 360,
+     "kind": "sweep",
+     "alwaysSafeGap": 38,
+     "timed": false
+    }
+   ],
+   "minObstacleLane": null,
+   "minHazardSafeGap": 38
+  },
+  {
+   "id": "magnetSlalom",
+   "tier": 2,
+   "tag": "magnet",
+   "height": 560,
+   "obstacles": 0,
+   "hazards": 0,
+   "hazardKinds": [],
+   "gravityZones": 0,
+   "magnets": [
+    "repel",
+    "repel"
+   ],
+   "stars": 2,
+   "bodies": 0,
+   "mechanics": [
+    "magnets"
+   ],
+   "obstacleRows": [],
+   "hazardRows": [],
+   "minObstacleLane": null,
+   "minHazardSafeGap": null
+  },
+  {
+   "id": "zigzag",
+   "tier": 2,
+   "tag": "wall",
+   "height": 560,
+   "obstacles": 2,
+   "hazards": 0,
+   "hazardKinds": [],
+   "gravityZones": 0,
+   "magnets": [],
+   "stars": 2,
+   "bodies": 2,
+   "mechanics": [
+    "obstacles"
+   ],
+   "obstacleRows": [
+    {
+     "y": 360,
+     "widestGap": 120
+    },
+    {
+     "y": 200,
+     "widestGap": 140
+    }
+   ],
+   "hazardRows": [],
+   "minObstacleLane": 120,
+   "minHazardSafeGap": null
+  },
+  {
+   "id": "windSaw",
+   "tier": 2,
+   "tag": "zone",
+   "height": 560,
+   "obstacles": 0,
+   "hazards": 1,
+   "hazardKinds": [
+    "sweep"
+   ],
+   "gravityZones": 1,
+   "magnets": [],
+   "stars": 1,
+   "bodies": 0,
+   "mechanics": [
+    "hazards",
+    "gravityZones"
+   ],
+   "obstacleRows": [],
+   "hazardRows": [
+    {
+     "y": 200,
+     "kind": "sweep",
+     "alwaysSafeGap": 98,
+     "timed": false
+    }
+   ],
+   "minObstacleLane": null,
+   "minHazardSafeGap": 98
+  },
+  {
+   "id": "repelGate",
+   "tier": 2,
+   "tag": "magnet",
+   "height": 560,
+   "obstacles": 1,
+   "hazards": 0,
+   "hazardKinds": [],
+   "gravityZones": 0,
+   "magnets": [
+    "repel"
+   ],
+   "stars": 1,
+   "bodies": 1,
+   "mechanics": [
+    "obstacles",
+    "magnets"
+   ],
+   "obstacleRows": [
+    {
+     "y": 300,
+     "widestGap": 140
+    }
+   ],
+   "hazardRows": [],
+   "minObstacleLane": 140,
+   "minHazardSafeGap": null
+  },
+  {
+   "id": "beamSlot",
+   "tier": 2,
+   "tag": "beam",
+   "height": 560,
+   "obstacles": 0,
+   "hazards": 1,
+   "hazardKinds": [
+    "beam"
+   ],
+   "gravityZones": 0,
+   "magnets": [],
+   "stars": 2,
+   "bodies": 0,
+   "mechanics": [
+    "hazards"
+   ],
+   "obstacleRows": [],
+   "hazardRows": [
+    {
+     "y": 280,
+     "kind": "beam",
+     "alwaysSafeGap": 170,
+     "timed": true
+    }
+   ],
+   "minObstacleLane": null,
+   "minHazardSafeGap": 170
+  },
+  {
+   "id": "gauntlet",
+   "tier": 3,
+   "tag": "saw",
+   "height": 560,
+   "obstacles": 1,
+   "hazards": 1,
+   "hazardKinds": [
+    "sweep"
+   ],
+   "gravityZones": 1,
+   "magnets": [],
+   "stars": 1,
+   "bodies": 1,
+   "mechanics": [
+    "obstacles",
+    "hazards",
+    "gravityZones"
+   ],
+   "obstacleRows": [
+    {
+     "y": 200,
+     "widestGap": 190
+    }
+   ],
+   "hazardRows": [
+    {
+     "y": 360,
+     "kind": "sweep",
+     "alwaysSafeGap": 58,
+     "timed": false
+    }
+   ],
+   "minObstacleLane": 190,
+   "minHazardSafeGap": 58
+  },
+  {
+   "id": "beamRun",
+   "tier": 3,
+   "tag": "beam",
+   "height": 560,
+   "obstacles": 0,
+   "hazards": 1,
+   "hazardKinds": [
+    "beam"
+   ],
+   "gravityZones": 0,
+   "magnets": [],
+   "stars": 2,
+   "bodies": 0,
+   "mechanics": [
+    "hazards"
+   ],
+   "obstacleRows": [],
+   "hazardRows": [
+    {
+     "y": 280,
+     "kind": "beam",
+     "alwaysSafeGap": 0,
+     "timed": true
+    }
+   ],
+   "minObstacleLane": null,
+   "minHazardSafeGap": 0
+  },
+  {
+   "id": "doubleBeam",
+   "tier": 3,
+   "tag": "beam",
+   "height": 560,
+   "obstacles": 0,
+   "hazards": 2,
+   "hazardKinds": [
+    "beam",
+    "beam"
+   ],
+   "gravityZones": 0,
+   "magnets": [],
+   "stars": 2,
+   "bodies": 0,
+   "mechanics": [
+    "hazards"
+   ],
+   "obstacleRows": [],
+   "hazardRows": [
+    {
+     "y": 220,
+     "kind": "beam",
+     "alwaysSafeGap": 170,
+     "timed": true
+    },
+    {
+     "y": 380,
+     "kind": "beam",
+     "alwaysSafeGap": 170,
+     "timed": true
+    }
+   ],
+   "minObstacleLane": null,
+   "minHazardSafeGap": 170
+  },
+  {
+   "id": "sawMaze",
+   "tier": 3,
+   "tag": "wall",
+   "height": 560,
+   "obstacles": 2,
+   "hazards": 1,
+   "hazardKinds": [
+    "sweep"
+   ],
+   "gravityZones": 0,
+   "magnets": [],
+   "stars": 1,
+   "bodies": 2,
+   "mechanics": [
+    "obstacles",
+    "hazards"
+   ],
+   "obstacleRows": [
+    {
+     "y": 360,
+     "widestGap": 120
+    },
+    {
+     "y": 200,
+     "widestGap": 140
+    }
+   ],
+   "hazardRows": [
+    {
+     "y": 280,
+     "kind": "sweep",
+     "alwaysSafeGap": 70,
+     "timed": false
+    }
+   ],
+   "minObstacleLane": 120,
+   "minHazardSafeGap": 70
+  },
+  {
+   "id": "binaryWell",
+   "tier": 3,
+   "tag": "magnet",
+   "height": 560,
+   "obstacles": 0,
+   "hazards": 0,
+   "hazardKinds": [],
+   "gravityZones": 0,
+   "magnets": [
+    "repel",
+    "attract"
+   ],
+   "stars": 1,
+   "bodies": 0,
+   "mechanics": [
+    "magnets"
+   ],
+   "obstacleRows": [],
+   "hazardRows": [],
+   "minObstacleLane": null,
+   "minHazardSafeGap": null
+  }
+ ],
+ "tiers": {
+  "0": [
+   "breather",
+   "starfield",
+   "drift",
+   "lanes"
+  ],
+  "1": [
+   "sawSweep",
+   "pillars",
+   "updraftLane",
+   "swingWell",
+   "downGap"
+  ],
+  "2": [
+   "twinSaws",
+   "magnetSlalom",
+   "zigzag",
+   "windSaw",
+   "repelGate",
+   "beamSlot"
+  ],
+  "3": [
+   "gauntlet",
+   "beamRun",
+   "doubleBeam",
+   "sawMaze",
+   "binaryWell"
+  ]
+ },
+ "tags": {
+  "open": [
+   "breather",
+   "starfield"
+  ],
+  "zone": [
+   "drift",
+   "updraftLane",
+   "windSaw"
+  ],
+  "wall": [
+   "lanes",
+   "pillars",
+   "downGap",
+   "zigzag",
+   "sawMaze"
+  ],
+  "saw": [
+   "sawSweep",
+   "twinSaws",
+   "gauntlet"
+  ],
+  "magnet": [
+   "swingWell",
+   "magnetSlalom",
+   "repelGate",
+   "binaryWell"
+  ],
+  "beam": [
+   "beamSlot",
+   "beamRun",
+   "doubleBeam"
+  ]
+ },
+ "generatorRules": {
+  "RAMP_EVERY": 3,
+  "RECENCY_WINDOW": 4,
+  "runLength": 400,
+  "rules": [
+   "allowed tier = min(maxTier, floor(i/3))",
+   "i=0 always tier 0 (allowed=0)",
+   "after a tier>=2 chunk, pool restricted to tier<=1",
+   "exclude last 4 ids (fallback: exclude previous id, then anything)",
+   "prefer a different tag than previous (fallback if none)",
+   "pick = pool[floor(rng*len)] with mulberry32(fnv1a(seed))",
+   "weekly seed = weekKey(date) = gw<floor(daysSinceEpoch/7)>; endless seed = random e<int> per attempt",
+   "EndlessScene wraps run[runIndex % 400]"
+  ]
+ },
+ "weeklySample": [
+  {
+   "seed": "gw2961",
+   "first24": [
+    "lanes(t0)",
+    "drift(t0)",
+    "starfield(t0)",
+    "updraftLane(t1)",
+    "pillars(t1)",
+    "swingWell(t1)",
+    "downGap(t1)",
+    "drift(t0)",
+    "starfield(t0)",
+    "gauntlet(t3)",
+    "breather(t0)",
+    "pillars(t1)",
+    "magnetSlalom(t2)",
+    "updraftLane(t1)",
+    "repelGate(t2)",
+    "sawSweep(t1)",
+    "swingWell(t1)",
+    "beamSlot(t2)",
+    "downGap(t1)",
+    "doubleBeam(t3)",
+    "pillars(t1)",
+    "starfield(t0)",
+    "magnetSlalom(t2)",
+    "drift(t0)"
+   ]
+  },
+  {
+   "seed": "gw2962",
+   "first24": [
+    "lanes(t0)",
+    "breather(t0)",
+    "drift(t0)",
+    "downGap(t1)",
+    "updraftLane(t1)",
+    "swingWell(t1)",
+    "breather(t0)",
+    "zigzag(t2)",
+    "starfield(t0)",
+    "magnetSlalom(t2)",
+    "sawSweep(t1)",
+    "lanes(t0)",
+    "repelGate(t2)",
+    "drift(t0)",
+    "pillars(t1)",
+    "magnetSlalom(t2)",
+    "starfield(t0)",
+    "swingWell(t1)",
+    "beamSlot(t2)",
+    "updraftLane(t1)",
+    "gauntlet(t3)",
+    "starfield(t0)",
+    "beamRun(t3)",
+    "downGap(t1)"
+   ]
+  },
+  {
+   "seed": "gw2963",
+   "first24": [
+    "breather(t0)",
+    "lanes(t0)",
+    "starfield(t0)",
+    "drift(t0)",
+    "swingWell(t1)",
+    "updraftLane(t1)",
+    "twinSaws(t2)",
+    "lanes(t0)",
+    "repelGate(t2)",
+    "drift(t0)",
+    "swingWell(t1)",
+    "twinSaws(t2)",
+    "breather(t0)",
+    "downGap(t1)",
+    "updraftLane(t1)",
+    "lanes(t0)",
+    "swingWell(t1)",
+    "windSaw(t2)",
+    "downGap(t1)",
+    "starfield(t0)",
+    "sawMaze(t3)",
+    "breather(t0)",
+    "beamSlot(t2)",
+    "sawSweep(t1)"
+   ]
+  },
+  {
+   "seed": "gw2964",
+   "first24": [
+    "lanes(t0)",
+    "starfield(t0)",
+    "drift(t0)",
+    "swingWell(t1)",
+    "updraftLane(t1)",
+    "downGap(t1)",
+    "breather(t0)",
+    "drift(t0)",
+    "magnetSlalom(t2)",
+    "pillars(t1)",
+    "doubleBeam(t3)",
+    "lanes(t0)",
+    "drift(t0)",
+    "twinSaws(t2)",
+    "downGap(t1)",
+    "sawSweep(t1)",
+    "swingWell(t1)",
+    "pillars(t1)",
+    "repelGate(t2)",
+    "lanes(t0)",
+    "binaryWell(t3)",
+    "updraftLane(t1)",
+    "doubleBeam(t3)",
+    "swingWell(t1)"
+   ]
+  },
+  {
+   "seed": "gw2965",
+   "first24": [
+    "drift(t0)",
+    "starfield(t0)",
+    "lanes(t0)",
+    "updraftLane(t1)",
+    "sawSweep(t1)",
+    "drift(t0)",
+    "pillars(t1)",
+    "beamSlot(t2)",
+    "lanes(t0)",
+    "repelGate(t2)",
+    "starfield(t0)",
+    "beamRun(t3)",
+    "drift(t0)",
+    "binaryWell(t3)",
+    "sawSweep(t1)",
+    "downGap(t1)",
+    "starfield(t0)",
+    "pillars(t1)",
+    "updraftLane(t1)",
+    "sawMaze(t3)",
+    "sawSweep(t1)",
+    "starfield(t0)",
+    "binaryWell(t3)",
+    "breather(t0)"
+   ]
+  },
+  {
+   "seed": "gw2966",
+   "first24": [
+    "starfield(t0)",
+    "drift(t0)",
+    "breather(t0)",
+    "swingWell(t1)",
+    "lanes(t0)",
+    "updraftLane(t1)",
+    "twinSaws(t2)",
+    "downGap(t1)",
+    "swingWell(t1)",
+    "breather(t0)",
+    "repelGate(t2)",
+    "updraftLane(t1)",
+    "beamRun(t3)",
+    "drift(t0)",
+    "pillars(t1)",
+    "doubleBeam(t3)",
+    "starfield(t0)",
+    "repelGate(t2)",
+    "drift(t0)",
+    "sawMaze(t3)",
+    "breather(t0)",
+    "gauntlet(t3)",
+    "swingWell(t1)",
+    "lanes(t0)"
+   ]
+  }
+ ],
+ "weeklyStats26w": {
+  "seeds": 26,
+  "count": 400,
+  "freq": {
+   "lanes": 685,
+   "drift": 778,
+   "starfield": 796,
+   "updraftLane": 765,
+   "pillars": 665,
+   "swingWell": 711,
+   "downGap": 640,
+   "gauntlet": 356,
+   "breather": 789,
+   "magnetSlalom": 372,
+   "repelGate": 346,
+   "sawSweep": 760,
+   "beamSlot": 404,
+   "doubleBeam": 382,
+   "twinSaws": 376,
+   "sawMaze": 275,
+   "beamRun": 397,
+   "windSaw": 311,
+   "binaryWell": 328,
+   "zigzag": 264
+  },
+  "freqFirst": {
+   "lanes": 50,
+   "drift": 70,
+   "starfield": 62,
+   "updraftLane": 45,
+   "pillars": 41,
+   "swingWell": 49,
+   "downGap": 38,
+   "gauntlet": 14,
+   "breather": 54,
+   "magnetSlalom": 16,
+   "repelGate": 24,
+   "sawSweep": 43,
+   "beamSlot": 22,
+   "doubleBeam": 16,
+   "zigzag": 12,
+   "beamRun": 12,
+   "twinSaws": 18,
+   "windSaw": 18,
+   "sawMaze": 9,
+   "binaryWell": 11
+  },
+  "violSameTag": 0,
+  "violHardHard": 0,
+  "violRecency": 0,
+  "openNotTier0": 0
+ },
+ "endlessStats500": {
+  "seeds": 500,
+  "count": 400,
+  "freq": {
+   "drift": 14552,
+   "breather": 15200,
+   "lanes": 13112,
+   "swingWell": 13462,
+   "starfield": 15203,
+   "sawSweep": 14117,
+   "windSaw": 6158,
+   "zigzag": 5251,
+   "magnetSlalom": 7047,
+   "downGap": 12791,
+   "beamSlot": 7654,
+   "updraftLane": 14426,
+   "doubleBeam": 7547,
+   "repelGate": 6922,
+   "beamRun": 7603,
+   "sawMaze": 5317,
+   "twinSaws": 7056,
+   "binaryWell": 6961,
+   "pillars": 12728,
+   "gauntlet": 6893
+  },
+  "freqFirst": {
+   "drift": 1153,
+   "breather": 1126,
+   "lanes": 1051,
+   "swingWell": 842,
+   "starfield": 1104,
+   "sawSweep": 887,
+   "windSaw": 330,
+   "zigzag": 285,
+   "magnetSlalom": 366,
+   "downGap": 780,
+   "beamSlot": 379,
+   "updraftLane": 854,
+   "doubleBeam": 312,
+   "repelGate": 358,
+   "beamRun": 281,
+   "sawMaze": 188,
+   "pillars": 778,
+   "twinSaws": 360,
+   "gauntlet": 296,
+   "binaryWell": 270
+  },
+  "violSameTag": 0,
+  "violHardHard": 0,
+  "violRecency": 0,
+  "openNotTier0": 0
+ },
+ "rampTimeline": [
+  {
+   "chunkIndex": 0,
+   "maxTierAllowed": 0,
+   "cameraTravelPx": 40,
+   "approxSeconds": 0.5,
+   "scoreAtDistance": 4
+  },
+  {
+   "chunkIndex": 3,
+   "maxTierAllowed": 1,
+   "cameraTravelPx": 1720,
+   "approxSeconds": 17.5,
+   "scoreAtDistance": 172
+  },
+  {
+   "chunkIndex": 6,
+   "maxTierAllowed": 2,
+   "cameraTravelPx": 3400,
+   "approxSeconds": 28.4,
+   "scoreAtDistance": 340
+  },
+  {
+   "chunkIndex": 9,
+   "maxTierAllowed": 3,
+   "cameraTravelPx": 5080,
+   "approxSeconds": 37.1,
+   "scoreAtDistance": 508
+  },
+  {
+   "chunkIndex": 12,
+   "maxTierAllowed": 3,
+   "cameraTravelPx": 6760,
+   "approxSeconds": 44.6,
+   "scoreAtDistance": 676
+  },
+  {
+   "chunkIndex": 20,
+   "maxTierAllowed": 3,
+   "cameraTravelPx": 11240,
+   "approxSeconds": 62.5,
+   "scoreAtDistance": 1124
+  },
+  {
+   "chunkIndex": 40,
+   "maxTierAllowed": 3,
+   "cameraTravelPx": 22440,
+   "approxSeconds": 107.3,
+   "scoreAtDistance": 2244
+  }
+ ],
+ "weekBoundaryExample": "Thu Oct 08 2026"
+}
