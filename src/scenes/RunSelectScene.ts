@@ -3,6 +3,7 @@ import { THEME } from '../config/theme.config';
 import { CosmicBackground } from '../entities/CosmicBackground';
 import { Button } from '../ui/Button';
 import { drawGlass } from '../ui/glass';
+import { setTapArea } from '../ui/hitArea';
 import { fadeIn, fadeToScene } from '../utils/transitions';
 import { reducedMotionActive, safeAreaInsetsScaled } from '../utils/a11y';
 import { weekKey } from '../utils/endless';
@@ -87,8 +88,7 @@ export class RunSelectScene extends Phaser.Scene {
       fontFamily: THEME.FONT_BODY, fontSize: '13px', color: THEME.TEXT_PRIMARY, fontStyle: '600',
     }).setOrigin(0.5);
     const card = this.add.container(cx, cy, [bg, name, desc, best]).setDepth(10);
-    card.setSize(w, h);
-    card.setInteractive(new Phaser.Geom.Rectangle(-w / 2, -h / 2, w, h), Phaser.Geom.Rectangle.Contains);
+    setTapArea(card, w, h);
     card.on('pointerup', onTap);
     return card;
   }

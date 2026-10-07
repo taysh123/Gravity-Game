@@ -25,6 +25,7 @@ import { Orb } from '../entities/Orb';
 import { Hazard } from '../entities/Hazard';
 import { IconButton } from '../ui/IconButton';
 import { drawGlass } from '../ui/glass';
+import { setTapArea } from '../ui/hitArea';
 import { fadeToScene } from '../utils/transitions';
 import { safeAreaInsetsScaled, reducedMotionActive } from '../utils/a11y';
 import { FX } from '../config/fx.config';
@@ -1419,8 +1420,7 @@ export class GameScene extends Phaser.Scene implements Pausable {
         fontFamily: THEME.FONT_DISPLAY, fontSize: '15px', color: '#7affb0', fontStyle: '700',
       }).setOrigin(0.5);
       const btn = this.add.container(cx, cy + panelH / 2 + 34 + nudgeExtra, [bbg, btxt]).setDepth(51);
-      btn.setSize(bw, bh);
-      btn.setInteractive(new Phaser.Geom.Rectangle(-bw / 2, -bh / 2, bw, bh), Phaser.Geom.Rectangle.Contains);
+      setTapArea(btn, bw, bh);
       btn.once('pointerup', async () => {
         btn.disableInteractive();
         this.advanceTimer?.remove();
@@ -1448,8 +1448,7 @@ export class GameScene extends Phaser.Scene implements Pausable {
         align: 'center', wordWrap: { width: bw - 24 },
       }).setOrigin(0.5);
       const btn = this.add.container(cx, cy + panelH / 2 + 34 + nudgeExtra, [bbg, btxt]).setDepth(51);
-      btn.setSize(bw, bh);
-      btn.setInteractive(new Phaser.Geom.Rectangle(-bw / 2, -bh / 2, bw, bh), Phaser.Geom.Rectangle.Contains);
+      setTapArea(btn, bw, bh);
       btn.once('pointerup', () => {
         Analytics.track(storeNudgeTapped());
         this.advanceTimer?.remove();

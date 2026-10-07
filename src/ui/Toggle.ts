@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { THEME } from '../config/theme.config';
+import { setTapArea } from './hitArea';
 
 const W = 52;
 const H = 30;
@@ -28,12 +29,8 @@ export class Toggle {
     this.knob = scene.add.circle(0, 0, KNOB / 2, 0xffffff);
 
     this.container = scene.add.container(x, y, [this.track, this.knob]);
-    this.container.setSize(W, H);
     // Generous hit area for an easy tap.
-    this.container.setInteractive(
-      new Phaser.Geom.Rectangle(-W / 2 - 8, -H / 2 - 8, W + 16, H + 16),
-      Phaser.Geom.Rectangle.Contains,
-    );
+    setTapArea(this.container, W, H, THEME.TOGGLE_TAP_PAD);
     if (this.container.input) this.container.input.cursor = 'pointer';
 
     this.render(false);

@@ -13,6 +13,7 @@ import { DailyStore } from '../utils/DailyStore';
 import { LEVELS } from '../config/levels';
 import { RETENTION } from '../config/retention.config';
 import { drawGlass } from '../ui/glass';
+import { setTapArea } from '../ui/hitArea';
 import { setBackHandlerEnabled } from '../platform/lifecycle';
 
 // Stage 3: the home screen. Logo title (bobbing) + tagline + PLAY / LEVELS,
@@ -189,13 +190,14 @@ export class MainMenuScene extends Phaser.Scene {
       height - Math.max(SPLASH.SAFE_AREA_MIN_PAD, insets.bottom) - 24,
       dailyY + SPLASH.MENU_BTN_H / 2 + 48,
     );
-    const runBtn = this.add
-      .text(cx, runY, '▶  GRAVITY RUN', {
+    const runLabel = this.add
+      .text(0, 0, '▶  GRAVITY RUN', {
         fontFamily: THEME.FONT_DISPLAY, fontSize: '16px', color: '#ffd166', fontStyle: '700',
       })
       .setOrigin(0.5)
       .setLetterSpacing(1);
-    runBtn.setInteractive(new Phaser.Geom.Rectangle(-110, -22, 220, 44), Phaser.Geom.Rectangle.Contains);
+    const runBtn = this.add.container(cx, runY, [runLabel]);
+    setTapArea(runBtn, THEME.LINK_TAP_W, THEME.LINK_TAP_H);
     runBtn.on('pointerup', () => fadeToScene(this, 'RunSelectScene'));
 
     if (reduced) {
@@ -306,8 +308,7 @@ export class MainMenuScene extends Phaser.Scene {
     drawBg();
 
     const chest = this.add.container(x, y, [glow, bg, glyph]).setDepth(30);
-    chest.setSize(size, size);
-    chest.setInteractive(new Phaser.Geom.Rectangle(-size / 2, -size / 2, size, size), Phaser.Geom.Rectangle.Contains);
+    setTapArea(chest, size, size);
     if (chest.input) chest.input.cursor = 'pointer';
 
     chest.on('pointerdown', () => this.tweens.add({ targets: chest, scale: THEME.PRESS_SCALE, duration: 100, ease: THEME.EASE }));

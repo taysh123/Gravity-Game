@@ -6,6 +6,7 @@ import { THEME } from '../config/theme.config';
 import { CosmicBackground } from '../entities/CosmicBackground';
 import { Button } from '../ui/Button';
 import { drawGlass } from '../ui/glass';
+import { setTapArea } from '../ui/hitArea';
 import { fadeIn, fadeToScene } from '../utils/transitions';
 import { reducedMotionActive, safeAreaInsetsScaled } from '../utils/a11y';
 import { ProgressStore } from '../utils/ProgressStore';
@@ -186,13 +187,9 @@ export class LevelSelectScene extends Phaser.Scene {
     }
 
     const cell = this.add.container(x, y, children);
-    cell.setSize(CELL_W, CELL_H);
 
     if (unlocked) {
-      cell.setInteractive(
-        new Phaser.Geom.Rectangle(-CELL_W / 2, -CELL_H / 2, CELL_W, CELL_H),
-        Phaser.Geom.Rectangle.Contains,
-      );
+      setTapArea(cell, CELL_W, CELL_H);
       if (cell.input) cell.input.cursor = 'pointer';
       // Suppress navigation if the press was a scroll drag.
       cell.on('pointerup', () => {
@@ -200,6 +197,7 @@ export class LevelSelectScene extends Phaser.Scene {
         fadeToScene(this, 'GameScene', { level });
       });
     } else {
+      cell.setSize(CELL_W, CELL_H);
       cell.setAlpha(0.6);
     }
 

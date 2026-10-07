@@ -4,6 +4,7 @@ import { SPLASH } from '../config/splash.config';
 import { THEME } from '../config/theme.config';
 import { CosmicBackground } from '../entities/CosmicBackground';
 import { Button } from '../ui/Button';
+import { setTapArea } from '../ui/hitArea';
 import { fadeIn, fadeToScene } from '../utils/transitions';
 import { reducedMotionActive } from '../utils/a11y';
 
@@ -77,16 +78,17 @@ export class EndScene extends Phaser.Scene {
     // a player who just finished the whole campaign and might want to spend
     // their Stardust. Never a popup, never required.
     const storeY = menu.container.y + SPLASH.MENU_BTN_H / 2 + 30;
-    const store = this.add
-      .text(cx, storeY, 'Visit the Store', {
+    const storeLabel = this.add
+      .text(0, 0, 'Visit the Store', {
         fontFamily: THEME.FONT_BODY,
         fontSize: '14px',
         color: THEME.TEXT_MUTED,
         fontStyle: '600',
       })
       .setOrigin(0.5);
+    const store = this.add.container(cx, storeY, [storeLabel]);
     // Explicit >=44px hit area — the text glyphs alone are shorter than that.
-    store.setInteractive(new Phaser.Geom.Rectangle(-110, -22, 220, 44), Phaser.Geom.Rectangle.Contains);
+    setTapArea(store, THEME.LINK_TAP_W, THEME.LINK_TAP_H);
     if (store.input) store.input.cursor = 'pointer';
     store.on('pointerup', () => fadeToScene(this, 'CosmeticsScene'));
 

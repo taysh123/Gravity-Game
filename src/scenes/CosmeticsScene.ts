@@ -17,13 +17,13 @@ import {
   runBuy,
   runCheckStatus,
   runRestore,
-  setTapArea,
   startPurchasePoll,
   tagColor,
   tagFontPx,
   type PurchaseSurface,
   type ToastMessage,
 } from '../ui/purchaseUi';
+import { setTapArea } from '../ui/hitArea';
 import { showToast } from '../ui/toast';
 import { fadeIn, fadeToScene } from '../utils/transitions';
 import { reducedMotionActive, safeAreaInsetsScaled } from '../utils/a11y';
@@ -278,9 +278,8 @@ export class CosmeticsScene extends Phaser.Scene {
     }
 
     const card = this.add.container(0, 0, children);
-    card.setSize(w, CARD_H);
     if (!equipped) {
-      card.setInteractive(new Phaser.Geom.Rectangle(-w / 2, -CARD_H / 2, w, CARD_H), Phaser.Geom.Rectangle.Contains);
+      setTapArea(card, w, CARD_H);
       card.on('pointerup', () => {
         if (this.dragging) return;
         // Bundle-only cosmetics can't be bought/equipped directly — route to the
@@ -305,6 +304,8 @@ export class CosmeticsScene extends Phaser.Scene {
         if (result === 'bought') this.playUnlockFanfare(c, () => this.scene.restart({ tab: this.tab, internal: true }));
         else this.scene.restart({ tab: this.tab, internal: true });
       });
+    } else {
+      card.setSize(w, CARD_H); // not tappable, but still sized like its neighbours
     }
     this.entrance(card, i);
     return card;
@@ -328,10 +329,9 @@ export class CosmeticsScene extends Phaser.Scene {
       fontFamily: THEME.FONT_BODY, fontSize: '13px', color: claimed ? THEME.TEXT_MUTED : '#7affb0', fontStyle: '700',
     }).setOrigin(1, 0.5);
     const card = this.add.container(0, 0, [bg, name, blurb, tag]);
-    card.setSize(w, h);
     if (!claimed) {
       Analytics.track(rewardedOffered('free_fragments')); // offer impression, fires once on render
-      card.setInteractive(new Phaser.Geom.Rectangle(-w / 2, -h / 2, w, h), Phaser.Geom.Rectangle.Contains);
+      setTapArea(card, w, h);
       card.on('pointerup', async () => {
         if (this.dragging) return;
         const earned = await Ads.showRewarded('free_fragments');
@@ -342,6 +342,8 @@ export class CosmeticsScene extends Phaser.Scene {
           this.scene.restart({ tab: 'bundle', internal: true });
         }
       });
+    } else {
+      card.setSize(w, h); // claimed: not tappable, but still sized like its neighbours
     }
     this.entrance(card, i);
     return card;
@@ -372,6 +374,7 @@ export class CosmeticsScene extends Phaser.Scene {
     note?.place(card, h / 2);
     if (v.action === 'buy') {
       setTapArea(card, w, h);
+      if (card.input) card.input.cursor = 'pointer';
       card.on('pointerup', () => void runBuy(this.surface, PACKAGES.REMOVE_ADS, dimmer(card), () => celebrateRemoveAds(this.surface)));
     } else {
       card.setSize(w, h);
@@ -446,6 +449,7 @@ export class CosmeticsScene extends Phaser.Scene {
     note?.place(card, h / 2);
     if (v.action === 'buy') {
       setTapArea(card, w, h);
+      if (card.input) card.input.cursor = 'pointer';
       // Ownership is derived from the entitlement IAP.buy confirmed; a cancel is silent, every other outcome has its copy.
       card.on('pointerup', () => void runBuy(this.surface, b.packageId, dimmer(card), () => {
         claimCollectionRewards();

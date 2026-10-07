@@ -295,10 +295,6 @@ describe('purchaseSignature: what the cards show, as one string', () => {
     iap.isPremium.mockReturnValue(true);
     expect(purchaseSignature(cards)).not.toBe(a);
   });
-
-  it('the same input renders the same signature on both surfaces (one builder)', () => {
-    expect(purchaseSignature([{ packageId: PACKAGES.REMOVE_ADS }])).toBe(purchaseSignature([{ packageId: PACKAGES.REMOVE_ADS }]));
-  });
 });
 
 describe('the redraw poll (review m2, m3): never mid-gesture, never mid-purchase, and it resumes after a scroll', () => {

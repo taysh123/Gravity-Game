@@ -6,6 +6,7 @@ import { THEME } from '../config/theme.config';
 import { themeForWorld } from '../config/worldThemes';
 import { CosmicBackground } from '../entities/CosmicBackground';
 import { Button } from '../ui/Button';
+import { setTapCircle } from '../ui/hitArea';
 import { fadeIn, fadeToScene, warpToScene } from '../utils/transitions';
 import { reducedMotionActive, safeAreaInsetsScaled } from '../utils/a11y';
 import { ProgressStore } from '../utils/ProgressStore';
@@ -13,6 +14,7 @@ import { worldOf } from '../utils/world';
 
 const NODE_GAP = 98;   // vertical spacing between world nodes
 const NODE_R = 23;     // planet node radius
+const NODE_TAP_PAD = 8; // a planet is tappable 8 px past its disc (ui/hitArea.ts setTapCircle)
 const WIND = 64;       // horizontal wind amplitude of the constellation path
 const DRAG_THRESHOLD = 8;
 
@@ -163,16 +165,16 @@ export class WorldMapScene extends Phaser.Scene {
     );
 
     const node = this.add.container(x, y, children);
-    node.setSize(NODE_R * 2, NODE_R * 2);
 
     if (unlocked) {
-      node.setInteractive(new Phaser.Geom.Circle(0, 0, NODE_R + 8), Phaser.Geom.Circle.Contains);
+      setTapCircle(node, NODE_R, NODE_TAP_PAD);
       if (node.input) node.input.cursor = 'pointer';
       node.on('pointerup', () => {
         if (this.scrolled) return;
         warpToScene(this, 'LevelSelectScene', { world: worldId }, accent);
       });
     } else {
+      node.setSize(NODE_R * 2, NODE_R * 2);
       node.setAlpha(0.55);
     }
 

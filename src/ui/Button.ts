@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { SPLASH } from '../config/splash.config';
 import { THEME } from '../config/theme.config';
+import { setTapArea } from './hitArea';
 import { drawIcon, type IconName } from './icons';
 
 export interface ButtonOptions {
@@ -76,14 +77,10 @@ export class Button {
     children.push(text);
 
     this.container = scene.add.container(x, y, children);
-    this.container.setSize(this.w, this.h);
     // Hit area == the visible button (buttons are already ≥44px). No padding:
     // padding made stacked buttons' hit rects overlap, so a later-added neighbour
     // stole the shared strip (taps below PLAY hit the button beneath it).
-    this.container.setInteractive(
-      new Phaser.Geom.Rectangle(-this.w / 2, -this.h / 2, this.w, this.h),
-      Phaser.Geom.Rectangle.Contains,
-    );
+    setTapArea(this.container, this.w, this.h);
     if (this.container.input) this.container.input.cursor = 'pointer';
 
     this.container.on('pointerover', () => {

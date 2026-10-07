@@ -22,6 +22,9 @@ export const THEME = {
   // Interaction — hit areas extend past the visible edge so the whole surface
   // (plus a forgiving margin for finger drift) is tappable.
   HIT_PADDING: 14,
+  LINK_TAP_W: 220, // a text-only link (menu "GRAVITY RUN", end-screen store link) is tappable over 220 x 44, not just its glyphs
+  LINK_TAP_H: 44,
+  TOGGLE_TAP_PAD: 8, // the Settings switch (52x30) is tappable 8 px past its track on every side (ui/hitArea.ts setTapArea)
 
   // Glass surfaces (Phaser fills: color + alpha)
   PANEL_FILL: 0x0c0e1a, // frosted panel base

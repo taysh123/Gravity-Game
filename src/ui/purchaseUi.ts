@@ -4,6 +4,7 @@ import { THEME } from '../config/theme.config';
 import { IAP } from '../services/IAP';
 import { purchaseCardView, purchaseFeedback, restoreFeedback, type CardView, type Feedback } from '../services/purchaseView';
 import { sharedAudio } from '../utils/AudioSynth';
+import { setTapArea } from './hitArea';
 import { showToast, type ToastTone } from './toast';
 
 // Scene-facing glue between IAP (the truth) and the pure card / feedback view-model (services/purchaseView.ts), shared by
@@ -52,7 +53,7 @@ export function showFeedbackToast(scene: Phaser.Scene, fb: Feedback, y?: number)
   if (t) showToast(scene, t.message, { tone: t.tone, y });
 }
 
-// ---- Tags, notes, tap areas ---------------------------------------------------------------------------------------
+// ---- Tags, notes, links -------------------------------------------------------------------------------------------
 
 export function tagFontPx(label: string): number {
   return label.length > PURCHASE_UI.TAG_LONG_LEN ? PURCHASE_UI.TAG_FONT_SMALL_PX : PURCHASE_UI.TAG_FONT_PX;
@@ -62,15 +63,6 @@ export function tagColor(tone: CardView['tone']): string {
   if (tone === 'price') return PURCHASE_UI.PRICE_COLOR;
   if (tone === 'pending') return PURCHASE_UI.PENDING_COLOR;
   return THEME.TEXT_MUTED;
-}
-
-// Make a container tappable over exactly its own size. Phaser tests a container's hit rectangle in a frame whose origin is
-// the container's TOP-LEFT corner (its display origin is half its size), so the rectangle starts at (0, 0): a rectangle
-// centred on the container (-w/2, -h/2) would leave the right half and the bottom half dead and tappable outside the card.
-export function setTapArea(container: Phaser.GameObjects.Container, w: number, h: number): void {
-  container.setSize(w, h);
-  container.setInteractive(new Phaser.Geom.Rectangle(0, 0, w, h), Phaser.Geom.Rectangle.Contains);
-  if (container.input) container.input.cursor = 'pointer';
 }
 
 // A text link with an explicit hit area of w x h (>=44px each way) centred on the label. `onTap` receives the link so the
@@ -87,6 +79,7 @@ export function makeLink(
   label.setOrigin(0.5).setPosition(0, 0);
   const link = scene.add.container(x, y, [label]);
   setTapArea(link, w, h);
+  if (link.input) link.input.cursor = 'pointer';
   link.on('pointerup', () => onTap(link));
   return link;
 }

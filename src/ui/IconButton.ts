@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { THEME } from '../config/theme.config';
+import { setTapArea } from './hitArea';
 import { drawIcon, type IconName } from './icons';
 
 export interface IconButtonOptions {
@@ -32,7 +33,6 @@ export class IconButton {
     const size = Math.max(44, opts.size ?? 46);
     const radius = opts.round ? size / 2 : THEME.RADIUS_SM;
 
-    const half = size / 2;
     this.radius = radius;
     this.size = size;
     this.iconColor = opts.iconColor ?? THEME.ACCENT_CYAN;
@@ -45,14 +45,10 @@ export class IconButton {
     drawIcon(icon, name, opts.iconSize ?? size * 0.5, this.iconColor);
 
     this.container = scene.add.container(x, y, [this.bg, icon]);
-    this.container.setSize(size, size);
     // Hit area == the visible icon button (≥44px). No padding: in the HUD toolbar
     // the 48px buttons sit 52px apart, so a 14px pad made adjacent hit rects
     // overlap and the later-added Settings button stole the Home button's edge.
-    this.container.setInteractive(
-      new Phaser.Geom.Rectangle(-half, -half, size, size),
-      Phaser.Geom.Rectangle.Contains,
-    );
+    setTapArea(this.container, size, size);
     if (this.container.input) this.container.input.cursor = 'pointer';
 
     this.container.on('pointerdown', () => {

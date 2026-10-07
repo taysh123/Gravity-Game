@@ -12,6 +12,7 @@ import { GravityZone } from '../entities/GravityZone';
 import { Magnet } from '../entities/Magnet';
 import { Collectible } from '../entities/Collectible';
 import { drawGlass } from '../ui/glass';
+import { setScrimTapArea, setTapArea } from '../ui/hitArea';
 import { IconButton } from '../ui/IconButton';
 import { safeAreaInsetsScaled } from '../utils/a11y';
 import { PLATFORM } from '../config/platform.config';
@@ -446,7 +447,7 @@ export class EndlessScene extends Phaser.Scene implements Pausable {
     const scrim = this.add.graphics().setScrollFactor(0).setDepth(110);
     scrim.fillStyle(0x000000, THEME.SCRIM_ALPHA);
     scrim.fillRect(0, 0, this.viewW, this.viewH);
-    scrim.setInteractive(new Phaser.Geom.Rectangle(0, 0, this.viewW, this.viewH), Phaser.Geom.Rectangle.Contains);
+    setScrimTapArea(scrim, this.viewW, this.viewH);
     scrim.on('pointerup', () => { if (this.canReturn) this.goHome(); });
 
     const panelW = Math.min(this.viewW * 0.8, 300);
@@ -513,8 +514,7 @@ export class EndlessScene extends Phaser.Scene implements Pausable {
       fontFamily: THEME.FONT_DISPLAY, fontSize: '15px', color: colorHex, fontStyle: '700',
     }).setOrigin(0.5);
     const c = this.add.container(x, y, [bg, txt]).setScrollFactor(0).setDepth(112);
-    c.setSize(width, h);
-    c.setInteractive(new Phaser.Geom.Rectangle(-width / 2, -h / 2, width, h), Phaser.Geom.Rectangle.Contains);
+    setTapArea(c, width, h);
     c.on('pointerup', () => onTap(c));
     return c;
   }
