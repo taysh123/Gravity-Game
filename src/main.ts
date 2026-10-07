@@ -93,19 +93,21 @@ window.visualViewport?.addEventListener('scroll', syncViewport);
 setTimeout(syncViewport, 300);
 setTimeout(syncViewport, 1200);
 
-// First user gesture: resume the (custom) shared AudioContext SYNCHRONOUSLY inside the
-// DOM handler. The Android WebView only unlocks audio when resume() runs inside a real
-// gesture; Phaser dispatches its pointer events during the game step (not the gesture
-// call stack), so resuming from a Phaser input callback leaves the context suspended.
+// Persistent audio unlock: on EVERY gesture, resume the (custom) shared AudioContext SYNCHRONOUSLY inside the DOM
+// handler if it is suspended and audio is wanted (AudioSynth.resumeFromGesture, rule in utils/audioUnlock.ts). The
+// Android WebView only unlocks audio when resume() runs inside a real gesture; Phaser dispatches its pointer events
+// during the game step (not the gesture call stack), so resuming from a Phaser input callback can leave the context
+// suspended. It must be persistent, not one-shot: after a background return (lifecycle suspend) the context is
+// suspended again and only the next gesture can restart it. The first call also creates the context in the gesture.
 const unlockAudio = (): void => {
   try {
-    sharedAudio().resume();
+    sharedAudio().resumeFromGesture();
   } catch {
     // audio unavailable — ignore
   }
 };
-window.addEventListener('pointerdown', unlockAudio, { once: true, capture: true });
-window.addEventListener('touchend', unlockAudio, { once: true, capture: true });
+window.addEventListener('pointerdown', unlockAudio, { capture: true });
+window.addEventListener('touchend', unlockAudio, { capture: true });
 
 // Dev-only handles for automated verification (Playwright). Stripped from prod builds.
 if (import.meta.env.DEV) {

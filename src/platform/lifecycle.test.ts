@@ -326,4 +326,22 @@ describe('lifecycle wiring source guards', () => {
     expect(main).toMatch(/installLifecycle\(game\)/);
     expect(main.match(/installLifecycle\(/g)).toHaveLength(1);
   });
+
+  // P00-T11 review: hidden must always be silent, even when opening the pause overlay throws.
+  it('hidden: audio is suspended BEFORE the pause is requested', () => {
+    const src = code(join(srcRoot, 'platform/lifecycle.ts'));
+    const iSuspend = src.indexOf('sharedAudio().suspend()');
+    const iPause = src.indexOf("requestPause('background')");
+    expect(iSuspend).toBeGreaterThan(-1);
+    expect(iPause).toBeGreaterThan(-1);
+    expect(iSuspend).toBeLessThan(iPause);
+  });
+
+  it('hidden: requestPause runs inside try/catch that reports through Crash and never rethrows', () => {
+    const src = code(join(srcRoot, 'platform/lifecycle.ts'));
+    const m = /try\s*\{\s*scene\.requestPause\('background'\)[\s\S]*?\}\s*catch\s*\(\w+\)\s*\{([\s\S]*?)\r?\n\s*\}\r?\n/.exec(src);
+    expect(m).not.toBeNull();
+    expect(m?.[1]).toMatch(/Crash\.recordError\(/);
+    expect(m?.[1]).not.toMatch(/\bthrow\b/);
+  });
 });

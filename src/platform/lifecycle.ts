@@ -20,6 +20,7 @@ import { PLATFORM } from '../config/platform.config';
 import { fadeToScene } from '../utils/transitions';
 import { sharedAudio } from '../utils/AudioSynth';
 import { SettingsStore } from '../utils/SettingsStore';
+import { Crash } from '../utils/Crash';
 import type { AppBridge } from '../utils/native/app';
 import { routeBack, deriveBackState, type BackAction, type BackState, type SceneSnapshot } from './backRouter';
 import { lifecycleDecision, deriveLifecycleScenes, type LifecycleActions, type Visibility } from './lifecycleDecision';
@@ -181,21 +182,30 @@ function runLifecycle(visibility: Visibility): LifecycleActions | null {
     music: settings.music,
   });
 
-  if (actions.requestPause && scenes.gameplayKey !== null) {
-    const scene = g.scene.getScene(scenes.gameplayKey);
-    if (isPausable(scene)) {
-      scene.requestPause('background');
-      pausePending = true;
-      g.events.once(Phaser.Core.Events.POST_STEP, () => {
-        pausePending = false;
-      });
-    }
-  }
+  // Hidden must always be silent: suspend FIRST, so nothing below (opening the pause overlay) can leave audio playing
+  // behind a hidden app.
   if (actions.suspendAudio) {
     try {
       sharedAudio().suspend();
     } catch {
       // audio unavailable: nothing to suspend
+    }
+  }
+  if (actions.requestPause && scenes.gameplayKey !== null) {
+    const scene = g.scene.getScene(scenes.gameplayKey);
+    if (isPausable(scene)) {
+      try {
+        scene.requestPause('background');
+        pausePending = true;
+        g.events.once(Phaser.Core.Events.POST_STEP, () => {
+          pausePending = false;
+        });
+      } catch (e) {
+        // Audio is already suspended above. Report and carry on (the foreground path still refits and resumes audio);
+        // never rethrow into the visibilitychange / native pause listener. pausePending stays false: no overlay is
+        // coming, so the foreground path must not wait for one.
+        Crash.recordError(e, 'lifecycle.requestPause');
+      }
     }
   }
   if (actions.refreshScale) g.scale.refresh();

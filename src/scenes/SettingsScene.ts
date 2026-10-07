@@ -48,7 +48,15 @@ export class SettingsScene extends Phaser.Scene implements Dismissable {
 
     const s = SettingsStore.get();
     const rows: Row[] = [
-      { icon: 'sound', label: 'Sound', value: s.sound, onChange: (v) => SettingsStore.set('sound', v) },
+      {
+        icon: 'sound',
+        label: 'Sound',
+        value: s.sound,
+        onChange: (v) => {
+          SettingsStore.set('sound', v);
+          sharedAudio().settingsChanged();
+        },
+      },
       {
         icon: 'music',
         label: 'Music',
@@ -59,6 +67,7 @@ export class SettingsScene extends Phaser.Scene implements Dismissable {
           audio.resume();
           if (v) audio.startAmbientPad();
           else audio.stopAmbientPad();
+          audio.settingsChanged();
         },
       },
       { icon: 'haptics', label: 'Haptics', value: s.haptics, onChange: (v) => SettingsStore.set('haptics', v) },

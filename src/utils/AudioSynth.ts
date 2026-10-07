@@ -1,6 +1,7 @@
 // Synthesized Web Audio sounds. Zero assets, zero loading.
 // All tones are soft sine waves at low gain — subtle feedback, not arcade effects.
 import { SettingsStore } from './SettingsStore';
+import { shouldResumeOnGesture } from './audioUnlock';
 
 export class AudioSynth {
   private readonly ctx: AudioContext;
@@ -10,6 +11,10 @@ export class AudioSynth {
   private worldPad: Array<{ osc: OscillatorNode; gain: GainNode }> = [];
   private currentThemeKey: string | null = null; // `${worldId}:${boss}` — continuity within a world
   private suspendPending = false; // suspend() issued and not yet settled (ctx.state still reads 'running')
+  // Intent behind the persistent DOM-gesture re-unlock (main.ts -> resumeFromGesture). True from the start (the first
+  // gesture unlocks a fresh context); false after suspend() (backgrounded / under the pause overlay) and when Sound and
+  // Music are both off; true again only when something requests a resume (CONTINUE / RESTART / HOME, foreground).
+  private audioWanted = true;
 
   constructor(ctx: AudioContext) {
     this.ctx = ctx;
@@ -22,8 +27,10 @@ export class AudioSynth {
 
   // Browsers suspend audio until a user gesture; call from a pointer handler. Also the foreground path after
   // suspend(): ctx.state only flips to 'suspended' once suspend() settles, so a suspend still in flight counts too
-  // (hidden then visible within one task must not leave the context suspended).
+  // (hidden then visible within one task must not leave the context suspended). Records the intent that audio is
+  // wanted, so a refused resume (no DOM gesture on the Android WebView) is retried by the next gesture.
   resume(): void {
+    this.audioWanted = true;
     if (this.ctx.state === 'suspended' || this.suspendPending) {
       this.ctx.resume().catch(() => undefined); // closed context: nothing to resume
     }
@@ -32,7 +39,9 @@ export class AudioSynth {
   // App backgrounded (D-11, P00-T11): drop the hum and suspend the context so nothing sounds while hidden. The ambient
   // pad / world bed oscillators are left in place and continue from where they were on resume(). The hum is cut hard
   // instead of faded: the context clock stops while suspended, so a scheduled fade would be heard after resume.
+  // Clears the intent: no gesture may wake the context until a resume is requested again.
   suspend(): void {
+    this.audioWanted = false;
     this.killHum();
     if (this.ctx.state === 'closed') return;
     this.suspendPending = true;
@@ -42,6 +51,27 @@ export class AudioSynth {
       .finally(() => {
         this.suspendPending = false;
       });
+  }
+
+  // Persistent capture-phase DOM gesture (main.ts): restart a suspended context if audio is wanted. Runs synchronously
+  // in the gesture call stack, which is what the Android WebView requires. Never throws, never touches a closed context.
+  resumeFromGesture(): void {
+    if (shouldResumeOnGesture(this.ctx.state, this.audioWanted)) {
+      this.ctx.resume().catch(() => undefined);
+    }
+  }
+
+  // Sound / Music toggled in Settings: with both off there is nothing to unlock, so a later gesture must not wake the
+  // context. It never turns the intent back on by itself (a toggle under the pause overlay must not un-silence it);
+  // turning something on goes through resume().
+  settingsChanged(): void {
+    const s = SettingsStore.get();
+    if (!s.sound && !s.music) this.audioWanted = false;
+  }
+
+  // Whether audio is currently wanted (see audioWanted). For tests and diagnostics.
+  get wantsAudio(): boolean {
+    return this.audioWanted;
   }
 
   // AudioContext state ('suspended' | 'running' | 'closed') — for the gesture-unlock check.
