@@ -27,9 +27,15 @@ export interface SafeAreaInsets {
   left: number;
 }
 
-// Reads the CSS env(safe-area-inset-*) values via a one-off probe element so
-// content stays clear of notches / home indicators. Falls back to zeros on
-// platforms that don't expose them (most desktop browsers).
+// Reads the safe-area insets via a one-off probe element so content stays clear of
+// notches, camera cutouts, status/navigation bars and home indicators. On Android the
+// Capacitor SystemBars plugin (insetsHandling 'css') injects --safe-area-inset-* on the
+// page; elsewhere (iOS, browsers) the standard env(safe-area-inset-*) is used. Falls back
+// to zeros on platforms that expose neither (most desktop browsers).
+function insetExpr(edge: 'top' | 'right' | 'bottom' | 'left'): string {
+  return `var(--safe-area-inset-${edge}, env(safe-area-inset-${edge}, 0px))`;
+}
+
 export function safeAreaInsets(): SafeAreaInsets {
   const zero: SafeAreaInsets = { top: 0, right: 0, bottom: 0, left: 0 };
   if (typeof document === 'undefined') return zero;
@@ -38,10 +44,10 @@ export function safeAreaInsets(): SafeAreaInsets {
   probe.style.position = 'fixed';
   probe.style.visibility = 'hidden';
   probe.style.pointerEvents = 'none';
-  probe.style.top = 'env(safe-area-inset-top, 0px)';
-  probe.style.right = 'env(safe-area-inset-right, 0px)';
-  probe.style.bottom = 'env(safe-area-inset-bottom, 0px)';
-  probe.style.left = 'env(safe-area-inset-left, 0px)';
+  probe.style.top = insetExpr('top');
+  probe.style.right = insetExpr('right');
+  probe.style.bottom = insetExpr('bottom');
+  probe.style.left = insetExpr('left');
   document.body.appendChild(probe);
   const cs = getComputedStyle(probe);
   const insets: SafeAreaInsets = {

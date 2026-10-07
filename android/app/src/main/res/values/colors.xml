@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Game background (PHYSICS.COLOR_BACKGROUND). Used as the window background so no white band shows in the
+         system-bar areas or before the first frame, even when the phone is in light mode. -->
+    <color name="game_background">#0d0d1a</color>
+</resources>

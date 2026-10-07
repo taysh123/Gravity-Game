@@ -2,7 +2,7 @@
 
 > **The single source of truth for project state.** The Facts block is machine-generated; every other section is
 > edited by hand at the end of each task. Anything that contradicts this file is stale.
-> Last hand-edited **2026-10-07** · Position: **Step 1 complete except P00-T08 (AdMob 8.2.1 soak, deferred to >= 2026-10-13)** of the [execution order](roadmap/EXECUTION-ORDER.md); Step 2 is next (P00-T01 to P00-T07 done).
+> Last hand-edited **2026-10-07** · Position: **Step 1 complete except P00-T08 (AdMob 8.2.1 soak, deferred to >= 2026-10-13)** of the [execution order](roadmap/EXECUTION-ORDER.md); Step 2 is in progress (P00-T01 to P00-T07 and P00-T09 done).
 > Plan of record: [MASTER-ROADMAP](roadmap/MASTER-ROADMAP.md) · [EXECUTION-ORDER](roadmap/EXECUTION-ORDER.md) · [DECISIONS](roadmap/DECISIONS.md) (amendments override entry bodies).
 > Working title: **Gravity Flow** by True Story Labs. Package id `com.truestorylabs.gravityflow` is permanent.
 
@@ -18,7 +18,7 @@
 | Other content | 8 daily levels · 20 run chunks · 14 achievements · 28 cosmetics · 3 bundles |
 | Scenes registered | 13 |
 | Level files | 163 on disk · 13 retired (6, 22, 31, 35, 37, 39, 40, 45, 48, 55, 56, 63, 64) |
-| Tests | 30 files / 291 tests |
+| Tests | 31 files / 305 tests |
 | package.json version | 1.0.0 |
 | androidBuild | 1 |
 | Derived versionName / versionCode | 1.0.0 / 1000001 |
@@ -40,7 +40,7 @@ Regenerate with `npm run facts`; verify with `npm run facts:check` (CI runs the 
 ### Milestones ([definitions](roadmap/MASTER-ROADMAP.md))
 | Milestone | Contents | Unlocks | Tag | State |
 |---|---|---|---|---|
-| **M0 Truthful Build** | P0 + P1 | Internal-track upload (versionCode >= 1000001); owner device validation | `v1.0.0-rc.2` | Not reached. Step 1 complete except P00-T08 (AdMob 8.2.1 soak, deferred to >= 2026-10-13); Step 2 platform contract next |
+| **M0 Truthful Build** | P0 + P1 | Internal-track upload (versionCode >= 1000001); owner device validation | `v1.0.0-rc.2` | Not reached. Step 1 complete except P00-T08 (AdMob 8.2.1 soak, deferred to >= 2026-10-13); Step 2 platform contract in progress (P00-T09 static half done: manifest, theme, WebView floor, system bars) |
 | **M1 Closed Beta** | M0 + P2 + P3 + P4-alpha + P5-A | Closed test (12 testers x 14 days if required), working title | `v1.0.0-rc.3` | Not started |
 | **M2 Launch Candidate** | M1 + P4 + P5 + P6/P7 core + P11 (rename applied) | Production staged rollout | `v1.0.0-rc.4` | Not started |
 | **M3 Live 1.x** | P8, P9, P10, P12 optimisation, iOS track | Growth and live ops by data | `v1.0.0` at launch (Step 19) | Not started |
@@ -63,8 +63,8 @@ Regenerate with `npm run facts`; verify with `npm run facts:check` (CI runs the 
 | Data Safety form + privacy policy sign-off (drafts land in P0 Step 5) | Owner | before M2 | PENDING |
 
 ## Next 5 actions
-Step 0 complete. Step 1 complete except P00-T08 (AdMob 8.2.1 soak, deferred to >= 2026-10-13); done so far: P00-T01…T07 (CI v2, Capacitor 8.5.2 family, exact pins). AdMob stays pinned at exactly 8.0.0 until the soak.
-1. **Step 2: P00-T09…T13** — Manifest, theme, WebView floor, system bars, back router, PauseScene (wires `@capacitor/app` and `@capacitor/preferences`, installed in T07 but not yet imported).
+Step 0 complete. Step 1 complete except P00-T08 (AdMob 8.2.1 soak, deferred to >= 2026-10-13); done so far: P00-T01…T07 (CI v2, Capacitor 8.5.2 family, exact pins) and P00-T09 (manifest, theme, WebView floor, system bars; device checks pending in the M0 session). AdMob stays pinned at exactly 8.0.0 until the soak.
+1. **Step 2: P00-T10…T13** — Back router, PauseScene, lifecycle/audio suspend, backup rules (wires `@capacitor/app` and `@capacitor/preferences`, installed in T07 but not yet imported). P00-T09 is done.
 2. **P00-T08** — AdMob 8.2.1 soak commit, deferred until >= 2026-10-13.
 3. **Step 3: P00-T14…T17** — Purchases (D-09): plugin config, ids, products, license testers.
 4. **Step 4: P00-T18…T20** — Consent-first boot and ad plumbing (D-10, D-11).
@@ -81,7 +81,7 @@ Top blockers from the [state audit](audit/2026-10-07/STATE-AUDIT.md) (section B.
 | B-05 | P0 | Google test AdMob ids shipped; no real AdMob/RevenueCat ids anywhere | [Steps 3-4](roadmap/phases/P00-foundation.md) + owner gates |
 | B-06 | P0 | Lazy consent, analytics before consent, no privacy-options entry, incomplete Data Safety | [Steps 4-5](roadmap/phases/P00-foundation.md) |
 | B-07 | P0 | Misleading "leaderboard" claim in the store listing (metadata policy) | [Step 5](roadmap/phases/P00-foundation.md) |
-| B-08 | P1 | Android Back exits mid-level; no pause or audio suspend on background; no portrait lock; no `VIBRATE` | [Step 2](roadmap/phases/P00-foundation.md) |
+| B-08 | P1 | Android Back exits mid-level; no pause or audio suspend on background (portrait lock and `VIBRATE` fixed in P00-T09) | [Step 2](roadmap/phases/P00-foundation.md) |
 | B-09 | P1 | Level clock is wall-clock (Settings, background and ads drain timers and par) | [Step 6](roadmap/phases/P01-physics.md) |
 | B-10 | P1 | An uncaught frame error freezes the game permanently | [Step 5](roadmap/phases/P00-foundation.md) |
 | B-11 | P1 | Web build on Vercel grants paid items for free (IAP stub) | [Step 3](roadmap/phases/P00-foundation.md) |

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Update needed</title>
+<!--
+  Capacitor loads this page (server.errorPath) instead of the game when the device's Android System WebView is older
+  than android.minWebViewVersion (87, capacitor.config.ts). The game bundle is es2020 and cannot run on that WebView,
+  so this file must stay plain ES5, self-contained (no external scripts, styles or fonts), and must not use any
+  Capacitor plugin (none are available on this page). src/config/capacitorConfig.test.ts enforces this.
+-->
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; background: #0d0d1a; color: #e8ecff; }
+  body {
+    font-family: sans-serif;
+    display: -webkit-flex;
+    display: flex;
+    -webkit-align-items: center;
+    align-items: center;
+    -webkit-justify-content: center;
+    justify-content: center;
+    text-align: center;
+  }
+  .card { max-width: 420px; padding: 24px; }
+  h1 { margin: 0 0 12px; font-size: 24px; letter-spacing: 1px; color: #ffffff; }
+  p { margin: 0 0 16px; font-size: 16px; line-height: 1.5; color: #b9c0e0; }
+  .btn {
+    display: block;
+    box-sizing: border-box;
+    min-height: 48px;
+    padding: 14px 20px;
+    margin: 24px 0 12px;
+    border-radius: 16px;
+    background: #4fd1ff;
+    color: #0d0d1a;
+    font-size: 16px;
+    font-weight: bold;
+    text-decoration: none;
+  }
+  .alt { display: block; padding: 12px; font-size: 14px; color: #8fa0ff; }
+  .meta { font-size: 13px; color: #7b83a8; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>Update needed</h1>
+  <p>GRAVITY FLOW needs a newer Android System WebView to run on this device. Updating it is free and takes a minute.</p>
+  <a class="btn" href="market://details?id=com.google.android.webview">Update Android System WebView</a>
+  <a class="alt" href="https://play.google.com/store/apps/details?id=com.google.android.webview">Open in the browser instead</a>
+  <p class="meta">Your WebView: <span id="v">unknown</span> &middot; needed: 87 or newer.<br>When it has updated, reopen the game.</p>
+</div>
+<script>
+(function () {
+  var m = /Chrome\/(\d+)/.exec(navigator.userAgent || '');
+  var el = document.getElementById('v');
+  if (m && el) { el.innerHTML = m[1]; }
+})();
+</script>
+</body>
+</html>

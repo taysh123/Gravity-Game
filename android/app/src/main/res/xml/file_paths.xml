@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
-    <external-path name="my_images" path="." />
+    <!-- Only the app cache is shareable (Share with files, written under Directory.Cache). The old broad
+         <external-path path="."/> exposed all of shared storage through the FileProvider and is removed. -->
     <cache-path name="my_cache_images" path="." />
 </paths>

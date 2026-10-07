@@ -13,6 +13,9 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
+        <!-- Dark window background: SystemBars paints the decor view with this, and the DayNight parent would
+             otherwise give white in light mode (a white strip behind the status/navigation bars). -->
+        <item name="android:windowBackground">@color/game_background</item>
     </style>
 
 
