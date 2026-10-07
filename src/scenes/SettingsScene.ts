@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import { THEME } from '../config/theme.config';
 import { PACKAGES, PURCHASE_COPY, PURCHASE_UI } from '../config/monetization.config';
+import { PRIVACY_UI } from '../config/consent.config';
+import { PLATFORM } from '../config/platform.config';
 import { Toggle } from '../ui/Toggle';
 import { Button } from '../ui/Button';
 import { IconButton } from '../ui/IconButton';
@@ -25,6 +27,9 @@ import {
   type ToastMessage,
 } from '../ui/purchaseUi';
 import { showToast } from '../ui/toast';
+import { Analytics } from '../services/Analytics';
+import { openPrivacyChoices } from '../services/bootServices';
+import { Consent } from '../services/Consent';
 import type { Dismissable } from '../platform/pausable';
 
 interface Row {
@@ -34,6 +39,22 @@ interface Row {
   onChange: (v: boolean) => void;
 }
 
+// "Privacy choices" is offered only when UMP's requirement status is REQUIRED (Consent.current() is null on the web, where it never is).
+function privacyChoicesShown(): boolean {
+  return Consent.current()?.privacyOptionsRequired === true;
+}
+
+// Opens the hosted privacy policy. On Android this reaches the system browser: window.open() falls through to the WebView navigation,
+// which Capacitor's BridgeWebViewClient.shouldOverrideUrlLoading hands to Bridge.launchIntent, and a host other than the app's own is
+// started as an ACTION_VIEW intent (node_modules/@capacitor/android .../Bridge.java launchIntent). On the web it opens a new tab.
+function openPrivacyPolicy(): void {
+  try {
+    window.open(PLATFORM.PRIVACY_POLICY_URL, '_blank');
+  } catch {
+    // no window to open (blocked): nothing to do, the policy is also linked from the store listing
+  }
+}
+
 // Settings overlay launched on top of a paused caller scene (game or menu).
 // Lightweight glass panel: Sound / Music / Haptics / Reduce Motion + close.
 export class SettingsScene extends Phaser.Scene implements Dismissable {
@@ -41,6 +62,7 @@ export class SettingsScene extends Phaser.Scene implements Dismissable {
   private closing = false;
   private readonly gate = { purchasing: false }; // a purchase / restore started here is running: taps are ignored, no redraw
   private toastY = 0; // where this overlay's toasts sit (just under the panel)
+  private resetArm: Phaser.Time.TimerEvent | null = null; // "Reset analytics data" is armed (first tap done) until this timer fires
   // What the shared purchase flow (ui/purchaseUi.ts) needs from this scene.
   private readonly surface: PurchaseSurface = {
     scene: this,
@@ -58,6 +80,7 @@ export class SettingsScene extends Phaser.Scene implements Dismissable {
     this.caller = data?.caller ?? 'MainMenuScene';
     this.closing = false; // reset: this scene is reused (singleton) across re-opens
     this.gate.purchasing = false;
+    this.resetArm = null; // a restart destroyed the scene's timers with it
     const quiet = data?.quiet ?? false; // a silent redraw (same panel, new purchase state): no pop-in
     // Render above the launching scene regardless of scene-list order
     // (the list places this before GameScene).
@@ -137,7 +160,12 @@ export class SettingsScene extends Phaser.Scene implements Dismissable {
     const removeAdsGap = 14;
     const restoreH = 30;
     const extrasH = dividerGapTop + dividerGapBottom + removeAdsH + (web ? PURCHASE_UI.SETTINGS_WEB_BOTTOM_PAD : removeAdsGap + restoreH);
-    const panelH = headerH + rows.length * rowH + extrasH + 18;
+    // Privacy entry points (D-10): "Privacy choices" only when UMP says the requirement is REQUIRED (never on the web, which has
+    // no consent layer), always "Privacy policy" and "Reset analytics data". Each is a PRIVACY_UI.LINK_H (>= 44px) tap row.
+    const privacyChoices = privacyChoicesShown();
+    const privacyRowCount = (privacyChoices ? 1 : 0) + 2;
+    const privacyH = PRIVACY_UI.SECTION_DIVIDER_GAP + 1 + PRIVACY_UI.SECTION_GAP_TOP + privacyRowCount * PRIVACY_UI.LINK_H;
+    const panelH = headerH + rows.length * rowH + extrasH + privacyH + 18;
     this.toastY = cy + panelH / 2 + PURCHASE_UI.SETTINGS_TOAST_BELOW_PANEL;
     const left = -panelW / 2;
     const top = -panelH / 2;
@@ -266,6 +294,24 @@ export class SettingsScene extends Phaser.Scene implements Dismissable {
       );
     }
 
+    // Privacy section: a hairline, then the rows edge to edge so no two tap areas overlap.
+    let privacyY = top + headerH + rows.length * rowH + extrasH + PRIVACY_UI.SECTION_DIVIDER_GAP; // extrasH ends where the store rows end
+    const privacyDivider = this.add.graphics();
+    privacyDivider.lineStyle(1, THEME.HAIRLINE, THEME.HAIRLINE_ALPHA);
+    privacyDivider.lineBetween(left + 22, privacyY, left + panelW - 22, privacyY);
+    card.add(privacyDivider);
+    privacyY += 1 + PRIVACY_UI.SECTION_GAP_TOP;
+    const privacyLabel = (text: string): Phaser.GameObjects.Text =>
+      this.add.text(0, 0, text, { fontFamily: THEME.FONT_BODY, fontSize: `${PRIVACY_UI.FONT_PX}px`, color: THEME.TEXT_MUTED, fontStyle: '600' });
+    const addPrivacyRow = (label: Phaser.GameObjects.Text, onTap: (link: Phaser.GameObjects.Container) => void): void => {
+      card.add(makeLink(this, 0, privacyY + PRIVACY_UI.LINK_H / 2, label, PRIVACY_UI.LINK_W, PRIVACY_UI.LINK_H, onTap));
+      privacyY += PRIVACY_UI.LINK_H;
+    };
+    if (privacyChoices) addPrivacyRow(privacyLabel(PRIVACY_UI.LABEL_CHOICES), (link) => void this.runPrivacyChoices(link));
+    addPrivacyRow(privacyLabel(PRIVACY_UI.LABEL_POLICY), () => openPrivacyPolicy());
+    const resetLabel = privacyLabel(PRIVACY_UI.LABEL_RESET);
+    addPrivacyRow(resetLabel, () => this.tapReset(resetLabel));
+
     // The panel body swallows taps: only the scrim OUTSIDE the panel closes the overlay. The card is interactive over the panel's
     // rectangle but has no handler; its controls are children of it, and a child sorts above its parent container, so they still
     // get their own taps. Without this, a tap on blank panel space (between two rows) fell through to the scrim and closed Settings.
@@ -278,10 +324,60 @@ export class SettingsScene extends Phaser.Scene implements Dismissable {
 
     // Offerings arrive, a pending payment completes (listener / foreground), a pending marker times out: redraw only when
     // what the row shows changed, never mid-purchase and never between a press and its release.
-    startPurchasePoll(this.surface, () => purchaseSignature([{ packageId: PACKAGES.REMOVE_ADS }]), () => this.surface.redraw());
+    // The "Privacy choices" row appears when the consent answer arrives after Settings opened, so its visibility is part of the signature.
+    startPurchasePoll(
+      this.surface,
+      () => `${purchaseSignature([{ packageId: PACKAGES.REMOVE_ADS }])}|${privacyChoicesShown()}`,
+      () => this.surface.redraw(),
+    );
     if (data?.toast) showToast(this, data.toast.message, { tone: data.toast.tone, y: this.toastY });
 
     this.input.keyboard?.once('keydown-ESC', () => this.close());
+  }
+
+  // "Privacy choices": the UMP privacy options form, then the answer is applied (analytics consent, ad gate). The purchase gate
+  // is held for the duration so the poll cannot redraw the panel under the native form; afterwards a quiet redraw refreshes it.
+  private async runPrivacyChoices(link: Phaser.GameObjects.Container): Promise<void> {
+    if (this.closing || this.gate.purchasing) return;
+    this.gate.purchasing = true;
+    link.setAlpha(PURCHASE_UI.BUSY_ALPHA);
+    try {
+      await openPrivacyChoices();
+    } finally {
+      this.gate.purchasing = false;
+    }
+    if (this.closing || !this.scene.isActive()) return;
+    this.surface.redraw();
+  }
+
+  // "Reset analytics data": an in-game two-tap confirm (native dialogs are unreliable in the WebView). The first tap arms the row for
+  // PRIVACY_UI.RESET_CONFIRM_MS and changes its label; the second tap inside the window runs it; an armed row that is left alone
+  // quietly disarms.
+  private tapReset(label: Phaser.GameObjects.Text): void {
+    if (this.closing) return;
+    if (!this.resetArm) {
+      label.setText(PRIVACY_UI.LABEL_RESET_CONFIRM).setColor(PRIVACY_UI.CONFIRM_COLOR);
+      this.resetArm = this.time.delayedCall(PRIVACY_UI.RESET_CONFIRM_MS, () => {
+        this.resetArm = null;
+        label.setText(PRIVACY_UI.LABEL_RESET).setColor(THEME.TEXT_MUTED);
+      });
+      return;
+    }
+    this.resetArm.remove(false);
+    this.resetArm = null;
+    label.setText(PRIVACY_UI.LABEL_RESET).setColor(THEME.TEXT_MUTED);
+    void this.runReset();
+  }
+
+  private async runReset(): Promise<void> {
+    let failed = false;
+    try {
+      await Analytics.resetData();
+    } catch {
+      failed = true;
+    }
+    if (this.closing || !this.scene.isActive()) return;
+    showToast(this, failed ? PRIVACY_UI.TOAST_RESET_FAILED : PRIVACY_UI.TOAST_RESET_DONE, { tone: failed ? 'error' : 'info', y: this.toastY });
   }
 
   // Public: the Android Back router closes this overlay through the Dismissable contract (src/platform/lifecycle.ts).
