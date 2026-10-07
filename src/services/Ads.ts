@@ -7,16 +7,25 @@
 // reloads (localStorage) so a cold start never re-arms a fresh player's cooldown.
 // Analytics events are emitted on both the show and every suppression.
 //
-// NOTE: a Capacitor registerPlugin() proxy is thenable, so `ensureAdMob()` must NOT
-// return the proxy (that would invoke proxy.then -> "AdMob.then is not implemented").
+// Consent-first (D-10, P00-T18): this module never asks for consent and never initialises the SDK on its own. bootServices runs
+// UMP (services/Consent.ts), applies the outcome to Analytics, and calls Ads.init(outcome) ONLY when UMP says canRequestAds.
+// Until that init has succeeded, every native ad request here is refused as not ready: no prepare, no show, no UMP, no
+// initialize. Ads.revoke() closes the gate again when the player withdraws consent in Settings > Privacy choices.
+// D-25 / A-07: initialize() gets maxAdContentRating ParentalGuidance and no child-directed or under-age tag at all.
+// (Preload, watchdog and readiness plumbing is P00-T19.)
+//
+// NOTE: a Capacitor registerPlugin() proxy is thenable, so the init promise must NOT
+// resolve to the proxy (that would invoke proxy.then -> "AdMob.then is not implemented").
 // It resolves to a boolean; callers use the module-scoped `admob`.
 import { Capacitor } from '@capacitor/core';
 import { IAP } from './IAP';
-import { ADMOB } from '../config/monetization.config';
+import { ADMOB, ADMOB_TARGETING } from '../config/monetization.config';
+import { UMP_DEBUG } from '../config/consent.config';
 import { Analytics } from './Analytics';
 import { rewardedShown, rewardedEarned, interstitialShown, interstitialSuppressed } from './analyticsEvents';
+import type { ConsentOutcome } from './consentState';
 import { interstitialDecision } from './interstitial';
-import type { AdMobPlugin } from './native/admob';
+import type { AdMobInitializeOptions, AdMobPlugin } from './native/admob';
 import { Saves } from '../platform/saves';
 
 // Persisted cooldown — survives a reload/cold start, unlike the old in-memory
@@ -57,37 +66,67 @@ const sessionStartMs = Date.now();
 let sessionLevels = 0;
 
 let admob: AdMobPlugin | null = null;
-let initStarted = false;
-// Resolves true once the native plugin is available. Does NOT return the proxy.
-async function ensureAdMob(): Promise<boolean> {
-  if (!Capacitor.isNativePlatform()) return false;
-  if (initStarted) return admob !== null;
-  initStarted = true;
-  try {
-    const m = await import('./native/admob');
-    const a = m.AdMob;
-    // UMP consent (GDPR/EEA) BEFORE initialize. Best-effort + non-blocking: any
-    // failure, NOT_REQUIRED, or an unconfigured form simply falls through to init.
-    // The actual form is configured in the AdMob "Privacy & messaging" console.
-    try {
-      const consent = await a.requestConsentInfo();
-      if (consent.status === 'REQUIRED' && consent.isConsentFormAvailable) {
-        await a.showConsentForm();
-      }
-    } catch {
-      // consent unavailable/not set up — proceed; ads SDK still initializes
-    }
-    await a.initialize(); // a method CALL is fine (real promise)
-    admob = a;
-  } catch {
-    admob = null; // plugin unavailable — never block gameplay
+let initPromise: Promise<boolean> | null = null;
+// True from Ads.init(outcome) with canRequestAds until Ads.revoke(). The SDK being initialised is not enough on its own: after the
+// player withdraws consent the SDK stays up for the session, but no further ad is requested or shown.
+let consented = false;
+
+// What AdMob.initialize() is told. D-25: no tagForChildDirectedTreatment / tagForUnderAgeOfConsent keys at all (13+ audience).
+// initializeForTesting only in a debug-geography build, with the test device ids that build was made with.
+function initializeOptions(): AdMobInitializeOptions {
+  const options: AdMobInitializeOptions = { maxAdContentRating: ADMOB_TARGETING.MAX_AD_CONTENT_RATING };
+  if (UMP_DEBUG.geography !== undefined) {
+    options.initializeForTesting = true;
+    options.testingDevices = [...UMP_DEBUG.testDeviceIds];
   }
-  return admob !== null;
+  return options;
+}
+
+// Single-flight SDK init. Resolves true once initialize() answered. Does NOT return the proxy. A failure is not memoized, so a
+// later Ads.init (e.g. after Privacy choices) may try again; it never throws and never blocks gameplay.
+function initSdk(): Promise<boolean> {
+  if (!initPromise) {
+    initPromise = (async () => {
+      try {
+        const m = await import('./native/admob');
+        await m.AdMob.initialize(initializeOptions()); // a method CALL is fine (real promise)
+        admob = m.AdMob;
+      } catch {
+        admob = null; // plugin unavailable — never block gameplay
+        initPromise = null;
+      }
+      return admob !== null;
+    })();
+  }
+  return initPromise;
+}
+
+// May a native ad be requested right now? Consent says yes AND the SDK came up.
+function adsReady(): boolean {
+  return Capacitor.isNativePlatform() && consented && admob !== null;
 }
 
 export const Ads = {
+  // Called by bootServices after consent resolved, and only when the outcome allows ads (also by "Privacy choices" if the player
+  // grants consent later). Idempotent. On the web there is nothing to initialise.
+  async init(outcome: ConsentOutcome): Promise<void> {
+    if (!outcome.canRequestAds) {
+      consented = false;
+      return;
+    }
+    if (!Capacitor.isNativePlatform()) return;
+    consented = true;
+    await initSdk();
+  },
+
+  // The player withdrew consent (Settings > Privacy choices): stop requesting and showing ads for the rest of the session.
+  revoke(): void {
+    consented = false;
+  },
+
   isRewardedReady(): boolean {
-    return true; // web stub; native prepares on demand in showRewarded()
+    // Web stub: always. Native: only once consent allowed ads and the SDK is up (P00-T19 refines this to the real cache state).
+    return !Capacitor.isNativePlatform() || adsReady();
   },
 
   // Resolves true if the player earned the reward. Web stub grants it.
@@ -96,15 +135,18 @@ export const Ads = {
   // per-surface in analytics (Wave 3 Task 2). This is the ONLY call site for
   // rewardedShown/rewardedEarned, so every caller gets the attribution for free.
   async showRewarded(source: string): Promise<boolean> {
+    // Consent gate: before a successful Ads.init a native request is refused as not ready, with no event and no native call.
+    if (Capacitor.isNativePlatform() && !adsReady()) return false;
     Analytics.track(rewardedShown(source));
     if (!Capacitor.isNativePlatform()) {
       Analytics.track(rewardedEarned(source));
       return true;
     }
-    if (!(await ensureAdMob()) || !admob) return false;
+    const ad = admob;
+    if (!ad) return false;
     try {
-      await admob.prepareRewardVideoAd({ adId: ADMOB.rewardedAdId });
-      const reward = await admob.showRewardVideoAd();
+      await ad.prepareRewardVideoAd({ adId: ADMOB.rewardedAdId });
+      const reward = await ad.showRewardVideoAd();
       const earned = reward != null;
       if (earned) Analytics.track(rewardedEarned(source));
       return earned;
@@ -138,10 +180,11 @@ export const Ads = {
     persistLastShownMs(now); // pre-native-guard, matching the old pre-guard write — the
     // cap must reflect an "eligible" moment even where no real ad can show (web).
     if (!Capacitor.isNativePlatform()) return;
-    if (!(await ensureAdMob()) || !admob) return;
+    const ad = admob;
+    if (!adsReady() || !ad) return; // consent gate: no request before Ads.init succeeded
     try {
-      await admob.prepareInterstitial({ adId: ADMOB.interstitialAdId });
-      await admob.showInterstitial();
+      await ad.prepareInterstitial({ adId: ADMOB.interstitialAdId });
+      await ad.showInterstitial();
       Analytics.track(interstitialShown());
     } catch {
       // ad failed to load/show — silently skip; never block gameplay

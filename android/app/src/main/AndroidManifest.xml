@@ -27,6 +27,18 @@
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-3940256099942544~3347511713" />
 
+        <!-- Consent-first Firebase (D-10, P00-T18). Firebase starts with every Consent Mode default DENIED, with automatic screen
+             reporting off and with Crashlytics collection off, so nothing is stored, linked or sent before the app has the UMP
+             outcome. src/services/bootServices.ts then writes the four consent types (Analytics.applyConsent) and turns
+             Crashlytics collection on (Crash.enable, whatever the outcome: D-10.5, pending the legal check in docs/STATUS.md).
+             src/config/manifestConsent.test.ts pins all six values; the merged manifest is checked by V10. -->
+        <meta-data android:name="google_analytics_default_allow_analytics_storage" android:value="false" />
+        <meta-data android:name="google_analytics_default_allow_ad_storage" android:value="false" />
+        <meta-data android:name="google_analytics_default_allow_ad_user_data" android:value="false" />
+        <meta-data android:name="google_analytics_default_allow_ad_personalization_signals" android:value="false" />
+        <meta-data android:name="google_analytics_automatic_screen_reporting_enabled" android:value="false" />
+        <meta-data android:name="firebase_crashlytics_collection_enabled" android:value="false" />
+
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
             android:name=".MainActivity"

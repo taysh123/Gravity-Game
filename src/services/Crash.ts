@@ -8,6 +8,10 @@
 // become a promise resolution value (return it from an async fn / await it /
 // Promise.resolve it) — that would invoke proxy.then -> "not implemented on android".
 // `ensure()` therefore resolves to a boolean; callers use the module-scoped `plugin`.
+//
+// Consent-first (D-10.5): the manifest sets firebase_crashlytics_collection_enabled=false, so Crashlytics keeps what it records on
+// the device and sends nothing. Loading the plugin (init, log, recordError) never changes that. Only enable() turns collection on;
+// bootServices calls it once consent has resolved, whatever the outcome (the legal check on that default is a STATUS gate).
 import { Capacitor } from '@capacitor/core';
 
 type Crashlytics = {
@@ -18,18 +22,18 @@ type Crashlytics = {
 
 let plugin: Crashlytics | null = null;
 let ready: Promise<boolean> | null = null;
+let enableRequested = false;
 
 // Resolves true once the native plugin is available. Does NOT return the proxy.
-// The in-flight promise is memoized, so every caller (init, log, recordError) waits on the same load instead of
-// seeing a half-initialised `plugin === null` and dropping its report. A failed load is not retried.
+// The in-flight promise is memoized, so every caller (init, log, recordError, enable) waits on the same load instead of
+// seeing a half-initialised `plugin === null` and dropping its report. A failed load is not retried. It does NOT enable
+// collection: that is enable()'s job, after consent.
 function ensure(): Promise<boolean> {
   if (!ready) {
     ready = (async () => {
       try {
         const m = await import('./native/firebaseCrashlytics');
-        const p = m.FirebaseCrashlytics as unknown as Crashlytics;
-        await p.setEnabled({ enabled: true }); // a method CALL is fine (real promise)
-        plugin = p;
+        plugin = m.FirebaseCrashlytics as unknown as Crashlytics;
       } catch {
         plugin = null; // unavailable — fail silent
       }
@@ -50,6 +54,16 @@ export const Crash = {
         Crash.recordError(e.reason, 'unhandledrejection'),
       );
     }
+  },
+
+  // Turns Crashlytics collection on (D-10.5). Called by bootServices after consent has resolved, in every outcome. Idempotent: the
+  // native call is made once. Never throws; a native failure leaves collection off (the manifest default).
+  enable(): void {
+    if (!Capacitor.isNativePlatform() || enableRequested) return;
+    enableRequested = true;
+    void ensure().then((ok) => {
+      if (ok) plugin?.setEnabled({ enabled: true }).catch(() => {});
+    });
   },
 
   log(message: string): void {

@@ -3,6 +3,7 @@ import { IMAGES } from '../config/assets';
 import { Analytics } from '../services/Analytics';
 import { sessionStart } from '../services/analyticsEvents';
 import { Saves } from '../platform/saves';
+import { bootServices } from '../services/bootServices';
 
 // V19: the boot time hydrate ADDS, i.e. how long Boot still waited for it after
 // the fonts were ready (about 0 when hydrate settled first). A User Timing entry
@@ -40,6 +41,10 @@ export class BootScene extends Phaser.Scene {
     // synchronously, so it must hold the restored data before any menu reads it.
     // Neither promise rejects; the catch is belt-and-braces so Boot always ends.
     const fontsReady = this.loadFonts().then(() => performance.now());
+    // Consent-first service boot (D-10): consent -> analytics consent -> crash reporting -> ads, once the saves are hydrated
+    // (Saves.hydrate() is memoized: this is the promise main.ts started). Deliberately NOT awaited and not tied to the fonts: the
+    // menu never waits on a consent round trip or a native form.
+    void Saves.hydrate().then(() => bootServices());
     void Promise.all([fontsReady, Saves.hydrate()])
       .then(([fontsAt]) => traceSavesWait(fontsAt))
       .catch(() => undefined)
