@@ -30,7 +30,8 @@
 // is still not visible after the re-read is 'pending' with a marker too (review M5): the store took the payment.
 // Pending markers are cleared per product only: when the product turns owned, after the TTL, or by an explicit
 // "Check status" restore of that product (review M2). Never a blanket clear.
-// Web: production resolves 'unavailable' and grants nothing (A.13); DEV keeps a stub that writes the snapshot.
+// Web (dev and production alike): buy and restore resolve 'unavailable' and nothing is ever granted (A.13); the SDK is
+// never loaded and the UI says "Available in the Android app". There is no web grant path at all.
 import { Capacitor } from '@capacitor/core';
 import type { CustomerInfo, LOG_LEVEL, MakePurchaseResult, PurchasesOfferings, PurchasesPlugin } from '@revenuecat/purchases-capacitor';
 import { PURCHASE_FLOW, REVENUECAT } from '../config/monetization.config';
@@ -66,14 +67,17 @@ import {
   withPending,
   withoutPendingFor,
   type CustomerInfoLike,
-  type Entitlement,
   type EntitlementSnapshot,
   type ProductRow,
   type ReconcileMode,
   type SilentRestoreLimits,
   type SilentRestoreResult,
 } from './entitlements';
-import type { StoreStatus } from './purchaseView';
+import type { PurchaseOutcome, RestoreResult, StoreStatus } from './purchaseTypes';
+
+// The outcome vocabulary lives in the leaf module ./purchaseTypes (shared with the pure view model); re-exported here so
+// existing importers keep working.
+export type { PurchaseOutcome, RestoreOutcome, RestoreResult, StoreStatus } from './purchaseTypes';
 
 // Once-per-device "first purchase" analytics flag (measure only).
 export const FIRST_PURCHASE_KEY = 'gravity-flow:firstPurchase';
@@ -106,18 +110,11 @@ export interface PurchasesModule {
 }
 
 export type IAPState = 'unconfigured' | 'initializing' | 'ready' | 'failed';
-// TECHNICAL-ARCHITECTURE §4.3. 'cancelled' is also the answer to a second tap while a purchase is in flight.
-export type PurchaseOutcome = 'purchased' | 'pending' | 'cancelled' | 'network' | 'unavailable' | 'error';
-export type RestoreOutcome = 'restored' | 'none' | 'network' | 'error' | 'unavailable' | 'busy';
-export interface RestoreResult {
-  outcome: RestoreOutcome;
-  restored: Entitlement[]; // every entitlement active after the restore (what the toast lists)
-}
 
 export interface IAPDeps {
   native: boolean;
   platform: string; // Capacitor.getPlatform()
-  dev: boolean; // import.meta.env.DEV: SDK debug logging, and the web purchase stub
+  dev: boolean; // import.meta.env.DEV: SDK debug logging only (the web build has no purchase stub, review m10b)
   apiKey: string;
   loadPurchases(): Promise<PurchasesModule>;
   store: { read(): EntitlementSnapshot; write(snapshot: EntitlementSnapshot): void };
@@ -137,8 +134,9 @@ export interface IAPApi {
   isPending(packageId: string): boolean; // a payment-pending marker is live for this package's product
   price(packageId: string): string | null; // store priceString of the cached package; null until offerings load
   // What a purchase card can offer right now (A.6, A.12, A.13): 'web' (no purchases on this build), 'loading' (the store
-  // has not answered: init running or failed, offerings missing), 'unavailable' (not configured, or the package is not
-  // in the offering), 'ready' (a priceString exists).
+  // has not answered: init running or failing for the first time, offerings missing), 'unavailable' (not configured, the
+  // package is not in the offering, or init has definitively failed: PURCHASE_FLOW.INIT_FAIL_LIMIT attempts in a row),
+  // 'ready' (a priceString exists).
   storeStatus(packageId: string): StoreStatus;
   owns(packageId: string): boolean; // every entitlement of the package's product is active in the snapshot
   buy(packageId: string): Promise<PurchaseOutcome>; // never rejects
@@ -166,7 +164,13 @@ export function createIAP(deps: IAPDeps): IAPApi {
   let freshChecked = deps.platform !== 'android';
   let silentAttempts = 0; // silent restores tried in this session (review M4 cap)
   let busy = false;
+  // A foreground reconcile or a surface's refresh() is running; never two at once (two concurrent re-inits could configure
+  // the SDK twice). A foreground event that lands meanwhile is queued, not dropped (review m4): one trailing reconcile.
   let refreshing = false;
+  let foregroundQueued = false;
+  // Consecutive failed init attempts, reset when init succeeds. The boot attempt plus the retry a surface or a buy makes
+  // fail PURCHASE_FLOW.INIT_FAIL_LIMIT times in a row = definitive: the cards read "Unavailable" instead of "..." forever.
+  let initFailures = 0;
   let legacyDropping = false;
   const reported = new Set<string>();
 
@@ -300,7 +304,11 @@ export function createIAP(deps: IAPDeps): IAPApi {
   // App back in the foreground (D-11): pending completions, refunds and another Play account land here, and a failed
   // init is retried. RevenueCat caches customer info for up to 5 minutes, so this is cheap.
   function onForeground(): void {
-    if (busy || refreshing) return;
+    if (busy) return;
+    if (refreshing) {
+      foregroundQueued = true; // replayed once by endRefresh(): a pending completion must not be missed
+      return;
+    }
     refreshing = true;
     void (async () => {
       try {
@@ -315,9 +323,18 @@ export function createIAP(deps: IAPDeps): IAPApi {
       } catch (error) {
         report(error, 'iap.foreground');
       } finally {
-        refreshing = false;
+        endRefresh();
       }
     })();
+  }
+
+  // Ends a foreground reconcile or a refresh(), then runs the one queued foreground event, if any.
+  function endRefresh(): void {
+    refreshing = false;
+    if (foregroundQueued) {
+      foregroundQueued = false;
+      onForeground();
+    }
   }
 
   async function runInit(): Promise<void> {
@@ -355,10 +372,12 @@ export function createIAP(deps: IAPDeps): IAPApi {
       }
     } catch (error) {
       state = 'failed';
+      initFailures++;
       report(error, 'iap.init');
       return;
     }
     state = 'ready';
+    initFailures = 0;
     await reconcile();
     await loadOfferings();
   }
@@ -366,6 +385,7 @@ export function createIAP(deps: IAPDeps): IAPApi {
   function init(): Promise<void> {
     initRun ??= runInit().catch((error: unknown) => {
       state = 'failed';
+      initFailures++;
       report(error, 'iap.init');
     });
     return initRun;
@@ -429,12 +449,6 @@ export function createIAP(deps: IAPDeps): IAPApi {
     }
   }
 
-  // DEV web only: simulate a store answer that adds the product's entitlements.
-  function devGrant(row: ProductRow): void {
-    const prev = deps.store.read();
-    deps.store.write(reconcileSnapshot(prev, [...prev.active, ...row.entitlements], deps.now(), ttl).next);
-  }
-
   async function buy(packageId: string): Promise<PurchaseOutcome> {
     const row = productByPackage(packageId);
     if (!row) return 'unavailable';
@@ -444,14 +458,8 @@ export function createIAP(deps: IAPDeps): IAPApi {
       deps.track(purchaseFailed(product, reason));
       return outcome;
     };
-    if (!deps.native) {
-      // Production web never grants paid items and is not a purchase attempt: no funnel events (A.13).
-      if (!deps.dev) return 'unavailable';
-      deps.track(purchaseInitiated(product));
-      devGrant(row);
-      trackCompleted(product);
-      return 'purchased';
-    }
+    // The web build (dev included) never grants a paid item and is not a purchase attempt: no funnel events (A.13).
+    if (!deps.native) return 'unavailable';
     busy = true;
     try {
       await ensureReady();
@@ -517,14 +525,9 @@ export function createIAP(deps: IAPDeps): IAPApi {
 
   async function restore(options: { recheck?: string } = {}): Promise<RestoreResult> {
     if (busy) return { outcome: 'busy', restored: [] };
-    if (!deps.native && !deps.dev) return { outcome: 'unavailable', restored: [] }; // production web (A.13)
+    if (!deps.native) return { outcome: 'unavailable', restored: [] }; // the web build (A.13): nothing to restore
     deps.track(restoreEvent());
     const recheckProductId = options.recheck ? productByPackage(options.recheck)?.productId : undefined;
-    if (!deps.native) {
-      if (recheckProductId) deps.store.write(withoutPendingFor(deps.store.read(), recheckProductId));
-      const active = [...deps.store.read().active];
-      return { outcome: active.length ? 'restored' : 'none', restored: active };
-    }
     busy = true;
     try {
       await ensureReady();
@@ -551,7 +554,7 @@ export function createIAP(deps: IAPDeps): IAPApi {
     } catch (error) {
       report(error, 'iap.refresh');
     } finally {
-      refreshing = false;
+      endRefresh(); // a foreground event that arrived meanwhile reconciles now (review m4)
     }
   }
 
@@ -572,8 +575,12 @@ export function createIAP(deps: IAPDeps): IAPApi {
       if (!deps.native) return 'web'; // production AND DEV web: purchases live in the Android app (A.13)
       const row = productByPackage(packageId);
       if (!row) return 'unavailable';
-      if (!initRun || state === 'initializing' || state === 'failed') return 'loading';
+      if (!initRun) return 'loading';
       if (state === 'unconfigured') return 'unavailable';
+      // Definitively failed (review m10c): terminal, and it stays so while a further retry runs, so a card the player has
+      // seen read "Unavailable" never flickers back to "...". Success resets the count.
+      if (initFailures >= PURCHASE_FLOW.INIT_FAIL_LIMIT) return 'unavailable';
+      if (state === 'initializing' || state === 'failed') return 'loading';
       if (!offerings) return 'loading'; // ready, but getOfferings has not answered (offline): refresh / foreground retries
       return findPackage(offerings, packageId, row.productId)?.product?.priceString ? 'ready' : 'unavailable';
     },

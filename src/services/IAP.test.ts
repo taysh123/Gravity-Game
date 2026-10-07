@@ -1005,6 +1005,144 @@ describe('purchase UI inputs: storeStatus / owns / refresh (P00-T17)', () => {
     expect(offeringCalls()).toBe(2);
   });
 
+  // Review m4: a surface's refresh() used to share one flag with the foreground handler, so an app-foreground event that
+  // landed during a slow shop refresh returned at once and was never replayed (a pending payment that completed while the
+  // app was backgrounded stayed pending). It is now queued: one trailing reconcile runs when the refresh ends.
+  describe('a foreground event during an in-flight refresh() still reconciles (review m4)', () => {
+    async function slowRefresh() {
+      const h = harness({}, { appUserID: 'u1' });
+      markRestored(h.storage, 'u1');
+      h.rc.getOfferings.mockRejectedValueOnce(rcError('35')); // init leaves the offerings missing, so refresh() has work
+      await h.iap.init();
+      let release: () => void = () => undefined;
+      h.rc.getOfferings.mockImplementationOnce(
+        () => new Promise((resolve) => {
+          release = () => resolve({ all: {}, current: { identifier: 'default', availablePackages: PACKAGES_ALL } } as never);
+        }),
+      );
+      const refreshing = h.iap.refresh();
+      await settle();
+      expect(h.rc.getOfferings).toHaveBeenCalledTimes(2); // refresh() is now parked inside its slow getOfferings
+      return { h, refreshing, release: () => release() };
+    }
+
+    it('the pending payment that completed meanwhile is applied once the refresh ends', async () => {
+      const { h, refreshing, release } = await slowRefresh();
+      h.fake.st.active.add('no_ads'); // Play completed the payment while the app was away
+      h.foreground(); // lands during the slow refresh
+      await settle();
+      release();
+      await refreshing;
+      await settle();
+      await settle();
+      expect(h.iap.isPremium()).toBe(true);
+      expect(h.iap.owns('remove_ads')).toBe(true);
+    });
+
+    it('several foreground events during one refresh coalesce into exactly one trailing reconcile', async () => {
+      const { h, refreshing, release } = await slowRefresh();
+      const before = h.rc.getCustomerInfo.mock.calls.length;
+      h.foreground();
+      h.foreground();
+      h.foreground();
+      await settle();
+      expect(h.rc.getCustomerInfo.mock.calls.length).toBe(before); // never two reconciles at once
+      release();
+      await refreshing;
+      await settle();
+      await settle();
+      expect(h.rc.getCustomerInfo.mock.calls.length).toBe(before + 1);
+    });
+
+    it('and the queue drains: a later foreground event reconciles again as usual', async () => {
+      const { h, refreshing, release } = await slowRefresh();
+      h.foreground();
+      release();
+      await refreshing;
+      await settle();
+      await settle();
+      const after = h.rc.getCustomerInfo.mock.calls.length;
+      h.foreground();
+      await settle();
+      await settle();
+      expect(h.rc.getCustomerInfo.mock.calls.length).toBe(after + 1);
+    });
+  });
+
+  // Review m10(c): a permanently failing init used to read "…" forever. The boot attempt plus one retry failing is
+  // definitive: the store is "unavailable" (the cards read "Unavailable"), and a later success clears it.
+  describe('a permanently failed init reaches a terminal state (review m10c)', () => {
+    function failingPlugin() {
+      const fake = fakeRC();
+      let fail = true;
+      const loadPurchases = vi.fn(async () => {
+        if (fail) throw new Error('bridge not ready');
+        return { Purchases: fake.rc, LOG_LEVEL: { DEBUG: 'DEBUG' } } as unknown as PurchasesModule;
+      });
+      return { loadPurchases, heal: () => void (fail = false) };
+    }
+
+    it('one failed attempt is still "loading" (a retry is coming); the retry failing too is "unavailable"', async () => {
+      const p = failingPlugin();
+      const h = harness({ loadPurchases: p.loadPurchases });
+      await h.iap.init();
+      expect(h.iap.storeStatus('remove_ads')).toBe('loading');
+      await h.iap.refresh(); // the surface's retry
+      expect(h.iap.state()).toBe('failed');
+      expect(h.iap.storeStatus('remove_ads')).toBe('unavailable');
+      expect(h.iap.storeStatus('founders')).toBe('unavailable');
+      expect(h.iap.price('remove_ads')).toBeNull();
+    });
+
+    it('a buy tap retries once too, so after it the failure is terminal', async () => {
+      const p = failingPlugin();
+      const h = harness({ loadPurchases: p.loadPurchases });
+      await h.iap.init();
+      expect(await h.iap.buy('remove_ads')).toBe('unavailable');
+      expect(h.iap.storeStatus('remove_ads')).toBe('unavailable');
+    });
+
+    it('stays "unavailable" while a further retry runs (no flicker back to "…"), then recovers when the plugin does', async () => {
+      const fake = fakeRC();
+      let mode: 'fail' | 'hang' = 'fail';
+      let release: () => void = () => undefined;
+      const loadPurchases = vi.fn(async () => {
+        if (mode === 'fail') throw new Error('bridge not ready');
+        await new Promise<void>((resolve) => {
+          release = resolve;
+        });
+        return { Purchases: fake.rc, LOG_LEVEL: { DEBUG: 'DEBUG' } } as unknown as PurchasesModule;
+      });
+      const h = harness({ loadPurchases });
+      await h.iap.init();
+      await h.iap.refresh();
+      expect(h.iap.storeStatus('remove_ads')).toBe('unavailable');
+      mode = 'hang';
+      const retry = h.iap.refresh();
+      await settle();
+      expect(h.iap.state()).toBe('initializing'); // a further retry is really running
+      expect(h.iap.storeStatus('remove_ads')).toBe('unavailable'); // not "loading": the player already saw it fail
+      release();
+      await retry;
+      expect(h.iap.state()).toBe('ready');
+      expect(h.iap.storeStatus('remove_ads')).toBe('ready');
+      expect(h.iap.price('remove_ads')).toBe('₪7.90');
+    });
+
+    it('the next foreground retries a terminal failure, and success resets the count', async () => {
+      const p = failingPlugin();
+      const h = harness({ loadPurchases: p.loadPurchases });
+      await h.iap.init();
+      await h.iap.refresh();
+      expect(h.iap.storeStatus('remove_ads')).toBe('unavailable');
+      p.heal();
+      h.foreground();
+      await settle();
+      await settle();
+      expect(h.iap.storeStatus('remove_ads')).toBe('ready');
+    });
+  });
+
   it('owns(): true only while every entitlement of the product is active (Starter is not owned because no_ads is)', () => {
     const h = harness();
     h.box.snapshot = { v: 1, active: ['no_ads'], at: 5, pending: [] };
@@ -1031,26 +1169,24 @@ describe('purchase UI inputs: storeStatus / owns / refresh (P00-T17)', () => {
   });
 });
 
-describe('web build (A.13: never grants paid items in production)', () => {
-  it('production web: buy and restore are "unavailable" and nothing is granted; the SDK is never loaded', async () => {
-    const h = harness({ native: false, platform: 'web', dev: false });
-    await h.iap.init();
-    expect(await h.iap.buy('founders')).toBe('unavailable');
-    expect(await h.iap.buy('remove_ads')).toBe('unavailable');
-    expect(await h.iap.restore()).toEqual({ outcome: 'unavailable', restored: [] });
-    expect(h.box.snapshot).toEqual(EMPTY_SNAPSHOT);
-    expect(h.iap.isPremium()).toBe(false);
-    expect(h.deps.loadPurchases).not.toHaveBeenCalled();
-    expect(h.names()).toEqual([]); // no purchase funnel events from production web (nit)
-  });
-
-  it('DEV web keeps a stub that writes the entitlement snapshot (derived cosmetics included)', async () => {
-    const h = harness({ native: false, platform: 'web', dev: true });
-    expect(await h.iap.buy('founders')).toBe('purchased');
-    expect(h.box.snapshot.active).toEqual(['no_ads', 'pack_founders']);
-    expect(h.iap.isPremium()).toBe(true);
-    expect(h.deps.loadPurchases).not.toHaveBeenCalled();
-  });
+describe('web build (A.13: no web build, dev included, ever grants a paid item)', () => {
+  // Review m10(b): the DEV-only grant stub was unreachable from the UI (the web build shows "Available in the Android
+  // app"), so it is gone. Under no circumstances may web grant anything.
+  for (const dev of [false, true]) {
+    it(`${dev ? 'DEV' : 'production'} web: buy and restore are "unavailable" and nothing is granted; the SDK is never loaded`, async () => {
+      const h = harness({ native: false, platform: 'web', dev });
+      await h.iap.init();
+      expect(await h.iap.buy('founders')).toBe('unavailable');
+      expect(await h.iap.buy('remove_ads')).toBe('unavailable');
+      expect(await h.iap.restore()).toEqual({ outcome: 'unavailable', restored: [] });
+      expect(await h.iap.restore({ recheck: 'founders' })).toEqual({ outcome: 'unavailable', restored: [] });
+      expect(h.box.snapshot).toEqual(EMPTY_SNAPSHOT);
+      expect(h.iap.isPremium()).toBe(false);
+      expect(h.iap.owns('founders')).toBe(false);
+      expect(h.deps.loadPurchases).not.toHaveBeenCalled();
+      expect(h.names()).toEqual([]); // no purchase funnel events from the web build (nit)
+    });
+  }
 });
 
 describe('the app instance (dynamic import behind the native guard)', () => {

@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+  bundleNotOfferedNote,
   bundleValueLine,
   entitlementLabel,
   purchaseCardView,
@@ -132,6 +133,18 @@ describe('bundleValueLine (A.6 interim honesty)', () => {
   });
 });
 
+describe('bundleNotOfferedNote (A-24: a cosmetic whose bundle is hidden does not cross-sell to it)', () => {
+  it('names the bundle and says why it is not offered', () => {
+    expect(bundleNotOfferedNote('Starter Pack')).toBe('Part of the Starter Pack — not offered once Remove Ads is owned');
+  });
+
+  it('carries no amount and no unfilled placeholder', () => {
+    const note = bundleNotOfferedNote("Founder's Pack");
+    expect(note).not.toMatch(/[{}]/);
+    expect(note).not.toMatch(/[$€£₪¥]s?d|ds?[$€£₪¥]/);
+  });
+});
+
 describe('entitlementLabel', () => {
   it('names every entitlement a restore can list', () => {
     expect(entitlementLabel('no_ads')).toBe('Remove Ads');
@@ -213,12 +226,24 @@ describe('restoreFeedback (A.5)', () => {
     expect(fb.message).toBe('Purchases restored: Remove Ads');
   });
 
-  it('"Check status" that still finds nothing for that product: honest "not unlocked yet", and the card refreshes', () => {
+  // Review m6: the recheck clears that product's pending marker (A.5), so the card goes back to a priced Buy button. The
+  // toast must agree with that card: it must not promise "unlocks automatically" as a fact, nor call the card pending.
+  it('"Check status" that still finds nothing for that product: says no completed payment was found and the player may try again; the card refreshes', () => {
     for (const outcome of ['none', 'restored'] as const) {
       const fb = restoreFeedback({ outcome, restored: outcome === 'restored' ? ['pack_founders'] : [] }, { web: false, recheck: true, ownedNow: false });
-      expect(fb.message).toBe(PURCHASE_COPY.STILL_PENDING);
+      expect(fb.message).toBe(
+        'No completed payment found yet. If a payment is still processing it will unlock automatically; otherwise you can try again.',
+      );
+      expect(fb.message).toBe(PURCHASE_COPY.CHECK_NOT_FOUND);
+      expect(fb.kind).toBe('info');
       expect(fb.refresh).toBe(true);
     }
+  });
+
+  it('the "not found yet" copy is consistent with a Buy card: it admits trying again and never says the card is pending', () => {
+    expect(PURCHASE_COPY.CHECK_NOT_FOUND).toMatch(/try again/i);
+    expect(PURCHASE_COPY.CHECK_NOT_FOUND).not.toMatch(/^Not unlocked yet/);
+    expect(PURCHASE_COPY.CHECK_NOT_FOUND).not.toMatch(/pending/i);
   });
 
   it('"Check status" while offline keeps the pending state and says why', () => {
@@ -253,5 +278,29 @@ describe('source guard: no hard-coded prices (P00-T17 done-when grep)', () => {
   it('no currency amount is typed in any app source file', () => {
     const amount = /[€£₪¥]\s?\d|\d\s?[€£₪¥]/;
     expect(app.filter((f) => amount.test(readFileSync(f, 'utf8'))).map(rel)).toEqual([]);
+  });
+});
+
+// Review m10(a): the pure view module sits BELOW the IAP service. It used to import its outcome types from ./IAP while IAP
+// imported StoreStatus back from it (a type-only cycle). Both now depend on a leaf module of shared types.
+describe('one-way dependency: the view model does not import the IAP service', () => {
+  const dir = fileURLToPath(new URL('./', import.meta.url));
+  const code = (file: string): string =>
+    readFileSync(join(dir, file), 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/\/\/.*$/gm, '');
+  const importsOf = (file: string): string[] => [...code(file).matchAll(/from\s+['"]([^'"]+)['"]/g)].map((m) => m[1]);
+
+  it('purchaseView.ts imports nothing from ./IAP', () => {
+    expect(importsOf('purchaseView.ts').filter((m) => /(^|\/)IAP$/.test(m))).toEqual([]);
+  });
+
+  it('the shared types module is a leaf: it imports neither ./IAP nor ./purchaseView', () => {
+    expect(existsSync(join(dir, 'purchaseTypes.ts'))).toBe(true);
+    expect(importsOf('purchaseTypes.ts').filter((m) => /(^|\/)(IAP|purchaseView)$/.test(m))).toEqual([]);
+  });
+
+  it('IAP.ts takes StoreStatus from the leaf module, not from purchaseView', () => {
+    expect(importsOf('IAP.ts').filter((m) => /(^|\/)purchaseView$/.test(m))).toEqual([]);
   });
 });

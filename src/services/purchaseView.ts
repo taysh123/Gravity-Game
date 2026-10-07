@@ -4,12 +4,12 @@
 //   - an owned product reads OWNED, a pending one "unlocks automatically" with a Check-status control and NEVER a second
 //     Buy, the web build never sells or grants anything, and a card the store has not answered for is disabled;
 //   - every purchase / restore outcome has exactly the copy of the spec (a cancel has none).
-// No SDK, no Phaser, no storage: the scenes read IAP and hand the answers in. Types only from ./IAP (erased at runtime).
+// No SDK, no Phaser, no storage: the scenes read IAP and hand the answers in. This module sits below the IAP service: its
+// shared types come from the leaf ./purchaseTypes, never from ./IAP (review m10a).
 import { BUNDLES, ENTITLEMENTS, PURCHASE_COPY } from '../config/monetization.config';
-import type { PurchaseOutcome, RestoreResult } from './IAP';
+import type { PurchaseOutcome, RestoreResult, StoreStatus } from './purchaseTypes';
 
-// What the store can do for one package right now (IAP.storeStatus).
-export type StoreStatus = 'web' | 'loading' | 'unavailable' | 'ready';
+export type { StoreStatus } from './purchaseTypes';
 
 export type CardAction = 'buy' | 'check' | 'none';
 export type CardTone = 'price' | 'owned' | 'pending' | 'muted';
@@ -45,7 +45,7 @@ const view = (label: string, tone: CardTone, over: Partial<CardView> = {}): Card
 export function purchaseCardView(i: CardInput): CardView {
   // An owned product is always shown as owned, even a Starter that the player really bought.
   if (i.owned) return view(PURCHASE_COPY.OWNED, 'owned');
-  // D-09: Starter is not offered to a player who already has no_ads.
+  // D-09 / A-24: Starter is not offered to a player who already has no_ads from another product (owned Starter returned above).
   if (i.hideWithNoAds && i.noAdsOwned) return { ...view('', 'muted'), visible: false };
   if (i.pending) {
     return view(PURCHASE_COPY.PENDING_TAG, 'pending', {
@@ -72,6 +72,11 @@ export function purchaseCardView(i: CardInput): CardView {
 export function bundleValueLine(items: string, premium: boolean, noAdsOwned: boolean): string {
   if (!premium) return items;
   return noAdsOwned ? `${items} + ${PURCHASE_COPY.ADS_ALREADY_YOURS}` : `${items} + ${PURCHASE_COPY.REMOVE_ADS}`;
+}
+
+// A-24: a locked bundle-only cosmetic whose bundle is hidden does not cross-sell to it; this is what the tap says instead.
+export function bundleNotOfferedNote(bundleName: string): string {
+  return PURCHASE_COPY.BUNDLE_NOT_OFFERED.replace('{bundle}', bundleName);
 }
 
 // The player-facing name of an entitlement (what a restore lists), or null for an id this build does not know.
@@ -129,9 +134,10 @@ export function restoreFeedback(result: RestoreResult, ctx: RestoreContext): Fee
       return { kind: 'error', message: PURCHASE_COPY.RESTORE_ERROR, refresh: false };
     case 'restored':
     case 'none': {
-      // "Check status" asked about one product: if it is still not owned, say so honestly (its marker is cleared, so the
-      // card redraws, but Play may still be processing the payment and RevenueCat will unlock it when it lands).
-      if (ctx.recheck && !ctx.ownedNow) return { kind: 'info', message: PURCHASE_COPY.STILL_PENDING, refresh: true };
+      // "Check status" asked about one product: if it is still not owned, say so honestly. The recheck cleared its marker
+      // (A.5), so the card redraws as a priced Buy button; the line therefore says nothing was found and that trying again
+      // is fine, while still telling a slow payment it will unlock by itself (review m6).
+      if (ctx.recheck && !ctx.ownedNow) return { kind: 'info', message: PURCHASE_COPY.CHECK_NOT_FOUND, refresh: true };
       if (result.outcome === 'none') return { kind: 'info', message: PURCHASE_COPY.NOTHING_TO_RESTORE, refresh: false };
       const names = result.restored.map(entitlementLabel).filter((n): n is string => n !== null);
       return { kind: 'info', message: names.length ? `${PURCHASE_COPY.RESTORED}: ${names.join(', ')}` : PURCHASE_COPY.RESTORED, refresh: true };

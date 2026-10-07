@@ -68,6 +68,10 @@ export const PURCHASE_FLOW = {
   SILENT_RESTORE_MAX_ATTEMPTS: 8,
   SILENT_RESTORE_BACKOFF_BASE_MS: 5 * 60 * 1000,
   SILENT_RESTORE_BACKOFF_MAX_MS: 24 * 60 * 60 * 1000,
+  // SDK init failing this many times in a row (the boot attempt plus the one retry a shop / Settings open or a buy tap
+  // makes) is definitive: the purchase cards then read "Unavailable" instead of "…" for ever. A later success (the next
+  // foreground, or the next time a surface opens) clears it.
+  INIT_FAIL_LIMIT: 2,
 } as const;
 
 // Premium bundles (IAP). `productId` is the Play Console product, `packageId` its RevenueCat package and
@@ -86,9 +90,10 @@ export interface BundleDef {
   grants: string[];
   premium: boolean;
   blurb: string;
-  // D-09: the offer is hidden once `no_ads` is owned, whatever granted it (Starter is Remove Ads plus one trail; a
-  // player who already has Remove Ads would pay for it twice). An owned pack still reads OWNED. P7 replaces it with a
-  // cosmetic-only twin product.
+  // D-09 / A-24: the offer is hidden once `no_ads` is owned through a different product (Starter is Remove Ads plus one
+  // trail; a player who already has Remove Ads or Founder's would pay for it twice). Starter itself, once owned, keeps its
+  // card and reads OWNED, so it never vanishes at the moment of purchase. A bundle-only cosmetic whose bundle is hidden
+  // does not cross-sell to it. P7 replaces it with a cosmetic-only twin product.
   hideWhenNoAds?: boolean;
   // ONE bundle only — an honest "BEST VALUE" tag (Wave 3 Task 4). Never fake
   // savings math: 'starter' is flagged as the best value-PER-PRICE entry deal —
@@ -128,7 +133,12 @@ export const PURCHASE_COPY = {
   RESTORED: 'Purchases restored',
   NOTHING_TO_RESTORE: 'No purchases found for this Google account', // A.5, device row P17
   RESTORE_ERROR: "Couldn't restore purchases. Please try again.",
-  STILL_PENDING: 'Not unlocked yet. If Google Play is still processing your payment, it unlocks automatically.',
+  // "Check status" found the product still not owned. Its pending marker is cleared by that check (A.5), so the card goes
+  // back to a priced Buy button: the line must read true next to a Buy card, so it says nothing was found and that trying
+  // again is fine, while still telling a slow payment it will unlock by itself.
+  CHECK_NOT_FOUND: 'No completed payment found yet. If a payment is still processing it will unlock automatically; otherwise you can try again.',
+  // A locked bundle-only cosmetic whose bundle is not on offer (Starter once Remove Ads is owned, A-24). {bundle} = its name.
+  BUNDLE_NOT_OFFERED: 'Part of the {bundle} — not offered once Remove Ads is owned',
   ADS_REMOVED: 'Ads removed — thank you!',
   ADS_ALREADY_YOURS: 'Remove Ads ✓ already yours', // A.6 interim honesty on a premium bundle card
   REMOVE_ADS: 'Remove Ads',
@@ -143,11 +153,32 @@ export const PURCHASE_UI = {
   TAG_FONT_PX: 15, // price / OWNED tag
   TAG_FONT_SMALL_PX: 12, // a long tag (PENDING, Unavailable)
   TAG_LONG_LEN: 8, // labels longer than this use the small tag font
-  NOTE_FONT_PX: 11, // the pending / web note under a card
-  NOTE_BOTTOM_PAD: 14, // note + Check-status link sit this far above the card's bottom edge
-  NOTE_EXTRA_H: 12, // a card with a note is this much taller, so the note never crowds the text above it
-  CHECK_LINK_W: 120, // Check-status hit area (>=44px tall: 44x44 touch minimum)
+  // The pending / web note under a card. >= 13px (review m10d). Colours: THEME.TEXT_MUTED #8A8F98 and PENDING_COLOR #ffd166
+  // both keep >= 4.5:1 on the glass card over any backdrop (pinned by ui/purchaseUi.test.ts).
+  NOTE_FONT_PX: 13,
+  NOTE_GAP: 6, // clear space between a card's text and its note
+  NOTE_BOTTOM_PAD: 14, // the note + Check-status control sit this far above the card's bottom edge
+  NOTE_SLACK: 24, // room a card already has below its text before a note needs more; a note grows the card by the rest
+  CARD_PAD_X: 18, // a card's left / right text margin
+  CHECK_FONT_PX: 14, // the Check-status label
+  CHECK_LINK_W: 120, // Check-status hit area (>=44px each way: 44x44 touch minimum)
   CHECK_LINK_H: 44,
+  RESTORE_FONT_PX: 13, // the Restore Purchases link label
+  RESTORE_LINK_W: 220, // its hit area (>=44px each way, review m8)
+  RESTORE_LINK_H: 44,
+  // Shop layout (scenes/CosmeticsScene.ts)
+  CARD_GAP: 9, // between stacked cards
+  BUNDLE_BLURB_TOP: 44, // a bundle card's blurb / value line, measured from the card's top edge (a note grows the bottom)
+  BUNDLE_VALUE_TOP: 67,
+  REMOVE_ADS_BLURB_TOP: 49,
+  SHOP_TOAST_ABOVE_BACK: 48, // the shop's toasts sit this far above the Back button
+  // Settings layout (scenes/SettingsScene.ts)
+  SETTINGS_TOAST_BELOW_PANEL: 34, // toasts sit this far below the panel
+  SETTINGS_STATUS_FONT_PX: 15, // the "Remove Ads · <status>" line when it is not a button
+  SETTINGS_STATUS_TITLE_Y: 12, // that line, from the top of the row, when a note follows it
+  SETTINGS_NOTE_TOP: 22, // the note's top edge, from the top of the row
+  SETTINGS_CHECK_LINK_W: 160, // the Settings row's Check-status hit area (wider: the row is a full-width panel)
+  SETTINGS_WEB_BOTTOM_PAD: 14, // the web build has no Restore link: keep the note clear of the panel edge
   PENDING_COLOR: '#ffd166', // gold, the store's accent (STARDUST in CosmeticsScene)
   PRICE_COLOR: '#7affb0', // green price highlight (same as STORE.BEST_VALUE_COLOR)
 } as const;
