@@ -11,7 +11,9 @@
     "optimize:assets": "node scripts/optimize-logos.mjs",
     "fonts:fetch": "node scripts/fetch-fonts.mjs",
     "cap:sync": "npm run build && cap sync",
-    "cap:open:android": "cap open android"
+    "cap:open:android": "cap open android",
+    "facts": "node scripts/facts.mjs",
+    "facts:check": "node scripts/facts.mjs --check"
   },
   "dependencies": {
     "@capacitor-community/admob": "^8.0.0",
