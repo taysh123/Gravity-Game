@@ -4,7 +4,8 @@
 //
 //   1  mirror-seed            copy localStorage into the @capacitor/preferences mirror once (P00-T13, here)
 //   2  premium-entitlements   seed `entitlements:v1` from the legacy `premium` flag      (P00-T16, to be appended)
-//   3  dead-key-cleanup       remove `progress:v1…v8`, and `cosmetics:v1` once v2 exists (P00-T22, to be appended)
+//   3  dead-key-cleanup       remove `progress:v1…v8`, and `cosmetics:v1` once v2 exists (P00-T22, to be appended;
+//                             delete through ctx.remove so the mirror loses the keys too)
 //
 // Rules for every step: idempotent (a crash mid-step is simply re-run on the next boot), ordered (a step that does
 // not complete stops the ladder, so later steps never run on data an earlier step has not finished), and reported
@@ -24,6 +25,10 @@ export interface MigrationContext {
   isMirrored(key: string): boolean;
   // Saves.write: localStorage now, the mirror after hydrate.
   write(key: string, value: string): void;
+  // Mirrored delete: the mirror first, then localStorage. Resolves false (nothing deleted) when the mirror exists on
+  // this platform but is not usable now, or the mirror delete failed; a step should then resolve false and retry.
+  // Never delete with ctx.local.remove(): the next hydrate would restore the key from the mirror.
+  remove(key: string): Promise<boolean>;
   // Crash.recordError in the app. Steps report their own failures and resolve false; they never throw on purpose.
   report(error: unknown, context: string): void;
 }

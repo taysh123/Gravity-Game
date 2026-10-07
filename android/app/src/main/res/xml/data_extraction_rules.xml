@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Android 12+ (API 31+) backup and device-to-device transfer rules (D-11/D-12, P00-T13).
-     Only the two save locations are included, so third-party SDK state (ad ids, RevenueCat and Firebase
-     installation ids in their own shared_prefs files) is never cloned onto another device:
+     Only these two locations are included:
        - shared_prefs/CapacitorStorage.xml: the @capacitor/preferences mirror (src/platform/saves.ts)
        - app_webview/Default/Local Storage/: the WebView's localStorage (every gravity-flow:* key)
+     Third-party SDK SharedPreferences (ad ids, RevenueCat and Firebase installation ids in their own
+     shared_prefs files) are therefore not copied to another device. The Local Storage directory, however,
+     is one store for every origin shown in the app's WebViews (e.g. AdMob creatives); it cannot be
+     filtered per origin, so whatever those origins keep there is backed up along with the saves.
      Pinned by src/platform/saves.test.ts. -->
 <data-extraction-rules>
     <cloud-backup>

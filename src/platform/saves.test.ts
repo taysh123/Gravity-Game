@@ -2,8 +2,9 @@ import { describe, it, expect, vi } from 'vitest';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createSaves, UNMIRRORED_KEY, type AsyncKV, type KV, type SavesDeps } from './saves';
-import { MIGRATED_V1_KEY, SAVE_SCHEMA_KEY } from './migrations';
+import { createSaves, CREATED_UNMIRRORED_KEY, UNMIRRORED_KEY, type AsyncKV, type KV, type SavesDeps } from './saves';
+import { MIGRATED_V1_KEY, SAVE_SCHEMA_KEY, type Migration } from './migrations';
+import { PLATFORM } from '../config/platform.config';
 
 // P00-T13 (D-12): the Preferences mirror. localStorage stays the synchronous source every store reads; Saves.write
 // writes it first and mirrors to @capacitor/preferences asynchronously (native only). Saves.hydrate() runs before
@@ -16,6 +17,7 @@ const PROGRESS = `${P}progress:v9`;
 const SETTINGS = `${P}settings`;
 const CURRENCY = `${P}currency:v1`;
 const STATS = `${P}stats`;
+const GHOST = `${P}ghost:v1`;
 
 const tick = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -43,10 +45,15 @@ function memoryKV(init: Record<string, string> = {}): MemoryKV {
 interface FakeMirror extends AsyncKV {
   data: Map<string, string>;
   sets: Array<[string, string]>;
+  removes: string[];
   calls: { keys: number; get: number };
   failSet: (key: string) => boolean;
+  failRemove: boolean;
+  failKeys: boolean;
   throwSyncOnSet: boolean;
   hangKeys: Promise<void> | null;
+  hangSet: Promise<void> | null;
+  onRemove: (key: string) => void;
 }
 
 function fakeMirror(init: Record<string, string> = {}): FakeMirror {
@@ -54,13 +61,19 @@ function fakeMirror(init: Record<string, string> = {}): FakeMirror {
   const m: FakeMirror = {
     data,
     sets: [],
+    removes: [],
     calls: { keys: 0, get: 0 },
     failSet: () => false,
+    failRemove: false,
+    failKeys: false,
     throwSyncOnSet: false,
     hangKeys: null,
+    hangSet: null,
+    onRemove: () => undefined,
     keys: async () => {
       m.calls.keys++;
       if (m.hangKeys) await m.hangKeys;
+      if (m.failKeys) throw new Error('bridge down');
       return [...data.keys()];
     },
     get: async (k) => {
@@ -70,9 +83,16 @@ function fakeMirror(init: Record<string, string> = {}): FakeMirror {
     set: (k, v) => {
       if (m.throwSyncOnSet) throw new Error('proxy exploded');
       if (m.failSet(k)) return Promise.reject(new Error(`bridge refused ${k}`));
+      if (m.hangSet) return m.hangSet;
       m.sets.push([k, v]);
       data.set(k, v);
       return Promise.resolve();
+    },
+    remove: async (k) => {
+      m.onRemove(k);
+      if (m.failRemove) throw new Error(`bridge refused remove ${k}`);
+      m.removes.push(k);
+      data.delete(k);
     },
   };
   return m;
@@ -93,6 +113,7 @@ function setup(over: Partial<SavesDeps> & { local?: MemoryKV; mirror?: FakeMirro
     now: () => 0,
     timeoutMs: 1000,
     prefix: P,
+    localOnly: [GHOST],
     onHydrated,
     ...over,
   };
@@ -137,13 +158,16 @@ describe('native without a usable mirror: passthrough, nothing lost', () => {
     expect(local.get(CURRENCY)).toBe('7');
   });
 
-  it('kill switch: remembers which keys the mirror missed (local-only bookkeeping)', async () => {
-    const { saves, local } = setup({ mirrorEnabled: false });
+  it('kill switch: remembers which keys the mirror missed (local-only bookkeeping), split by lineage', async () => {
+    const local = memoryKV({ [CURRENCY]: '6' }); // held when the session started
+    const { saves } = setup({ local, mirrorEnabled: false });
     await saves.hydrate();
     saves.write(CURRENCY, '7');
     saves.write(CURRENCY, '8');
-    saves.write(STATS, '{}');
-    expect(JSON.parse(local.get(UNMIRRORED_KEY) ?? '[]')).toEqual(expect.arrayContaining([CURRENCY, STATS]));
+    saves.write(STATS, '{}'); // first created in this session
+    expect(JSON.parse(local.get(UNMIRRORED_KEY) ?? '[]')).toEqual([CURRENCY]);
+    expect(JSON.parse(local.get(CREATED_UNMIRRORED_KEY) ?? '[]')).toEqual(expect.arrayContaining([STATS]));
+    expect(JSON.parse(local.get(CREATED_UNMIRRORED_KEY) ?? '[]')).not.toContain(CURRENCY);
   });
 
   it('plugin not available: passthrough "unavailable"', async () => {
@@ -458,7 +482,8 @@ describe('hydrate', () => {
     expect(local.get(PROGRESS)).toBe('local');
     expect(local.get(CURRENCY)).toBe('42');
     expect(mirror.data.has(CURRENCY)).toBe(false);
-    expect(JSON.parse(local.get(UNMIRRORED_KEY) ?? '[]')).toContain(CURRENCY);
+    // CURRENCY did not exist when the session started, so it is recorded as created (the mirror would win for it).
+    expect(JSON.parse(local.get(CREATED_UNMIRRORED_KEY) ?? '[]')).toContain(CURRENCY);
   });
 
   it('also times out when loading the plugin itself never settles', async () => {
@@ -482,6 +507,290 @@ describe('hydrate', () => {
     await saves.hydrate();
     expect(local.get(PROGRESS)).toBe('mirror');
     expect(report).toHaveBeenCalledWith(expect.anything(), 'saves.unmirroredRecord');
+  });
+});
+
+// Review fix (P00-T13): a WebView wipe followed by a launch without a usable mirror must never let that session's
+// default-based data overwrite the full mirror on the next good launch. A key the session's localStorage did not hold
+// when it started is recorded as "created" (not "unmirrored"): next time the mirror's copy wins for it.
+describe('WebView wipe + a launch without the mirror: the next launch restores the mirror', () => {
+  const FULL = { [PROGRESS]: 'full-progress', [CURRENCY]: '900', [SAVE_SCHEMA_KEY]: '1' };
+  type FirstLaunch = (m: FakeMirror) => Omit<Partial<SavesDeps>, 'local'> & { mirror?: FakeMirror | null };
+  const badLaunches: Array<[string, FirstLaunch]> = [
+    [
+      'timeout',
+      (m) => {
+        m.hangKeys = new Promise<void>(() => undefined);
+        return { mirror: m, timeoutMs: 20 };
+      },
+    ],
+    [
+      'bridge error',
+      (m) => {
+        m.failKeys = true;
+        return { mirror: m };
+      },
+    ],
+    ['plugin unavailable', () => ({ mirror: null })],
+    ['kill switch', (m) => ({ mirror: m, mirrorEnabled: false })],
+  ];
+  const heal = (m: FakeMirror): void => {
+    m.hangKeys = null;
+    m.failKeys = false;
+  };
+
+  it.each(badLaunches)('WebView lost + %s + session writes: the mirror wins and its copy is restored', async (_label, first) => {
+    const mirror = fakeMirror(seeded(FULL));
+    const local = memoryKV(); // the WebView lost its storage
+    const s1 = setup({ local, ...first(mirror) });
+    await s1.saves.hydrate();
+    s1.saves.write(PROGRESS, 'defaults-plus-one-level');
+    s1.saves.write(CURRENCY, '5');
+    await tick();
+    expect(mirror.data.get(PROGRESS)).toBe('full-progress');
+
+    heal(mirror);
+    const s2 = setup({ local, mirror });
+    const reset = vi.fn();
+    s2.saves.onRestore(PROGRESS, reset);
+    const r = await s2.saves.hydrate();
+    await tick();
+    expect(local.get(PROGRESS)).toBe('full-progress');
+    expect(local.get(CURRENCY)).toBe('900');
+    expect(mirror.data.get(PROGRESS)).toBe('full-progress');
+    expect(mirror.data.get(CURRENCY)).toBe('900');
+    expect([...r.replaced].sort()).toEqual([CURRENCY, PROGRESS].sort());
+    expect(reset).toHaveBeenCalledTimes(1);
+    expect(local.get(CREATED_UNMIRRORED_KEY)).toBeNull();
+    expect(local.get(UNMIRRORED_KEY)).toBeNull();
+  });
+
+  it('even before the mirror is seeded (an interrupted first copy), a created key takes the mirror copy', async () => {
+    const mirror = fakeMirror({ [PROGRESS]: 'real-progress' }); // migration 1 was cut short: no marker
+    const local = memoryKV();
+    const s1 = setup({ local, mirror: null });
+    await s1.saves.hydrate();
+    s1.saves.write(PROGRESS, 'defaults-plus-one-level');
+    const r = await setup({ local, mirror }).saves.hydrate();
+    expect(local.get(PROGRESS)).toBe('real-progress');
+    expect(mirror.data.get(PROGRESS)).toBe('real-progress');
+    expect(r.replaced).toEqual([PROGRESS]);
+    expect(mirror.data.get(MIGRATED_V1_KEY)).toBe('1');
+  });
+
+  it('a write held during the next hydrate (from a cache read too early) does not beat the mirror for a created key', async () => {
+    const mirror = fakeMirror(seeded(FULL));
+    const local = memoryKV();
+    const s1 = setup({ local, mirror: null });
+    await s1.saves.hydrate();
+    s1.saves.write(PROGRESS, 'defaults-1');
+    const s2 = setup({ local, mirror });
+    const reset = vi.fn();
+    s2.saves.onRestore(PROGRESS, reset);
+    const pending = s2.saves.hydrate();
+    s2.saves.write(PROGRESS, 'defaults-2'); // a store that cached the default-based value before hydrate settled
+    await pending;
+    await tick();
+    expect(local.get(PROGRESS)).toBe('full-progress');
+    expect(mirror.data.get(PROGRESS)).toBe('full-progress');
+    expect(reset).toHaveBeenCalledTimes(1);
+  });
+
+  it('a key the bad session created that the mirror never had is kept and pushed', async () => {
+    const mirror = fakeMirror(seeded(FULL));
+    const local = memoryKV();
+    const s1 = setup({ local, mirror: null });
+    await s1.saves.hydrate();
+    s1.saves.write(STATS, '{"deaths":1}');
+    const s2 = setup({ local, mirror });
+    const r = await s2.saves.hydrate();
+    expect(local.get(STATS)).toBe('{"deaths":1}');
+    expect(mirror.data.get(STATS)).toBe('{"deaths":1}');
+    expect(r.pushed).toContain(STATS);
+  });
+
+  it('two bad launches in a row keep the lineage: the mirror still wins afterwards', async () => {
+    const mirror = fakeMirror(seeded(FULL));
+    const local = memoryKV();
+    const s1 = setup({ local, mirror: null });
+    await s1.saves.hydrate();
+    s1.saves.write(PROGRESS, 'defaults-1');
+    const s2 = setup({ local, mirror: null }); // localStorage now holds the default-based key at session start
+    await s2.saves.hydrate();
+    s2.saves.write(PROGRESS, 'defaults-2');
+    expect(JSON.parse(local.get(UNMIRRORED_KEY) ?? '[]')).not.toContain(PROGRESS);
+    const s3 = setup({ local, mirror });
+    await s3.saves.hydrate();
+    expect(local.get(PROGRESS)).toBe('full-progress');
+  });
+
+  it('a key localStorage held when the bad session started still wins (the mirror is behind on it)', async () => {
+    const mirror = fakeMirror(seeded({ [PROGRESS]: 'older' }));
+    const local = memoryKV({ [PROGRESS]: 'newer' });
+    mirror.hangKeys = new Promise<void>(() => undefined);
+    const s1 = setup({ local, mirror, timeoutMs: 20 });
+    await s1.saves.hydrate();
+    s1.saves.write(PROGRESS, 'newest');
+    heal(mirror);
+    await setup({ local, mirror }).saves.hydrate();
+    expect(local.get(PROGRESS)).toBe('newest');
+    expect(mirror.data.get(PROGRESS)).toBe('newest');
+  });
+
+  it('a timeout after the pull counts the restored keys as held: session writes to them win next time', async () => {
+    const mirror = fakeMirror(seeded({ [PROGRESS]: 'restored' }));
+    const local = memoryKV({ [STATS]: 'only-local' }); // forces a push, which hangs
+    mirror.hangSet = new Promise<void>(() => undefined);
+    const s1 = setup({ local, mirror, timeoutMs: 20 });
+    expect(await s1.saves.hydrate()).toMatchObject({ mode: 'passthrough', reason: 'timeout' });
+    expect(local.get(PROGRESS)).toBe('restored');
+    s1.saves.write(PROGRESS, 'played-after-restore');
+    mirror.hangSet = null;
+    await setup({ local, mirror }).saves.hydrate();
+    expect(local.get(PROGRESS)).toBe('played-after-restore');
+    expect(mirror.data.get(PROGRESS)).toBe('played-after-restore');
+  });
+});
+
+describe('unmirrored record upkeep', () => {
+  it('a later successful mirror write of the same key clears it', async () => {
+    const { saves, local, mirror } = setup();
+    await saves.hydrate();
+    mirror!.failSet = (k) => k === CURRENCY;
+    saves.write(CURRENCY, '500');
+    await tick();
+    expect(JSON.parse(local.get(UNMIRRORED_KEY) ?? '[]')).toEqual([CURRENCY]);
+    mirror!.failSet = () => false;
+    saves.write(CURRENCY, '600');
+    await tick();
+    expect(mirror!.data.get(CURRENCY)).toBe('600');
+    expect(local.get(UNMIRRORED_KEY)).toBeNull();
+  });
+});
+
+describe('Saves.remove', () => {
+  const DEAD = `${P}progress:v8`;
+
+  it('deletes from the mirror first, then localStorage; the next hydrate does not bring it back', async () => {
+    const local = memoryKV({ [PROGRESS]: 'p', [DEAD]: 'dead' });
+    const mirror = fakeMirror();
+    const { saves } = setup({ local, mirror });
+    await saves.hydrate();
+    await tick();
+    let localAtMirrorDelete: string | null = 'unset';
+    mirror.onRemove = (k) => {
+      if (k === DEAD) localAtMirrorDelete = local.get(k);
+    };
+    expect(await saves.remove(DEAD)).toBe(true);
+    expect(localAtMirrorDelete).toBe('dead'); // the mirror went first
+    expect(local.get(DEAD)).toBeNull();
+    expect(mirror.data.has(DEAD)).toBe(false);
+    await setup({ local, mirror }).saves.hydrate();
+    expect(local.get(DEAD)).toBeNull();
+  });
+
+  it('a failed mirror delete keeps localStorage (the two stay consistent) and is reported', async () => {
+    const local = memoryKV({ [PROGRESS]: 'p' });
+    const { saves, mirror, report } = setup({ local });
+    await saves.hydrate();
+    await tick();
+    mirror!.failRemove = true;
+    expect(await saves.remove(PROGRESS)).toBe(false);
+    expect(local.get(PROGRESS)).toBe('p');
+    expect(report).toHaveBeenCalledWith(expect.any(Error), `saves.mirrorRemove:${PROGRESS}`);
+  });
+
+  it('on native without a usable mirror it deletes nothing and says so', async () => {
+    const local = memoryKV({ [PROGRESS]: 'p' });
+    const { saves } = setup({ local, mirror: null });
+    await saves.hydrate();
+    expect(await saves.remove(PROGRESS)).toBe(false);
+    expect(local.get(PROGRESS)).toBe('p');
+  });
+
+  it('on web it deletes from localStorage', async () => {
+    const local = memoryKV({ [PROGRESS]: 'p' });
+    const { saves } = setup({ local, native: false });
+    expect(await saves.remove(PROGRESS)).toBe(true);
+    expect(local.get(PROGRESS)).toBeNull();
+  });
+
+  it('drops a pending write for the key, so the flush cannot resurrect it', async () => {
+    const { saves, mirror } = setup();
+    await saves.hydrate();
+    saves.write(STATS, 'x');
+    expect(await saves.remove(STATS)).toBe(true);
+    await tick();
+    expect(mirror!.data.has(STATS)).toBe(false);
+  });
+
+  it('forgets the key in the unmirrored record', async () => {
+    const { saves, local, mirror } = setup();
+    await saves.hydrate();
+    mirror!.failSet = (k) => k === CURRENCY;
+    saves.write(CURRENCY, '1');
+    await tick();
+    mirror!.failSet = () => false;
+    expect(await saves.remove(CURRENCY)).toBe(true);
+    expect(local.get(UNMIRRORED_KEY)).toBeNull();
+  });
+
+  describe('in the migration context (ctx.remove)', () => {
+    const dropDead: Migration = { version: 1, name: 'drop-dead', run: async (ctx) => ctx.remove(DEAD) };
+
+    it('a ladder step deletes from both sides, and it stays deleted', async () => {
+      const local = memoryKV({ [DEAD]: 'old' });
+      const mirror = fakeMirror(seeded({ [DEAD]: 'old' }));
+      const r = await setup({ local, mirror, ladder: [dropDead] }).saves.hydrate();
+      expect(r.schema).toBe(1);
+      expect(local.get(DEAD)).toBeNull();
+      expect(mirror.data.has(DEAD)).toBe(false);
+      await setup({ local, mirror, ladder: [dropDead] }).saves.hydrate();
+      expect(local.get(DEAD)).toBeNull();
+    });
+
+    it('without a usable mirror the step does not complete and nothing is deleted', async () => {
+      const local = memoryKV({ [DEAD]: 'old' });
+      const r = await setup({ local, mirror: null, ladder: [dropDead] }).saves.hydrate();
+      expect(r.schema).toBe(0);
+      expect(local.get(DEAD)).toBe('old');
+    });
+  });
+});
+
+// Review fix: ghost:v1 (hundreds of KB of replay paths) would make every SharedPreferences apply() rewrite a huge XML
+// and slow hydrate. It is local-only: losing it on a WebView wipe only costs the best-run trails.
+describe('local-only keys (ghost:v1) never reach the mirror', () => {
+  it("the app lists GhostStore's key as local-only", () => {
+    expect(PLATFORM.SAVE_LOCAL_ONLY_KEYS).toContain(GHOST);
+    const ghostStore = readFileSync(fileURLToPath(new URL('../utils/GhostStore.ts', import.meta.url)), 'utf8');
+    expect(ghostStore).toContain(`const KEY = '${GHOST}'`);
+  });
+
+  it('a write is not mirrored', async () => {
+    const { saves, local, mirror } = setup();
+    await saves.hydrate();
+    saves.write(GHOST, '{"1":[[1,2]]}');
+    await tick();
+    expect(local.get(GHOST)).toBe('{"1":[[1,2]]}');
+    expect(mirror!.data.has(GHOST)).toBe(false);
+  });
+
+  it('migration 1 does not copy it and the heal does not push it', async () => {
+    const local = memoryKV({ [GHOST]: 'paths', [PROGRESS]: 'p' });
+    const mirror = fakeMirror();
+    await setup({ local, mirror }).saves.hydrate();
+    expect(mirror.data.has(GHOST)).toBe(false);
+    await setup({ local, mirror }).saves.hydrate();
+    expect(mirror.data.has(GHOST)).toBe(false);
+  });
+
+  it('a copy an earlier build mirrored is neither pulled nor kept in the mirror', async () => {
+    const local = memoryKV();
+    const mirror = fakeMirror(seeded({ [GHOST]: 'stale-paths' }));
+    await setup({ local, mirror }).saves.hydrate();
+    expect(local.get(GHOST)).toBeNull();
+    expect(mirror.data.has(GHOST)).toBe(false);
   });
 });
 
@@ -557,8 +866,9 @@ describe('save wiring source guards', () => {
   });
 });
 
-// D-11 / D-12: Android Auto Backup and device transfer carry only the two save locations, never the third-party SDK
-// preferences (ad ids, RevenueCat and Firebase installation ids) that would be cloned onto another device.
+// D-11 / D-12: Android Auto Backup and device transfer include only the two save locations, so third-party SDK
+// SharedPreferences (ad ids, RevenueCat and Firebase installation ids) are not cloned onto another device. (The WebView
+// Local Storage directory still holds every origin's localStorage, e.g. AdMob creatives; it cannot be split per origin.)
 describe('Android backup rules', () => {
   const res = (p: string): string =>
     readFileSync(fileURLToPath(new URL(`../../android/app/src/main/${p}`, import.meta.url)), 'utf8');

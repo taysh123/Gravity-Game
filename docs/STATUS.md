@@ -18,7 +18,7 @@
 | Other content | 8 daily levels · 20 run chunks · 14 achievements · 28 cosmetics · 3 bundles |
 | Scenes registered | 14 |
 | Level files | 163 on disk · 13 retired (6, 22, 31, 35, 37, 39, 40, 45, 48, 55, 56, 63, 64) |
-| Tests | 40 files / 514 tests |
+| Tests | 40 files / 537 tests |
 | package.json version | 1.0.0 |
 | androidBuild | 1 |
 | Derived versionName / versionCode | 1.0.0 / 1000001 |
@@ -64,7 +64,7 @@ Regenerate with `npm run facts`; verify with `npm run facts:check` (CI runs the 
 
 ## Next 5 actions
 Step 0 complete. Step 1 complete except P00-T08 (AdMob 8.2.1 soak, deferred to >= 2026-10-13); done so far: P00-T01…T07 (CI v2, Capacitor 8.5.2 family, exact pins), P00-T09 (manifest, theme, WebView floor, system bars), P00-T10 (Back router + `PauseScene`, Endless pause button), P00-T11 (background/foreground contract, `Haptics.pulse`) and P00-T13 (`@capacitor/preferences` save mirror, hydrate before Boot, migration ladder, backup rules limited to the two save locations); device checks pending in the M0 session. AdMob stays pinned at exactly 8.0.0 until the soak.
-1. **Step 2: P00-T12** — renderer-crash recovery. `MainActivity` must write `platform:rendererGone` into `CapacitorStorage` as a **String** (the Preferences plugin reads with `getString`); the read/clear goes into `Saves.hydrate()` (`src/platform/saves.ts`, T13). P00-T16 appends migration 2 and P00-T22 migration 3 to `src/platform/migrations.ts`; every new persisted key must go through `Saves.write` (a source guard enforces it). P00-T16 / T19 must call `setExternalFlowActive(true|false, source)` around purchase and ad flows so they do not open the pause overlay.
+1. **Step 2: P00-T12** — renderer-crash recovery. `MainActivity` must write `platform:rendererGone` into `CapacitorStorage` as a **String** (the Preferences plugin reads with `getString`); the read/clear goes into `Saves.hydrate()` (`src/platform/saves.ts`, T13). P00-T16 appends migration 2 and P00-T22 migration 3 to `src/platform/migrations.ts` (delete keys with `ctx.remove` / `Saves.remove`, never a local-only delete); every new persisted key must go through `Saves.write` (a source guard enforces it). P00-T16 / T19 must call `setExternalFlowActive(true|false, source)` around purchase and ad flows so they do not open the pause overlay.
 2. **P00-T08** — AdMob 8.2.1 soak commit, deferred until >= 2026-10-13.
 3. **Step 3: P00-T14…T17** — Purchases (D-09): plugin config, ids, products, license testers.
 4. **Step 4: P00-T18…T20** — Consent-first boot and ad plumbing (D-10, D-11).

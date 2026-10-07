@@ -7,38 +7,47 @@
 // write(key, value): localStorage first, synchronously (the caches and every read depend on it), then the mirror,
 //   asynchronously and coalesced per key in a microtask, so a burst (StatsStore.recordPortalJump) costs one bridge call.
 //   Writes made before hydrate settles are held and sent right after it. Saves.write never throws.
+// remove(key): the mirror first, then localStorage, so a later hydrate cannot restore a deleted key. Without a usable
+//   mirror on native it deletes nothing and resolves false (the caller retries later). For keys nothing writes any more.
+// Local-only keys (PLATFORM.SAVE_LOCAL_ONLY_KEYS, i.e. ghost:v1, hundreds of KB of replay paths) are never mirrored:
+//   every SharedPreferences apply() rewrites the whole XML, and losing them on a WebView wipe only costs best-run trails.
 //
 // hydrate(): started by main.ts before the Phaser.Game exists; BootScene awaits the same promise with the fonts.
 //   1. Read every save key from the mirror (one keys() + parallel get()s).
 //   2. Pull, mirror -> localStorage: a key localStorage lacks is restored (WebView storage loss). A key both hold with
 //      different values follows the CONFLICT RULE below. Caches registered with onRestore() for a changed key are
 //      dropped, so a read that happened before hydrate cannot shadow the restored value.
-//   3. Push, localStorage -> mirror (seeded mirrors only): keys the mirror is known to be behind on (see "unmirrored")
-//      and keys the mirror lacks.
+//   3. Push, localStorage -> mirror (seeded mirrors only): keys the mirror is known to be behind on (`save:unmirrored`)
+//      and keys the mirror lacks. Stale copies of local-only keys are deleted from the mirror.
 //   4. The migration ladder (src/platform/migrations.ts). Migration 1 seeds an unseeded mirror with a full copy and
 //      sets `save:migratedV1` (in the mirror) last.
 //
 // CONFLICT RULE (a key present on both sides with different values):
+//   - `save:unmirroredCreated` keys: the MIRROR wins, seeded or not. These are keys first written in a session that
+//     had no usable mirror (kill switch, plugin missing, bridge error or timeout) while localStorage did not hold them
+//     when that session started. If the mirror holds such a key, localStorage had lost it (a WebView wipe) and the
+//     session's value grew from defaults, so it must never replace the full copy.
 //   - Mirror not seeded yet (no migratedV1 marker): localStorage wins. It is the source migration 1 is copying from;
 //     the mirror only holds an interrupted earlier copy.
 //   - Mirror seeded: Preferences wins. It is the durable copy (SharedPreferences is flushed when the app stops, while
 //     the WebView commits localStorage lazily), so after a kill or a storage fault it is the one to trust...
 //   - ...EXCEPT for keys whose latest localStorage value is known not to have reached the mirror: writes held during
-//     this hydrate, and keys recorded in `save:unmirrored` (a mirror write that failed, or any write made while the
-//     mirror was off, unavailable or timed out). For those localStorage wins and is pushed. This is what keeps a
-//     Preferences error from ever losing a localStorage write.
+//     this hydrate, and `save:unmirrored` keys (a mirror write that failed, or a write in a session without a usable
+//     mirror to a key localStorage already held when that session started). For those localStorage wins and is
+//     pushed. This is what keeps a Preferences error from ever losing a localStorage write.
 //
 // FAILURE MODES (none throws into gameplay; failures go to Crash.recordError, once per context per session):
 //   - Kill switch (PLATFORM.SAVE_MIRROR_ENABLED = false), plugin unavailable, or a bridge error while reading:
-//     passthrough. localStorage only; every key written is recorded in `save:unmirrored` for the next mirrored launch.
+//     passthrough. localStorage only; every key written is recorded (`unmirrored` or `unmirroredCreated`, above).
 //   - The bridge does not answer within PLATFORM.SAVE_HYDRATE_TIMEOUT_MS: Boot continues on localStorage
 //     (passthrough + recording). A late answer is ignored; the migration ladder waits for the next launch.
 //   - localStorage refuses a restore: passthrough WITHOUT write-through, so a store restarting from defaults can never
 //     overwrite the only good copy (the mirror). The next launch retries the restore.
-//   - A mirror write fails: the key is recorded as unmirrored; the localStorage write stands.
+//   - A mirror write fails: the key is recorded as unmirrored; the localStorage write stands. A later successful write
+//     of the same value clears the record.
 //   - localStorage refuses a write: on native it is reported and still mirrored (the next launch restores it); on web
 //     it is ignored silently, as the stores always did.
-// Nothing here ever deletes save data. `save:unmirrored` is local-only bookkeeping and the only key removed here.
+// Saves deletes save data only through remove(). The two records are local-only bookkeeping.
 import { Capacitor } from '@capacitor/core';
 import { PLATFORM } from '../config/platform.config';
 import { Crash } from '../utils/Crash';
@@ -56,11 +65,14 @@ export interface KV {
 export interface AsyncKV {
   get(key: string): Promise<string | null>;
   set(key: string, value: string): Promise<void>;
+  remove(key: string): Promise<void>;
   keys(): Promise<string[]>;
 }
 
-// Local-only JSON string[]: save keys whose latest localStorage value may not be in the mirror. Never mirrored.
+// Local-only JSON string[]: keys whose latest localStorage value is newer than the mirror's (localStorage wins).
 export const UNMIRRORED_KEY = 'gravity-flow:save:unmirrored';
+// Local-only JSON string[]: keys first created in a session without a usable mirror (the mirror wins if it has them).
+export const CREATED_UNMIRRORED_KEY = 'gravity-flow:save:unmirroredCreated';
 
 export type HydrateMode = 'web' | 'mirror' | 'passthrough';
 export type PassthroughReason = 'disabled' | 'unavailable' | 'error' | 'timeout' | 'local-error';
@@ -86,6 +98,7 @@ export interface SavesDeps {
   now(): number;
   timeoutMs: number;
   prefix: string;
+  localOnly?: readonly string[]; // save keys kept out of the mirror
   ladder?: readonly Migration[];
   onHydrated?(report: HydrateReport): void;
 }
@@ -93,6 +106,8 @@ export interface SavesDeps {
 export interface SavesApi {
   hydrate(): Promise<HydrateReport>; // memoized; never rejects
   write(key: string, value: string): void; // never throws
+  // Mirror first, then localStorage. Resolves true when the key is gone from both; never rejects.
+  remove(key: string): Promise<boolean>;
   // Drop an in-memory cache when hydrate restores or replaces `key` (stores register at module load).
   onRestore(key: string, reset: () => void): void;
 }
@@ -101,9 +116,9 @@ type State = 'web' | 'hydrating' | 'mirror' | 'passthrough';
 type Outcome = 'done' | 'local-error' | 'detached';
 
 // A registerPlugin() proxy may throw synchronously; fold that into the promise.
-function safeSet(mirror: AsyncKV, key: string, value: string): Promise<void> {
+function safeCall(call: () => Promise<void>): Promise<void> {
   try {
-    return mirror.set(key, value);
+    return call();
   } catch (error) {
     return Promise.reject(error);
   }
@@ -112,19 +127,20 @@ function safeSet(mirror: AsyncKV, key: string, value: string): Promise<void> {
 export function createSaves(deps: SavesDeps): SavesApi {
   const { local, prefix } = deps;
   const ladder = deps.ladder ?? MIGRATIONS;
+  const localOnly = new Set(deps.localOnly ?? []);
+  const bookkeeping = new Set([UNMIRRORED_KEY, CREATED_UNMIRRORED_KEY, MIGRATED_V1_KEY]);
   let state: State = deps.native ? 'hydrating' : 'web';
   let mirror: AsyncKV | null = null;
   let trackUnmirrored = true; // false only when localStorage itself is failing (local-error)
   let detached = false; // hydrate timed out: its late answer must not touch localStorage
   let hydration: Promise<HydrateReport> | null = null;
   let flushQueued = false;
-  let unmirrored: Set<string> | null = null;
   const pending = new Map<string, string>();
+  const writeCount = new Map<string, number>();
   const hooks = new Map<string, Array<() => void>>();
   const reported = new Set<string>();
 
-  const isMirrored = (key: string): boolean =>
-    key.startsWith(prefix) && key !== UNMIRRORED_KEY && key !== MIGRATED_V1_KEY;
+  const isMirrored = (key: string): boolean => key.startsWith(prefix) && !bookkeeping.has(key) && !localOnly.has(key);
 
   function reportOnce(error: unknown, context: string): void {
     if (reported.has(context)) return;
@@ -136,41 +152,74 @@ export function createSaves(deps: SavesDeps): SavesApi {
     }
   }
 
-  function unmirroredSet(): Set<string> {
-    if (unmirrored) return unmirrored;
-    const set = new Set<string>();
-    unmirrored = set;
-    const raw = local.get(UNMIRRORED_KEY);
-    if (raw !== null) {
-      try {
-        const parsed: unknown = JSON.parse(raw);
-        if (!Array.isArray(parsed) || !parsed.every((k): k is string => typeof k === 'string')) {
-          throw new Error('save:unmirrored is not a string[]');
+  // A persisted, local-only list of keys (JSON string[]), loaded on first use.
+  function localRecord(storageKey: string): {
+    keys(): Set<string>;
+    add(key: string): void;
+    remove(key: string): void;
+    clear(): void;
+  } {
+    let set: Set<string> | null = null;
+    const keys = (): Set<string> => {
+      if (set) return set;
+      const loaded = new Set<string>();
+      set = loaded;
+      const raw = local.get(storageKey);
+      if (raw !== null) {
+        try {
+          const parsed: unknown = JSON.parse(raw);
+          if (!Array.isArray(parsed) || !parsed.every((k): k is string => typeof k === 'string')) {
+            throw new Error(`${storageKey} is not a string[]`);
+          }
+          for (const key of parsed) loaded.add(key);
+        } catch (error) {
+          reportOnce(error, 'saves.unmirroredRecord');
         }
-        for (const key of parsed) set.add(key);
+      }
+      return loaded;
+    };
+    const save = (): void => {
+      const current = keys();
+      try {
+        if (current.size) local.set(storageKey, JSON.stringify([...current]));
+        else local.remove(storageKey);
       } catch (error) {
         reportOnce(error, 'saves.unmirroredRecord');
       }
-    }
-    return set;
+    };
+    return {
+      keys,
+      add(key) {
+        if (keys().has(key)) return;
+        keys().add(key);
+        save();
+      },
+      remove(key) {
+        if (keys().delete(key)) save();
+      },
+      clear() {
+        if (!keys().size && local.get(storageKey) === null) return;
+        keys().clear();
+        save();
+      },
+    };
   }
 
-  function saveUnmirrored(): void {
-    const set = unmirroredSet();
-    try {
-      if (set.size) local.set(UNMIRRORED_KEY, JSON.stringify([...set]));
-      else local.remove(UNMIRRORED_KEY);
-    } catch (error) {
-      reportOnce(error, 'saves.unmirroredRecord');
-    }
-  }
+  const behind = localRecord(UNMIRRORED_KEY); // localStorage newer: it wins
+  const created = localRecord(CREATED_UNMIRRORED_KEY); // grown without the key: the mirror wins
+  // Keys whose localStorage value continues a known-good lineage: those held when this session started (minus the
+  // ones still marked as created), plus everything the pull reconciled. Only these may claim "localStorage is newer".
+  const trusted = new Set<string>(
+    deps.native ? local.keys().filter((k) => isMirrored(k) && !created.keys().has(k)) : [],
+  );
 
-  function markUnmirrored(key: string): void {
-    if (!trackUnmirrored) return;
-    const set = unmirroredSet();
-    if (set.has(key)) return;
-    set.add(key);
-    saveUnmirrored();
+  // A write the mirror did not receive. In a mirrored session localStorage was reconciled at hydrate, so it is newer.
+  // Without a usable mirror it is newer only for keys of a known-good lineage; a key the session created may be a
+  // default rebuilt after a WebView wipe, and the mirror's copy (if any) must win next time.
+  function markBehind(key: string): void {
+    if (!trackUnmirrored || created.keys().has(key)) return;
+    if (state === 'mirror' || trusted.has(key)) behind.add(key);
+    else created.add(key);
   }
 
   function flush(): void {
@@ -180,10 +229,15 @@ export function createSaves(deps: SavesDeps): SavesApi {
     const batch = [...pending];
     pending.clear();
     for (const [key, value] of batch) {
-      safeSet(m, key, value).catch((error: unknown) => {
-        markUnmirrored(key);
-        reportOnce(error, `saves.mirrorWrite:${key}`);
-      });
+      safeCall(() => m.set(key, value)).then(
+        () => {
+          if (local.get(key) === value) behind.remove(key); // the mirror caught up
+        },
+        (error: unknown) => {
+          markBehind(key);
+          reportOnce(error, `saves.mirrorWrite:${key}`);
+        },
+      );
     }
   }
 
@@ -194,6 +248,7 @@ export function createSaves(deps: SavesDeps): SavesApi {
   }
 
   function write(key: string, value: string): void {
+    writeCount.set(key, (writeCount.get(key) ?? 0) + 1);
     try {
       local.set(key, value);
     } catch (error) {
@@ -202,11 +257,37 @@ export function createSaves(deps: SavesDeps): SavesApi {
     }
     if (state === 'web' || !isMirrored(key)) return;
     if (state === 'passthrough') {
-      markUnmirrored(key);
+      markBehind(key);
       return;
     }
     pending.set(key, value);
     if (state === 'mirror') scheduleFlush();
+  }
+
+  // Delete through `m` (the mirror in use, or null when there is none). On native a mirrored key is deleted from the
+  // mirror first; without one nothing is deleted, since a local-only delete would be undone by the next hydrate.
+  async function removeWith(m: AsyncKV | null, key: string): Promise<boolean> {
+    if (deps.native && isMirrored(key)) {
+      if (!m) return false;
+      pending.delete(key);
+      const writesBefore = writeCount.get(key) ?? 0;
+      try {
+        await safeCall(() => m.remove(key));
+      } catch (error) {
+        reportOnce(error, `saves.mirrorRemove:${key}`);
+        return false;
+      }
+      if ((writeCount.get(key) ?? 0) !== writesBefore) return false; // written again meanwhile: keep the new value
+    }
+    try {
+      local.remove(key);
+    } catch (error) {
+      if (deps.native) reportOnce(error, `saves.localRemove:${key}`);
+      return false;
+    }
+    behind.remove(key);
+    created.remove(key);
+    return true;
   }
 
   function onRestore(key: string, reset: () => void): void {
@@ -228,14 +309,14 @@ export function createSaves(deps: SavesDeps): SavesApi {
   }
 
   function context(m: AsyncKV | null): MigrationContext {
-    return { local, mirror: m, prefix, isMirrored, write, report: reportOnce };
+    return { local, mirror: m, prefix, isMirrored, write, remove: (key) => removeWith(m, key), report: reportOnce };
   }
 
   function enterPassthrough(track: boolean): void {
     state = 'passthrough';
     mirror = null;
     trackUnmirrored = track;
-    for (const key of pending.keys()) markUnmirrored(key);
+    for (const key of pending.keys()) markBehind(key);
     pending.clear();
   }
 
@@ -250,7 +331,8 @@ export function createSaves(deps: SavesDeps): SavesApi {
       if (typeof v === 'string') snapshot.set(k, v);
     });
     const seeded = snapshot.get(MIGRATED_V1_KEY) === '1';
-    const behind = unmirroredSet();
+    const newer = behind.keys();
+    const regrown = created.keys();
 
     // 2. Pull.
     let localFailed = false;
@@ -258,8 +340,12 @@ export function createSaves(deps: SavesDeps): SavesApi {
       if (!isMirrored(key)) continue;
       const current = local.get(key);
       if (current === value) continue;
-      if (current !== null && (pending.has(key) || behind.has(key))) continue; // local is newer
-      if (current !== null && !seeded) continue; // before the seed, localStorage is the source
+      if (regrown.has(key)) {
+        pending.delete(key); // grew from defaults: the mirror's full copy wins
+      } else {
+        if (current !== null && (pending.has(key) || newer.has(key))) continue; // local is newer
+        if (current !== null && !seeded) continue; // before the seed, localStorage is the source
+      }
       try {
         local.set(key, value);
       } catch (error) {
@@ -267,34 +353,40 @@ export function createSaves(deps: SavesDeps): SavesApi {
         localFailed = true;
         break;
       }
+      behind.remove(key);
       (current === null ? report.restored : report.replaced).push(key);
     }
     fireHooks([...report.restored, ...report.replaced]);
     if (localFailed) return 'local-error';
+    // localStorage is reconciled: what it holds now is a known-good lineage, and the created list has been applied.
+    created.clear();
+    for (const key of local.keys()) if (isMirrored(key)) trusted.add(key);
 
-    // 3. Push (an unseeded mirror gets the full copy from migration 1 instead).
+    // 3. Push (an unseeded mirror gets the full copy from migration 1 instead), and drop stale local-only copies.
+    const stale = [...snapshot.keys()].filter((k) => localOnly.has(k));
+    const drops = stale.map((k) => safeCall(() => m.remove(k)).catch((e: unknown) => reportOnce(e, `saves.mirrorRemove:${k}`)));
     if (seeded) {
-      const keysToPush = new Set<string>([...behind].filter(isMirrored));
+      const keysToPush = new Set<string>([...newer].filter(isMirrored));
       for (const key of local.keys()) if (isMirrored(key) && !snapshot.has(key)) keysToPush.add(key);
       const batch: Array<[string, string]> = [];
       for (const key of keysToPush) {
         const value = local.get(key);
-        if (value === null) behind.delete(key); // nothing local left to protect
+        if (value === null) behind.remove(key); // nothing local left to protect
         else batch.push([key, value]);
       }
-      const results = await Promise.allSettled(batch.map(([k, v]) => safeSet(m, k, v)));
+      const results = await Promise.allSettled(batch.map(([k, v]) => safeCall(() => m.set(k, v))));
       results.forEach((result, i) => {
         const key = batch[i][0];
         if (result.status === 'fulfilled') {
           report.pushed.push(key);
-          // After a timeout the session records its own writes in this set; a late push must not erase them.
-          if (!detached) behind.delete(key);
+          // After a timeout the session records its own writes; a late push must not erase them.
+          if (!detached) behind.remove(key);
         } else {
           reportOnce(result.reason, `saves.mirrorWrite:${key}`);
         }
       });
-      saveUnmirrored();
     }
+    await Promise.allSettled(drops);
     if (detached) return 'detached';
 
     // 4. Ladder.
@@ -302,7 +394,6 @@ export function createSaves(deps: SavesDeps): SavesApi {
     if (!seeded && (await m.get(MIGRATED_V1_KEY).catch(() => null)) === '1' && !detached) {
       report.migrated = true;
       behind.clear(); // migration 1 just copied every local key
-      saveUnmirrored();
     }
     return 'done';
   }
@@ -391,11 +482,14 @@ export function createSaves(deps: SavesDeps): SavesApi {
     }
   }
 
-  return {
-    hydrate: () => (hydration ??= run()),
-    write,
-    onRestore,
-  };
+  const hydrate = (): Promise<HydrateReport> => (hydration ??= run());
+
+  async function remove(key: string): Promise<boolean> {
+    if (deps.native && isMirrored(key)) await hydrate(); // memoized; never rejects
+    return removeWith(state === 'mirror' ? mirror : null, key);
+  }
+
+  return { hydrate, write, remove, onRestore };
 }
 
 // ---- The app instance ---------------------------------------------------------------------------------------------
@@ -438,6 +532,7 @@ async function loadPreferencesMirror(): Promise<AsyncKV | null> {
   return {
     get: async (key) => (await Preferences.get({ key })).value ?? null,
     set: (key, value) => Preferences.set({ key, value }),
+    remove: (key) => Preferences.remove({ key }),
     keys: async () => (await Preferences.keys()).keys,
   };
 }
@@ -464,5 +559,6 @@ export const Saves: SavesApi = createSaves({
   now: () => performance.now(),
   timeoutMs: PLATFORM.SAVE_HYDRATE_TIMEOUT_MS,
   prefix: PLATFORM.SAVE_PREFIX,
+  localOnly: PLATFORM.SAVE_LOCAL_ONLY_KEYS,
   onHydrated: traceHydrate,
 });

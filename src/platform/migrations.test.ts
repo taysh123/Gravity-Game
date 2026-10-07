@@ -47,6 +47,7 @@ function fakeMirror(init: Record<string, string> = {}): FakeMirror {
       m.sets.push([k, v]);
       data.set(k, v);
     },
+    remove: async (k) => void data.delete(k),
     keys: async () => [...data.keys()],
   };
   return m;
@@ -64,6 +65,7 @@ function ctx(
     prefix: P,
     isMirrored: (k) => k.startsWith(P) && k !== LOCAL_ONLY && k !== MIGRATED_V1_KEY,
     write,
+    remove: vi.fn(async () => true),
     report,
   };
 }

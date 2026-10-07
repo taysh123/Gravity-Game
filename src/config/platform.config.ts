@@ -74,6 +74,10 @@ export const PLATFORM = {
   // <= 60 ms (V19); this only guards against a bridge that never answers. Past it the session runs on
   // localStorage alone and its writes are reconciled on the next launch.
   SAVE_HYDRATE_TIMEOUT_MS: 2500,
+  // Save keys kept out of the Preferences mirror (localStorage only). ghost:v1 holds hundreds of KB of
+  // best-run replay paths; mirroring it would make every SharedPreferences apply() rewrite that whole XML
+  // and slow hydrate. Losing it on a WebView wipe only costs the ghost trails, never progress.
+  SAVE_LOCAL_ONLY_KEYS: ['gravity-flow:ghost:v1'] as readonly string[],
 
   // Frame-error guard (src/platform/frameGuard.ts): this many uncaught frame errors inside the window
   // freeze the loop and show the "Tap to restart" overlay.
