@@ -126,6 +126,12 @@ Run each row twice: Android 16 **gesture** navigation and **3-button** navigatio
 | U2 | System in dark mode | Same as U1 | D-11 | | | |
 | U3 | Cold start | The window background is dark, with no white flash before the first frame | D-11 | | | |
 
+## T: Touch targets (P00-T17b)
+
+| ID | Scenario | Expected | Ref | Result | Date | Notes |
+|---|---|---|---|---|---|---|
+| T1 | REQUIRES HUMAN DEVICE TEST: on a phone, tap the **bottom-right corner** of PLAY (and of WORLDS and DAILY), one **Settings toggle** at its right and lower edge, one **Level Select cell** at its bottom-right corner, and one **shop card** at its bottom-right corner (its price tag) | Each tap lands: PLAY starts the level, the toggle flips, the cell opens its level, the card acts (buy sheet / equip / jump to its bundle). A tap just outside any of them (up and to the left of PLAY, in the gap between two buttons) does nothing. | P00-T17b | | | |
+
 ## Sign-off (M0)
 
 - [ ] C1-C3 pass (V13)
@@ -134,4 +140,5 @@ Run each row twice: Android 16 **gesture** navigation and **3-button** navigatio
 - [ ] B, G and H rows pass on gesture and 3-button navigation (V16)
 - [ ] S1, S3 and S4 pass (V17); S2 recorded (V19)
 - [ ] R1 passes (V18)
+- [ ] T1 passes (P00-T17b: hit areas match what the player sees)
 - [ ] Results copied to the *Gates* table in [`docs/STATUS.md`](../STATUS.md)

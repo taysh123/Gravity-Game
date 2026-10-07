@@ -136,7 +136,7 @@ stateDiagram-v2
   
   A pending product never shows a second Buy button.
 - **Refund / chargeback.** Revocation reaches RC within ≤24 h (DOCUMENTED). The next `apply` removes `no_ads` and the derived cosmetics, and the equipped item falls back to the default. Interstitials resume. There is no punitive copy, and Stardust is never clawed back.
-- **Restore** has two entry points: Settings (`SettingsScene.ts:159-173`) and the shop (`CosmeticsScene.ts:128-135`).
+- **Restore** has two entry points, both built with `makeLink` and run by `runRestore` (`ui/purchaseUi.ts`): Settings (in `SettingsScene.create`) and the shop's Bundles tab (in `CosmeticsScene.create`, none on web). Refer to them by function, not line.
   - It is user-initiated only (`restorePurchases`). `syncPurchases` is never used.
   - Busy-guarded.
   - Shows a toast that lists restored items, or "No purchases found for this Google account".
