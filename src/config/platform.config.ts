@@ -67,8 +67,11 @@ export const PLATFORM = {
   // mirror lists and restores keys by this prefix.
   SAVE_PREFIX: 'gravity-flow:',
   // Kill switch for the Preferences mirror. false = stop mirroring writes and restoring on hydrate;
-  // localStorage is never removed, so progress is safe either way. Keys written while it is off are
-  // remembered locally, so turning it back on keeps them instead of the older mirror copies.
+  // localStorage is never removed, so progress is safe either way. Writes made while it is off are
+  // remembered locally. When it is turned back on, a key that localStorage already held when the
+  // mirror-off session started keeps its localStorage value (it is newer than the mirror's copy); a key
+  // first created during a mirror-off session yields to the mirror, because it may be a default
+  // regrown after a WebView wipe and must not replace the full copy.
   SAVE_MIRROR_ENABLED: true,
   // Upper bound on how long BootScene waits for Saves.hydrate() (src/platform/saves.ts). The target is
   // <= 60 ms (V19); this only guards against a bridge that never answers. Past it the session runs on
@@ -78,6 +81,15 @@ export const PLATFORM = {
   // best-run replay paths; mirroring it would make every SharedPreferences apply() rewrite that whole XML
   // and slow hydrate. Losing it on a WebView wipe only costs the ghost trails, never progress.
   SAVE_LOCAL_ONLY_KEYS: ['gravity-flow:ghost:v1'] as readonly string[],
+
+  // Renderer-crash recovery (D-11). MainActivity.java recreates the activity when the WebView's renderer
+  // process dies, at most RENDERER_MAX_RECOVERIES times per process, and adds one to the String count under
+  // RENDERER_GONE_KEY in the Capacitor Preferences file (SharedPreferences "CapacitorStorage"). Saves.hydrate()
+  // reads and clears it and reports one non-fatal (src/platform/rendererGone.ts). The key is deliberately
+  // outside SAVE_PREFIX: it is a native flag, not save data, so it is never mirrored into localStorage.
+  // MainActivity.java repeats both values; src/platform/rendererGone.test.ts pins that they match.
+  RENDERER_GONE_KEY: 'platform:rendererGone',
+  RENDERER_MAX_RECOVERIES: 2,
 
   // Frame-error guard (src/platform/frameGuard.ts): this many uncaught frame errors inside the window
   // freeze the loop and show the "Tap to restart" overlay.

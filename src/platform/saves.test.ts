@@ -2,7 +2,15 @@ import { describe, it, expect, vi } from 'vitest';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createSaves, CREATED_UNMIRRORED_KEY, UNMIRRORED_KEY, type AsyncKV, type KV, type SavesDeps } from './saves';
+import {
+  createSaves,
+  CREATED_UNMIRRORED_KEY,
+  UNMIRRORED_KEY,
+  type AsyncKV,
+  type KV,
+  type SavesApi,
+  type SavesDeps,
+} from './saves';
 import { MIGRATED_V1_KEY, SAVE_SCHEMA_KEY, type Migration } from './migrations';
 import { PLATFORM } from '../config/platform.config';
 
@@ -392,12 +400,13 @@ describe('hydrate', () => {
   });
 
   it('ignores keys outside the save prefix (other plugins and native flags in CapacitorStorage)', async () => {
-    const mirror = fakeMirror(seeded({ 'platform:rendererGone': '1' }));
+    const mirror = fakeMirror(seeded({ 'other-plugin:token': 'x', [PLATFORM.RENDERER_GONE_KEY]: '1' }));
     const local = memoryKV();
     const { saves } = setup({ local, mirror });
     await saves.hydrate();
-    expect(local.get('platform:rendererGone')).toBeNull();
-    expect(mirror.data.get('platform:rendererGone')).toBe('1');
+    expect(local.get('other-plugin:token')).toBeNull();
+    expect(mirror.data.get('other-plugin:token')).toBe('x');
+    expect(local.get(PLATFORM.RENDERER_GONE_KEY)).toBeNull(); // read and cleared in the mirror, never copied
   });
 
   it('is idempotent: a second launch over consistent stores changes nothing', async () => {
@@ -755,6 +764,181 @@ describe('Saves.remove', () => {
       expect(r.schema).toBe(0);
       expect(local.get(DEAD)).toBe('old');
     });
+  });
+});
+
+// P00-T12 (D-11): MainActivity leaves PLATFORM.RENDERER_GONE_KEY in the Preferences file when it recreates the
+// activity after a renderer crash. hydrate() reports it once as a non-fatal and clears it (rendererGone.test.ts covers
+// the read/clear logic itself).
+describe('renderer-gone marker', () => {
+  const KEY = PLATFORM.RENDERER_GONE_KEY;
+
+  it('reports once and clears the marker during hydrate', async () => {
+    const mirror = fakeMirror(seeded({ [PROGRESS]: 'p', [KEY]: '2' }));
+    const { saves, report } = setup({ local: memoryKV({ [PROGRESS]: 'p' }), mirror });
+    const r = await saves.hydrate();
+    expect(r.rendererGone).toBe(2);
+    expect(mirror.data.has(KEY)).toBe(false);
+    expect(mirror.removes).toEqual([KEY]);
+    expect(report).toHaveBeenCalledTimes(1);
+    expect(report).toHaveBeenCalledWith('renderer_gone x2', 'native');
+  });
+
+  it('the next launch reports nothing', async () => {
+    const local = memoryKV({ [PROGRESS]: 'p' });
+    const mirror = fakeMirror(seeded({ [PROGRESS]: 'p', [KEY]: '1' }));
+    await setup({ local, mirror }).saves.hydrate();
+    const second = setup({ local, mirror });
+    const r = await second.saves.hydrate();
+    expect(r.rendererGone).toBe(0);
+    expect(second.report).not.toHaveBeenCalled();
+  });
+
+  it('a clean launch looks nothing up by name and reports 0', async () => {
+    const mirror = fakeMirror(seeded({ [PROGRESS]: 'p' }));
+    const { saves, report } = setup({ local: memoryKV({ [PROGRESS]: 'p' }), mirror });
+    const looked: string[] = [];
+    const get = mirror.get;
+    mirror.get = (k) => {
+      looked.push(k);
+      return get(k);
+    };
+    const r = await saves.hydrate();
+    expect(r.rendererGone).toBe(0);
+    expect(report).not.toHaveBeenCalled();
+    expect(looked).not.toContain(KEY); // the key is only read when the mirror lists it
+  });
+
+  it('is handled on a first launch with an unseeded mirror too, and never touches saves', async () => {
+    const mirror = fakeMirror({ [KEY]: '1' });
+    const local = memoryKV({ [PROGRESS]: 'p' });
+    const { saves, report } = setup({ local, mirror });
+    const r = await saves.hydrate();
+    expect(r.rendererGone).toBe(1);
+    expect(mirror.data.has(KEY)).toBe(false);
+    expect(local.get(PROGRESS)).toBe('p');
+    expect(report).toHaveBeenCalledWith('renderer_gone x1', 'native');
+  });
+
+  it('a clear that fails keeps the marker, reports the failure, and still finishes hydrate in mirror mode', async () => {
+    const mirror = fakeMirror(seeded({ [PROGRESS]: 'p', [KEY]: '1' }));
+    mirror.failRemove = true;
+    const { saves, report } = setup({ local: memoryKV({ [PROGRESS]: 'p' }), mirror });
+    const r = await saves.hydrate();
+    expect(r.mode).toBe('mirror');
+    expect(r.rendererGone).toBe(0);
+    expect(mirror.data.get(KEY)).toBe('1');
+    expect(report).toHaveBeenCalledWith(expect.any(Error), 'saves.rendererGone');
+  });
+
+  it('waits for a usable mirror: the kill switch leaves the marker for a later launch', async () => {
+    const mirror = fakeMirror(seeded({ [KEY]: '1' }));
+    const { saves, report } = setup({ mirrorEnabled: false, mirror });
+    const r = await saves.hydrate();
+    expect(r.rendererGone).toBe(0);
+    expect(mirror.data.get(KEY)).toBe('1');
+    expect(report).not.toHaveBeenCalled();
+  });
+
+  it('web has no marker and never loads the mirror', async () => {
+    const { saves, loadMirror, report } = setup({ native: false });
+    const r = await saves.hydrate();
+    expect(r.rendererGone).toBe(0);
+    expect(loadMirror).not.toHaveBeenCalled();
+    expect(report).not.toHaveBeenCalled();
+  });
+});
+
+// P00-T13 hand-off: a migration step that calls Saves.remove() (or anything else on Saves that awaits hydrate()) waits
+// on the hydrate it is running inside, so boot stalls until SAVE_HYDRATE_TIMEOUT_MS. Steps must use ctx.remove.
+describe('Saves.remove from inside a migration step', () => {
+  const DEAD = `${P}progress:v8`;
+
+  // A one-step ladder whose step runs `body` against the Saves instance under test (bound after setup()).
+  function badLadder(body: (saves: SavesApi) => Promise<boolean>): { ladder: Migration[]; bind(s: SavesApi): void } {
+    let saves: SavesApi | null = null;
+    return {
+      ladder: [{ version: 1, name: 'bad-step', run: () => body(saves as SavesApi) }],
+      bind(s) {
+        saves = s;
+      },
+    };
+  }
+
+  it('fails fast (false) and is reported, instead of stalling boot until the hydrate timeout', async () => {
+    let removed: boolean | undefined;
+    const bad = badLadder(async (saves) => {
+      removed = await saves.remove(DEAD);
+      return true;
+    });
+    const local = memoryKV({ [DEAD]: 'old' });
+    const mirror = fakeMirror(seeded({ [DEAD]: 'old' }));
+    const { saves, report } = setup({ local, mirror, ladder: bad.ladder, timeoutMs: 300 });
+    bad.bind(saves);
+    const r = await saves.hydrate();
+    expect(removed).toBe(false);
+    expect(r.mode).toBe('mirror'); // not the 'timeout' passthrough
+    expect(r.schema).toBe(1);
+    expect(local.get(DEAD)).toBe('old'); // nothing was deleted
+    expect(mirror.data.get(DEAD)).toBe('old');
+    expect(report).toHaveBeenCalledWith(
+      expect.objectContaining({ message: expect.stringMatching(/ctx\.remove/) }),
+      'saves.removeInMigration',
+    );
+  });
+
+  it('is refused on web as well, so the mistake shows up in the dev loop and not only on a device', async () => {
+    let removed: boolean | undefined;
+    const bad = badLadder(async (saves) => {
+      removed = await saves.remove(DEAD);
+      return true;
+    });
+    const local = memoryKV({ [DEAD]: 'old' });
+    const { saves, report } = setup({ local, native: false, ladder: bad.ladder });
+    bad.bind(saves);
+    await saves.hydrate();
+    expect(removed).toBe(false);
+    expect(local.get(DEAD)).toBe('old');
+    expect(report).toHaveBeenCalledWith(expect.any(Error), 'saves.removeInMigration');
+  });
+
+  it('is reported once per session, and Saves.remove works normally once hydrate has finished', async () => {
+    const bad = badLadder(async (saves) => {
+      await saves.remove(DEAD);
+      await saves.remove(DEAD);
+      return true;
+    });
+    const local = memoryKV({ [DEAD]: 'old' });
+    const { saves, report } = setup({ local, mirror: fakeMirror(seeded({ [DEAD]: 'old' })), ladder: bad.ladder });
+    bad.bind(saves);
+    await saves.hydrate();
+    expect(report.mock.calls.filter((c) => c[1] === 'saves.removeInMigration')).toHaveLength(1);
+    expect(await saves.remove(DEAD)).toBe(true);
+    expect(local.get(DEAD)).toBeNull();
+  });
+
+  it('a hung step cannot leave the guard on once the hydrate timeout has settled hydrate()', async () => {
+    const hung: Migration = { version: 1, name: 'hung', run: () => new Promise<boolean>(() => undefined) };
+    const local = memoryKV({ [GHOST]: 'trail' });
+    const { saves } = setup({ local, mirror: fakeMirror(seeded({})), ladder: [hung], timeoutMs: 30 });
+    const r = await saves.hydrate();
+    expect(r).toMatchObject({ mode: 'passthrough', reason: 'timeout' });
+    expect(await saves.remove(GHOST)).toBe(true); // a local-only key: deletable without the mirror
+    expect(local.get(GHOST)).toBeNull();
+  });
+
+  it('a step that throws does not leave the guard on', async () => {
+    const throwing: Migration = {
+      version: 1,
+      name: 'throws',
+      run: async () => {
+        throw new Error('boom');
+      },
+    };
+    const local = memoryKV({ [DEAD]: 'old' });
+    const { saves } = setup({ local, mirror: fakeMirror(seeded({ [DEAD]: 'old' })), ladder: [throwing] });
+    await saves.hydrate();
+    expect(await saves.remove(DEAD)).toBe(true);
   });
 });
 

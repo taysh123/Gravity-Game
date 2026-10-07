@@ -20,7 +20,12 @@
 //   3. Push, localStorage -> mirror (seeded mirrors only): keys the mirror is known to be behind on (`save:unmirrored`)
 //      and keys the mirror lacks. Stale copies of local-only keys are deleted from the mirror.
 //   4. The migration ladder (src/platform/migrations.ts). Migration 1 seeds an unseeded mirror with a full copy and
-//      sets `save:migratedV1` (in the mirror) last.
+//      sets `save:migratedV1` (in the mirror) last. While it runs, Saves.remove() is refused (resolves false and is
+//      reported as `saves.removeInMigration`): it waits for hydrate(), which is waiting for the step, so a step that
+//      called it would stall boot until the timeout below. Steps delete through ctx.remove.
+//   Also, right after step 1: when the mirror lists PLATFORM.RENDERER_GONE_KEY (a native flag outside the save prefix,
+//   written by MainActivity when it recreated the activity after a renderer crash, D-11), it is cleared and reported as
+//   one non-fatal (src/platform/rendererGone.ts). It needs a usable mirror, so it waits for one like the other steps.
 //
 // CONFLICT RULE (a key present on both sides with different values):
 //   - `save:unmirroredCreated` keys: the MIRROR wins, seeded or not. These are keys first written in a session that
@@ -51,6 +56,7 @@
 import { Capacitor } from '@capacitor/core';
 import { PLATFORM } from '../config/platform.config';
 import { Crash } from '../utils/Crash';
+import { consumeRendererGone } from './rendererGone';
 import { MIGRATED_V1_KEY, MIGRATIONS, readSchema, runMigrations, type Migration, type MigrationContext } from './migrations';
 
 // Synchronous key-value store (localStorage). set/remove may throw (quota, storage disabled); get/keys never do.
@@ -81,6 +87,7 @@ export interface HydrateReport {
   mode: HydrateMode;
   reason: PassthroughReason | null;
   migrated: boolean; // migration 1 seeded the mirror during this hydrate
+  rendererGone: number; // renderer deaths read from the native marker and reported during this hydrate (0 = none)
   restored: string[]; // mirror -> localStorage, localStorage had no value
   replaced: string[]; // mirror -> localStorage, the mirror won a conflict
   pushed: string[]; // localStorage -> mirror, the mirror was behind
@@ -134,6 +141,7 @@ export function createSaves(deps: SavesDeps): SavesApi {
   let trackUnmirrored = true; // false only when localStorage itself is failing (local-error)
   let detached = false; // hydrate timed out: its late answer must not touch localStorage
   let hydration: Promise<HydrateReport> | null = null;
+  let migrating = false; // true while the ladder runs inside an unsettled hydrate(): remove() must fail fast
   let flushQueued = false;
   const pending = new Map<string, string>();
   const writeCount = new Map<string, number>();
@@ -312,6 +320,16 @@ export function createSaves(deps: SavesDeps): SavesApi {
     return { local, mirror: m, prefix, isMirrored, write, remove: (key) => removeWith(m, key), report: reportOnce };
   }
 
+  // The ladder, with the re-entry guard raised for exactly as long as a step could be waiting on this hydrate.
+  async function runLadder(m: AsyncKV | null): Promise<number> {
+    migrating = true;
+    try {
+      return await runMigrations(context(m), readSchema(local), ladder);
+    } finally {
+      migrating = false;
+    }
+  }
+
   function enterPassthrough(track: boolean): void {
     state = 'passthrough';
     mirror = null;
@@ -322,9 +340,15 @@ export function createSaves(deps: SavesDeps): SavesApi {
 
   // Steps 1-4 against a loaded mirror. Rejects only when the bridge fails while reading (step 1).
   async function reconcile(m: AsyncKV, report: HydrateReport): Promise<Outcome> {
-    const keys = (await m.keys()).filter((k) => k.startsWith(prefix));
+    const listed = await m.keys();
+    const keys = listed.filter((k) => k.startsWith(prefix));
     const values = await Promise.all(keys.map((k) => m.get(k)));
     if (detached) return 'detached';
+    // Native flag, not save data: read by name only when listed, so a clean launch costs nothing extra.
+    if (listed.includes(PLATFORM.RENDERER_GONE_KEY)) {
+      report.rendererGone = await consumeRendererGone(m, PLATFORM.RENDERER_GONE_KEY, reportOnce);
+      if (detached) return 'detached';
+    }
     const snapshot = new Map<string, string>();
     keys.forEach((k, i) => {
       const v = values[i];
@@ -390,7 +414,7 @@ export function createSaves(deps: SavesDeps): SavesApi {
     if (detached) return 'detached';
 
     // 4. Ladder.
-    report.schema = await runMigrations(context(m), readSchema(local), ladder);
+    report.schema = await runLadder(m);
     if (!seeded && (await m.get(MIGRATED_V1_KEY).catch(() => null)) === '1' && !detached) {
       report.migrated = true;
       behind.clear(); // migration 1 just copied every local key
@@ -404,6 +428,7 @@ export function createSaves(deps: SavesDeps): SavesApi {
       mode: 'web',
       reason: null,
       migrated: false,
+      rendererGone: 0,
       restored: [],
       replaced: [],
       pushed: [],
@@ -421,7 +446,7 @@ export function createSaves(deps: SavesDeps): SavesApi {
       return report;
     };
     const localLadder = async (): Promise<void> => {
-      report.schema = await runMigrations(context(null), readSchema(local), ladder);
+      report.schema = await runLadder(null);
     };
     const passthrough = async (reason: PassthroughReason, track = true, ladderNow = true): Promise<HydrateReport> => {
       enterPassthrough(track);
@@ -460,6 +485,7 @@ export function createSaves(deps: SavesDeps): SavesApi {
       }
       if (outcome === 'timeout') {
         detached = true;
+        migrating = false; // hydrate() has settled, so a step that is still hung can no longer deadlock on it
         work.catch(() => undefined); // a late failure no longer matters
         reportOnce(new Error(`hydrate timed out after ${deps.timeoutMs} ms`), 'saves.hydrate');
         // The ladder waits for the next launch: the detached reconcile may still be running it.
@@ -485,6 +511,13 @@ export function createSaves(deps: SavesDeps): SavesApi {
   const hydrate = (): Promise<HydrateReport> => (hydration ??= run());
 
   async function remove(key: string): Promise<boolean> {
+    if (migrating) {
+      // Awaiting hydrate() here would wait on the step that called us. Refuse on every platform, so the mistake shows
+      // up in the web dev loop too, not only on a device.
+      const message = 'Saves.remove() was called from a migration step; use ctx.remove, Saves.remove waits for hydrate';
+      reportOnce(new Error(message), 'saves.removeInMigration');
+      return false;
+    }
     if (deps.native && isMirrored(key)) await hydrate(); // memoized; never rejects
     return removeWith(state === 'mirror' ? mirror : null, key);
   }
