@@ -23,12 +23,12 @@
 | androidBuild | 1 |
 | Derived versionName / versionCode | 1.0.0 / 1000001 |
 | `phaser` | 3.90.0 |
-| `@capacitor/core` | 8.4.0 |
-| `@capacitor/android` | 8.4.0 |
+| `@capacitor/core` | 8.5.2 |
+| `@capacitor/android` | 8.5.2 |
 | `@capacitor-community/admob` | 8.0.0 |
-| `@revenuecat/purchases-capacitor` | 13.1.5 |
-| `@capacitor-firebase/analytics` | 8.3.0 |
-| `@capacitor-firebase/crashlytics` | 8.3.0 |
+| `@revenuecat/purchases-capacitor` | 13.7.0 |
+| `@capacitor-firebase/analytics` | 8.5.2 |
+| `@capacitor-firebase/crashlytics` | 8.5.2 |
 | Android SDK (min / compile / target) | 24 / 36 / 36 |
 | CI Node | 22 |
 <!-- facts:end -->
@@ -40,7 +40,7 @@ Regenerate with `npm run facts`; verify with `npm run facts:check` (CI runs the 
 ### Milestones ([definitions](roadmap/MASTER-ROADMAP.md))
 | Milestone | Contents | Unlocks | Tag | State |
 |---|---|---|---|---|
-| **M0 Truthful Build** | P0 + P1 | Internal-track upload (versionCode >= 1000001); owner device validation | `v1.0.0-rc.2` | Not reached. In progress: Step 0 |
+| **M0 Truthful Build** | P0 + P1 | Internal-track upload (versionCode >= 1000001); owner device validation | `v1.0.0-rc.2` | Not reached. In progress: Step 2 |
 | **M1 Closed Beta** | M0 + P2 + P3 + P4-alpha + P5-A | Closed test (12 testers x 14 days if required), working title | `v1.0.0-rc.3` | Not started |
 | **M2 Launch Candidate** | M1 + P4 + P5 + P6/P7 core + P11 (rename applied) | Production staged rollout | `v1.0.0-rc.4` | Not started |
 | **M3 Live 1.x** | P8, P9, P10, P12 optimisation, iOS track | Growth and live ops by data | `v1.0.0` at launch (Step 19) | Not started |
@@ -63,9 +63,9 @@ Regenerate with `npm run facts`; verify with `npm run facts:check` (CI runs the 
 | Data Safety form + privacy policy sign-off (drafts land in P0 Step 5) | Owner | before M2 | PENDING |
 
 ## Next 5 actions
-Step 0 complete (P00-T01…T06 CI v2). Then Step 1 (Capacitor 8.5.2 security) and Step 2 (platform contract).
-1. **Step 1: P00-T07** — Capacitor 8.5.2 family and exact pins (patch GHSA-rvm3-566m-v7fv).
-2. **Step 2: P00-T09…T13** — Manifest, theme, WebView floor, system bars, back router, PauseScene.
+Steps 0 and 1 complete (P00-T01…T07: CI v2, Capacitor 8.5.2 family and exact pins). AdMob stays at 8.0.0 until the P00-T08 soak (not before 2026-10-13).
+1. **Step 2: P00-T09…T13** — Manifest, theme, WebView floor, system bars, back router, PauseScene (wires `@capacitor/app` and `@capacitor/preferences`, installed in T07 but not yet imported).
+2. **P00-T08** — AdMob 8.2.1 soak commit, deferred until >= 2026-10-13.
 3. **Step 3: P00-T14…T17** — Purchases (D-09): plugin config, ids, products, license testers.
 4. **Step 4: P00-T18…T20** — Consent-first boot and ad plumbing (D-10, D-11).
 5. **Step 5: P00-T21…T26** — Error boundary, store validation, analytics hygiene (A-10 level_end attempts), boot smoke.
@@ -77,7 +77,7 @@ Top blockers from the [state audit](audit/2026-10-07/STATE-AUDIT.md) (section B.
 | B-01 | P0 | IAP non-functional: plugin registered as `'PurchasesPlugin'` (native name is `Purchases`) and empty RevenueCat key | [Step 3](roadmap/phases/P00-foundation.md) |
 | B-02 | P0 | Interstitial can show over live gameplay; rewarded ad can hang | [Step 4](roadmap/phases/P00-foundation.md) |
 | B-03 | P0 | Frame-rate-dependent physics (forces applied per render frame) | [Steps 6-7](roadmap/phases/P01-physics.md) |
-| B-04 | P0 | `@capacitor/android` 8.4.0 critical advisory GHSA-rvm3-566m-v7fv (`npm audit`: 1 critical) | [Step 1](roadmap/phases/P00-foundation.md) |
+| B-04 | P0 | `@capacitor/android` 8.4.0 critical advisory GHSA-rvm3-566m-v7fv (`npm audit`: 1 critical) | FIXED in P00-T07 (Capacitor 8.5.2; `npm audit --omit=dev` reports 0, gated in CI) |
 | B-05 | P0 | Google test AdMob ids shipped; no real AdMob/RevenueCat ids anywhere | [Steps 3-4](roadmap/phases/P00-foundation.md) + owner gates |
 | B-06 | P0 | Lazy consent, analytics before consent, no privacy-options entry, incomplete Data Safety | [Steps 4-5](roadmap/phases/P00-foundation.md) |
 | B-07 | P0 | Misleading "leaderboard" claim in the store listing (metadata policy) | [Step 5](roadmap/phases/P00-foundation.md) |

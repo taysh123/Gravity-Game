@@ -27,6 +27,11 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # D-11: shipped (production) dependencies must carry no critical advisory. GHSA-rvm3-566m-v7fv (Capacitor
+      # Android, CVSS 9.3) is the reason this gate exists. Dev-only tooling (vitest, the Capacitor CLI) is not
+      # shipped in the APK and is excluded by --omit=dev; its advisories are tracked in docs/STATUS.md instead.
+      - name: Dependency audit (no critical advisories in production dependencies)
+        run: npm audit --omit=dev --audit-level=critical
       - run: npx tsc --noEmit
       # One vitest run: the console reporter for the log, the JSON report for the facts check below.
       # A red test fails this step (and so the job) before the facts check is reached.
