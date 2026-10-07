@@ -2,7 +2,7 @@
 
 > **The single source of truth for project state.** The Facts block is machine-generated; every other section is
 > edited by hand at the end of each task. Anything that contradicts this file is stale.
-> Last hand-edited **2026-10-07** · Position: **Step 0** of the [execution order](roadmap/EXECUTION-ORDER.md) (docs SSOT; P00-T01 to P00-T03 done).
+> Last hand-edited **2026-10-07** · Position: **Step 0** of the [execution order](roadmap/EXECUTION-ORDER.md) (docs SSOT; P00-T01 to P00-T05 done).
 > Plan of record: [MASTER-ROADMAP](roadmap/MASTER-ROADMAP.md) · [EXECUTION-ORDER](roadmap/EXECUTION-ORDER.md) · [DECISIONS](roadmap/DECISIONS.md) (amendments override entry bodies).
 > Working title: **Gravity Flow** by True Story Labs. Package id `com.truestorylabs.gravityflow` is permanent.
 
@@ -18,10 +18,10 @@
 | Other content | 8 daily levels · 20 run chunks · 14 achievements · 28 cosmetics · 3 bundles |
 | Scenes registered | 13 |
 | Level files | 163 on disk · 13 retired (6, 22, 31, 35, 37, 39, 40, 45, 48, 55, 56, 63, 64) |
-| Tests | 29 files / 262 tests |
-| package.json version | 1.0.0-rc.1 |
-| androidBuild | unset |
-| Derived versionName / versionCode | not derived (androidBuild unset in package.json; D-20) |
+| Tests | 30 files / 291 tests |
+| package.json version | 1.0.0 |
+| androidBuild | 1 |
+| Derived versionName / versionCode | 1.0.0 / 1000001 |
 | `phaser` | 3.90.0 |
 | `@capacitor/core` | 8.4.0 |
 | `@capacitor/android` | 8.4.0 |
@@ -48,7 +48,7 @@ Regenerate with `npm run facts`; verify with `npm run facts:check` (CI runs the 
 ### Owner gates (opened 2026-10-07 unless noted)
 | Gate | Owner | Date / due | State |
 |---|---|---|---|
-| Play Console app exists; AAB with **versionCode 1** uploaded (last uploaded versionCode = **1**; next upload >= **1000001**, D-20) | Owner | reported 2026-10-07 | DONE (owner-reported) |
+| Play Console app exists; AAB with **versionCode 1** uploaded (last uploaded versionCode = **1**; next upload >= **1000001**, D-20; `package.json` now derives 1000001) | Owner | reported 2026-10-07 | DONE (owner-reported) |
 | Google Play and Apple developer accounts exist (Apple used only for the iOS track, D-29) | Owner | reported 2026-10-07 | DONE (owner-reported) |
 | **Android developer verification**: check the status on Play Console Home | Owner | URGENT, before the next upload | UNKNOWN |
 | **Upload keystore backup** (`gravityflow-upload`, one copy on disk): password manager + one offline copy (R-21) | Owner | URGENT | OPEN |
@@ -58,16 +58,17 @@ Regenerate with `npm run facts`; verify with `npm run facts:check` (CI runs the 
 | **Naming decision** (D-19, USER-GATED): pick from [NAMING-STUDY](launch/NAMING-STUDY.md) + trademark knockout; gates production, not the closed test (A-14) | Owner | before M2 | PENDING |
 | `FORCE_SCALE` on-device A/B (1.0 / 1.5 / 2.08 / 2.2; provisional 2.08, A-19) | Owner | before M0 | PENDING |
 | Crashlytics collection after consent: legal check (D-10.5) | Owner | before M0 upload | PENDING |
+| Confirm dropping the stale git stash `stash@{0}` ("abandoned sprint4 wip", 2026-05-31) with `git stash drop stash@{0}` (P00-T04; not dropped, needs owner OK) | Owner | any time | PENDING |
 | Age Signals plugin scheduled (D-25; CA AB 1043 starts 2027-01-01) | Claude + Owner | 2026-12-15 | SCHEDULED |
 | Data Safety form + privacy policy sign-off (drafts land in P0 Step 5) | Owner | before M2 | PENDING |
 
 ## Next 5 actions
 Step 0 continues ([P00 task list](roadmap/phases/P00-foundation.md)); then Step 1 (Capacitor 8.5.2 security bump) and Step 2.
-1. **P00-T04**: repo hygiene (JDK path out of `gradle.properties`, untrack `.ai/*`, `proguard-android-optimize.txt`).
-2. **P00-T05**: D-20 versioning (versionCode derived from `package.json`, next upload 1000001); rewrites the RUNBOOK versioning section.
-3. **P00-T06**: CI v2 (Node 22, `npm ci`, `facts:check`, Android debug build).
-4. **P00-T07**: Capacitor 8.5.2 family and exact pins (Step 1).
-5. **P00-T09**: manifest, theme, WebView floor and system bars (Step 2; the AdMob bump P00-T08 waits for its soak window).
+1. **P00-T06**: CI v2 (Node 22, `npm ci`, `facts:check`, Android debug build, version cross-check).
+2. **P00-T07**: Capacitor 8.5.2 family and exact pins (Step 1).
+3. **P00-T09**: manifest, theme, WebView floor and system bars (Step 2; the AdMob bump P00-T08 waits for its soak window, on or after 2026-10-13).
+4. **P00-T10**: back router + PauseScene.
+5. **P00-T11**: background/foreground contract (pause + audio suspend).
 
 ## Open bugs
 Top blockers from the [state audit](audit/2026-10-07/STATE-AUDIT.md) (section B.6/O). Target: 0 open P0 defects at M0.

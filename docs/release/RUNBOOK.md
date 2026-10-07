@@ -42,8 +42,7 @@ Needs Node, the Android SDK and **JDK 21** (Temurin 21 or the Android Studio bun
 
 - Pass JDK 21 per invocation, through `JAVA_HOME` or `-Dorg.gradle.java.home` on the command line.
 - **Never commit `org.gradle.java.home` in `android/gradle.properties`.** It is a machine-specific path; a tracked value
-  breaks every other machine and CI. (Removal of the current line is P00-T04; the check is
-  `git grep -n "org.gradle.java.home=" -- android` returning nothing.)
+  breaks every other machine and CI. The check is `git grep -n "org.gradle.java.home=" -- android` returning nothing.
 
 PowerShell:
 ```
@@ -61,18 +60,33 @@ cd android && ./gradlew -Dorg.gradle.java.home="<path to a JDK 21 home>" bundleR
 |---|---|
 | `versionName` | the semver in `package.json` (`MAJOR.MINOR.PATCH`) |
 | `versionCode` | `MAJOR*1_000_000 + MINOR*10_000 + PATCH*100 + BUILD`; `BUILD` is `androidBuild` in `package.json` |
-| Ranges | `MINOR`, `PATCH`, `BUILD` each 0-99; the build fails outside them |
+| Ranges | `MINOR`, `PATCH`, `BUILD` each 0-99, and the code at most 2_100_000_000 (Google Play's cap); the build fails outside them |
 | Rc label | lives only in the git tag, never in `package.json` or the Android version |
+| Source of truth | `package.json` only (`version` and `androidBuild`); `build.gradle` has no literal version numbers |
 
 - **An AAB with versionCode 1 is already on Play, so the next upload must be at least 1000001** (version 1.0.0, build 1).
   Play rejects any code that is not strictly higher than one already uploaded.
 - A code is never reused. A bad build is superseded by `androidBuild + 1`, not rebuilt under the same code.
 - The same AAB is promoted Internal, then Closed, then Production. Rebuild only when something changes, and then bump
   `androidBuild`.
-- *(P00-T05)* The derivation lives in `android/app/build.gradle` (reads `package.json`, fails out of range, task
-  `printVersionCode`) and in `node scripts/version.mjs` (`--code`, `--name`, `--bump-build`, `--check`); both must print the
-  same value. Until then `android/app/build.gradle` holds literal values: set `versionCode 1000001` before the first
-  upload.
+- The derivation is implemented twice and both must print the same number:
+  `scripts/lib/versionCode.mjs` (used by `node scripts/version.mjs` and by `scripts/facts.mjs`) and `android/app/build.gradle`
+  (reads `package.json` with `JsonSlurper`, fails the build out of range, task `printVersionCode`).
+- **Commands.** Run them from the repository root; the Gradle one needs JDK 21 (section 3).
+
+  | Command | Does |
+  |---|---|
+  | `node scripts/version.mjs --code` | prints the versionCode (1000001 for 1.0.0 build 1) |
+  | `node scripts/version.mjs --name` | prints the versionName |
+  | `node scripts/version.mjs --check` | exits 1 when `package.json` is not valid D-20 data: not a plain `MAJOR.MINOR.PATCH`, a part out of range, or a code outside 1000001 to 2_100_000_000 |
+  | `node scripts/version.mjs --bump-build` | `androidBuild` + 1 in `package.json` (refuses past 99) |
+  | `cd android && ./gradlew -q :app:printVersionCode` | prints the versionCode Gradle will build; compare with `--code` |
+
+- **Before every upload:** run `--bump-build` (a code is never reused), commit `package.json`, check that `--code` and
+  `printVersionCode` agree, then `./gradlew bundleRelease`. Record the uploaded code in the *Gates* table of
+  [`docs/STATUS.md`](../STATUS.md).
+- **New version:** edit `version` in `package.json` (and `package-lock.json`) and set `androidBuild` to 1.
+  If `androidBuild` reaches 99, bump PATCH instead; the code keeps increasing.
 
 ### Git tags (A-15)
 

@@ -2,6 +2,8 @@
 // everything here is a function of its arguments so it can be unit-tested and so the
 // generated facts block is deterministic (the CI drift check depends on that).
 
+import { VersionError, deriveVersion as deriveD20Version } from '../lib/versionCode.mjs';
+
 export class FactsError extends Error {
   constructor(message) {
     super(message);
@@ -79,22 +81,14 @@ export function checkBlock(text, id, expected) {
 // Fact parsing (inputs are file contents / parsed JSON; scripts/facts.mjs does the I/O)
 // ---------------------------------------------------------------------------
 
-/** D-20: versionCode = MAJOR*1_000_000 + MINOR*10_000 + PATCH*100 + BUILD. Nothing is derived until androidBuild exists. */
+/** D-20 facts adapter over scripts/lib/versionCode.mjs (the only implementation). Nothing is derived until androidBuild exists. */
 export function deriveVersion(version, androidBuild) {
   if (androidBuild === undefined || androidBuild === null) return { versionName: null, versionCode: null };
-  if (!Number.isInteger(androidBuild) || androidBuild < 0 || androidBuild > 99) {
-    throw new FactsError(`androidBuild must be an integer 0-99 (got ${androidBuild})`);
+  try {
+    return deriveD20Version(version, androidBuild);
+  } catch (err) {
+    throw err instanceof VersionError ? new FactsError(err.message) : err;
   }
-  const m = /^(\d+)\.(\d+)\.(\d+)$/.exec(version);
-  if (!m) throw new FactsError(`version must be MAJOR.MINOR.PATCH when androidBuild is set (got "${version}")`);
-  const [major, minor, patch] = [Number(m[1]), Number(m[2]), Number(m[3])];
-  if (minor > 99 || patch > 99 || major > 2100) {
-    throw new FactsError(`version "${version}" is out of range for the D-20 versionCode formula`);
-  }
-  return {
-    versionName: version,
-    versionCode: major * 1_000_000 + minor * 10_000 + patch * 100 + androidBuild,
-  };
 }
 
 /** Installed (locked) version of a package from package-lock.json, or null when it is not installed. */

@@ -1,4 +1,42 @@
+import groovy.json.JsonSlurper
+
 apply plugin: 'com.android.application'
+
+// Versioning (D-20): ONE version file, package.json. versionName is its semver `version`;
+//   versionCode = MAJOR*1_000_000 + MINOR*10_000 + PATCH*100 + BUILD      (BUILD = `androidBuild`)
+// The same rules live in scripts/lib/versionCode.mjs (`node scripts/version.mjs --code`); CI compares the
+// two outputs. MINOR, PATCH and BUILD must each be 0-99 and the code at most Google Play's 2_100_000_000,
+// otherwise the build fails. The rc label lives only in the git tag. See docs/release/RUNBOOK.md section 4.
+def appVersionCap = 2100000000G
+def packageJson = new JsonSlurper().parse(file('../../package.json'))
+def semver = (packageJson.version instanceof String) ? (packageJson.version =~ /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/) : null
+if (semver == null || !semver.matches()) {
+    throw new GradleException("package.json version must be a plain MAJOR.MINOR.PATCH with no rc label (got '${packageJson.version}')")
+}
+def appMajor = new BigInteger(semver.group(1))
+def appMinor = new BigInteger(semver.group(2))
+def appPatch = new BigInteger(semver.group(3))
+if (appMinor > 99G || appPatch > 99G) {
+    throw new GradleException("package.json version '${packageJson.version}': MINOR and PATCH must each be 0-99")
+}
+if (!(packageJson.androidBuild instanceof Integer) || packageJson.androidBuild < 0 || packageJson.androidBuild > 99) {
+    throw new GradleException("package.json androidBuild must be an integer 0-99 (got '${packageJson.androidBuild}')")
+}
+def appVersionCodeBig = appMajor * 1000000G + appMinor * 10000G + appPatch * 100G + packageJson.androidBuild
+if (appVersionCodeBig > appVersionCap) {
+    throw new GradleException("package.json version '${packageJson.version}' build ${packageJson.androidBuild} derives versionCode ${appVersionCodeBig}, above Google Play's maximum ${appVersionCap}")
+}
+def appVersionCode = appVersionCodeBig.intValueExact()
+def appVersionName = packageJson.version as String
+
+tasks.register('printVersionCode') {
+    group = 'help'
+    description = 'Prints the versionCode derived from package.json (CI compares it with node scripts/version.mjs --code).'
+    def printed = appVersionCode.toString()
+    doLast {
+        println printed
+    }
+}
 
 // Release signing — loaded from android/keystore.properties (gitignored; never committed).
 // If the file is absent (fresh clone, web/CI, anyone without the keystore) the release build
@@ -18,8 +56,8 @@ android {
         applicationId "com.truestorylabs.gravityflow"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0.0"
+        versionCode appVersionCode
+        versionName appVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

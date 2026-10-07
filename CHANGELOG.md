@@ -1,8 +1,19 @@
 # Changelog — GRAVITY FLOW
 
 Internal project changelog (newest first). Store-facing "What's new" copy lives in
-`docs/store/release-notes.md`. Versions track `package.json`; the Android marketing
-version is `versionName` / `versionCode` in `android/app/build.gradle`.
+`docs/store/release-notes.md`. Versions track `package.json`; the Android `versionName` / `versionCode` are derived from it
+(D-20, `docs/release/RUNBOOK.md` section 4).
+
+## [Unreleased]
+- **Versioning (D-20, P00-T05):** `package.json` is the one version file: `version` is `1.0.0` (the rc label now lives only in git
+  tags) and the new `androidBuild` is `1`. `versionCode = MAJOR*1_000_000 + MINOR*10_000 + PATCH*100 + BUILD`, so the next
+  Play upload is **1000001** (an AAB with versionCode 1 is already on Play). `versionName` stays `1.0.0`.
+  `android/app/build.gradle` derives both from `package.json` (fails the build when MINOR/PATCH/BUILD leave 0-99 or the code
+  exceeds Play's 2_100_000_000), with a `printVersionCode` task; `node scripts/version.mjs` (`--code`, `--name`,
+  `--bump-build`, `--check`) and `scripts/lib/versionCode.mjs` are the JS side and the facts generator uses the same code.
+- **Repo hygiene (P00-T04):** the machine-specific `org.gradle.java.home` is gone from `android/gradle.properties` (pass JDK 21 per
+  invocation, see the RUNBOOK); the dead `.ai/*` symlinks are untracked and `.ai/` is ignored; release builds reference
+  `proguard-android-optimize.txt` (AGP 9 readiness; R8 stays off for 1.0).
 
 ## [1.0.0-rc.1] — release candidate (launch-locked, pre-publication)
 The 1.0 launch candidate: feature- & content-complete, repo-side launch-ready, store copy accurate.
