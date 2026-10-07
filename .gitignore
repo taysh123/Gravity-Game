@@ -35,3 +35,6 @@ android/app/release/
 
 # Subagent-driven-development scratch (ledger)
 .superpowers/
+
+# Local AI-tooling symlinks (targets are machine-specific; not part of the project).
+.ai/
