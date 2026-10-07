@@ -41,6 +41,10 @@ New plans keep going to `docs/superpowers/plans/`.
 | [`2026-07-01-wave3-monetization-tuning.md`](../plans/2026-07-01-wave3-monetization-tuning.md) | Wave 3: monetization tuning |
 | [`2026-07-01-wave4-launch-readiness-polish.md`](../plans/2026-07-01-wave4-launch-readiness-polish.md) | Wave 4: launch-readiness polish |
 
+## Local machine paths
+
+Local machine paths (e.g. the keystore location) were redacted from archived docs, because docs/ is publicly served.
+
 ## Links inside archived files
 
 Relative links between the archived documents were rewritten so they still resolve after the move. Plain-text path

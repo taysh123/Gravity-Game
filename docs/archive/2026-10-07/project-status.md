@@ -186,7 +186,7 @@ Pages, served from `docs/index.html`).
 
 **Done this phase — all committed + pushed (HEAD `a354492`):**
 - **Release signing** wired in Gradle (`android/app/build.gradle`) from a gitignored
-  `android/keystore.properties`; upload key **`gravityflow-upload`** (`C:\Keys\gravityflow-upload.jks`,
+  `android/keystore.properties`; upload key **`gravityflow-upload`** (`<local path redacted>`,
   valid to 2051). `./gradlew signingReport` → release variant **Valid**. (`b79e849`)
 - **Signed AAB** built + `jarsigner`-verified at
   `android/app/build/outputs/bundle/release/app-release.aab`. Built 2026-06-16 (11.4 MB, signed

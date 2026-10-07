@@ -81,7 +81,7 @@ you resume (in order):**
 
 ## Done this phase (all committed + pushed)
 - **Release signing** via Gradle + gitignored `android/keystore.properties`; upload key
-  `gravityflow-upload` (`C:\Keys\gravityflow-upload.jks`, valid to 2051); `signingReport` = Valid.
+  `gravityflow-upload` (`<local path redacted>`, valid to 2051); `signingReport` = Valid.
 - **Signed AAB** built + `jarsigner`-verified; **rebuilt 2026-06-16** so it reflects UMP + branded icon + 150 levels.
 - **UMP/GDPR consent** before `AdMob.initialize()` (`utils/Ads.ts` + `native/admob.ts`), web-safe.
 - **Privacy policy finalized** (markdown + mobile-friendly HTML `docs/index.html`; contact

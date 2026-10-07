@@ -31,9 +31,7 @@ Keep `docs/index.html` and `docs/.nojekyll` where they are: the privacy URL abov
   Configure the UMP "Privacy & messaging" consent message so the form shows in the EEA.
 - **RevenueCat**: the Android app and its **public SDK key** (`goog_...`). Products, entitlements and the current
   offering follow the D-09 table: entitlements `no_ads`, `pack_starter`, `pack_premium_collection`, `pack_founders`; Play
-  products `remove_ads`, `starter_pack`, `premium_collection_pack`, `founders_pack`, all non-consumable. Details in
-  [`docs/design/MONETIZATION.md`](../design/MONETIZATION.md) Part A and
-  [`docs/launch/EXTERNAL-SERVICES-AUDIT.md`](../launch/EXTERNAL-SERVICES-AUDIT.md).
+  products `remove_ads`, `starter_pack`, `premium_collection_pack`, `founders_pack`, all non-consumable. The product set is extended by amendment A-06 in [`docs/roadmap/DECISIONS.md`](../roadmap/DECISIONS.md) (`supporter_pack`, seasonal packs, cosmetic-only "twin" SKUs such as `starter_cosmetic`), with details in [`docs/design/MONETIZATION.md`](../design/MONETIZATION.md) Part A. See also [`docs/launch/EXTERNAL-SERVICES-AUDIT.md`](../launch/EXTERNAL-SERVICES-AUDIT.md).
 - **Firebase**: an Android app for `com.truestorylabs.gravityflow`; download `google-services.json`. Enable Analytics and
   Crashlytics.
 
@@ -118,7 +116,7 @@ project is already committed.
 `android/app/build.gradle` loads `android/keystore.properties` when it exists. Without it the release build still
 configures and emits an **unsigned** bundle, so fresh clones and CI never break.
 
-1. **Create the upload keystore once** (you choose the passwords). Run from `android/`:
+1. **Create the upload keystore once** (you choose the passwords). The upload keystore (alias `gravityflow-upload`) **already exists and must never be regenerated**, because replacing it requires a Play Console upload-key reset; back it up instead (see `docs/roadmap/RISK-REGISTER.md`). Run from `android/` only if creating from scratch:
    ```
    keytool -genkeypair -v -keystore <keystore-file>.jks -keyalg RSA -keysize 2048 -validity 10000 -alias gravityflow-upload
    ```

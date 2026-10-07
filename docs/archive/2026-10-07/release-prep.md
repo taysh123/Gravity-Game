@@ -19,7 +19,7 @@
 | **Privacy policy** | **https://taysh123.github.io/Gravity-Game/** (Pages → `docs/index.html`) |
 | **Web demo (Vercel)** | https://gravity-flow-six.vercel.app (older build; not the release artifact) |
 | **Signed AAB** | `android/app/build/outputs/bundle/release/app-release.aab` — **✅ rebuilt 2026-06-16** (11.4 MB, signed `gravityflow-upload`, `jarsigner` verified; reflects UMP + branded icon + 150 levels). Re-run the build only if real ids/version change. |
-| **Upload key** | `gravityflow-upload` · `C:\Keys\gravityflow-upload.jks` (gitignored, valid to 2051) |
+| **Upload key** | `gravityflow-upload` · `<local path redacted>` (gitignored, valid to 2051) |
 | **Store copy** | listing/ASO/release-notes refreshed to 150/15 + new modes (`docs/store/`) |
 | **Media package** | ✅ full visual package in `docs/media/` (Play / App Store / GitHub / portfolio / LinkedIn) + 3 GIFs; strategy/captions in `docs/media/README.md`; portfolio-grade root `README.md` |
 
