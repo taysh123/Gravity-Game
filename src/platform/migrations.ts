@@ -114,6 +114,8 @@ function ownedIn(raw: string | null): string[] | null {
 //        - a snapshot RevenueCat confirmed (`at > 0`): the store truth wins, the seed is ignored.
 //   2. Strip: bundle cosmetics leave cosmetics:v2 `owned` (their ownership is derived from the snapshot from now on, so
 //      a refund removes them). Equips are kept; CosmeticStore validates them against the derived ownership on read.
+//      The strip happens only after the seed write is read back from storage; if it did not land, nothing is stripped,
+//      the failure is reported and the step resolves false, so the ladder re-runs it on the next boot (review M8).
 // The legacy `premium` key is NOT deleted here: §5 deletes it after the first successful getCustomerInfo() reconcile
 // (IAP, through Saves.remove, outside the ladder). This step never deletes anything, so it cannot strand a key that a
 // later kill or a mirror restore could resurrect; re-running it (a kill before the schema is recorded, a lost schema
@@ -132,7 +134,16 @@ export async function migrateV2(ctx: MigrationContext): Promise<boolean> {
   } else if (!isConfirmed(existing) && seed.some((e) => !existing.active.includes(e))) {
     next = { ...existing, active: [...existing.active, ...seed] };
   }
-  if (next) ctx.write(ENTITLEMENTS_KEY, serializeSnapshot(next));
+  if (next) {
+    const raw = serializeSnapshot(next);
+    ctx.write(ENTITLEMENTS_KEY, raw);
+    // Read it back (review M8): ctx.write is Saves.write, which never throws, so a quota failure is silent. The local
+    // grants are the only other record of those packs, so they are stripped only once the seed is known to be stored.
+    if (local.get(ENTITLEMENTS_KEY) !== raw) {
+      ctx.report(new Error('entitlements seed did not persist; local bundle grants kept'), 'saves.migration:premium-entitlements');
+      return false; // not complete: nothing stripped, the ladder re-runs this step on the next boot
+    }
+  }
 
   if (v2Raw !== null) {
     try {

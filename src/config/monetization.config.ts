@@ -61,6 +61,13 @@ export const PURCHASE_FLOW = {
   VERIFY_DELAY_MS: 2000,
   // The setExternalFlowActive() source raised around the Play purchase sheet (src/platform/externalFlow.ts).
   EXTERNAL_FLOW_SOURCE: 'iap',
+  // A-06 silent restore (one per new RevenueCat identity on Android). A failure backs off exponentially across
+  // launches (BASE, 2xBASE, 4xBASE ... capped at MAX), at most MAX_PER_SESSION attempts run in one session, and after
+  // MAX_ATTEMPTS failures it gives up: the store truth then applies and the user-facing Restore stays available.
+  SILENT_RESTORE_MAX_PER_SESSION: 2,
+  SILENT_RESTORE_MAX_ATTEMPTS: 8,
+  SILENT_RESTORE_BACKOFF_BASE_MS: 5 * 60 * 1000,
+  SILENT_RESTORE_BACKOFF_MAX_MS: 24 * 60 * 60 * 1000,
 } as const;
 
 // Premium bundles (IAP). `productId` is the Play Console product, `packageId` its RevenueCat package and

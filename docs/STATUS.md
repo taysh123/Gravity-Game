@@ -18,7 +18,7 @@
 | Other content | 8 daily levels · 20 run chunks · 14 achievements · 28 cosmetics · 3 bundles |
 | Scenes registered | 14 |
 | Level files | 163 on disk · 13 retired (6, 22, 31, 35, 37, 39, 40, 45, 48, 55, 56, 63, 64) |
-| Tests | 44 files / 704 tests |
+| Tests | 46 files / 740 tests |
 | package.json version | 1.0.0 |
 | androidBuild | 1 |
 | Derived versionName / versionCode | 1.0.0 / 1000001 |
@@ -64,7 +64,7 @@ Regenerate with `npm run facts`; verify with `npm run facts:check` (CI runs the 
 
 ## Next 5 actions
 Step 0 complete. Step 1 complete except P00-T08 (AdMob 8.2.1 soak, deferred to >= 2026-10-13); done so far: P00-T01…T07 (CI v2, Capacitor 8.5.2 family, exact pins), P00-T09 (manifest, theme, WebView floor, system bars), P00-T10 (Back router + `PauseScene`, Endless pause button), P00-T11 (background/foreground contract, `Haptics.pulse`), P00-T12 (renderer-crash recovery: `MainActivity` recreates the activity on a dead WebView renderer, at most twice per process, and leaves a `platform:rendererGone` marker that `Saves.hydrate()` reports once to Crashlytics; null-bridge guard; `Crash` queues early reports until the plugin is ready) and P00-T13 (`@capacitor/preferences` save mirror, hydrate before Boot, migration ladder, backup rules limited to the two save locations); device checks pending in the M0 session (V18 renderer kill, R1 in the device checklist). AdMob stays pinned at exactly 8.0.0 until the soak.
-1. **P00-T17** — Purchase UI honesty on top of the P00-T16 service: `IAP.price(pkg)` (store `priceString`, `null` until offerings load), `IAP.buy(pkg)` outcomes (`purchased`/`pending`/`cancelled`/`network`/`unavailable`/`error`), `IAP.restore()` (`{ outcome, restored }`), `IAP.isPending(pkg)`, `IAP.inFlight()`; production web resolves `unavailable` ("Available in the Android app"). Standing rules: P00-T22 appends migration 3 (delete with **`ctx.remove` only**, never `Saves.remove`); every new persisted key goes through `Saves.write`; P00-T19 raises `setExternalFlowActive(true|false, 'ads')` around ads.
+1. **P00-T17** — Purchase UI honesty on top of the P00-T16 service: `IAP.price(pkg)` (store `priceString`, `null` until offerings load), `IAP.buy(pkg)` outcomes (`purchased`/`pending`/`cancelled`/`network`/`unavailable`/`error`), `IAP.restore()` (`{ outcome, restored }`; a card's "Check status" calls `IAP.restore({ recheck: pkg })`, which is the only way a still-pending marker is cleared), `IAP.isPending(pkg)` (also set when a purchase resolved but its entitlement is not visible yet), `IAP.inFlight()`; production web resolves `unavailable` ("Available in the Android app"). Standing rules: P00-T22 appends migration 3 (delete with **`ctx.remove` only**, never `Saves.remove`); every new persisted key goes through `Saves.write`; P00-T19 raises `setExternalFlowActive(true|false, 'ads')` around ads.
 2. **P00-T08** — AdMob 8.2.1 soak commit, deferred until >= 2026-10-13.
 3. **Step 4: P00-T18…T20** — Consent-first boot and ad plumbing (D-10, D-11).
 4. **Step 5: P00-T21…T26** — Error boundary, store validation, analytics hygiene (A-10 level_end attempts), boot smoke.

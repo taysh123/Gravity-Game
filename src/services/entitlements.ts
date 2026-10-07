@@ -226,18 +226,32 @@ export interface Reconciled {
   resolved: string[]; // product ids whose pending marker completed (fire purchase_completed for these)
 }
 
-// Apply one RevenueCat answer. The store's list REPLACES the snapshot's (entitlements are the truth); a pending marker
-// resolves when its product is now owned and expires after `pendingTtlMs`.
-export function reconcileSnapshot(prev: EntitlementSnapshot, active: readonly string[], now: number, pendingTtlMs: number): Reconciled {
-  const nextActive = canonical(active);
+// How an answer is applied:
+//   'replace': the store's list REPLACES the snapshot's (entitlements are the truth) and stamps `at`. The normal mode.
+//   'merge':   the store's list is ADDED to the snapshot and nothing is revoked; `at` is kept. Used while the current
+//              RevenueCat identity's A-06 silent restore has not answered (a fresh install, possibly with a snapshot
+//              restored from backup): the new identity's partial answers must not revoke what the restore will return.
+export type ReconcileMode = 'replace' | 'merge';
+
+// Apply one RevenueCat answer. A pending marker expires after `pendingTtlMs` (an expired one is dropped, never
+// resolved, so it cannot add a late or second purchase_completed); a live one resolves when its product is now owned.
+export function reconcileSnapshot(
+  prev: EntitlementSnapshot,
+  active: readonly string[],
+  now: number,
+  pendingTtlMs: number,
+  mode: ReconcileMode = 'replace',
+): Reconciled {
+  const nextActive = mode === 'merge' ? canonical([...prev.active, ...active]) : canonical(active);
   const resolved: string[] = [];
   const pending: PendingMarker[] = [];
   for (const m of prev.pending) {
+    if (now - m.at >= pendingTtlMs) continue; // expired
     if (ownsProduct(nextActive, m.productId)) resolved.push(m.productId);
-    else if (now - m.at < pendingTtlMs) pending.push(m);
+    else pending.push(m);
   }
   return {
-    next: { v: 1, active: nextActive, at: now, pending },
+    next: { v: 1, active: nextActive, at: mode === 'merge' ? prev.at : now, pending },
     granted: nextActive.filter((e) => !prev.active.includes(e)),
     revoked: prev.active.filter((e) => !nextActive.includes(e)),
     resolved,
@@ -248,8 +262,11 @@ export function withPending(s: EntitlementSnapshot, productId: string, now: numb
   return { ...s, pending: [...s.pending.filter((m) => m.productId !== productId), { productId, at: now }] };
 }
 
-export function withoutPending(s: EntitlementSnapshot): EntitlementSnapshot {
-  return { ...s, pending: [] };
+// "Check status" on one product (A.5): its marker is dropped. Never a blanket clear: another product's payment may
+// still be pending, and a cleared marker would show a second Buy button for it.
+export function withoutPendingFor(s: EntitlementSnapshot, productId: string): EntitlementSnapshot {
+  if (!s.pending.some((m) => m.productId === productId)) return s;
+  return { ...s, pending: s.pending.filter((m) => m.productId !== productId) };
 }
 
 export function isPendingFor(s: EntitlementSnapshot, productId: string, now: number, pendingTtlMs: number): boolean {
@@ -257,7 +274,7 @@ export function isPendingFor(s: EntitlementSnapshot, productId: string, now: num
   return s.pending.some((m) => m.productId === productId && now - m.at < pendingTtlMs);
 }
 
-// ---- Migration and fresh-install decisions ---------------------------------------------------------------------
+// ---- Migration and silent-restore decisions ----------------------------------------------------------------------
 
 // Migration 2's seed: the legacy Remove-Ads flag, plus the pack of any bundle cosmetic that an old build granted
 // locally (the web stub did; on a device every old purchase failed, see MONETIZATION.md A.0 #1).
@@ -269,20 +286,71 @@ export function legacySeed(premiumRaw: string | null, ownedCosmetics: readonly s
   return canonical(seed);
 }
 
-export interface FreshInstallInput {
-  platform: string; // Capacitor.getPlatform()
-  appUserId: string | null; // Purchases.getAppUserID(); null when it could not be read
-  restoredFor: string | null; // the identity the last silent restore (or check) was recorded for
-  active: readonly string[]; // what RevenueCat reports for the current identity
+// A-06: on Android, ONE silent restorePurchases() per RevenueCat identity. RevenueCat's own storage is excluded from
+// backup (D-11), so a fresh install (or a reinstall restored from backup) always starts a new anonymous identity. The
+// restore runs whatever that identity already reports (review M3: a purchase or listener update made before it must
+// not skip it). A failure backs off exponentially across launches, is capped per session, and gives up after
+// `maxAttempts` (review M4). Persisted as `gravity-flow:iap:silentRestore` (services/IAP.ts).
+export interface SilentRestoreRecord {
+  id: string | null; // the RevenueCat app user id it is for (null: getAppUserID could not be read)
+  done: boolean; // a restore answered for this identity
+  attempts: number; // restores tried for this identity
+  nextAt: number; // epoch ms before which no new attempt is made (after a failure)
 }
 
-// A-06: on Android, run one silent restorePurchases() on a fresh install. RevenueCat's own storage is excluded from
-// backup (D-11), so a fresh install (or a reinstall restored from backup) always has a new anonymous identity:
-// "fresh" = an identity this install has not checked yet. 'restore' when that identity reports nothing active,
-// 'mark' when it already has entitlements (nothing to restore), 'none' otherwise. Never on iOS, where a restore can
-// prompt for an Apple ID.
-export function freshInstallAction(i: FreshInstallInput): 'restore' | 'mark' | 'none' {
-  if (i.platform !== 'android') return 'none';
-  if (i.appUserId !== null && i.appUserId === i.restoredFor) return 'none';
-  return i.active.length > 0 ? 'mark' : 'restore';
+export interface SilentRestoreLimits {
+  maxPerSession: number;
+  maxAttempts: number;
+  backoffBaseMs: number;
+  backoffMaxMs: number;
+}
+
+export interface SilentRestoreInput {
+  platform: string; // Capacitor.getPlatform()
+  appUserId: string | null;
+  record: SilentRestoreRecord | null;
+  now: number;
+  sessionAttempts: number; // attempts already made in this session
+  limits: SilentRestoreLimits;
+}
+
+export function parseSilentRestoreRecord(raw: string | null): SilentRestoreRecord | null {
+  if (!raw) return null;
+  try {
+    const o = JSON.parse(raw) as Partial<SilentRestoreRecord> | null;
+    if (!o || typeof o !== 'object' || Array.isArray(o)) return null;
+    if (o.id !== null && typeof o.id !== 'string') return null;
+    if (typeof o.done !== 'boolean') return null;
+    if (typeof o.attempts !== 'number' || !Number.isInteger(o.attempts) || o.attempts < 0) return null;
+    if (typeof o.nextAt !== 'number' || !Number.isFinite(o.nextAt)) return null;
+    return { id: o.id, done: o.done, attempts: o.attempts, nextAt: o.nextAt };
+  } catch {
+    return null;
+  }
+}
+
+// 'restore' now; 'wait' (not now, still outstanding: answers are merged, nothing is revoked); 'skip' (done for this
+// identity, given up, or not Android: the store truth applies).
+export function silentRestoreDecision(i: SilentRestoreInput): 'restore' | 'wait' | 'skip' {
+  if (i.platform !== 'android') return 'skip';
+  const rec = i.record && i.record.id === i.appUserId ? i.record : null; // a record for another identity does not count
+  if (rec?.done) return 'skip';
+  if ((rec?.attempts ?? 0) >= i.limits.maxAttempts) return 'skip';
+  if (i.sessionAttempts >= i.limits.maxPerSession) return 'wait';
+  if (rec && i.now < rec.nextAt) return 'wait';
+  return 'restore';
+}
+
+// The record after an attempt for `appUserId` (ok = the restore answered).
+export function afterSilentRestore(
+  record: SilentRestoreRecord | null,
+  appUserId: string | null,
+  ok: boolean,
+  now: number,
+  limits: SilentRestoreLimits,
+): SilentRestoreRecord {
+  const attempts = (record && record.id === appUserId ? record.attempts : 0) + 1;
+  if (ok) return { id: appUserId, done: true, attempts, nextAt: 0 };
+  const delay = Math.min(limits.backoffBaseMs * 2 ** (attempts - 1), limits.backoffMaxMs);
+  return { id: appUserId, done: false, attempts, nextAt: now + delay };
 }

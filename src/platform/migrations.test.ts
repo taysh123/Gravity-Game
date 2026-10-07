@@ -454,9 +454,54 @@ describe('migration 2: legacy premium flag + local bundle grants -> entitlements
   it('writes through ctx.write only (the mirrored Saves.write), never localStorage directly', async () => {
     const local = memoryKV({ [LEGACY_PREMIUM_KEY]: '1', [COSMETICS_V2_KEY]: COSMETICS(['default', 'trail_galaxy']) });
     const direct = vi.spyOn(local, 'set');
-    const write = vi.fn();
-    await migrateV2(ctx(local, null, write));
+    const write = vi.fn((k: string, v: string): void => {
+      local.data.set(k, v); // lands, without the spied set()
+    });
+    expect(await migrateV2(ctx(local, null, write))).toBe(true);
     expect(direct).not.toHaveBeenCalled();
     expect(write.mock.calls.map((c) => c[0]).sort()).toEqual([COSMETICS_V2_KEY, ENTITLEMENTS_KEY].sort());
+  });
+
+  // Review fix M8: never strip the local grants before the seed that replaces them is known to be in storage.
+  describe('M8: the strip waits until the seed is read back from storage', () => {
+    const dropping = (local: KV & { data: Map<string, string> }, state: { fail: boolean }) =>
+      vi.fn((k: string, v: string): void => {
+        if (state.fail && k === ENTITLEMENTS_KEY) return; // Saves.write never throws: a quota failure is silent
+        local.data.set(k, v);
+      });
+
+    it('a seed write that does not land: nothing is stripped, reported, and the step is not complete', async () => {
+      const local = memoryKV({ [LEGACY_PREMIUM_KEY]: '1', [COSMETICS_V2_KEY]: COSMETICS(['default', 'trail_galaxy']) });
+      const state = { fail: true };
+      const report = vi.fn();
+      expect(await migrateV2(ctx(local, null, dropping(local, state), report))).toBe(false);
+      expect(local.get(ENTITLEMENTS_KEY)).toBeNull();
+      expect(JSON.parse(local.get(COSMETICS_V2_KEY)!).owned).toEqual(['default', 'trail_galaxy']);
+      expect(report).toHaveBeenCalledWith(expect.any(Error), 'saves.migration:premium-entitlements');
+
+      state.fail = false; // the next boot, storage works again
+      expect(await migrateV2(ctx(local, null, dropping(local, state)))).toBe(true);
+      expect(snapshotOf(local)?.active).toEqual(['no_ads', 'pack_starter']);
+      expect(JSON.parse(local.get(COSMETICS_V2_KEY)!).owned).toEqual(['default']);
+    });
+
+    it('a merge into an unconfirmed snapshot that does not land: no strip, not complete', async () => {
+      const seeded = JSON.stringify({ v: 1, active: ['no_ads'], at: 0, pending: [] });
+      const local = memoryKV({ [ENTITLEMENTS_KEY]: seeded, [COSMETICS_V2_KEY]: COSMETICS(['default', 'mythic_dragon']) });
+      expect(await migrateV2(ctx(local, null, dropping(local, { fail: true })))).toBe(false);
+      expect(local.get(ENTITLEMENTS_KEY)).toBe(seeded);
+      expect(JSON.parse(local.get(COSMETICS_V2_KEY)!).owned).toContain('mythic_dragon');
+    });
+
+    it('with the real ladder: stops at 1 while the seed does not persist, records the latest on the boot it does', async () => {
+      const local = memoryKV({ [SAVE_SCHEMA_KEY]: '1', [LEGACY_PREMIUM_KEY]: '1', [COSMETICS_V2_KEY]: COSMETICS(['default', 'arrival_bolt']) });
+      const state = { fail: true };
+      const write = dropping(local, state);
+      expect(await runMigrations(ctx(local, null, write), readSchema(local))).toBe(1);
+      state.fail = false;
+      expect(await runMigrations(ctx(local, null, write), readSchema(local))).toBe(LATEST);
+      expect(snapshotOf(local)?.active).toEqual(['no_ads', 'pack_premium_collection']);
+      expect(JSON.parse(local.get(COSMETICS_V2_KEY)!).owned).toEqual(['default']);
+    });
   });
 });

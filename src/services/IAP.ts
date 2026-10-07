@@ -14,9 +14,10 @@
 //   Android listener does not replay current state) -> getOfferings() cached (the exact package objects).
 //   An empty key leaves IAP "unconfigured" (every purchase/restore resolves 'unavailable'); a failed load or configure
 //   is "failed" and retried on the next foreground or the next tap.
-// A-06: on Android, the first reconcile of a RevenueCat identity this install has not checked yet runs ONE silent
-//   restorePurchases() when that identity reports nothing active (fresh install, or a reinstall restored from backup;
-//   RevenueCat's own storage is not backed up, D-11). Until that check answered, nothing is revoked.
+// A-06: on Android, ONE silent restorePurchases() runs per RevenueCat identity (a fresh install, or a reinstall restored
+//   from backup: RevenueCat's own storage is not backed up, D-11), whatever that identity already reports. Until it has
+//   answered, every answer is MERGED into the snapshot and nothing is revoked (review M3). A failing restore backs off
+//   exponentially across launches, is capped per session, and gives up after a maximum (review M4).
 // Never revoke without a successful answer: offline, a failed call or a malformed answer leaves the snapshot as it is
 //   (A.12), so a migrated or offline player stays ad-free with their cosmetics. The first successful answer replaces
 //   the migration-2 seed with the store truth and deletes the legacy `premium` key (P00-foundation.md §5, §9).
@@ -24,7 +25,10 @@
 // buy(packageId) follows the A.4 state machine: exact package from the offering (never [0]) -> purchasePackage with
 // the external-flow flag raised around the Play sheet -> 'purchased' ONLY when the target entitlement is active (after
 // one re-read 2 s later: "Verifying"). Codes: 1 cancelled (silent), 20 pending (marker + the listener completes it),
-// 6 already owned (restore), 10/35 network, 42 and anything else error.
+// 6 already owned (restore), 10/35 network, 42 and anything else error. A purchase that resolved but whose entitlement
+// is still not visible after the re-read is 'pending' with a marker too (review M5): the store took the payment.
+// Pending markers are cleared per product only: when the product turns owned, after the TTL, or by an explicit
+// "Check status" restore of that product (review M2). Never a blanket clear.
 // Web: production resolves 'unavailable' and grants nothing (A.13); DEV keeps a stub that writes the snapshot.
 import { Capacitor } from '@capacitor/core';
 import type { CustomerInfo, LOG_LEVEL, MakePurchaseResult, PurchasesOfferings, PurchasesPlugin } from '@revenuecat/purchases-capacitor';
@@ -51,23 +55,34 @@ import {
   deriveOwnership,
   errorCode,
   findPackage,
-  freshInstallAction,
   isPendingFor,
   ownsProduct,
+  parseSilentRestoreRecord,
   productByPackage,
   reconcileSnapshot,
+  silentRestoreDecision,
+  afterSilentRestore,
   withPending,
-  withoutPending,
+  withoutPendingFor,
   type CustomerInfoLike,
   type Entitlement,
   type EntitlementSnapshot,
   type ProductRow,
+  type ReconcileMode,
+  type SilentRestoreLimits,
 } from './entitlements';
 
 // Once-per-device "first purchase" analytics flag (measure only).
 export const FIRST_PURCHASE_KEY = 'gravity-flow:firstPurchase';
-// The RevenueCat app user id the A-06 fresh-install check last ran for.
-export const RESTORED_FOR_KEY = 'gravity-flow:iap:restoredFor';
+// The A-06 silent-restore record (entitlements.ts SilentRestoreRecord): identity, done, attempts, backoff.
+export const SILENT_RESTORE_KEY = 'gravity-flow:iap:silentRestore';
+
+const SILENT_RESTORE_LIMITS: SilentRestoreLimits = {
+  maxPerSession: PURCHASE_FLOW.SILENT_RESTORE_MAX_PER_SESSION,
+  maxAttempts: PURCHASE_FLOW.SILENT_RESTORE_MAX_ATTEMPTS,
+  backoffBaseMs: PURCHASE_FLOW.SILENT_RESTORE_BACKOFF_BASE_MS,
+  backoffMaxMs: PURCHASE_FLOW.SILENT_RESTORE_BACKOFF_MAX_MS,
+};
 
 type PurchasesApi = Pick<
   PurchasesPlugin,
@@ -119,7 +134,9 @@ export interface IAPApi {
   isPending(packageId: string): boolean; // a payment-pending marker is live for this package's product
   price(packageId: string): string | null; // store priceString of the cached package; null until offerings load
   buy(packageId: string): Promise<PurchaseOutcome>; // never rejects
-  restore(): Promise<RestoreResult>; // never rejects
+  // Never rejects. `recheck`: the package whose "Check status" asked for this restore; only its pending marker is
+  // cleared when it is still not owned (other products' markers are never touched).
+  restore(options?: { recheck?: string }): Promise<RestoreResult>;
   inFlight(): boolean; // a purchase or restore is running (buttons render disabled)
 }
 
@@ -132,15 +149,21 @@ export function createIAP(deps: IAPDeps): IAPApi {
   let hooked = false;
   let initRun: Promise<void> | null = null;
   let offerings: PurchasesOfferings | null = null;
-  // A-06 fresh-install check outstanding for this session (Android only).
+  // The current identity's A-06 silent restore has answered (or is not needed): answers are applied with 'replace'.
+  // Until then they are merged and nothing is revoked (review M3). Always true off Android.
   let freshChecked = deps.platform !== 'android';
+  let silentAttempts = 0; // silent restores tried in this session (review M4 cap)
   let busy = false;
   let refreshing = false;
   let legacyDropping = false;
+  const reported = new Set<string>();
 
-  // Offline is expected, not a defect: network codes are never reported.
+  // Offline is expected, not a defect: network codes are never reported. One report per context per session, so a
+  // failure that repeats on every foreground cannot flood Crashlytics (review M4).
   function report(error: unknown, context: string): void {
     if (classifyPurchaseError(errorCode(error)) === 'network') return;
+    if (reported.has(context)) return;
+    reported.add(context);
     try {
       deps.report(error, context);
     } catch {
@@ -170,14 +193,15 @@ export function createIAP(deps: IAPDeps): IAPApi {
   }
 
   // Apply one RevenueCat answer. A missing or malformed CustomerInfo is ignored (it must never read as "nothing
-  // active"). Returns whether it was applied.
-  function apply(info: CustomerInfoLike | null | undefined): boolean {
+  // active"). The mode defaults to 'replace' once the identity's silent restore has answered, 'merge' before. Returns
+  // whether it was applied.
+  function apply(info: CustomerInfoLike | null | undefined, mode: ReconcileMode = freshChecked ? 'replace' : 'merge'): boolean {
     const active = info?.entitlements?.active;
     if (!active || typeof active !== 'object') return false;
-    const r = reconcileSnapshot(deps.store.read(), activeEntitlements(info), deps.now(), ttl);
+    const r = reconcileSnapshot(deps.store.read(), activeEntitlements(info), deps.now(), ttl, mode);
     deps.store.write(r.next);
     for (const productId of r.resolved) trackCompleted(productId); // a pending purchase completed
-    dropLegacyPremium();
+    if (mode === 'replace') dropLegacyPremium(); // §5: only once the store truth has replaced the seed
     return true;
   }
 
@@ -190,12 +214,13 @@ export function createIAP(deps: IAPDeps): IAPApi {
     }
   }
 
-  function markChecked(id: string | null): void {
-    freshChecked = true;
-    if (id) deps.kv.write(RESTORED_FOR_KEY, id);
+  function recordSilentRestore(id: string | null, ok: boolean): void {
+    const next = afterSilentRestore(parseSilentRestoreRecord(deps.kv.get(SILENT_RESTORE_KEY)), id, ok, deps.now(), SILENT_RESTORE_LIMITS);
+    deps.kv.write(SILENT_RESTORE_KEY, JSON.stringify(next));
   }
 
-  // getCustomerInfo -> (A-06 silent restore) -> apply. false = nothing applied (retried on the next foreground).
+  // getCustomerInfo -> (A-06 silent restore) -> apply. false = no store answer was applied (retried on the next
+  // foreground).
   async function reconcile(): Promise<boolean> {
     const api = rc;
     if (!api) return false;
@@ -208,25 +233,31 @@ export function createIAP(deps: IAPDeps): IAPApi {
     }
     if (!freshChecked) {
       const id = await appUserId(api);
-      const action = freshInstallAction({
+      const decision = silentRestoreDecision({
         platform: deps.platform,
         appUserId: id,
-        restoredFor: deps.kv.get(RESTORED_FOR_KEY),
-        active: activeEntitlements(info),
+        record: parseSilentRestoreRecord(deps.kv.get(SILENT_RESTORE_KEY)),
+        now: deps.now(),
+        sessionAttempts: silentAttempts,
+        limits: SILENT_RESTORE_LIMITS,
       });
-      if (action === 'restore') {
-        let restored: CustomerInfo;
+      if (decision === 'restore') {
+        silentAttempts++;
+        let restored: CustomerInfo | undefined;
         try {
           restored = (await api.restorePurchases()).customerInfo;
         } catch (error) {
           report(error, 'iap.silentRestore');
-          return false; // keep the snapshot: nothing is revoked before this identity's restore has answered
         }
-        if (!apply(restored)) return false;
-        markChecked(id);
-        return true;
+        if (restored && apply(restored, 'replace')) {
+          recordSilentRestore(id, true);
+          freshChecked = true;
+          return true;
+        }
+        recordSilentRestore(id, false); // backs off; meanwhile take what the store says without revoking
+        return apply(info, 'merge');
       }
-      markChecked(action === 'mark' ? id : null);
+      if (decision === 'skip') freshChecked = true;
     }
     return apply(info);
   }
@@ -243,9 +274,7 @@ export function createIAP(deps: IAPDeps): IAPApi {
 
   function onCustomerInfo(info: CustomerInfo): void {
     try {
-      // Before this identity's fresh-install check, an empty update must not revoke: the check's own answer follows.
-      if (!freshChecked && activeEntitlements(info).length === 0) return;
-      apply(info);
+      apply(info); // merged (never revoking) until this identity's silent restore has answered
     } catch (error) {
       report(error, 'iap.listener');
     }
@@ -334,9 +363,10 @@ export function createIAP(deps: IAPDeps): IAPApi {
     }
   }
 
-  // Restore and apply: shared by restore() and the code-6 path. Clears pending markers ("Check status", A.5) and
-  // counts as this identity's fresh-install check.
-  async function restoreWith(api: PurchasesApi): Promise<'ok' | 'network' | 'error'> {
+  // Restore and apply: shared by restore() and the code-6 path. The answer is authoritative ('replace') and counts as
+  // this identity's silent restore. Pending markers resolve per product through apply(); only `recheckProductId`
+  // ("Check status" on that card, A.5) is additionally cleared when still not owned. Never a blanket clear (review M2).
+  async function restoreWith(api: PurchasesApi, recheckProductId?: string): Promise<'ok' | 'network' | 'error'> {
     let info: CustomerInfo;
     try {
       info = (await api.restorePurchases()).customerInfo;
@@ -345,9 +375,10 @@ export function createIAP(deps: IAPDeps): IAPApi {
       report(error, 'iap.restore');
       return 'error';
     }
-    if (!apply(info)) return 'error';
-    deps.store.write(withoutPending(deps.store.read()));
-    markChecked(await appUserId(api));
+    if (!apply(info, 'replace')) return 'error';
+    if (recheckProductId) deps.store.write(withoutPendingFor(deps.store.read(), recheckProductId));
+    if (deps.platform === 'android') recordSilentRestore(await appUserId(api), true); // this identity is restored
+    freshChecked = true;
     return 'ok';
   }
 
@@ -392,13 +423,14 @@ export function createIAP(deps: IAPDeps): IAPApi {
     if (!row) return 'unavailable';
     if (busy) return 'cancelled';
     const product = row.productId;
-    deps.track(purchaseInitiated(product));
     const fail = (reason: string, outcome: PurchaseOutcome): PurchaseOutcome => {
       deps.track(purchaseFailed(product, reason));
       return outcome;
     };
     if (!deps.native) {
-      if (!deps.dev) return fail('unavailable', 'unavailable'); // production web never grants paid items (A.13)
+      // Production web never grants paid items and is not a purchase attempt: no funnel events (A.13).
+      if (!deps.dev) return 'unavailable';
+      deps.track(purchaseInitiated(product));
       devGrant(row);
       trackCompleted(product);
       return 'purchased';
@@ -406,11 +438,12 @@ export function createIAP(deps: IAPDeps): IAPApi {
     busy = true;
     try {
       await ensureReady();
-      const api = rc;
-      if (!api || state !== 'ready') return fail('unavailable', 'unavailable');
       const owned = (): boolean => ownsProduct(deps.store.read().active, product);
       if (owned()) return 'purchased';
       if (isPendingFor(deps.store.read(), product, deps.now(), ttl)) return 'pending'; // never a second sheet
+      deps.track(purchaseInitiated(product)); // a real attempt (not an owned / pending short-circuit)
+      const api = rc;
+      if (!api || state !== 'ready') return fail('unavailable', 'unavailable');
       let aPackage = findPackage(offerings, packageId, product);
       if (!aPackage) {
         await loadOfferings();
@@ -449,7 +482,14 @@ export function createIAP(deps: IAPDeps): IAPApi {
         trackCompleted(product);
         return 'purchased';
       }
-      return fail('not_entitled', 'error');
+      // The store took the payment (purchasePackage resolved) but the entitlement is still not visible: pending, not a
+      // failure (review M5). The marker lets the listener / foreground refresh complete it (firing purchase_completed
+      // once) and the card show "unlocks automatically". A persistent case points at the dashboard (a product not
+      // attached to its entitlement), hence the report.
+      deps.store.write(withPending(deps.store.read(), product, deps.now()));
+      deps.track(purchasePending(product));
+      report(new Error(`purchase of ${product} resolved but its entitlements are not active`), 'iap.notEntitled');
+      return 'pending';
     } catch (error) {
       report(error, 'iap.buy');
       return fail('error', 'error');
@@ -458,11 +498,13 @@ export function createIAP(deps: IAPDeps): IAPApi {
     }
   }
 
-  async function restore(): Promise<RestoreResult> {
+  async function restore(options: { recheck?: string } = {}): Promise<RestoreResult> {
     if (busy) return { outcome: 'busy', restored: [] };
+    if (!deps.native && !deps.dev) return { outcome: 'unavailable', restored: [] }; // production web (A.13)
     deps.track(restoreEvent());
+    const recheckProductId = options.recheck ? productByPackage(options.recheck)?.productId : undefined;
     if (!deps.native) {
-      if (!deps.dev) return { outcome: 'unavailable', restored: [] };
+      if (recheckProductId) deps.store.write(withoutPendingFor(deps.store.read(), recheckProductId));
       const active = [...deps.store.read().active];
       return { outcome: active.length ? 'restored' : 'none', restored: active };
     }
@@ -471,7 +513,7 @@ export function createIAP(deps: IAPDeps): IAPApi {
       await ensureReady();
       const api = rc;
       if (!api || state !== 'ready') return { outcome: 'unavailable', restored: [] };
-      const r = await restoreWith(api);
+      const r = await restoreWith(api, recheckProductId);
       if (r !== 'ok') return { outcome: r, restored: [] };
       const active = [...deps.store.read().active];
       return { outcome: active.length ? 'restored' : 'none', restored: active };

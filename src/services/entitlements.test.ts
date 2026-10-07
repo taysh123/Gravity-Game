@@ -12,7 +12,9 @@ import {
   deriveOwnership,
   errorCode,
   findPackage,
-  freshInstallAction,
+  afterSilentRestore,
+  parseSilentRestoreRecord,
+  silentRestoreDecision,
   isEntitlementCosmetic,
   isPendingFor,
   legacySeed,
@@ -23,9 +25,10 @@ import {
   reconcileSnapshot,
   serializeSnapshot,
   withPending,
-  withoutPending,
+  withoutPendingFor,
   type EntitlementSnapshot,
   type PackageLike,
+  type SilentRestoreRecord,
 } from './entitlements';
 import { BUNDLES, ENTITLEMENTS, PACKAGES, REVENUECAT } from '../config/monetization.config';
 import { COSMETICS, cosmeticById } from '../utils/cosmetics';
@@ -351,6 +354,36 @@ describe('entitlement snapshot', () => {
     it('ignores ids it does not know (never stores them)', () => {
       expect(reconcileSnapshot(EMPTY_SNAPSHOT, ['premium', 'no_ads'] as never, 1, TTL).next.active).toEqual(['no_ads']);
     });
+
+    it('M6: an expired marker is dropped, never resolved (no late or duplicate purchase_completed)', () => {
+      const prev = snap({ pending: [{ productId: 'remove_ads', at: 0 }] });
+      const r = reconcileSnapshot(prev, ['no_ads'], TTL + 1, TTL);
+      expect(r.resolved).toEqual([]);
+      expect(r.next.pending).toEqual([]);
+    });
+
+    describe("M3: 'merge' mode (the identity's silent restore has not answered yet)", () => {
+      it('adds what the store reports but never revokes, and keeps the confirmation stamp', () => {
+        const prev = snap({ active: ['no_ads', 'pack_founders'], at: 0 });
+        const r = reconcileSnapshot(prev, ['pack_premium_collection'], 1000, TTL, 'merge');
+        expect(r.next.active).toEqual(['no_ads', 'pack_premium_collection', 'pack_founders']);
+        expect(r.next.at).toBe(0);
+        expect(r.revoked).toEqual([]);
+        expect(r.granted).toEqual(['pack_premium_collection']);
+      });
+
+      it('an empty answer changes nothing', () => {
+        const prev = snap({ active: ['no_ads'], at: 77 });
+        expect(reconcileSnapshot(prev, [], 1000, TTL, 'merge').next).toEqual(prev);
+      });
+
+      it('still resolves and expires pending markers', () => {
+        const prev = snap({ pending: [{ productId: 'remove_ads', at: 900 }, { productId: 'founders_pack', at: 0 }] });
+        const r = reconcileSnapshot(prev, ['no_ads'], TTL + 1, TTL, 'merge');
+        expect(r.resolved).toEqual(['remove_ads']);
+        expect(r.next.pending).toEqual([]);
+      });
+    });
   });
 
   describe('pending markers', () => {
@@ -362,10 +395,11 @@ describe('entitlement snapshot', () => {
       expect(withPending(b, 'founders_pack', 30).pending).toHaveLength(2);
     });
 
-    it('withoutPending clears every marker (Check status ran a restore)', () => {
+    it('M2: withoutPendingFor clears only the re-checked product, never the others', () => {
       const s = withPending(withPending(EMPTY_SNAPSHOT, 'starter_pack', 1), 'founders_pack', 2);
-      expect(withoutPending(s).pending).toEqual([]);
-      expect(withoutPending(s).active).toEqual(s.active);
+      expect(withoutPendingFor(s, 'starter_pack').pending).toEqual([{ productId: 'founders_pack', at: 2 }]);
+      expect(withoutPendingFor(s, 'starter_pack').active).toEqual(s.active);
+      expect(withoutPendingFor(s, 'remove_ads')).toEqual(s);
     });
 
     it('isPendingFor: live marker, not expired, product not owned yet', () => {
@@ -396,29 +430,73 @@ describe('legacySeed (migration 2 input: the old premium flag + locally granted 
   });
 });
 
-describe('freshInstallAction (A-06: one silent restore on an Android fresh install)', () => {
-  const base = { platform: 'android', appUserId: '$RCAnonymousID:new', restoredFor: null as string | null, active: [] as string[] };
+// A-06 + review M3/M4: one silent restore per new RevenueCat identity on Android, whatever that identity reports,
+// with a capped backoff when it keeps failing.
+describe('silentRestoreDecision / afterSilentRestore (A-06, M3, M4)', () => {
+  const LIMITS = { maxPerSession: 2, maxAttempts: 4, backoffBaseMs: 1000, backoffMaxMs: 5000 };
+  const base = { platform: 'android', appUserId: '$RCAnonymousID:new' as string | null, record: null as SilentRestoreRecord | null, now: 10_000, sessionAttempts: 0, limits: LIMITS };
 
-  it('Android, a RevenueCat identity never checked before, nothing active -> restore', () => {
-    expect(freshInstallAction(base)).toBe('restore');
-    // a reinstall restored from backup: the old identity is recorded, RevenueCat made a new one
-    expect(freshInstallAction({ ...base, restoredFor: '$RCAnonymousID:old' })).toBe('restore');
+  it('Android, an identity never restored -> restore', () => {
+    expect(silentRestoreDecision(base)).toBe('restore');
   });
 
-  it('the identity already has entitlements -> just record it', () => {
-    expect(freshInstallAction({ ...base, active: ['no_ads'] })).toBe('mark');
+  it('M3: restores even when the identity already reports entitlements (a partial grant must not skip it)', () => {
+    // The decision has no input for what the store reports: only the identity's record counts.
+    expect(silentRestoreDecision({ ...base, record: null })).toBe('restore');
   });
 
-  it('runs once per identity', () => {
-    expect(freshInstallAction({ ...base, restoredFor: '$RCAnonymousID:new' })).toBe('none');
+  it('a record for another identity (reinstall from backup) does not count', () => {
+    const old: SilentRestoreRecord = { id: '$RCAnonymousID:old', done: true, attempts: 1, nextAt: 0 };
+    expect(silentRestoreDecision({ ...base, record: old })).toBe('restore');
   });
 
-  it('identity unknown (getAppUserID failed): restore, without recording', () => {
-    expect(freshInstallAction({ ...base, appUserId: null })).toBe('restore');
+  it('done for this identity -> skip (once per identity)', () => {
+    const rec = afterSilentRestore(null, '$RCAnonymousID:new', true, 10_000, LIMITS);
+    expect(rec).toEqual({ id: '$RCAnonymousID:new', done: true, attempts: 1, nextAt: 0 });
+    expect(silentRestoreDecision({ ...base, record: rec })).toBe('skip');
+  });
+
+  it('M4: a failure backs off exponentially, capped', () => {
+    let rec = afterSilentRestore(null, '$RCAnonymousID:new', false, 10_000, LIMITS);
+    expect(rec).toEqual({ id: '$RCAnonymousID:new', done: false, attempts: 1, nextAt: 11_000 });
+    expect(silentRestoreDecision({ ...base, record: rec, now: 10_999 })).toBe('wait');
+    expect(silentRestoreDecision({ ...base, record: rec, now: 11_000 })).toBe('restore');
+    rec = afterSilentRestore(rec, '$RCAnonymousID:new', false, 11_000, LIMITS);
+    expect(rec.nextAt).toBe(13_000); // 2 s
+    rec = afterSilentRestore(rec, '$RCAnonymousID:new', false, 13_000, LIMITS);
+    expect(rec.nextAt).toBe(17_000); // 4 s
+    rec = { ...rec, attempts: 3 };
+    expect(afterSilentRestore(rec, '$RCAnonymousID:new', false, 20_000, LIMITS).nextAt).toBe(25_000); // capped at 5 s
+  });
+
+  it('M4: at most maxPerSession attempts in one session', () => {
+    expect(silentRestoreDecision({ ...base, sessionAttempts: 2 })).toBe('wait');
+  });
+
+  it('M4: gives up after maxAttempts (the store truth then applies; Restore stays available)', () => {
+    const rec: SilentRestoreRecord = { id: '$RCAnonymousID:new', done: false, attempts: 4, nextAt: 0 };
+    expect(silentRestoreDecision({ ...base, record: rec })).toBe('skip');
+  });
+
+  it('M4: an unknown identity (getAppUserID failed) is recorded as null and is not retried every launch once done', () => {
+    const rec = afterSilentRestore(null, null, true, 10_000, LIMITS);
+    expect(rec).toEqual({ id: null, done: true, attempts: 1, nextAt: 0 });
+    expect(silentRestoreDecision({ ...base, appUserId: null, record: rec })).toBe('skip');
+    const failed = afterSilentRestore(null, null, false, 10_000, LIMITS);
+    expect(silentRestoreDecision({ ...base, appUserId: null, record: failed, now: 10_500 })).toBe('wait');
   });
 
   it('never on other platforms (iOS restore can prompt for an Apple ID)', () => {
-    expect(freshInstallAction({ ...base, platform: 'ios' })).toBe('none');
-    expect(freshInstallAction({ ...base, platform: 'web' })).toBe('none');
+    expect(silentRestoreDecision({ ...base, platform: 'ios' })).toBe('skip');
+    expect(silentRestoreDecision({ ...base, platform: 'web' })).toBe('skip');
+  });
+
+  it('parseSilentRestoreRecord: round-trips, rejects junk', () => {
+    const rec: SilentRestoreRecord = { id: 'u', done: false, attempts: 2, nextAt: 5 };
+    expect(parseSilentRestoreRecord(JSON.stringify(rec))).toEqual(rec);
+    expect(parseSilentRestoreRecord(JSON.stringify({ ...rec, id: null }))).toEqual({ ...rec, id: null });
+    for (const raw of [null, '', 'x', '[]', '{"id":3,"done":false,"attempts":0,"nextAt":0}', '{"id":"u","done":"no","attempts":0,"nextAt":0}', '{"id":"u","done":false,"attempts":-1,"nextAt":0}']) {
+      expect(parseSilentRestoreRecord(raw), String(raw)).toBeNull();
+    }
   });
 });
