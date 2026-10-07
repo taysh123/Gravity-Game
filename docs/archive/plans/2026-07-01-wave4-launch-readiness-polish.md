@@ -1,3 +1,5 @@
+> **Completed — historical record.** Archived 2026-10-07. This plan is finished and is not maintained; current state is in [`docs/STATUS.md`](../../STATUS.md) and the plan of record is [`docs/roadmap/`](../../roadmap/). New plans go to `docs/superpowers/plans/`. Index: [archive README](../2026-10-07/README.md).
+
 # Wave 4 — "Launch-Readiness Polish" Implementation Plan (DRAFT — awaiting wave-level approval)
 
 > **For agentic workers:** REQUIRED SUB-SKILL: superpowers:subagent-driven-development — one implementer + one

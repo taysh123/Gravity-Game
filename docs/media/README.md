@@ -9,7 +9,7 @@ captured automatically from the live build, then curated.
 - **Boss shot re-captured:** 2026-07-02, after the long-title HUD-fit fix landed on `master` — the
   Google Play `03-boss-finale.png` now shows the true campaign finale **"THE LONG WAY HOME" (L150)**
   with its title fitting cleanly (no icon-toolbar collision). See §B row 3 / §E (resolved).
-- **Source of truth for state:** [`../project-status.md`](../project-status.md).
+- **Source of truth for state:** [`../STATUS.md`](../STATUS.md).
 - **Caption / ASO strategy reference:** [`../store/aso.md`](../store/aso.md) · [`../store/listing.md`](../store/listing.md).
 
 ## Regenerate (reproducible)

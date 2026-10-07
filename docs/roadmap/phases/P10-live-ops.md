@@ -230,7 +230,7 @@ acquire:'event', eventId, vaultReturn (≤12 months after first window), fallbac
 - `docs/design/LIVE-OPS.md`: as-built.
 - `CHANGELOG.md`.
 - `docs/STATUS.md`.
-- A new runbook section in `docs/release-android.md`: "Monthly live-ops sitting", the commands, and the kill switch.
+- A new runbook section in `docs/release/RUNBOOK.md`: "Monthly live-ops sitting", the commands, and the kill switch.
 - `liveops/event_calendar.json` header comment convention.
 - `docs/store/listing.md`: seasonal mentions only when an event is live (honest copy).
 
@@ -270,4 +270,4 @@ P10 is complete when **all** of the following hold:
 | **P10-T07** Weekly ladder | Personal milestone track | Modify `src/utils/liveops.ts`, `src/config/retention.config.ts`, `RunSelectScene.ts`, `EventProgressStore.ts` | Ladder math; weekly reset by `rw` key; reward cap 55/week | Pips fill and reset at Sunday 07:00 UTC |
 | **P10-T08** Themed-week convention | Calendar recipe pairing `weekly_mod` + D-21 `daily_schedule` | `liveops/event_calendar.json`, CLI `timeline` | CLI warns when a themed week lacks its daily override | First themed week scheduled |
 | **P10-T09** Telemetry | `event_view`, `event_progress` (25/50/75/100), `event_reward`, `liveops_reject` (≤1/session) | Modify `src/utils/analyticsEvents.ts`(+test), `src/utils/liveops.ts` | Name/param lint | Events in DebugView 👤 |
-| **P10-T10** Runbook + first quarter | Document the cadence; commit 3 months of rows; publish | `docs/release-android.md`, `liveops/event_calendar.json` | `calendar.mjs validate` + `timeline` | §15 items 2–5 satisfied |
+| **P10-T10** Runbook + first quarter | Document the cadence; commit 3 months of rows; publish | `docs/release/RUNBOOK.md`, `liveops/event_calendar.json` | `calendar.mjs validate` + `timeline` | §15 items 2–5 satisfied |

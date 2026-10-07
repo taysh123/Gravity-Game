@@ -1,8 +1,10 @@
+> **Completed — historical record.** Archived 2026-10-07. This plan is finished and is not maintained; current state is in [`docs/STATUS.md`](../../STATUS.md) and the plan of record is [`docs/roadmap/`](../../roadmap/). New plans go to `docs/superpowers/plans/`. Index: [archive README](../2026-10-07/README.md).
+
 # Gravity Flow — Brutally Honest Excitement Audit
 
 > ⏳ **Historical analysis record (largely addressed).** Written pre-expansion; its asks (per-world visual
 > identity, a world-journey, an endless mode, more excitement) were since delivered (Star Map, Gravity Run,
-> 150 levels / 15 worlds, per-world themes). Current state: [`docs/project-status.md`](../../project-status.md).
+> 150 levels / 15 worlds, per-world themes). Current state: [`docs/project-status.md`](../2026-10-07/project-status.md).
 
 > Question this answers: **"Why isn't Gravity Flow a game people get excited about and tell friends —
 > and what would change that?"** Bug fixes shipped alongside (v0.6.1): L9 was unsolvable (fixed),

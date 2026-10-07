@@ -307,10 +307,10 @@ It is additive over today's `RunChunk` (`chunks.ts:22-32`), which also gains `ga
 - `docs/design/GRAVITY-RUN.md`: as-built deltas.
 - `CHANGELOG.md`.
 - `docs/STATUS.md` (created in P0 step 0).
-- `docs/release-android.md`: PGS setup and fingerprints.
+- `docs/release/RUNBOOK.md`: PGS setup and fingerprints.
 - `docs/store/listing.md`: the leaderboard copy flip, after boards are verified.
 - `docs/store/privacy-policy.md` + `docs/index.html`: PGS data (gamertag, scores, achievements).
-- Data safety notes in `docs/LAUNCH-READINESS.md`.
+- Data safety notes in `docs/store/data-safety.md`.
 - Chunk authoring guide as the header comment of `src/config/endless/chunks.ts`.
 
 ## 14. Validation criteria

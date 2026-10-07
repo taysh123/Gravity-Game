@@ -1,3 +1,5 @@
+> **Archived 2026-10-07 — superseded by [`docs/STATUS.md`](../../STATUS.md) / [`docs/roadmap/`](../../roadmap/).** Build, sign and upload steps moved to [`docs/release/RUNBOOK.md`](../../release/RUNBOOK.md). Kept as a historical record only. Index: [archive README](./README.md).
+
 # Android Release Runbook — GRAVITY FLOW
 
 How to take the (already-wired) web build to a signed Android **AAB** on the Play

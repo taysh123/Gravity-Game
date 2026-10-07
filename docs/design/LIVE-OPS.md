@@ -11,7 +11,7 @@
 > - D-24: no fake urgency
 > - D-30: no battle pass, event currency or server events
 >
-> **Evidence:** `docs/research/retention-analytics-liveops.md` Q3, Q4, Q7 · `docs/growth-architecture.md` · `src/config/worldThemes.ts` · `src/utils/cosmetics.ts` · `src/utils/RewardStore.ts` · `docs/design/GRAVITY-RUN.md` §10.
+> **Evidence:** `docs/research/retention-analytics-liveops.md` Q3, Q4, Q7 · `docs/archive/2026-10-07/growth-architecture.md` · `src/config/worldThemes.ts` · `src/utils/cosmetics.ts` · `src/utils/RewardStore.ts` · `docs/design/GRAVITY-RUN.md` §10.
 > **Schedule:** execution step 22 (after P9). It needs P6 (Remote Config live), P7 (cosmetic pipeline) and P8 (Weekly modifier hook).
 
 ---

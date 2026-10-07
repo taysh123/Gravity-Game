@@ -2,7 +2,7 @@
 
 > **The single source of truth for project state.** The Facts block is machine-generated; every other section is
 > edited by hand at the end of each task. Anything that contradicts this file is stale.
-> Last hand-edited **2026-10-07** · Position: **Step 0** of the [execution order](roadmap/EXECUTION-ORDER.md) (docs SSOT; P00-T01 done).
+> Last hand-edited **2026-10-07** · Position: **Step 0** of the [execution order](roadmap/EXECUTION-ORDER.md) (docs SSOT; P00-T01 and P00-T02 done).
 > Plan of record: [MASTER-ROADMAP](roadmap/MASTER-ROADMAP.md) · [EXECUTION-ORDER](roadmap/EXECUTION-ORDER.md) · [DECISIONS](roadmap/DECISIONS.md) (amendments override entry bodies).
 > Working title: **Gravity Flow** by True Story Labs. Package id `com.truestorylabs.gravityflow` is permanent.
 
@@ -63,11 +63,11 @@ Regenerate with `npm run facts`; verify with `npm run facts:check` (CI runs the 
 
 ## Next 5 actions
 Step 0 continues ([P00 task list](roadmap/phases/P00-foundation.md)); then Step 1 (Capacitor 8.5.2 security bump).
-1. **P00-T02**: archive the stale state docs, create `docs/release/RUNBOOK.md` and `docs/qa/`.
-2. **P00-T03**: make `CLAUDE.md` state-free; add the README facts line.
-3. **P00-T04**: repo hygiene (JDK path out of `gradle.properties`, untrack `.ai/*`, `proguard-android-optimize.txt`).
-4. **P00-T05**: D-20 versioning (versionCode derived from `package.json`, next upload 1000001).
-5. **P00-T06**: CI v2 (Node 22, `npm ci`, `facts:check`, Android debug build); then Step 1.
+1. **P00-T03**: make `CLAUDE.md` state-free; add the README facts line.
+2. **P00-T04**: repo hygiene (JDK path out of `gradle.properties`, untrack `.ai/*`, `proguard-android-optimize.txt`).
+3. **P00-T05**: D-20 versioning (versionCode derived from `package.json`, next upload 1000001); rewrites the RUNBOOK versioning section.
+4. **P00-T06**: CI v2 (Node 22, `npm ci`, `facts:check`, Android debug build).
+5. **P00-T07**: Capacitor 8.5.2 family and exact pins (Step 1).
 
 ## Open bugs
 Top blockers from the [state audit](audit/2026-10-07/STATE-AUDIT.md) (section B.6/O). Target: 0 open P0 defects at M0.
@@ -97,4 +97,5 @@ Full register: [DECISIONS.md](roadmap/DECISIONS.md). Entries here are one-liners
 - Roadmap: [master](roadmap/MASTER-ROADMAP.md) · [execution order](roadmap/EXECUTION-ORDER.md) · [decisions](roadmap/DECISIONS.md) · [risks](roadmap/RISK-REGISTER.md) · [metrics](roadmap/SUCCESS-METRICS.md) · [feature matrix](roadmap/FEATURE-MATRIX.md) · [phase plans](roadmap/phases/)
 - Architecture: [technical](architecture/TECHNICAL-ARCHITECTURE.md) · [level engine](architecture/LEVEL-ENGINE.md) · [level QA](architecture/LEVEL-QA-SIMULATION.md)
 - Design: [gameplay](design/GAMEPLAY-DESIGN.md) · [UX/UI](design/UX-UI-MOTION.md) · [retention](design/RETENTION.md) · [monetization](design/MONETIZATION.md) · [Gravity Run](design/GRAVITY-RUN.md) · [social](design/SOCIAL-VIRAL.md) · [live ops](design/LIVE-OPS.md)
+- Release and QA: [release runbook](release/RUNBOOK.md) · [device checklist M0](qa/DEVICE-CHECKLIST-M0.md) · [archive of retired docs](archive/2026-10-07/README.md)
 - Launch: [store plan](launch/STORE-LAUNCH-PLAN.md) · [external services](launch/EXTERNAL-SERVICES-AUDIT.md) · [naming study](launch/NAMING-STUDY.md) · [analytics](analytics/ANALYTICS-PLAN.md) · [research](research/RESEARCH-SUMMARY.md)

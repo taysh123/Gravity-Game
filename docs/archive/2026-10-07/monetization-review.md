@@ -1,3 +1,5 @@
+> **Archived 2026-10-07 — superseded by [`docs/STATUS.md`](../../STATUS.md) / [`docs/roadmap/`](../../roadmap/).** The monetization plan of record is [`docs/design/MONETIZATION.md`](../../design/MONETIZATION.md). Kept as a historical record only. Index: [archive README](./README.md).
+
 # Gravity Flow — Monetization & Economy Review
 
 Sprint 2.5 (Monetization Expansion). Phase A is the pre-implementation audit; the

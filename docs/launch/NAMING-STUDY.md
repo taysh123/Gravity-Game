@@ -174,7 +174,7 @@ For domains, ".com" shows the registration year when the domain is taken. ".app/
   - Privacy policy app name and `docs/index.html` (hosted page)
   - Feature graphic, icon (if it carries text), and any screenshot showing the logo (the main menu shot)
 - **Third-party dashboards:** Firebase, AdMob and RevenueCat display names. Cosmetic only.
-- **Docs:** README, CLAUDE.md, project-status, session-handoff, docs/store/*.
+- **Docs:** README, CLAUDE.md, `docs/STATUS.md`, docs/store/*.
 - **Stays as-is:** the in-game "FLOW" streak tier and "Find the flow" copy. "Flow" alone is a generic word.
 
 **Must not change:**

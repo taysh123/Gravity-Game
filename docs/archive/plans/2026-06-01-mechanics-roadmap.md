@@ -1,8 +1,10 @@
+> **Completed — historical record.** Archived 2026-10-07. This plan is finished and is not maintained; current state is in [`docs/STATUS.md`](../../STATUS.md) and the plan of record is [`docs/roadmap/`](../../roadmap/). New plans go to `docs/superpowers/plans/`. Index: [archive README](../2026-10-07/README.md).
+
 # Mechanics Roadmap — candidates (ranked)
 
 > ⏳ **Historical plan record (superseded).** All 7 mechanics are now shipped (attractor, gravity zones,
 > magnets, portals, moving platforms, hazards, one-way gates) across 150 levels / 15 worlds (`v1.0.0-rc.1`).
-> Current state: [`docs/project-status.md`](../../project-status.md).
+> Current state: [`docs/project-status.md`](../2026-10-07/project-status.md).
 
 Shipped so far: **Gravity Zones**, **Moving Platforms**, **Collectibles/Stars** (Depth sprint);
 **Hazards** (fail-on-touch, incl. moving saws) + **hard-countdown timed levels** (Tension sprint) →

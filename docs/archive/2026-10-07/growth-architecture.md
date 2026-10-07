@@ -1,3 +1,5 @@
+> **Archived 2026-10-07 — superseded by [`docs/STATUS.md`](../../STATUS.md) / [`docs/roadmap/`](../../roadmap/).** The growth seams are now planned in [`docs/design/LIVE-OPS.md`](../../design/LIVE-OPS.md) and [`docs/design/SOCIAL-VIRAL.md`](../../design/SOCIAL-VIRAL.md). Kept as a historical record only. Index: [archive README](./README.md).
+
 # Growth Architecture — future opportunities & where they plug in
 
 Highest-ROI growth opportunities for GRAVITY FLOW, ranked, with the **existing seams** each one extends.

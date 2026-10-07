@@ -88,7 +88,7 @@ npm test             # Vitest (one-shot)
 npm run build        # tsc + Vite production build
 ```
 
-Architecture & conventions: [`CLAUDE.md`](CLAUDE.md) · current state: [`docs/project-status.md`](docs/project-status.md).
+Architecture & conventions: [`CLAUDE.md`](CLAUDE.md) · current state: [`docs/STATUS.md`](docs/STATUS.md).
 
 ## Links
 

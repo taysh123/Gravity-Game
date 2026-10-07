@@ -8,7 +8,7 @@ import type { LevelConfig } from '../../types';
 // Coordinates are PLAY-AREA coords: 0,0 = top-left of a 360 × 780 box. GameScene
 // adds the canvas offset at spawn time — never reference canvas size here.
 //
-// Difficulty rubric (see docs/superpowers/plans/2026-06-14-expansion-150.md):
+// Difficulty rubric (see docs/archive/plans/2026-06-14-expansion-150.md):
 //   • goal.radius by role: teach 40–52 · develop 34–40 · twist 30–36 · combine 26–32 · master 22–28
 //   • parTimeMs   = a clean EXPERT run (the 3rd star should require a deliberate route)
 //   • collectible = ALWAYS genuinely off-route (a detour / a risk past a hazard or repeller)

@@ -234,10 +234,10 @@ flowchart LR
 - `docs/design/SOCIAL-VIRAL.md`: as-built.
 - `CHANGELOG.md`.
 - `docs/STATUS.md`.
-- `docs/release-android.md`: App Links verification commands and fingerprints.
-- `docs/device-playtest-checklist.md`: share targets, link and referrer matrix.
+- `docs/release/RUNBOOK.md`: App Links verification commands and fingerprints.
+- `docs/qa/DEVICE-CHECKLIST-M0.md`: share targets, link and referrer matrix.
 - `docs/store/privacy-policy.md` + `docs/index.html`, together.
-- `docs/LAUNCH-READINESS.md`: Data safety delta (analytics attribution via the Install Referrer).
+- `docs/store/data-safety.md`: Data safety delta (analytics attribution via the Install Referrer).
 - Link-host sources under `docs/launch/link-host/`.
 
 ## 14. Validation criteria
@@ -280,5 +280,5 @@ P9-B (T10, T11) is tracked separately and does not block P9 completion.
 | **P09-T10** Creator tools (P9-B) | Seed code chip, "Play a seed", clean-HUD toggle | Modify `EndlessScene.ts`, `RunSelectScene.ts`, `SettingsScene.ts`, `SettingsStore.ts` | Seed entry validation; practice never posts | Seeds reproducible across two devices 👤 |
 | **P09-T11** Level challenge (P9-B) | Level card + `l=` links | Modify `shareCard.ts`, `shareText.ts`, `challengeLink.ts`, `GameScene.ts` | Locked-level route | Level link opens the right level or a lock notice |
 | **P09-T12** Telemetry | `share{method,content_type,item_id}`, `review_request{trigger}`, `challenge_open{source:'applink'|'referrer'|'web', kind}` | Modify `src/utils/analyticsEvents.ts`(+test) | Name/param lint | Visible in DebugView 👤 |
-| **P09-T13** Privacy + Data safety | Policy text + form delta | Modify `docs/store/privacy-policy.md`, `docs/index.html`, `docs/LAUNCH-READINESS.md` | Review checklist | Owner submits the updated form 👤 |
-| **P09-T14** Device matrix + release | Run §14; staged rollout | `docs/device-playtest-checklist.md`, `docs/release-android.md` | §14 | §15 items 1–6 satisfied |
+| **P09-T13** Privacy + Data safety | Policy text + form delta | Modify `docs/store/privacy-policy.md`, `docs/index.html`, `docs/store/data-safety.md` | Review checklist | Owner submits the updated form 👤 |
+| **P09-T14** Device matrix + release | Run §14; staged rollout | `docs/qa/DEVICE-CHECKLIST-M0.md`, `docs/release/RUNBOOK.md` | §14 | §15 items 1–6 satisfied |

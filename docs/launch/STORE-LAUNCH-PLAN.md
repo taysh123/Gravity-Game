@@ -4,7 +4,7 @@
 > **App:** working title "Gravity Flow" (the name is not final; renaming is owner-gated, D-19) · package `com.truestorylabs.gravityflow` (**permanent**: an AAB has already been uploaded to the owner's Play Console app) · studio True Story Labs · target audience 13+ (D-25).
 > **Conforms to:** [`../roadmap/DECISIONS.md`](../roadmap/DECISIONS.md), especially D-09, D-10, D-16, D-17, D-19, D-20, D-24, D-25, D-27 and D-29. Execution order: [`../roadmap/EXECUTION-ORDER.md`](../roadmap/EXECUTION-ORDER.md), steps 5, 14, 19 and 23, plus the 👤 items. Phase plans: [`../roadmap/phases/P11-brand-aso.md`](../roadmap/phases/P11-brand-aso.md) and [`../roadmap/phases/P12-launch.md`](../roadmap/phases/P12-launch.md).
 > **Not legal advice.** The trademark, GDPR, US-state and Israel items need a professional check (D-19).
-> **Do not trust older docs.** `docs/store/listing.md`, `release-notes.md`, `assets/README.md`, `LAUNCH-READINESS.md` and `release-prep.md` are stale on the points listed in §0. Where they disagree with this file, this file wins.
+> **Do not trust older docs.** `docs/store/listing.md`, `release-notes.md`, `assets/README.md`, `LAUNCH-READINESS.md` and `release-prep.md` (both now in `docs/archive/2026-10-07/`) are stale on the points listed in §0. Where they disagree with this file, this file wins.
 
 **Legend**
 - **Owner column:** **Owner** = you, working in Play Console, AdMob, RevenueCat, a registrar or Firebase. **Claude** = a change in this repo. **Both** = Claude prepares it, you submit it.

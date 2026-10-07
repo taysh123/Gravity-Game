@@ -170,7 +170,7 @@ P12 ships the game safely and then improves it with data. It has four parts:
 | Modify | `src/scenes/SettingsScene.ts` | Version footer |
 | Modify | `src/utils/Crash.ts` | Custom keys `app_version_code` (+ `scene`, `level_id` if P0 step 5 hasn't added them) |
 | Modify | `.github/workflows/ci.yml` | Node 24, `npm ci`, `android-debug`, `android-release-verify`; optional `play-internal` (environment-protected) |
-| Create | `docs/release/RUNBOOK.md` | Build, sign, JDK, version, preflight, upload, promote, rollout, halt, hotfix. Merges `docs/release-android.md`, `release-prep.md` and `RELEASE-v1.0.0.md` (archived by P0 step 0). |
+| Create | `docs/release/RUNBOOK.md` | Build, sign, JDK, version, preflight, upload, promote, rollout, halt, hotfix. Merges the retired `release-android.md`, `release-prep.md` and `RELEASE-v1.0.0.md` (archived by P0 step 0 under `docs/archive/2026-10-07/`). |
 | Create | `docs/release/ledger.json` | §3.2 |
 | Create | `docs/release/WEEKLY-REVIEW-LOG.md` | §3.7 template + entries |
 | Modify | `android/keystore.properties.example` | `keyAlias=gravityflow-upload` (line 19 says `upload`) |

@@ -9,7 +9,7 @@ The 1.0 launch candidate: feature- & content-complete, repo-side launch-ready, s
 Code is functionally identical to `v0.15.0` — this RC marks the locked launch candidate pending the
 **device 1★ fairness + Endless/Star-Map feel playtest** and the Play Console upload.
 - Android marketing version `versionName 1.0.0` / `versionCode 1` (the first Play release).
-- Launch command-center, audit & roadmaps: `docs/LAUNCH-READINESS.md`; release plan: `docs/RELEASE-v1.0.0.md`.
+- Launch command-center, audit & roadmaps: `docs/archive/2026-10-07/LAUNCH-READINESS.md`; release plan: `docs/archive/2026-10-07/RELEASE-v1.0.0.md` (superseded by `docs/release/RUNBOOK.md`).
 - **`[1.0.0]` is cut at public launch** (production rollout) — see the release plan. RC builds may iterate
   (`rc.2`, `rc.3`, …) if the device playtest forces tuning.
 - **Media & presentation (docs-only, 2026-06-14):** full **Screenshot & Media Production Pass** — a
@@ -28,7 +28,7 @@ Code is functionally identical to `v0.15.0` — this RC marks the locked launch 
   jump when entering a world / from the menu (reduced-motion → fade).
 - **Gravity Run feel v3**: a faster, more exciting endless ramp (~76 → 234 px/s over a
   ~45s run) while staying fair (start grace + safe-lane chunks).
-- Docs: `docs/growth-architecture.md` (events / LTC / PGS / social seams).
+- Docs: `docs/archive/2026-10-07/growth-architecture.md` (events / LTC / PGS / social seams).
 
 ## [0.14.x] — Gravity Run + content + economy
 - **Gravity Run** flagship endless mode (`EndlessScene`): camera-scroll vertical climb

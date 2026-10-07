@@ -11,7 +11,7 @@
 > - D-25: 13+, no child-directed features
 > - D-30: friend ghosts and referral rewards deferred
 >
-> **Evidence:** `docs/research/retention-analytics-liveops.md` Q6/Q8 · `docs/research/android-capacitor.md` Q8 · `docs/audit/2026-10-07/STATE-AUDIT.md` §G.2, §G.5 · `docs/growth-architecture.md` · code at `master @ d3c6aab`.
+> **Evidence:** `docs/research/retention-analytics-liveops.md` Q6/Q8 · `docs/research/android-capacitor.md` Q8 · `docs/audit/2026-10-07/STATE-AUDIT.md` §G.2, §G.5 · `docs/archive/2026-10-07/growth-architecture.md` · code at `master @ d3c6aab`.
 > **Schedule:** execution step 21, after Gravity Run 2.0 (step 20). It depends on P6 (Daily), P8 (weekly seeds, boards) and P11 (website/domain).
 
 ---

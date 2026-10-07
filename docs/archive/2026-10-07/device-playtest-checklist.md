@@ -1,3 +1,5 @@
+> **Archived 2026-10-07 — superseded by [`docs/STATUS.md`](../../STATUS.md) / [`docs/roadmap/`](../../roadmap/).** Device checks now live in [`docs/qa/DEVICE-CHECKLIST-M0.md`](../../qa/DEVICE-CHECKLIST-M0.md). Kept as a historical record only. Index: [archive README](./README.md).
+
 # Device 1★ Fairness Playtest — Checklist
 
 > The structural validator (`src/config/levels/levels.test.ts`) and the boot smoke

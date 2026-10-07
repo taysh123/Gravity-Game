@@ -1,3 +1,5 @@
+> **Archived 2026-10-07 — superseded by [`docs/STATUS.md`](../../STATUS.md) / [`docs/roadmap/`](../../roadmap/).** Current state lives only in `docs/STATUS.md`. Kept as a historical record only. Index: [archive README](./README.md).
+
 # Gravity Flow — Project Status (Single Source of Truth)
 
 > **Resume in one line:** Read **[CURRENT PROJECT STATUS](#current-project-status)** below, then continue from **[Release Readiness — Play Store Launch Prep](#release-readiness--play-store-launch-prep-current-phase)**.

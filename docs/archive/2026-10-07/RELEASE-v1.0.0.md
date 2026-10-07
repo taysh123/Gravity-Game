@@ -1,3 +1,5 @@
+> **Archived 2026-10-07 — superseded by [`docs/STATUS.md`](../../STATUS.md) / [`docs/roadmap/`](../../roadmap/).** Versioning, tags and the release flow moved to [`docs/release/RUNBOOK.md`](../../release/RUNBOOK.md). Kept as a historical record only. Index: [archive README](./README.md).
+
 # Release Plan — GRAVITY FLOW v1.0.0
 
 > The path from the **`v1.0.0-rc.1`** launch candidate to the **`v1.0.0`** public release.

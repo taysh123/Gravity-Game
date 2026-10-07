@@ -21,7 +21,7 @@ Status: PLANNED · Milestone: M0 (Truthful Build, with P1) · Steps: 0–5 of [`
 ### 2.1 Systems affected
 | System | Current state [V] | P0 change |
 |---|---|---|
-| Docs SSOT | 3 conflicting state docs (`docs/project-status.md`, `docs/session-handoff.md`, `docs/LAUNCH-READINESS.md`); CLAUDE.md lines 5-7, 15, 37-56, 216-231 carry state | `docs/STATUS.md` with a generated facts block; `scripts/facts.mjs --check` in CI; stale docs archived; CLAUDE.md state-free |
+| Docs SSOT | 3 conflicting state docs (`project-status.md`, `session-handoff.md`, `LAUNCH-READINESS.md`, now in `docs/archive/2026-10-07/`); CLAUDE.md lines 5-7, 15, 37-56, 216-231 carry state | `docs/STATUS.md` with a generated facts block; `scripts/facts.mjs --check` in CI; stale docs archived; CLAUDE.md state-free |
 | Repo hygiene | JDK path `android/gradle.properties:19`; tracked dead symlinks `.ai/*` (mode 120000); `proguard-android.txt` at `android/app/build.gradle:43` | JDK from the command line/env; `.ai/` untracked + ignored; `proguard-android-optimize.txt` |
 | Versioning | `versionCode 1`, `versionName "1.0.0"` hard-coded (`build.gradle:21-22`); `package.json:4` = `1.0.0-rc.1` | D-20 formula from `package.json`; next upload `1000001` |
 | Dependencies | Capacitor 8.4.0 (1 critical), admob 8.0.0, purchases 13.1.5, firebase 8.3.0; caret ranges | exact pins per D-11; `@capacitor/app`, `@capacitor/preferences` added; AdMob 8.2.1 soak commit |
@@ -282,7 +282,7 @@ Consent C1–C3 (EEA/US debug geography), ads A1–A5, license-tester purchases 
 
 ## 13. Documentation changes
 - New: `docs/STATUS.md`, `docs/release/RUNBOOK.md`, `docs/qa/DEVICE-CHECKLIST-M0.md`, `docs/store/data-safety.md`, `docs/archive/2026-10-07/README.md`.
-- Archived to `docs/archive/2026-10-07/`: `docs/project-status.md`, `docs/session-handoff.md`, `docs/LAUNCH-READINESS.md`, `docs/release-prep.md`, `docs/RELEASE-v1.0.0.md`, `docs/release-android.md` (after its content moves to the RUNBOOK), `docs/growth-architecture.md`, `docs/device-playtest-checklist.md`, `docs/store/monetization-review.md`; `docs/superpowers/plans/*` (10 completed plans) → `docs/archive/plans/` with a "Completed — historical record" banner (new plans keep going to `docs/superpowers/plans/`).
+- Archived to `docs/archive/2026-10-07/` (from `docs/`): `project-status.md`, `session-handoff.md`, `LAUNCH-READINESS.md`, `release-prep.md`, `RELEASE-v1.0.0.md`, `release-android.md` (after its content moves to the RUNBOOK), `growth-architecture.md`, `device-playtest-checklist.md`, and (from `docs/store/`) `monetization-review.md`; `docs/superpowers/plans/*` (10 completed plans) → `docs/archive/plans/` with a "Completed — historical record" banner (new plans keep going to `docs/superpowers/plans/`).
 - Rewritten: `CLAUDE.md` (architecture + conventions only), `README.md` facts line, store copy files, privacy policy, `CHANGELOG.md` `[Unreleased]` entry for Waves 1–4, the title-fit fix and P0.
 - This file's status line → `DONE` with the closing commit hash at phase end.
 
@@ -342,7 +342,7 @@ Each task: own branch or commit series, TDD where pure, gates V1–V3 before com
 **P00-T02 — Archive stale docs, create RUNBOOK and QA folder**
 - Goal: no doc contradicts STATUS.
 - Files: move the §13 list into `docs/archive/2026-10-07/` and `docs/archive/plans/` with banners; create `docs/archive/2026-10-07/README.md`, `docs/release/RUNBOOK.md` (content from `release-android.md`, `release-prep.md`, `RELEASE-v1.0.0.md`, with the real keystore alias `gravityflow-upload`), `docs/qa/DEVICE-CHECKLIST-M0.md` (skeleton rows).
-- Tests: `node scripts/facts.mjs --check`; `git grep -n "docs/project-status.md" -- ':!docs/archive'` returns nothing.
+- Tests: `node scripts/facts.mjs --check`; `git grep -nE "docs/project-statu[s]\.md" -- ':!docs/archive'` returns nothing (the bracket keeps this line from matching itself).
 - Done when: every inbound link points at STATUS, RUNBOOK or the archive index.
 
 **P00-T03 — CLAUDE.md state-free + README facts line**

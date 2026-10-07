@@ -2,7 +2,7 @@
 
 Research date: 2026-10-07. Scope: unlaunched Android (Capacitor 8 + Phaser) one-touch physics puzzler, solo developer.
 Evidence labels: **[DOC]** official platform docs · **[IND]** industry or practitioner source · **[OPN]** my recommendation or judgment.
-Code read (read-only): `analyticsEvents.ts`, `Analytics.ts`, `Leaderboard.ts`, `daily.ts`, `DailyStore.ts`, `streak.ts`, `loginBonus.ts`, `achievements.ts`, `docs/growth-architecture.md`.
+Code read (read-only): `analyticsEvents.ts`, `Analytics.ts`, `Leaderboard.ts`, `daily.ts`, `DailyStore.ts`, `streak.ts`, `loginBonus.ts`, `achievements.ts`, `docs/archive/2026-10-07/growth-architecture.md`.
 
 ## TL;DR: ordered actions
 1. **Pre-launch blockers (analytics hygiene + consent).** Delete the custom `session_start`: it is a reserved name, so Firebase drops it and logs an error. Default all four consent types to denied in the manifest, then resolve them through UMP before analytics starts. Log `screen_view` manually per Phaser scene. Add user properties. Move to the recommended game event names now, while there is no history to lose.
@@ -349,7 +349,7 @@ Total is about 35 events, well under 500. **Register** these event-scoped dimens
 
 ## Q7. Live-ops for a solo indie
 
-**Sources:** Naavik (2025-11-16) · GameRefinery battle-pass prevalence (in about 60% of top-grossing games; growth reports via PocketGamer.biz) · Google Play Promotional Content page (play.google.com/console/about/programs/liveopsbeta) · Play Games Level Up blog (2025-09-23) · Level Up guidelines (developer.android.com/games/guidelines) · `docs/growth-architecture.md`.
+**Sources:** Naavik (2025-11-16) · GameRefinery battle-pass prevalence (in about 60% of top-grossing games; growth reports via PocketGamer.biz) · Google Play Promotional Content page (play.google.com/console/about/programs/liveopsbeta) · Play Games Level Up blog (2025-09-23) · Level Up guidelines (developer.android.com/games/guidelines) · `docs/archive/2026-10-07/growth-architecture.md`.
 
 **Key findings:**
 - Weekly leaderboard events with milestone tracks are the near-universal puzzle cadence [IND].

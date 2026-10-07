@@ -4,7 +4,7 @@ apply plugin: 'com.android.application'
 // If the file is absent (fresh clone, web/CI, anyone without the keystore) the release build
 // still configures and simply produces an UNSIGNED bundle — no crash, no hard dependency.
 // With the file present, bundleRelease/assembleRelease are signed with your upload key.
-// Generate the keystore + this file per docs/release-android.md §4 (see keystore.properties.example).
+// Generate the keystore + this file per docs/release/RUNBOOK.md §7 (see keystore.properties.example).
 def keystorePropsFile = rootProject.file('keystore.properties')
 def keystoreProps = new Properties()
 if (keystorePropsFile.exists()) {

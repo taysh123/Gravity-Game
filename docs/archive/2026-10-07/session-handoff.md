@@ -1,3 +1,5 @@
+> **Archived 2026-10-07 — superseded by [`docs/STATUS.md`](../../STATUS.md) / [`docs/roadmap/`](../../roadmap/).** Current state and the next actions live only in `docs/STATUS.md`. Kept as a historical record only. Index: [archive README](./README.md).
+
 # Session Handoff — GRAVITY FLOW
 
 **30-second resume card. 🚀 Launch command-center: [`docs/LAUNCH-READINESS.md`](./LAUNCH-READINESS.md)

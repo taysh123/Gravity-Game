@@ -2,9 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-> 📍 **Single source of truth for project state & resuming work:** [`docs/project-status.md`](docs/project-status.md)
-> (30-second version: [`docs/session-handoff.md`](docs/session-handoff.md)). This CLAUDE.md covers
-> architecture/conventions; the status doc covers current state, sprints, decisions, and what's next.
+> 📍 **Single source of truth for project state & resuming work:** [`docs/STATUS.md`](docs/STATUS.md).
+> This CLAUDE.md covers architecture/conventions; the status doc covers current state, gates, and what's next.
 
 ---
 
@@ -12,7 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Project Gravity is a mobile-first physics puzzle game. The player never directly controls the ball — instead, pressing and holding the screen creates a gravity attraction point that pulls the ball toward it. Drag to move the attractor, release to remove it. The core experience: hold to pull, guide the ball through physics.
 
-The game targets iOS, Android, and web (web is the primary development and testing target). The MVP mechanic has been validated and expanded into a content-complete game — **150 levels across 15 worlds** (`v1.0.0-rc.1`); see [`docs/project-status.md`](docs/project-status.md) for the authoritative current state.
+The game targets iOS, Android, and web (web is the primary development and testing target). The MVP mechanic has been validated and expanded into a content-complete game — **150 levels across 15 worlds** (`v1.0.0-rc.1`); see [`docs/STATUS.md`](docs/STATUS.md) for the authoritative current state.
 
 ---
 
@@ -40,7 +39,7 @@ MVP mechanic validated and expanded into a content-complete **skill puzzle game*
 worlds** (`v1.0.0-rc.1`, milestone `v0.15.0`), each world teaching one of **7 mechanics**
 (teach → develop → twist → combine → master) and ending in a boss, layered with 3-star mastery, a **Star
 Map** world-journey, and the **Gravity Run** endless mode (Endless + Weekly). **The full, authoritative
-world/level breakdown + current state lives in [`docs/project-status.md`](docs/project-status.md).**
+world/level breakdown + current state lives in [`docs/STATUS.md`](docs/STATUS.md).**
 
 - **7 mechanics:** attractor (inverse-square) · gravity zones · magnets · portals · moving platforms ·
   hazards · one-way gates. Worlds 1–8 introduce them; Worlds 9–15 are combination/tension/mastery worlds.
@@ -48,7 +47,7 @@ world/level breakdown + current state lives in [`docs/project-status.md`](docs/p
 **3-star scoring** (per level): ★ complete · ★ optional **gem** (off-route) · ★ **efficiency** (≤ `parTimeMs`).
 Persisted in `ProgressStore` (localStorage); shown on the win overlay + world-select; drives sequential
 unlock. Pure scoring in `utils/scoring.ts` (TDD). *(All 7 mechanics are now built; the original mechanics roadmap
-`docs/superpowers/plans/2026-06-01-mechanics-roadmap.md` is a historical plan record.)*
+`docs/archive/plans/2026-06-01-mechanics-roadmap.md` is a historical plan record.)*
 
 **Gravity feel:** `ATTRACTOR_STRENGTH 2.6`, `MIN_DIST 75`, `MAX_DIST 310` — inverse-square model, tuned
 for stronger medium-range pull without a close-range snap.
@@ -218,7 +217,7 @@ src/
 > **Historical early-MVP record.** The project is long past this table — it is content-complete at
 > `v1.0.0-rc.1` (150 levels / 15 worlds) and in the Google Play launch phase. The full sprint history
 > (Sprints A–E + the content expansion + launch prep + media pass) and what's next live in
-> [`docs/project-status.md`](docs/project-status.md). Kept here only as the origin record.
+> [`docs/STATUS.md`](docs/STATUS.md). Kept here only as the origin record.
 
 | Sprint | Status | Goal |
 |--------|--------|------|
@@ -226,7 +225,7 @@ src/
 | 1.5 — Feel Tuning | ✅ Complete | Hold-to-attract, ATTRACTOR_STRENGTH 0.2, stationary start |
 | 2 — Playable Game | ✅ Complete | 3 levels, Goal, win detection, ball absorption, EndScene |
 | 3 — Polish | ✅ Complete | Trail, synth audio + hum, goal/attractor pulse, haptics, particle burst, screen shake, onboarding hints, pull line, 3 more levels (6 total), mobile touch hardening |
-| 4+ — Content, Native, Launch | ✅ Complete | → see `docs/project-status.md` (Sprints A–E, 150-level expansion, native/monetization, launch prep, media pass) |
+| 4+ — Content, Native, Launch | ✅ Complete | → see `docs/STATUS.md` (Sprints A–E, 150-level expansion, native/monetization, launch prep, media pass) |
 
 ---
 

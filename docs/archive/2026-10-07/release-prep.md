@@ -1,3 +1,5 @@
+> **Archived 2026-10-07 — superseded by [`docs/STATUS.md`](../../STATUS.md) / [`docs/roadmap/`](../../roadmap/).** Build, sign and release steps moved to [`docs/release/RUNBOOK.md`](../../release/RUNBOOK.md). Kept as a historical record only. Index: [archive README](./README.md).
+
 # Release Prep — GRAVITY FLOW (Google Play tracker)
 
 > Per-track checklists for the Play launch. **Command-center / full audit + roadmaps:

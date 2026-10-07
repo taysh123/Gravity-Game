@@ -1,7 +1,9 @@
+> **Completed — historical record.** Archived 2026-10-07. This plan is finished and is not maintained; current state is in [`docs/STATUS.md`](../../STATUS.md) and the plan of record is [`docs/roadmap/`](../../roadmap/). New plans go to `docs/superpowers/plans/`. Index: [archive README](../2026-10-07/README.md).
+
 # Content Roadmap — toward ~100 levels (+ difficulty rubric)
 
 > ⏳ **Historical plan record (superseded).** The game is now **150 levels / 15 worlds** (`v1.0.0-rc.1`).
-> Authoritative current state: [`docs/project-status.md`](../../project-status.md). The difficulty rubric
+> Authoritative current state: [`docs/project-status.md`](../2026-10-07/project-status.md). The difficulty rubric
 > below is still useful; the level/world counts are point-in-time.
 
 Sprint that took Gravity Flow from 27 → **48 levels / 6 worlds** and made it harder. This doc is the

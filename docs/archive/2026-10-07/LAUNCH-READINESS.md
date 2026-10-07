@@ -1,9 +1,11 @@
+> **Archived 2026-10-07 — superseded by [`docs/STATUS.md`](../../STATUS.md) / [`docs/roadmap/`](../../roadmap/).** Current state lives in `docs/STATUS.md`; the launch plan is [`docs/launch/STORE-LAUNCH-PLAN.md`](../../launch/STORE-LAUNCH-PLAN.md); build and release steps are in [`docs/release/RUNBOOK.md`](../../release/RUNBOOK.md). Kept as a historical record only. Index: [archive README](./README.md).
+
 # GRAVITY FLOW — Launch Readiness Audit & Roadmap
 
 > **The single launch command-center.** Per-track checklists: [`release-prep.md`](./release-prep.md).
 > Hands-on signing/AAB steps: [`release-android.md`](./release-android.md). Store copy:
-> [`store/listing.md`](./store/listing.md) · [`store/aso.md`](./store/aso.md) ·
-> [`store/release-notes.md`](./store/release-notes.md). Project state: [`project-status.md`](./project-status.md).
+> [`store/listing.md`](../../store/listing.md) · [`store/aso.md`](../../store/aso.md) ·
+> [`store/release-notes.md`](../../store/release-notes.md). Project state: [`project-status.md`](./project-status.md).
 
 ## Snapshot
 | | |

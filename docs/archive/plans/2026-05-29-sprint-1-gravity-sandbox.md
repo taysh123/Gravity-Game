@@ -1,3 +1,5 @@
+> **Completed — historical record.** Archived 2026-10-07. This plan is finished and is not maintained; current state is in [`docs/STATUS.md`](../../STATUS.md) and the plan of record is [`docs/roadmap/`](../../roadmap/). New plans go to `docs/superpowers/plans/`. Index: [archive README](../2026-10-07/README.md).
+
 # Sprint 1: Gravity Sandbox — Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.

@@ -243,7 +243,7 @@ All "Modify" paths were verified to exist on 2026-10-07.
 | `src/ui/Button.ts`, `IconButton.ts`, `Toggle.ts`, `icons.ts`, `glass.ts` | T13–T14, T12 | Variants, 48 targets, icons, `drawSurface` |
 | `scripts/optimize-logos.mjs`, `assets/images/gravity-flow-logo.png` | T08 | Alpha key-out + sparkle crop + trim |
 | `.github/workflows/ci.yml` | T26 | Optional `audit` job (Python Playwright) once stable; Vitest gates are already in `npm test` |
-| `CLAUDE.md`, `docs/device-playtest-checklist.md`, `docs/media/README.md`, `CHANGELOG.md` | T09, T26 | See §13 |
+| `CLAUDE.md`, `docs/qa/DEVICE-CHECKLIST-M0.md`, `docs/media/README.md`, `CHANGELOG.md` | T09, T26 | See §13 |
 
 ---
 
@@ -350,7 +350,7 @@ Physics constants and the force formula are **untouched** (D-26), and so is leve
 | `reduced_motion_audit.py` | Set `reduceMotion='on'` in localStorage before boot; run boot → menu → level win → death → Star Map → shop | Camera scroll offset 0 and zoom == k on every sampled frame; no tweens targeting cameras; star `tilePosition` constant for 60 frames; comets 0; ≤0 full-screen flashes; steady-state frame mean luminance RM-on vs RM-off within ±2% (D-13) |
 | `boot_smoke` (existing pattern) | All scenes, including HudScene with both hosts | Zero console errors; 200× restart leak probe flat (scenes, textures, listeners) |
 
-### 8.3 Device (HUMAN DEVICE TEST; rows added to `docs/device-playtest-checklist.md`)
+### 8.3 Device (HUMAN DEVICE TEST; rows added to `docs/qa/DEVICE-CHECKLIST-M0.md`)
 **Reference devices:**
 - **Low:** ≤2 GB RAM, 60 Hz.
 - **Mid:** 4 GB, 120 Hz A-series.
@@ -445,7 +445,7 @@ Physics constants and the force formula are **untouched** (D-26), and so is leve
 - `CLAUDE.md` architecture: HudScene in the scene flow; tokens v2 in `theme.config.ts`; `fx.config.ts` QUALITY/DEPTH/RENDER; the rule "no postFX, no `cam.shake`, text via `ui/text.ts`".
 - `docs/STATUS.md` (from step 0): P5-A/P5 gate results; current tier defaults.
 - `CHANGELOG.md`: player-visible changes (brightness, HUD, accessibility options, Star Map colours).
-- `docs/device-playtest-checklist.md`: the P5 device rows (§8.3).
+- `docs/qa/DEVICE-CHECKLIST-M0.md`: the P5 device rows (§8.3).
 - `docs/media/README.md`: the 9:16 capture recipe (`?gfx=capture`, crop y-range, caption band 346 px) for step 14.
 - This file: task status and completion evidence.
 
@@ -514,7 +514,7 @@ Physics constants and the force formula are **untouched** (D-26), and so is leve
 | **P05-T06** | Render scale k + text sharpness + capture mode | C `src/utils/renderScale.ts` + test. M `main.ts`, `physics.config.ts` (`VIEW_W/H`), the 12 scenes plus `CosmicBackground.ts` and `transitions.ts` that read `scale.width/height` (53 reads → `VIEW`), the pointer reads in Achievements / Cosmetics / Game / LevelSelect / WorldMap (18 → `worldX/Y`), `HudScene.ts`; per-scene `ADDED_TO_SCENE` text-resolution hook | `renderScale.test.ts`; Playwright at k 1 / 1.5 / 2: layout bounds identical in logical px, hit tests correct, scroll-factor-0 objects placed correctly | Mid/High render at 1.5 / ≤2 with crisp text; `RENDER.SCALE_ENABLED=false` restores k = 1; `?gfx=capture` produces a 1080-wide frame |
 | **P05-T07** | Hint chip (Exo 2, wrapped) | C `src/ui/HintChip.ts`. M `GameScene.ts` `showHint` (or P3 `HintSystem` if merged), `theme.config.ts` (`SURFACE_HUD_ALPHA 0.88`, `body` token), `physics.config.ts` (retire `COLOR_HINT_TEXT`); hint-length rule (P2 validator or `src/config/levels/hints.test.ts`) | V15 Playwright over every level with a hint; contrast ≥4.5 as rendered; length rule ≤110 | No Arial in `src/`; every hint ≤3 lines inside 342 px; dismiss on first touch / 5 s |
 | **P05-T08** | Transparent logo re-export | M `scripts/optimize-logos.mjs` (`alphaKey` navy (1,7,36) with feathering, sparkle-region crop, trim + 8 px, RGBA), `assets/images/gravity-flow-logo.png`, `MainMenuScene.ts` / `IntroSplashScene.ts` (scale for the trimmed bounds) | Script self-check: alpha channel present, corners α = 0, sparkle bbox α = 0; menu capture has no navy block around the logo | V16 VERIFIED; owner visual OK |
-| **P05-T09** | P5-A verification and sign-off | C `scripts/audit/luminance_check.py`, `scripts/audit/contrast_render.py`. M `docs/device-playtest-checklist.md`, `CLAUDE.md`, `CHANGELOG.md`, `docs/STATUS.md` | All §8.1 P5-A units; V1–V3, V5, V13, V15, V16, V21; device V10, V11, V14 | P5-A completion definition (§15) met |
+| **P05-T09** | P5-A verification and sign-off | C `scripts/audit/luminance_check.py`, `scripts/audit/contrast_render.py`. M `docs/qa/DEVICE-CHECKLIST-M0.md`, `CLAUDE.md`, `CHANGELOG.md`, `docs/STATUS.md` | All §8.1 P5-A units; V1–V3, V5, V13, V15, V16, V21; device V10, V11, V14 | P5-A completion definition (§15) met |
 
 ### 16.2 P5 system — execution step 16 (needs M1; T18 also needs P3 step 10)
 | ID | Goal | Files | Tests | Done when |
@@ -535,4 +535,4 @@ Physics constants and the force formula are **untouched** (D-26), and so is leve
 | **P05-T23** | Settings v2 | M `SettingsScene.ts` (scrollable E3 sheet, 7 sections, D-10 privacy rows, D-20 version string), `SettingsStore.ts` | Playwright: every row reachable, ≥48 targets, Back closes; privacy-choices row visible only when UMP is REQUIRED (mocked) | Settings matches spec §2.11 |
 | **P05-T24** | Splash fast path | M `CompanySplashScene.ts`, `IntroSplashScene.ts`, `BootScene.ts` (lazy company logo), `splash.config.ts`, `SettingsStore.ts` (`seenIntro`) | Playwright timing: first launch full, returning ≤1.2 s, one tap skips both; never blocks the D-10 consent flow | V20 |
 | **P05-T25** | EndScene finale sequence | M `EndScene.ts`, `ProgressStore.ts` (`finaleSeen`) | Playwright: vignette skippable, stats values match the stores, CTAs route to Gravity Run / Star Map; RM variant | No "Play Again → L1"; finale per spec §5.6 |
-| **P05-T26** | P5 system verification and sign-off | M `theme.config.ts` (delete `THEME` facade), `.github/workflows/ci.yml` (optional audit job), `CLAUDE.md`, `docs/STATUS.md`, `CHANGELOG.md`, `docs/media/README.md`, `docs/device-playtest-checklist.md`, `docs/design/UX-UI-MOTION.md` | Full §8 suite; device run V9–V11, V14, V19, V20 | P5 system completion definition (§15) met |
+| **P05-T26** | P5 system verification and sign-off | M `theme.config.ts` (delete `THEME` facade), `.github/workflows/ci.yml` (optional audit job), `CLAUDE.md`, `docs/STATUS.md`, `CHANGELOG.md`, `docs/media/README.md`, `docs/qa/DEVICE-CHECKLIST-M0.md`, `docs/design/UX-UI-MOTION.md` | Full §8 suite; device run V9–V11, V14, V19, V20 | P5 system completion definition (§15) met |
