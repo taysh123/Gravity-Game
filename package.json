@@ -17,7 +17,7 @@
     "facts:check": "node scripts/facts.mjs --check"
   },
   "dependencies": {
-    "@capacitor-community/admob": "^8.0.0",
+    "@capacitor-community/admob": "8.0.0",
     "@capacitor-firebase/analytics": "8.5.2",
     "@capacitor-firebase/crashlytics": "8.5.2",
     "@capacitor/android": "8.5.2",

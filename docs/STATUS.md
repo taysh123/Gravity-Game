@@ -2,7 +2,7 @@
 
 > **The single source of truth for project state.** The Facts block is machine-generated; every other section is
 > edited by hand at the end of each task. Anything that contradicts this file is stale.
-> Last hand-edited **2026-10-07** · Position: **Step 0** of the [execution order](roadmap/EXECUTION-ORDER.md) (docs SSOT; P00-T01 to P00-T05 done).
+> Last hand-edited **2026-10-07** · Position: **Step 1 complete except P00-T08 (AdMob 8.2.1 soak, deferred to >= 2026-10-13)** of the [execution order](roadmap/EXECUTION-ORDER.md); Step 2 is next (P00-T01 to P00-T07 done).
 > Plan of record: [MASTER-ROADMAP](roadmap/MASTER-ROADMAP.md) · [EXECUTION-ORDER](roadmap/EXECUTION-ORDER.md) · [DECISIONS](roadmap/DECISIONS.md) (amendments override entry bodies).
 > Working title: **Gravity Flow** by True Story Labs. Package id `com.truestorylabs.gravityflow` is permanent.
 
@@ -40,7 +40,7 @@ Regenerate with `npm run facts`; verify with `npm run facts:check` (CI runs the 
 ### Milestones ([definitions](roadmap/MASTER-ROADMAP.md))
 | Milestone | Contents | Unlocks | Tag | State |
 |---|---|---|---|---|
-| **M0 Truthful Build** | P0 + P1 | Internal-track upload (versionCode >= 1000001); owner device validation | `v1.0.0-rc.2` | Not reached. In progress: Step 2 |
+| **M0 Truthful Build** | P0 + P1 | Internal-track upload (versionCode >= 1000001); owner device validation | `v1.0.0-rc.2` | Not reached. Step 1 complete except P00-T08 (AdMob 8.2.1 soak, deferred to >= 2026-10-13); Step 2 platform contract next |
 | **M1 Closed Beta** | M0 + P2 + P3 + P4-alpha + P5-A | Closed test (12 testers x 14 days if required), working title | `v1.0.0-rc.3` | Not started |
 | **M2 Launch Candidate** | M1 + P4 + P5 + P6/P7 core + P11 (rename applied) | Production staged rollout | `v1.0.0-rc.4` | Not started |
 | **M3 Live 1.x** | P8, P9, P10, P12 optimisation, iOS track | Growth and live ops by data | `v1.0.0` at launch (Step 19) | Not started |
@@ -63,7 +63,7 @@ Regenerate with `npm run facts`; verify with `npm run facts:check` (CI runs the 
 | Data Safety form + privacy policy sign-off (drafts land in P0 Step 5) | Owner | before M2 | PENDING |
 
 ## Next 5 actions
-Steps 0 and 1 complete (P00-T01…T07: CI v2, Capacitor 8.5.2 family and exact pins). AdMob stays at 8.0.0 until the P00-T08 soak (not before 2026-10-13).
+Step 0 complete. Step 1 complete except P00-T08 (AdMob 8.2.1 soak, deferred to >= 2026-10-13); done so far: P00-T01…T07 (CI v2, Capacitor 8.5.2 family, exact pins). AdMob stays pinned at exactly 8.0.0 until the soak.
 1. **Step 2: P00-T09…T13** — Manifest, theme, WebView floor, system bars, back router, PauseScene (wires `@capacitor/app` and `@capacitor/preferences`, installed in T07 but not yet imported).
 2. **P00-T08** — AdMob 8.2.1 soak commit, deferred until >= 2026-10-13.
 3. **Step 3: P00-T14…T17** — Purchases (D-09): plugin config, ids, products, license testers.
@@ -77,7 +77,7 @@ Top blockers from the [state audit](audit/2026-10-07/STATE-AUDIT.md) (section B.
 | B-01 | P0 | IAP non-functional: plugin registered as `'PurchasesPlugin'` (native name is `Purchases`) and empty RevenueCat key | [Step 3](roadmap/phases/P00-foundation.md) |
 | B-02 | P0 | Interstitial can show over live gameplay; rewarded ad can hang | [Step 4](roadmap/phases/P00-foundation.md) |
 | B-03 | P0 | Frame-rate-dependent physics (forces applied per render frame) | [Steps 6-7](roadmap/phases/P01-physics.md) |
-| B-04 | P0 | `@capacitor/android` 8.4.0 critical advisory GHSA-rvm3-566m-v7fv (`npm audit`: 1 critical) | FIXED in P00-T07 (Capacitor 8.5.2; `npm audit --omit=dev` reports 0, gated in CI) |
+| B-04 | P0 | `@capacitor/android` 8.4.0 critical advisory GHSA-rvm3-566m-v7fv (`npm audit`: 1 critical) | FIXED in P00-T07 (Capacitor 8.5.2; `npm audit --omit=dev` reports 0, gated in CI; dev-only advisories: see below) |
 | B-05 | P0 | Google test AdMob ids shipped; no real AdMob/RevenueCat ids anywhere | [Steps 3-4](roadmap/phases/P00-foundation.md) + owner gates |
 | B-06 | P0 | Lazy consent, analytics before consent, no privacy-options entry, incomplete Data Safety | [Steps 4-5](roadmap/phases/P00-foundation.md) |
 | B-07 | P0 | Misleading "leaderboard" claim in the store listing (metadata policy) | [Step 5](roadmap/phases/P00-foundation.md) |
@@ -85,6 +85,20 @@ Top blockers from the [state audit](audit/2026-10-07/STATE-AUDIT.md) (section B.
 | B-09 | P1 | Level clock is wall-clock (Settings, background and ads drain timers and par) | [Step 6](roadmap/phases/P01-physics.md) |
 | B-10 | P1 | An uncaught frame error freezes the game permanently | [Step 5](roadmap/phases/P00-foundation.md) |
 | B-11 | P1 | Web build on Vercel grants paid items for free (IAP stub) | [Step 3](roadmap/phases/P00-foundation.md) |
+
+### Known dev-only advisories
+Full `npm audit` (dev dependencies included), 2026-10-07, after the lockfile-only `npm audit fix` in P00-T07: **9 vulnerabilities (2 critical, 2 high, 5 moderate)**, down from 15 (3 critical, 7 high, 5 moderate). None is in the APK or the web bundle: `npm audit --omit=dev --audit-level=critical` reports 0 and is the CI gate (D-11). This list is maintained by hand; CI does not check it.
+
+| Package (path) | Sev | Notes |
+|---|---|---|
+| `vitest` 1.6 (direct) and `tinypool` (via vitest) | critical | Vitest UI server file read/execute; tinypool prototype-pollution RCE. Fix is vitest 5.0.3 (major) |
+| `sharp` 0.34.5 (direct, dev) | high | libvips, libheif and librsvg CVEs. Used only by `npm run optimize:assets` on our own images. Fix is sharp 0.35.5 (major) |
+| `vite` 5 (direct) | high | Dev-server path traversal and `server.fs.deny` bypass. Fix is vite 8 (deferred by D-28) |
+| `esbuild` (via vite), `vite-node` | moderate | Dev-server request exposure. Same upgrade path as vite and vitest |
+| `@capacitor/cli` > `xcode` > `uuid@7` | moderate | uuid buffer bounds check. The only offered fix downgrades the CLI to 8.4.3, so it is left alone |
+
+Cleared by the lockfile-only `npm audit fix` (dev tooling, no production version changed): `tar` critical (via `@capacitor/cli`, 7.5.16 to 7.5.22), `@xmldom/xmldom` high (0.9.10 to 0.9.12), `brace-expansion`, `nanoid`, `postcss`, `source-map-js`.
+Follow-up: decide the vitest 5 and sharp 0.35.5 upgrades (and Vite 8, which D-28 defers until after launch) in a later step, then re-run `npm audit`.
 
 ## Decisions log
 Full register: [DECISIONS.md](roadmap/DECISIONS.md). Entries here are one-liners, newest last.

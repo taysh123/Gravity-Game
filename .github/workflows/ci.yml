@@ -29,7 +29,8 @@ jobs:
       - run: npm ci
       # D-11: shipped (production) dependencies must carry no critical advisory. GHSA-rvm3-566m-v7fv (Capacitor
       # Android, CVSS 9.3) is the reason this gate exists. Dev-only tooling (vitest, the Capacitor CLI) is not
-      # shipped in the APK and is excluded by --omit=dev; its advisories are tracked in docs/STATUS.md instead.
+      # shipped in the APK and is excluded by --omit=dev; its advisories are listed by hand under "Known dev-only
+      # advisories" in docs/STATUS.md (a manual record, not enforced by CI).
       - name: Dependency audit (no critical advisories in production dependencies)
         run: npm audit --omit=dev --audit-level=critical
       - run: npx tsc --noEmit
