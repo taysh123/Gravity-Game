@@ -19,7 +19,7 @@ permissions:
 jobs:
   web:
     name: Typecheck · Test · Facts · Web build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -60,7 +60,7 @@ jobs:
   # plugins, which a debug build does not need. The APK is not uploaded.
   android-debug:
     name: Android debug build · Version cross-check
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

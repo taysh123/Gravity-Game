@@ -63,12 +63,12 @@ Regenerate with `npm run facts`; verify with `npm run facts:check` (CI runs the 
 | Data Safety form + privacy policy sign-off (drafts land in P0 Step 5) | Owner | before M2 | PENDING |
 
 ## Next 5 actions
-Step 0 continues ([P00 task list](roadmap/phases/P00-foundation.md)); then Step 1 (Capacitor 8.5.2 security bump) and Step 2.
-1. **P00-T06**: CI v2 (Node 22, `npm ci`, `facts:check`, Android debug build, version cross-check).
-2. **P00-T07**: Capacitor 8.5.2 family and exact pins (Step 1).
-3. **P00-T09**: manifest, theme, WebView floor and system bars (Step 2; the AdMob bump P00-T08 waits for its soak window, on or after 2026-10-13).
-4. **P00-T10**: back router + PauseScene.
-5. **P00-T11**: background/foreground contract (pause + audio suspend).
+Step 0 complete (P00-T01…T06 CI v2). Then Step 1 (Capacitor 8.5.2 security) and Step 2 (platform contract).
+1. **Step 1: P00-T07** — Capacitor 8.5.2 family and exact pins (patch GHSA-rvm3-566m-v7fv).
+2. **Step 2: P00-T09…T13** — Manifest, theme, WebView floor, system bars, back router, PauseScene.
+3. **Step 3: P00-T14…T17** — Purchases (D-09): plugin config, ids, products, license testers.
+4. **Step 4: P00-T18…T20** — Consent-first boot and ad plumbing (D-10, D-11).
+5. **Step 5: P00-T21…T26** — Error boundary, store validation, analytics hygiene (A-10 level_end attempts), boot smoke.
 
 ## Open bugs
 Top blockers from the [state audit](audit/2026-10-07/STATE-AUDIT.md) (section B.6/O). Target: 0 open P0 defects at M0.

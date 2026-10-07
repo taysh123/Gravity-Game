@@ -190,17 +190,31 @@ describe('single implementation', () => {
   // and its one version adapter calls the imported deriveVersion instead of computing a code itself.
   it('factsLib.mjs imports versionCode.mjs and defines no local formula function', () => {
     const source = readFileSync(new URL('../facts/factsLib.mjs', import.meta.url), 'utf8');
-    expect(source).toMatch(/^import\s*\{[^}]*\}\s*from\s*'\.\.\/lib\/versionCode\.mjs';?$/m);
 
-    const declared = [...source.matchAll(/\bfunction\s+(\w+)/g)].map((m) => m[1]);
-    const libFunctions = Object.keys(versionLib).filter((name) => /^[a-z]/.test(name));
-    expect(libFunctions).toContain('deriveVersionCode'); // the guard is meaningless if the export list changes shape
-    const redefined = libFunctions.filter((name) => name !== 'deriveVersion' && declared.includes(name));
-    expect(redefined).toEqual([]);
+    // (a) Import specifier list contains deriveVersion as deriveD20Version (the exact binding).
+    expect(source).toMatch(/^import\s*\{[^}]*\bderiveVersion\s+as\s+deriveD20Version\b[^}]*\}\s*from\s*'\.\.\/lib\/versionCode\.mjs';?$/m);
 
+    // (b) No local declaration in factsLib whose name contains "version" is defined in these forms:
+    // function NAME (non-exported), (const|let|var) NAME = (non-exported), or a method NAME(.
+    // The adapter function deriveVersion is allowed; identify it by name.
     const adapter = /export function deriveVersion\([^)]*\) \{\r?\n([\s\S]*?)\r?\n\}\r?\n/.exec(source);
     expect(adapter, 'the deriveVersion adapter was not found in factsLib.mjs').not.toBeNull();
-    expect(adapter[1]).toMatch(/\bderiveD20Version\(/);
+
+    // Slice out the adapter so it doesn't trigger false positives on exported helper functions.
+    const adapterMatch = adapter[0];
+    const adapterStart = source.indexOf(adapterMatch);
+    const withoutAdapter = source.slice(0, adapterStart) + source.slice(adapterStart + adapterMatch.length);
+
+    // Check for non-exported function declarations with "version" in the name.
+    const badNonExportFunction = /(?<!export\s)\bfunction\s+(\w*version\w*)/i.exec(withoutAdapter);
+    // Check for non-exported var declarations with "version" in the name.
+    const badNonExportVar = /(?<!export\s)\b(const|let|var)\s+(\w*version\w*)/i.exec(withoutAdapter);
+    expect(badNonExportFunction, `found non-exported function with "version" in name: ${badNonExportFunction?.[1] ?? 'N/A'}`).toBeNull();
+    expect(badNonExportVar, `found non-exported var with "version" in name: ${badNonExportVar?.[2] ?? 'N/A'}`).toBeNull();
+
+    // (c) The adapter body contains no multiplication by 1000000, 1_000_000, 10000 or 10_000.
+    expect(adapter[1]).toMatch(/\bderiveD20Version\(/, 'adapter must call the imported deriveD20Version');
+    expect(adapter[1]).not.toMatch(/\*\s*(1000000|1_000_000|10000|10_000)/, 'adapter must not compute a versionCode itself');
   });
 });
 

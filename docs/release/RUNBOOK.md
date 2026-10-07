@@ -167,8 +167,7 @@ configures and emits an **unsigned** bundle, so fresh clones and CI never break.
 5. **Production**: final Data safety, pricing and countries, staged rollout, submit for review.
 6. Update the *Gates* table in `docs/STATUS.md` with the uploaded versionCode.
 
-CI (`.github/workflows/ci.yml`) typechecks, tests and builds the web app. Release signing never runs in CI. *(P00-T06)*
-adds a debug Android build with Temurin 21 and the facts check.
+CI (`.github/workflows/ci.yml`) runs on master and on phase branches. It has two jobs. **Web** runs Node 22 and: typechecks, runs the test suite (reporting JSON for the facts check), runs the facts block drift check against `docs/STATUS.md` and `README.md`, runs `scripts/version.mjs --check` to validate version data, and builds the production web bundle. **Android-debug** runs Temurin 21 and: syncs Capacitor, assembles an unsigned debug APK, and cross-checks the versionCode from `scripts/version.mjs` against `gradlew printVersionCode`. Both jobs use no secrets and produce no signed artifacts; release builds are made locally per this runbook.
 
 ## 9. Device smoke test and the GitHub Release
 
