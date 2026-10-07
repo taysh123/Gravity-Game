@@ -15,11 +15,11 @@ import { CosmeticStore } from '../utils/CosmeticStore';
 import { sharedAudio } from '../utils/AudioSynth';
 import { CurrencyStore } from '../utils/CurrencyStore';
 import { FragmentStore } from '../utils/FragmentStore';
-import { IAP } from '../utils/IAP';
-import { Ads } from '../utils/Ads';
+import { IAP } from '../services/IAP';
+import { Ads } from '../services/Ads';
 import { RewardStore } from '../utils/RewardStore';
-import { Analytics } from '../utils/Analytics';
-import { shopOpen, storeTab, bundleCrossSell, cosmeticEquip, fragmentEarned, rewardedOffered } from '../utils/analyticsEvents';
+import { Analytics } from '../services/Analytics';
+import { shopOpen, storeTab, bundleCrossSell, cosmeticEquip, fragmentEarned, rewardedOffered } from '../services/analyticsEvents';
 
 const FREE_FRAGMENTS = 5; // daily rewarded grant
 

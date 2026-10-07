@@ -9,7 +9,7 @@ import { drawIcon, type IconName } from '../ui/icons';
 import { sharedAudio } from '../utils/AudioSynth';
 import { SettingsStore } from '../utils/SettingsStore';
 import { reducedMotionActive } from '../utils/a11y';
-import { IAP } from '../utils/IAP';
+import { IAP } from '../services/IAP';
 import type { Dismissable } from '../platform/pausable';
 
 interface Row {

@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { IMAGES } from '../config/assets';
-import { Analytics } from '../utils/Analytics';
-import { sessionStart } from '../utils/analyticsEvents';
+import { Analytics } from '../services/Analytics';
+import { sessionStart } from '../services/analyticsEvents';
 import { Saves } from '../platform/saves';
 
 // V19: the boot time hydrate ADDS, i.e. how long Boot still waited for it after

@@ -55,7 +55,7 @@
 // Saves deletes save data only through remove(). The two records are local-only bookkeeping.
 import { Capacitor } from '@capacitor/core';
 import { PLATFORM } from '../config/platform.config';
-import { Crash } from '../utils/Crash';
+import { Crash } from '../services/Crash';
 import { consumeRendererGone } from './rendererGone';
 import { MIGRATED_V1_KEY, MIGRATIONS, readSchema, runMigrations, type Migration, type MigrationContext } from './migrations';
 

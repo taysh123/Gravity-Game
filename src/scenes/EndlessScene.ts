@@ -23,11 +23,11 @@ import { fadeToScene } from '../utils/transitions';
 import { sharedAudio } from '../utils/AudioSynth';
 import { CurrencyStore } from '../utils/CurrencyStore';
 import { Leaderboard } from '../utils/Leaderboard';
-import { Ads } from '../utils/Ads';
+import { Ads } from '../services/Ads';
 import { Share } from '../utils/Share';
 import { dateKey } from '../utils/daily';
-import { Analytics } from '../utils/Analytics';
-import { rewardedOffered } from '../utils/analyticsEvents';
+import { Analytics } from '../services/Analytics';
+import { rewardedOffered } from '../services/analyticsEvents';
 
 // A live (spawned) chunk: its world-Y extent + the entities to pulse/cull.
 interface LiveChunk {

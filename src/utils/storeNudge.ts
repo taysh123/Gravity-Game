@@ -1,7 +1,7 @@
 // Pure win-overlay spend-nudge gating (Wave 3 Task 4). No localStorage/Phaser
 // here — GameScene owns the impure glue (the persisted "wins since the nudge
 // last showed" counter) and resolves every field before calling in, mirroring
-// utils/interstitial.ts's pure-gate / impure-glue split. Keeping this pure
+// services/interstitial.ts's pure-gate / impure-glue split. Keeping this pure
 // makes the "genuinely helpful, genuinely infrequent" rules directly testable.
 
 export interface AffordabilityItem {

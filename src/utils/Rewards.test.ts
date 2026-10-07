@@ -26,7 +26,7 @@ vi.mock('./FragmentStore', () => ({
 }));
 
 const analyticsTrack = vi.fn();
-vi.mock('./Analytics', () => ({
+vi.mock('../services/Analytics', () => ({
   Analytics: { track: (e: unknown) => analyticsTrack(e) },
 }));
 

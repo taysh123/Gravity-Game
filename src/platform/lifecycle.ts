@@ -20,7 +20,7 @@ import { PLATFORM } from '../config/platform.config';
 import { fadeToScene } from '../utils/transitions';
 import { sharedAudio } from '../utils/AudioSynth';
 import { SettingsStore } from '../utils/SettingsStore';
-import { Crash } from '../utils/Crash';
+import { Crash } from '../services/Crash';
 import type { AppBridge } from '../utils/native/app';
 import { routeBack, deriveBackState, type BackAction, type BackState, type SceneSnapshot } from './backRouter';
 import { lifecycleDecision, deriveLifecycleScenes, type LifecycleActions, type Visibility } from './lifecycleDecision';

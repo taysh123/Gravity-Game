@@ -14,7 +14,7 @@ import {
   firstPurchase,
   restore as restoreEvent,
 } from './analyticsEvents';
-import { CosmeticStore } from './CosmeticStore';
+import { CosmeticStore } from '../utils/CosmeticStore';
 import type { PurchasesPlugin } from './native/revenueCat';
 import { Saves } from '../platform/saves';
 

@@ -20,8 +20,8 @@ import {
 import { DAILY_LEVELS } from '../config/dailyLevels';
 import { RewardStore } from './RewardStore';
 import { grantLoginBonus } from './Rewards';
-import { Analytics } from './Analytics';
-import { streakFrozen } from './analyticsEvents';
+import { Analytics } from '../services/Analytics';
+import { streakFrozen } from '../services/analyticsEvents';
 import { RETENTION } from '../config/retention.config';
 import { Saves } from '../platform/saves';
 

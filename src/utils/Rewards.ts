@@ -8,8 +8,8 @@ import { CosmeticStore } from './CosmeticStore';
 import { RewardStore } from './RewardStore';
 import { collectionComplete } from './cosmeticsLogic';
 import { COLLECTIONS, type CollectionId } from '../config/cosmetics.config';
-import { Analytics } from './Analytics';
-import { fragmentEarned, collectionComplete as collectionCompleteEvent, loginBonus } from './analyticsEvents';
+import { Analytics } from '../services/Analytics';
+import { fragmentEarned, collectionComplete as collectionCompleteEvent, loginBonus } from '../services/analyticsEvents';
 import { streakMilestone } from './streak';
 import { loginBonusFor } from './loginBonus';
 

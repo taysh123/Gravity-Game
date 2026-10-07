@@ -1,7 +1,7 @@
 // Monetization config — ad-unit / RevenueCat / product ids. NO SECRETS in source.
 // Defaults are Google's public AdMob TEST ids so a native build works before real
 // ids exist; replace with the real ids (and set the RevenueCat key) before a prod
-// release. Consumed by the guarded native branches in utils/Ads.ts + utils/IAP.ts.
+// release. Consumed by the guarded native branches in services/Ads.ts + services/IAP.ts.
 
 export const ADMOB = {
   // Google AdMob official TEST ad units (safe for dev + internal testing).
@@ -12,7 +12,7 @@ export const ADMOB = {
 } as const;
 
 // Interstitial cadence (Wave 3 Task 1) — retention-first, deliberately
-// conservative. Consumed by the pure gate in utils/interstitial.ts; Ads.ts
+// conservative. Consumed by the pure gate in services/interstitial.ts; Ads.ts
 // supplies the runtime context (now/lastShownMs/session state). Tune UP later
 // from live `interstitial_suppressed` analytics, never down without data.
 export const INTERSTITIAL = {
@@ -31,7 +31,7 @@ export const REVENUECAT = {
 
 // Premium bundles (IAP). `grants` = cosmetic ids unlocked; `premium` = also grants
 // Remove-Ads. `productId` is the Play Console / RevenueCat product. Purchase logic
-// is in utils/IAP.buyBundle (web stub grants); the store surfaces these. No P2W —
+// is in services/IAP.buyBundle (web stub grants); the store surfaces these. No P2W —
 // everything granted is purely cosmetic (plus the optional Remove-Ads convenience).
 export interface BundleDef {
   id: string;
