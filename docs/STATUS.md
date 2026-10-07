@@ -93,12 +93,12 @@ Full `npm audit` (dev dependencies included), 2026-10-07, after the lockfile-onl
 |---|---|---|
 | `vitest` 1.6 (direct) and `tinypool` (via vitest) | critical | Vitest UI server file read/execute; tinypool prototype-pollution RCE. Fix is vitest 5.0.3 (major) |
 | `sharp` 0.34.5 (direct, dev) | high | libvips, libheif and librsvg CVEs. Used only by `npm run optimize:assets` on our own images. Fix is sharp 0.35.5 (major) |
-| `vite` 5 (direct) | high | Dev-server path traversal and `server.fs.deny` bypass. Fix is vite 8 (deferred by D-28) |
+| `vite` 5 (direct) | high | Dev-server path traversal and `server.fs.deny` bypass. Fix is vite 8 (no Vite upgrade planned yet; decide in a later step) |
 | `esbuild` (via vite), `vite-node` | moderate | Dev-server request exposure. Same upgrade path as vite and vitest |
 | `@capacitor/cli` > `xcode` > `uuid@7` | moderate | uuid buffer bounds check. The only offered fix downgrades the CLI to 8.4.3, so it is left alone |
 
 Cleared by the lockfile-only `npm audit fix` (dev tooling, no production version changed): `tar` critical (via `@capacitor/cli`, 7.5.16 to 7.5.22), `@xmldom/xmldom` high (0.9.10 to 0.9.12), `brace-expansion`, `nanoid`, `postcss`, `source-map-js`.
-Follow-up: decide the vitest 5 and sharp 0.35.5 upgrades (and Vite 8, which D-28 defers until after launch) in a later step, then re-run `npm audit`.
+Follow-up: decide the vitest 5 and sharp 0.35.5 upgrades and Vite 8 (no upgrade planned yet) in a later step, then re-run `npm audit`.
 
 ## Decisions log
 Full register: [DECISIONS.md](roadmap/DECISIONS.md). Entries here are one-liners, newest last.
