@@ -440,7 +440,7 @@ Each task: own branch or commit series, TDD where pure, gates V1–V3 before com
 
 ### Step 4 — Consent-first boot + ad plumbing
 **P00-T18 — Consent-first boot + privacy entry points**
-- Goal: nothing is requested or logged before consent is applied.
+- Goal: no ad is requested before UMP has answered, and on a fresh install nothing is stored or logged before consent is applied (Firebase and Crashlytics persist their last value, so from the second launch that choice applies until UMP answers again: TECHNICAL-ARCHITECTURE 4.3).
 - Files: `src/services/consentState.ts`, `Consent.ts`, `bootServices.ts`, `src/services/native/admob.ts` (consent + listener typings), `src/services/Analytics.ts` (`applyConsent`, `resetData`), `src/services/native/firebaseAnalytics.ts` (`setConsent`, `setCurrentScreen`, `resetAnalyticsData`), `src/services/Crash.ts` (`enable()`), `AndroidManifest.xml` (6 meta-data entries), `src/scenes/BootScene.ts`, `src/scenes/SettingsScene.ts`.
 - Tests: `src/services/consentState.test.ts`; 👤 V13.
 - Done when: unit tests green; EEA debug APK shows the form before any ad request and Settings shows "Privacy choices"; US debug APK shows no form.

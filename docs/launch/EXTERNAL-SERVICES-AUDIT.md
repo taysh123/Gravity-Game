@@ -77,7 +77,7 @@
 5. Optional: create a separate debug Firebase app or project.
 
 **Me:**
-- Consent Mode v2 defaults: analytics *denied* until UMP resolves, via the manifest `google_analytics_default_allow_*` flags plus `setConsent`.
+- Consent Mode v2 defaults: analytics *denied* on a fresh install until UMP resolves, via the manifest `google_analytics_default_allow_*` flags plus `setConsent` (Firebase persists the last `setConsent`, so from the second launch that choice applies until UMP answers again).
 - Rename the reserved `session_start`; implement the new taxonomy.
 - Crashlytics stack traces + custom keys.
 - An in-app "Reset analytics data" option.

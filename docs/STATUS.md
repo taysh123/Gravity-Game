@@ -18,7 +18,7 @@
 | Other content | 8 daily levels · 20 run chunks · 14 achievements · 28 cosmetics · 3 bundles |
 | Scenes registered | 14 |
 | Level files | 163 on disk · 13 retired (6, 22, 31, 35, 37, 39, 40, 45, 48, 55, 56, 63, 64) |
-| Tests | 57 files / 1059 tests |
+| Tests | 57 files / 1071 tests |
 | package.json version | 1.0.0 |
 | androidBuild | 1 |
 | Derived versionName / versionCode | 1.0.0 / 1000001 |
@@ -79,7 +79,7 @@ Top blockers from the [state audit](audit/2026-10-07/STATE-AUDIT.md) (section B.
 | B-03 | P0 | Frame-rate-dependent physics (forces applied per render frame) | [Steps 6-7](roadmap/phases/P01-physics.md) |
 | B-04 | P0 | `@capacitor/android` 8.4.0 critical advisory GHSA-rvm3-566m-v7fv (`npm audit`: 1 critical) | FIXED in P00-T07 (Capacitor 8.5.2; `npm audit --omit=dev` reports 0, gated in CI; dev-only advisories: see below) |
 | B-05 | P0 | Google test AdMob ids shipped; no real AdMob/RevenueCat ids anywhere | [Steps 3-4](roadmap/phases/P00-foundation.md) + owner gates |
-| B-06 | P0 | Lazy consent, analytics before consent, no privacy-options entry, incomplete Data Safety | Consent-first boot and the Settings privacy rows FIXED in code in P00-T18 (UMP before analytics before ads; manifest defaults denied; the four analytics types follow the player's real TCF answer, not UMP's `canRequestAds`; verified call by call on an Android 16 emulator, device rows C1-C5 pending). Still open: the pre-consent analytics queue and `session_start` ([P00-T23](roadmap/phases/P00-foundation.md)), Data Safety ([Step 5](roadmap/phases/P00-foundation.md)), the Crashlytics legal check (gate above) |
+| B-06 | P0 | Lazy consent, analytics before consent, no privacy-options entry, incomplete Data Safety | Consent-first boot and the Settings privacy rows FIXED in code in P00-T18 (UMP before analytics before ads; manifest defaults denied on a fresh install, the persisted choice applies from the second launch; the four analytics types follow the player's real TCF answer, not UMP's `canRequestAds`; verified call by call on an Android 16 emulator, device rows C1-C5 pending). Still open: the pre-consent analytics queue and `session_start` ([P00-T23](roadmap/phases/P00-foundation.md)), Data Safety ([Step 5](roadmap/phases/P00-foundation.md)), the Crashlytics legal check (gate above) |
 | B-07 | P0 | Misleading "leaderboard" claim in the store listing (metadata policy) | [Step 5](roadmap/phases/P00-foundation.md) |
 | B-08 | P1 | Background now pauses the level behind `PauseScene` and suspends audio; foreground refits and never auto-resumes (P00-T11, headless-verified; Home / shade / split-screen device check pending). Android Back opens `PauseScene` instead of exiting mid-level (P00-T10, headless-verified; Android 16 gesture and 3-button device check pending). Portrait lock + `VIBRATE`: config-level fix in P00-T09, device check pending | [Step 2](roadmap/phases/P00-foundation.md) |
 | B-09 | P1 | Level clock is wall-clock (Settings, background and ads drain timers and par) | [Step 6](roadmap/phases/P01-physics.md) |

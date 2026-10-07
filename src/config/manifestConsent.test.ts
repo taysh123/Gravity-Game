@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 // outcome. These are first-launch defaults only: Firebase consent and the Crashlytics switch are persisted by the SDKs and override
 // them on later launches (TECHNICAL-ARCHITECTURE 4.3). The merged manifest (what Gradle really ships) is checked by hand per
 // docs/roadmap/phases/P00-foundation.md V10; this pins the source it merges from.
-// com.google.android.gms.ads.DELAY_APP_MEASUREMENT_INIT is deliberately absent (obsolete since Mobile Ads SDK 18.1.0; see the manifest).
+// com.google.android.gms.ads.DELAY_APP_MEASUREMENT_INIT is deliberately absent (an SDK 18.1.0 era flag that Mobile Ads SDK 24.x no longer reads; see the manifest).
 
 const read = (rel: string): string => readFileSync(fileURLToPath(new URL(`../../${rel}`, import.meta.url)), 'utf8');
 const manifest = read('android/app/src/main/AndroidManifest.xml').replace(/<!--[\s\S]*?-->/g, ''); // comments never count

@@ -3,9 +3,12 @@
 // web bundle never loads the native plugin. Mirrors the Ads/IAP seam shape — thin,
 // not a manager. Event shapes live in analyticsEvents.ts (pure + tested).
 //
-// Consent (D-10): the manifest starts Firebase with all four Consent Mode defaults denied, so nothing is stored or linked before
-// bootServices has the UMP outcome. applyConsent(outcome) then writes the four types (ANALYTICS_STORAGE, AD_STORAGE, AD_USER_DATA,
-// AD_PERSONALIZATION); the same call is how a later change from "Privacy choices" is applied.
+// Consent (D-10): the manifest starts Firebase with all four Consent Mode defaults denied, but those defaults apply on a FRESH
+// install (or after app data is cleared) only: Firebase persists every setConsent value, and the persisted value takes precedence
+// over the manifest. So on a fresh install nothing is stored or linked before bootServices has the UMP outcome; from the second
+// launch the last explicit choice applies from process start until the new UMP answer arrives (TECHNICAL-ARCHITECTURE 4.3).
+// applyConsent(outcome) writes the four types (ANALYTICS_STORAGE, AD_STORAGE, AD_USER_DATA, AD_PERSONALIZATION) on every launch;
+// the same call is how a later change from "Privacy choices" is applied.
 //
 // IMPORTANT: a Capacitor registerPlugin() proxy is *thenable*, so it is never returned from an async function or awaited:
 // ensureNative() resolves to a boolean and callers use the module-scoped `plugin`.

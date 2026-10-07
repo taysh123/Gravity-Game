@@ -14,7 +14,7 @@
 // Crash.enable() / disable() are synchronous fire-and-forget calls and sit before the ad SDK on purpose: crash reporting must not
 // depend on, or wait for, the ad SDK. Every step is isolated: a failure anywhere degrades (consent errors become "all denied") and
 // never throws out of this function. IAP has its own init in main.ts and is not consent-gated (a purchase is not an ad).
-import { CRASH_REQUIRES_ANALYTICS_CONSENT } from '../config/consent.config';
+import { CONSENT, CRASH_REQUIRES_ANALYTICS_CONSENT } from '../config/consent.config';
 import { Ads } from './Ads';
 import { Analytics } from './Analytics';
 import { Consent, type ConsentSeam } from './Consent';
@@ -77,6 +77,8 @@ export function bootServices(deps?: BootDeps): Promise<ConsentOutcome> {
 }
 
 let privacyFlight: Promise<ConsentOutcome> | null = null;
+// Counts the flows started. A flow is superseded once a newer one has started (its number is no longer the latest).
+let privacyFlowSeq = 0;
 
 // Settings > "Privacy choices": the UMP privacy options form, then the new answer is applied exactly like at boot. A withdrawal
 // denies analytics and closes the ad gate (the SDK stays up for the session but nothing more is requested or shown); a grant
@@ -84,28 +86,50 @@ let privacyFlight: Promise<ConsentOutcome> | null = null;
 //
 // Single-flight: closing and re-opening Settings mid-flow must not start a second flow (two forms, two unserialised applyConsent
 // writes), so a call made while one is running returns that same promise. The flow never waits on the ad SDK (see runPrivacyChoices),
-// so it always ends and the next call starts a fresh one.
+// so it ends when the native form does.
+//
+// Bounded by CONSENT.FORM_WATCHDOG_MS (the budget Consent.ts gives a native sheet). A form that never settles must not hand the same
+// pending promise to every later tap for the rest of the session, so the slot is released when the flow settles OR when that budget
+// has passed since it started, whichever comes first. Rule (pure, deterministic, pinned in bootServices.test.ts):
+//   - release by timeout leaves one fixed-string breadcrumb through deps.crash.log (the step, never an error text);
+//   - the released flow is NOT cancelled: if its form answers later, its answer is applied only if no newer flow has started
+//     (a superseded flow changes nothing), and it never frees a newer flow's slot;
+//   - the timer is cleared the moment the flow settles, so none is left behind.
 export function openPrivacyChoices(deps: BootDeps = defaultDeps()): Promise<ConsentOutcome> {
-  if (!privacyFlight) {
-    privacyFlight = runPrivacyChoices(deps).finally(() => {
-      privacyFlight = null;
-    });
-  }
-  return privacyFlight;
+  if (privacyFlight) return privacyFlight;
+  const id = ++privacyFlowSeq;
+  const superseded = (): boolean => id !== privacyFlowSeq;
+  const watchdog = setTimeout(() => {
+    if (privacyFlight !== flight) return; // already settled or already released
+    privacyFlight = null;
+    try {
+      deps.crash.log('privacy choices: native form still pending, single-flight released');
+    } catch {
+      // a breadcrumb must never break the Settings row
+    }
+  }, CONSENT.FORM_WATCHDOG_MS);
+  const flight: Promise<ConsentOutcome> = runPrivacyChoices(deps, superseded).finally(() => {
+    clearTimeout(watchdog);
+    if (privacyFlight === flight) privacyFlight = null; // never frees a newer flow's slot
+  });
+  privacyFlight = flight;
+  return flight;
 }
 
-async function runPrivacyChoices(deps: BootDeps): Promise<ConsentOutcome> {
+async function runPrivacyChoices(deps: BootDeps, superseded: () => boolean): Promise<ConsentOutcome> {
   let outcome: ConsentOutcome;
   try {
     outcome = await deps.consent.showPrivacyOptions();
   } catch {
     outcome = { ...CONSENT_DENIED };
   }
+  if (superseded()) return outcome; // released by the watchdog and a newer flow has started: that flow owns the state now
   try {
     await deps.analytics.applyConsent(outcome);
   } catch {
     // analytics must never break the Settings row
   }
+  if (superseded()) return outcome;
   // Only the opt-in flag touches Crashlytics here: with it off (D-10.5 default) the boot-time enable() stands and nothing changes.
   if (deps.crashRequiresAnalyticsConsent) applyCrashCollection(deps, outcome);
   try {

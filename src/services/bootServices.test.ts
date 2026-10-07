@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import { bootServices, openPrivacyChoices, type BootDeps } from './bootServices';
 import { createConsent, type ConsentApi } from './Consent';
 import { CONSENT_DENIED, type ConsentOutcome } from './consentState';
@@ -476,5 +476,136 @@ describe('openPrivacyChoices is single-flight', () => {
     await openPrivacyChoices(f.deps);
     await openPrivacyChoices(f.deps);
     expect(f.log.filter((e) => e === 'consent.showPrivacyOptions')).toHaveLength(2);
+  });
+});
+
+// The hung Privacy-options form. The single-flight gate above would, with a native form that never settles, hand the same pending
+// promise to every later tap for the rest of the session. It is therefore bounded by CONSENT.FORM_WATCHDOG_MS (the same budget the
+// consent source watchdog in Consent.ts uses). Rule, pure and deterministic:
+//   - a flow's slot is released when it settles OR when FORM_WATCHDOG_MS has passed since it started, whichever is first;
+//   - release by timeout leaves one fixed-string breadcrumb (step name only) through deps.crash.log;
+//   - the released flow's promise is left running. When it settles later its answer is APPLIED ONLY IF NO NEWER FLOW HAS STARTED
+//     (a flow that has been superseded changes nothing: no applyConsent, no Crashlytics call, no ads init / revoke), and it never
+//     clears a newer flow's slot;
+//   - the timer is cleared as soon as the flow settles, so none is left behind.
+describe('openPrivacyChoices: a hung form releases the single-flight after CONSENT.FORM_WATCHDOG_MS', () => {
+  const BREADCRUMB = 'privacy choices: native form still pending, single-flight released';
+  const WITHDRAWN: ConsentOutcome = { ...CONSENT_DENIED, privacyOptionsRequired: true };
+  const shows = (f: Fakes): number => f.log.filter((e) => e === 'consent.showPrivacyOptions').length;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('joins the hung flow until the budget has passed, then the next call starts a fresh native call', async () => {
+    const hung = fakes({ showPrivacyOptions: () => new Promise<ConsentOutcome>(() => {}) });
+    const first = openPrivacyChoices(hung.deps);
+    await vi.advanceTimersByTimeAsync(CONSENT.FORM_WATCHDOG_MS - 1);
+
+    const early = fakes();
+    expect(openPrivacyChoices(early.deps)).toBe(first); // one ms short of the budget: still the same flow
+    expect(early.log).toEqual([]);
+    expect(hung.crashLogs).toEqual([]);
+
+    await vi.advanceTimersByTimeAsync(1);
+    expect(hung.crashLogs).toEqual([BREADCRUMB]);
+
+    const fresh = fakes();
+    await expect(openPrivacyChoices(fresh.deps)).resolves.toBe(ALLOWED);
+    expect(shows(fresh)).toBe(1);
+    expect(fresh.applied).toEqual([ALLOWED]);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('the breadcrumb is a fixed string, and a crash sink that throws cannot break the release', async () => {
+    const hung = fakes({ showPrivacyOptions: () => new Promise<ConsentOutcome>(() => {}) });
+    hung.deps.crash.log = () => {
+      throw new Error('sink down: secret-detail');
+    };
+    void openPrivacyChoices(hung.deps);
+    await vi.advanceTimersByTimeAsync(CONSENT.FORM_WATCHDOG_MS);
+    const fresh = fakes();
+    await expect(openPrivacyChoices(fresh.deps)).resolves.toBe(ALLOWED);
+    expect(shows(fresh)).toBe(1);
+  });
+
+  it('a released flow that settles later, with no newer flow started, still applies its answer', async () => {
+    let finish!: (o: ConsentOutcome) => void;
+    const hung = fakes({ showPrivacyOptions: () => new Promise<ConsentOutcome>((res) => (finish = res)) });
+    const first = openPrivacyChoices(hung.deps);
+    await vi.advanceTimersByTimeAsync(CONSENT.FORM_WATCHDOG_MS);
+    finish(WITHDRAWN);
+    await expect(first).resolves.toBe(WITHDRAWN);
+    expect(hung.applied).toEqual([WITHDRAWN]);
+    expect(hung.log).toContain('ads.revoke');
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('a released flow that settles after a newer flow started is ignored and does not free the newer flow slot', async () => {
+    let finishOld!: (o: ConsentOutcome) => void;
+    let finishNew!: (o: ConsentOutcome) => void;
+    const old = fakes({ showPrivacyOptions: () => new Promise<ConsentOutcome>((res) => (finishOld = res)) });
+    const newer = fakes({ showPrivacyOptions: () => new Promise<ConsentOutcome>((res) => (finishNew = res)) });
+    const oldFlow = openPrivacyChoices(old.deps);
+    await vi.advanceTimersByTimeAsync(CONSENT.FORM_WATCHDOG_MS);
+    const newFlow = openPrivacyChoices(newer.deps);
+    expect(newFlow).not.toBe(oldFlow);
+
+    finishOld(WITHDRAWN); // the stale answer arrives while the newer form is open
+    await expect(oldFlow).resolves.toBe(WITHDRAWN);
+    expect(old.applied).toEqual([]);
+    expect(old.log).toEqual(['consent.showPrivacyOptions']); // no applyConsent, no Crash, no ads revoke / init
+    const joiner = fakes();
+    expect(openPrivacyChoices(joiner.deps)).toBe(newFlow); // the old flow's settle did not clear the newer slot
+    expect(joiner.log).toEqual([]);
+
+    finishNew(ALLOWED);
+    await expect(newFlow).resolves.toBe(ALLOWED);
+    expect(newer.applied).toEqual([ALLOWED]);
+    const after = fakes();
+    await openPrivacyChoices(after.deps); // and the slot is free again once the newer flow is done
+    expect(shows(after)).toBe(1);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('a normal flow is unaffected: no breadcrumb, no stale slot, and the timer is gone as soon as it settles', async () => {
+    const f = fakes();
+    const first = openPrivacyChoices(f.deps);
+    expect(vi.getTimerCount()).toBe(1); // the watchdog is armed while the flow runs
+    await expect(first).resolves.toBe(ALLOWED);
+    expect(vi.getTimerCount()).toBe(0);
+    await vi.advanceTimersByTimeAsync(CONSENT.FORM_WATCHDOG_MS * 2);
+    expect(f.crashLogs).toEqual([]);
+    expect(f.applied).toEqual([ALLOWED]);
+
+    const g = fakes();
+    await openPrivacyChoices(g.deps);
+    expect(shows(g)).toBe(1);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('a flow that finishes just inside the budget logs nothing', async () => {
+    let finish!: (o: ConsentOutcome) => void;
+    const f = fakes({ showPrivacyOptions: () => new Promise<ConsentOutcome>((res) => (finish = res)) });
+    const flow = openPrivacyChoices(f.deps);
+    await vi.advanceTimersByTimeAsync(CONSENT.FORM_WATCHDOG_MS - 1);
+    finish(ALLOWED);
+    await expect(flow).resolves.toBe(ALLOWED);
+    await vi.advanceTimersByTimeAsync(CONSENT.FORM_WATCHDOG_MS);
+    expect(f.crashLogs).toEqual([]);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('a failed flow leaves no timer either', async () => {
+    const f = fakes({
+      showPrivacyOptions: async () => {
+        throw new Error('form');
+      },
+    });
+    await expect(openPrivacyChoices(f.deps)).resolves.toEqual({ ...CONSENT_DENIED });
+    expect(vi.getTimerCount()).toBe(0);
   });
 });

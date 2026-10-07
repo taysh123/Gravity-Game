@@ -152,7 +152,7 @@ stateDiagram-v2
 
 | Step | Action | Detail |
 |---|---|---|
-| 1 | Firebase starts with **all four Consent Mode defaults denied** | Manifest: `google_analytics_default_allow_{analytics_storage, ad_storage, ad_user_data, ad_personalization_signals}=false`, plus `google_analytics_automatic_screen_reporting_enabled=false`. Analytics events queue before consent (D-14). |
+| 1 | **On a fresh install**, Firebase starts with **all four Consent Mode defaults denied** | Manifest: `google_analytics_default_allow_{analytics_storage, ad_storage, ad_user_data, ad_personalization_signals}=false`, plus `google_analytics_automatic_screen_reporting_enabled=false`. These are first-launch defaults only: Firebase persists every `setConsent` value and the persisted value overrides the manifest, so from the second launch the last explicit choice applies until step 6 re-applies the new UMP answer (TECHNICAL-ARCHITECTURE 4.3). Analytics events queue before consent (D-14). |
 | 2 | `requestConsentInfo()` during CompanySplash, non-blocking | **Every launch** (DOCUMENTED). DEV only: `debugGeography` (`AdmobConsentDebugGeography.EEA=1 / NOT_EEA=2`, VERIFIED in plugin 8.0.0) and `testDeviceIdentifiers`. |
 | 3 | `showConsentForm()` | Safe to call every time; it wraps `loadAndShowConsentFormIfRequired` (VERIFIED) |
 | 4 | Keep `privacyOptionsRequirementStatus` | Settings shows **"Privacy choices"** only when it is `REQUIRED`. That row calls `showPrivacyOptionsForm()` and then re-requests consent info. |
@@ -277,7 +277,7 @@ The matrix runs on a release-signed internal-track build, with license testers a
 | C2 | EEA, "Do not consent" / Manage → reject all | Game fully playable. If `canRequestAds` is false, ads stay uninitialised and offers are hidden. No hang. | D-10, D-24 |
 | C3 | `NOT_EEA` geography | No form. Privacy row hidden unless the status is REQUIRED. | D-10 |
 | C4 | Settings → Privacy choices → change answer | Form re-shows; consent info re-requested; the next ad request reflects the change | D-10 |
-| C5 | Firebase DebugView before and after consent | No events are sent before the UMP outcome. Queued events flush after a grant; storage stays denied after a denial. | D-10, D-14 |
+| C5 | Firebase DebugView before and after consent | On a fresh install, no events are sent before the UMP outcome (from the second launch Firebase's persisted choice applies until the new answer, TECHNICAL-ARCHITECTURE 4.3). Queued events flush after a grant; storage stays denied after a denial. | D-10, D-14 |
 | C6 | First launch offline, then go online and resume | No form, no ad init, game playable. The consent flow runs on resume. | A.12 |
 | C7 | Debug log at init | `maxAdContentRating = ParentalGuidance`; no child-directed tag | D-25 |
 | A1 | Campaign 2× with ad loaded | Offer visible; reward granted exactly once **after** dismissal; ad reloads | D-24 |

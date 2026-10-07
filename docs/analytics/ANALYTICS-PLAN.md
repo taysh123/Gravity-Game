@@ -350,7 +350,7 @@ The SQL files live in `scripts/analytics/queries/`: `q_level_health.sql`, `q_ttp
 ### 9.1 Boot order (D-10), as wired in P0
 
 1. **Manifest:**
-   - `google_analytics_default_allow_analytics_storage`, `_ad_storage`, `_ad_user_data` and `_ad_personalization` are all **`false`** (Consent Mode v2 defaults denied).
+   - `google_analytics_default_allow_analytics_storage`, `_ad_storage`, `_ad_user_data` and `_ad_personalization` are all **`false`** (Consent Mode v2 defaults denied on a fresh install only; the SDK's persisted `setConsent` values win on later launches until UMP answers).
    - `google_analytics_automatic_screen_reporting_enabled=false`.
    - `firebase_crashlytics_collection_enabled=false` (the default of a fresh install only; the SDK's persisted value wins on later launches).
 2. Firebase initializes. The JS seam (`Analytics.ts`) is **queued**: `track()`, `screen()` and `setUserProp()` append to an in-memory FIFO capped at **50 events**, dropping the oldest.

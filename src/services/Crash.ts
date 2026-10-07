@@ -54,6 +54,13 @@ function setCollection(on: boolean): void {
     if (!ok) return;
     plugin?.setEnabled({ enabled: on }).catch(() => {
       if (collection === on) collection = null; // not applied: let the next call retry
+      // A fixed-string breadcrumb (which switch, never the error text), console only: Crash.log / recordError would go through the
+      // same Crashlytics plugin whose setEnabled just failed. On Android the WebView console reaches logcat. Must never throw.
+      try {
+        console.warn(on ? 'crash: setEnabled on failed' : 'crash: setEnabled off failed');
+      } catch {
+        // no console: nothing more to do
+      }
     });
   });
 }

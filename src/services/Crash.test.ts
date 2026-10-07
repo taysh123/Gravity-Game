@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, type MockInstance } from 'vitest';
 
 // Crash is a thin seam over the native Crashlytics plugin, loaded lazily on first use. These tests pin two things.
 // 1. The boot race: a report made while the plugin is still loading must be delivered once it is ready, not dropped. This matters
@@ -57,6 +57,7 @@ describe('Crash (native)', () => {
   beforeEach(() => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.spyOn(console, 'debug').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
   });
   afterEach(() => {
     vi.restoreAllMocks();
@@ -126,6 +127,7 @@ describe('Crash collection switch (D-10.5)', () => {
   beforeEach(() => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.spyOn(console, 'debug').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
   });
   afterEach(() => {
     vi.restoreAllMocks();
@@ -186,6 +188,7 @@ describe('Crash.disable (the off-switch)', () => {
   beforeEach(() => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.spyOn(console, 'debug').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
   });
   afterEach(() => {
     vi.restoreAllMocks();
@@ -263,6 +266,7 @@ describe('Crash (web / non-native)', () => {
   beforeEach(() => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.spyOn(console, 'debug').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
   });
   afterEach(() => {
     vi.restoreAllMocks();
@@ -281,5 +285,103 @@ describe('Crash (web / non-native)', () => {
     expect(plugin.setEnabled).not.toHaveBeenCalled();
     expect(plugin.addLogMessage).not.toHaveBeenCalled();
     expect(plugin.recordException).not.toHaveBeenCalled();
+  });
+});
+
+describe('Crash: a failed collection switch leaves a breadcrumb', () => {
+  let warn: MockInstance;
+  beforeEach(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'debug').mockImplementation(() => {});
+    warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.doUnmock('@capacitor/core');
+    vi.doUnmock('./native/firebaseCrashlytics');
+  });
+
+  // The breadcrumb is a console.warn of a FIXED string, deliberately not Crash.log / recordError: those are addLogMessage /
+  // recordException on the same Crashlytics plugin whose setEnabled just failed, so they would depend on the failing SDK (and a
+  // failure inside them would loop back here). On Android the WebView console reaches logcat, which is where a tester looks.
+  const SECRET = 'native failure with secret-detail user@example.com';
+
+  it('a rejected enable() warns "crash: setEnabled on failed" once, with no error text, and never throws', async () => {
+    const { Crash, plugin } = await load(true, {
+      setEnabled: async () => {
+        throw new Error(SECRET);
+      },
+    });
+    expect(() => Crash.enable()).not.toThrow();
+    await flush();
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]).toEqual(['crash: setEnabled on failed']);
+    expect(JSON.stringify(warn.mock.calls)).not.toContain('secret-detail');
+    // not routed through Crashlytics itself
+    expect(plugin.addLogMessage).not.toHaveBeenCalled();
+    expect(plugin.recordException).not.toHaveBeenCalled();
+  });
+
+  it('a rejected disable() warns "crash: setEnabled off failed" once, with no error text, and never throws', async () => {
+    const { Crash, plugin } = await load(true, {
+      setEnabled: async () => {
+        throw new Error(SECRET);
+      },
+    });
+    expect(() => Crash.disable()).not.toThrow();
+    await flush();
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]).toEqual(['crash: setEnabled off failed']);
+    expect(JSON.stringify(warn.mock.calls)).not.toContain('secret-detail');
+    expect(plugin.addLogMessage).not.toHaveBeenCalled();
+    expect(plugin.recordException).not.toHaveBeenCalled();
+  });
+
+  it('each failed attempt warns once, and the retry still runs', async () => {
+    let fail = true;
+    const { Crash, plugin } = await load(true, {
+      setEnabled: async () => {
+        if (fail) throw new Error(SECRET);
+      },
+    });
+    Crash.disable();
+    await flush();
+    Crash.disable(); // retried because the first failure was forgotten; fails again
+    await flush();
+    expect(warn.mock.calls).toEqual([['crash: setEnabled off failed'], ['crash: setEnabled off failed']]);
+    fail = false;
+    Crash.disable();
+    await flush();
+    expect(plugin.setEnabled).toHaveBeenCalledTimes(3);
+    expect(warn).toHaveBeenCalledTimes(2); // a success warns nothing
+  });
+
+  it('a successful switch and a plugin that never loaded warn nothing', async () => {
+    const ok = await load(true);
+    ok.Crash.enable();
+    await flush();
+    expect(warn).not.toHaveBeenCalled();
+    const broken = await load(true, { loadFails: true });
+    broken.Crash.enable();
+    await flush();
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it('a console.warn that itself throws cannot make the switch throw, reject unhandled, or block the retry', async () => {
+    let fail = true;
+    const { Crash, plugin } = await load(true, {
+      setEnabled: async () => {
+        if (fail) throw new Error(SECRET);
+      },
+    });
+    warn.mockImplementation(() => {
+      throw new Error('console unavailable');
+    });
+    expect(() => Crash.enable()).not.toThrow();
+    await flush();
+    fail = false;
+    Crash.enable();
+    await flush();
+    expect(plugin.setEnabled).toHaveBeenCalledTimes(2);
   });
 });
