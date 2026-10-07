@@ -31,6 +31,8 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // The app's own plugin that reads the UMP consent answer (see ConsentSignalsPlugin); local plugins register BEFORE super.onCreate.
+        registerPlugin(ConsentSignalsPlugin.class);
         super.onCreate(savedInstanceState);
         // BridgeActivity shows no_webview and returns early if the WebView is missing, disabled or mid-update.
         if (getBridge() == null) return;

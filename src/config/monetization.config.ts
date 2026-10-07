@@ -11,6 +11,14 @@ export const ADMOB = {
   interstitialAdId: 'ca-app-pub-3940256099942544/1033173712',
 } as const;
 
+// AdMob request configuration passed to AdMob.initialize() (services/Ads.ts). D-25: the audience is 13+ and the content rating stays
+// Everyone, so there is NO child-directed and NO under-age-of-consent tag anywhere (neither key is ever sent). A-07: the max ad content
+// rating is the plugin enum value MaxAdContentRating.ParentalGuidance, not the string 'PG'; the value is mirrored here because the web
+// bundle never imports the plugin, and src/config/consentConfig.test.ts pins it to the real enum.
+export const ADMOB_TARGETING = {
+  MAX_AD_CONTENT_RATING: 'ParentalGuidance',
+} as const;
+
 // Interstitial cadence (Wave 3 Task 1) — retention-first, deliberately
 // conservative. Consumed by the pure gate in services/interstitial.ts; Ads.ts
 // supplies the runtime context (now/lastShownMs/session state). Tune UP later
