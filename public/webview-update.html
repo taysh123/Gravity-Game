@@ -38,7 +38,7 @@
     font-weight: bold;
     text-decoration: none;
   }
-  .alt { display: block; padding: 12px; font-size: 14px; color: #8fa0ff; }
+  .alt { display: block; padding: 14px; font-size: 14px; color: #8fa0ff; }
   .meta { font-size: 13px; color: #7b83a8; }
 </style>
 </head>
@@ -54,7 +54,7 @@
 (function () {
   var m = /Chrome\/(\d+)/.exec(navigator.userAgent || '');
   var el = document.getElementById('v');
-  if (m && el) { el.innerHTML = m[1]; }
+  if (m && el) { el.textContent = m[1]; }
 })();
 </script>
 </body>

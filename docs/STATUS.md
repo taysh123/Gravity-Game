@@ -81,7 +81,7 @@ Top blockers from the [state audit](audit/2026-10-07/STATE-AUDIT.md) (section B.
 | B-05 | P0 | Google test AdMob ids shipped; no real AdMob/RevenueCat ids anywhere | [Steps 3-4](roadmap/phases/P00-foundation.md) + owner gates |
 | B-06 | P0 | Lazy consent, analytics before consent, no privacy-options entry, incomplete Data Safety | [Steps 4-5](roadmap/phases/P00-foundation.md) |
 | B-07 | P0 | Misleading "leaderboard" claim in the store listing (metadata policy) | [Step 5](roadmap/phases/P00-foundation.md) |
-| B-08 | P1 | Android Back exits mid-level; no pause or audio suspend on background (portrait lock and `VIBRATE` fixed in P00-T09) | [Step 2](roadmap/phases/P00-foundation.md) |
+| B-08 | P1 | Android Back exits mid-level; no pause or audio suspend on background (portrait lock + `VIBRATE`: config-level fix in P00-T09, device check pending) | [Step 2](roadmap/phases/P00-foundation.md) |
 | B-09 | P1 | Level clock is wall-clock (Settings, background and ads drain timers and par) | [Step 6](roadmap/phases/P01-physics.md) |
 | B-10 | P1 | An uncaught frame error freezes the game permanently | [Step 5](roadmap/phases/P00-foundation.md) |
 | B-11 | P1 | Web build on Vercel grants paid items for free (IAP stub) | [Step 3](roadmap/phases/P00-foundation.md) |
