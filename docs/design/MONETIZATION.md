@@ -90,12 +90,12 @@ The game is unlaunched, so `premium` is renamed to `no_ads` now.
 ```mermaid
 stateDiagram-v2
   [*] --> Idle
-  Idle --> Unavailable: no package / unconfigured
+  Idle --> Unavailable: no package, unconfigured, or init failed twice
   Idle --> Purchasing: tap Buy (package found, not busy, not owned)
   Purchasing --> Success: resolved and target entitlement active
   Purchasing --> Verifying: resolved, entitlement not yet active
   Verifying --> Success: getCustomerInfo after 2 s shows entitlement
-  Verifying --> Pending: still inactive (marker written; a late grant completes it)
+  Verifying --> Pending: still inactive (marker written, a late grant completes it)
   Purchasing --> Idle: code 1 cancelled (silent)
   Purchasing --> Pending: code 20
   Purchasing --> Restoring: code 6
@@ -132,7 +132,7 @@ stateDiagram-v2
 - **Pending.** No grant until `PURCHASED` (DOCUMENTED). RC resolves pending purchases from RTDN and pushes them through the listener. The marker is advisory, and it clears when:
   - the entitlement turns active (toast "Unlocked: …"), or
   - after 72 h (INFERRED; verify with matrix row P5), or
-  - when the user taps the card's "Check status" (which runs `restorePurchases`).
+  - when the user taps the card's "Check status" (which runs `restorePurchases` for that product). If the product is still not owned afterwards, its marker is cleared anyway, so the card goes back to a priced Buy button and the toast agrees with it: "No completed payment found yet. If a payment is still processing it will unlock automatically; otherwise you can try again." (`PURCHASE_COPY.CHECK_NOT_FOUND`). A payment that is genuinely still processing is not lost: the customer-info listener or the next foreground refresh unlocks it.
   
   A pending product never shows a second Buy button.
 - **Refund / chargeback.** Revocation reaches RC within ≤24 h (DOCUMENTED). The next `apply` removes `no_ads` and the derived cosmetics, and the equipped item falls back to the default. Interstitials resume. There is no punitive copy, and Stardust is never clawed back.
@@ -144,8 +144,8 @@ stateDiagram-v2
 
 ### A.6 Store price display and Starter visibility
 
-- **Prices** come only from `pkg.product.priceString`. Delete `BundleDef.priceLabel` and `REMOVE_ADS_PRICE_LABEL` (`monetization.config.ts:40,67`; Settings uses it at `SettingsScene.ts:148`). Until offerings load, show `…` with the button disabled. If there's no package, show "Unavailable".
-- **Starter is hidden once `no_ads` is active** (D-09), whatever granted it. A Starter the player actually owns still reads OWNED (the rule hides the offer, not what they bought). Implemented in P00-T17 as `BundleDef.hideWhenNoAds` + `purchaseCardView` (`src/services/purchaseView.ts`).
+- **Prices** come only from `pkg.product.priceString`. Delete `BundleDef.priceLabel` and `REMOVE_ADS_PRICE_LABEL` (`monetization.config.ts:40,67`; Settings uses it at `SettingsScene.ts:148`). Until offerings load, show `…` with the button disabled. If there's no package, show "Unavailable". The same goes for a store whose SDK init failed twice in a row (`PURCHASE_FLOW.INIT_FAIL_LIMIT`: the boot attempt plus one retry): a terminal "Unavailable" instead of "…" for ever. Opening the shop or Settings, or the next foreground, retries, and a success clears it.
+- **Starter is hidden only when `no_ads` is owned through a different product** (Remove Ads or Founder's), per DECISIONS A-24. A Starter the player actually owns keeps its card and reads **OWNED** (the rule hides the offer, not what they bought), so it does not vanish at the moment of purchase. A locked bundle-only cosmetic whose bundle is hidden (Galaxy Trail) does not cross-sell to it: tapping it shows "Part of the Starter Pack — not offered once Remove Ads is owned" and records no `bundle_cross_sell` intent. Implemented in P00-T17 as `BundleDef.hideWhenNoAds` + `purchaseCardView` (`src/services/purchaseView.ts`).
 - **Interim honesty (P0).** If `no_ads` is active, the Founder's card's value line reads "Remove Ads ✓ already yours". P7 replaces this with cosmetic-only twin products (B.4).
 
 ### A.7 AdMob consent-first boot (D-10, D-25)
@@ -229,7 +229,7 @@ stateDiagram-v2
 - A Vite build-time check fails a **release** build if:
   - the ad unit or app ids are Google test ids (`ca-app-pub-3940256099942544…`, currently at `monetization.config.ts:9-11`), or
   - the RC key is empty or is the Test Store key.
-- **Production web build.** IAP buttons read "Available in the Android app" and the web stub grants run only when `import.meta.env.DEV` (fixes defect #14). Rewarded on web stays a DEV-only stub. Production web never grants ad rewards.
+- **Production web build.** IAP buttons read "Available in the Android app" and no web build, dev included, grants anything: buy and restore resolve `unavailable`, and the DEV grant stub was deleted in the P00-T17 fix pass (fixes defect #14). Rewarded on web stays a DEV-only stub. Production web never grants ad rewards.
 
 ### A.14 Owner dashboard setup checklist
 
@@ -538,7 +538,7 @@ These replace Fragments' prestige role. They have no price in any currency. They
 | Product (Play id) | Price | Entitlements | Contents | Shown |
 |---|---|---|---|---|
 | Remove Ads (`remove_ads`) | $2.99 (from $1.99) | `no_ads` | Interstitials off; rewarded stays optional | Until `no_ads` |
-| Starter Pack (`starter_pack`) | $3.99 | `no_ads`, `pack_starter` | Remove Ads + Galaxy Trail (Legendary). Keeps the honest **BEST VALUE** tag (`monetization.config.ts:44-52`). | After the first World 1 boss clear (B.6); **hidden once `no_ads`** (D-09) |
+| Starter Pack (`starter_pack`) | $3.99 | `no_ads`, `pack_starter` | Remove Ads + Galaxy Trail (Legendary). Keeps the honest **BEST VALUE** tag (`monetization.config.ts:44-52`). | After the first World 1 boss clear (B.6); **hidden once `no_ads` is owned through another product** (D-09, A-24) |
 | Galaxy Trail (`starter_cosmetic`) | $0.99 | `pack_starter` | Galaxy Trail only | Only to `no_ads` owners without it |
 | Premium Collection (`premium_collection_pack`) | $4.99 | `pack_premium_collection` | Black Hole + Lightning Strike | Always |
 | Founder's Pack (`founders_pack`) | $7.99 | `no_ads`, `pack_founders` | Remove Ads + Phoenix Core + Dragon Heart + **Founder badge** | Until the honest end date |
@@ -611,7 +611,7 @@ Built on the P5 components (ScrollView, Modal, Toast, shop cards):
 | Never | After a death or fail, during play, over Settings, on boot or splash, on resume, stacked with a rewarded offer on the same screen (the existing one-CTA rule, `GameScene.ts:1356-1380`) |
 | After any purchase | 14-day prompt cooldown (shop unaffected) |
 | Pending purchase | No prompt for that product |
-| **Starter** | After the first World 1 boss clear, in session ≥2. A dismissible card below the primary action on the world-complete beat, then a highlighted shop card for 7 days. Prompted once ever. Hidden once `no_ads`. |
+| **Starter** | After the first World 1 boss clear, in session ≥2. A dismissible card below the primary action on the world-complete beat, then a highlighted shop card for 7 days. Prompted once ever. Hidden once `no_ads` is owned through another product (A-24). |
 | **Remove Ads line** | After the 3rd lifetime interstitial: one line under the next result's actions; ≤1 per 7 days |
 | **Supporter** | Once, on the campaign-complete EndScene |
 | **Season pack** | MainMenu event card during the season (P10); counts toward the per-session cap |

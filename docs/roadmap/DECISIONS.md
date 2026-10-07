@@ -440,4 +440,5 @@ Each domain plan writer listed conflicts instead of resolving them silently. The
 | A-21 | D-19 | D-19 covers **only the product name**. World and level titles are content: P4 may rename them (L80 → "ALMOST HOME", duplicate titles fixed). The **anti-gravity field** mechanic is not adopted (it borders on D-26) and stays USER-GATED. |
 | A-22 | D-08, D-24 | The result-screen rewarded offer sits **below** the NEXT/RETRY row, in tertiary position, never above or before the primary action. This resolves UX-UI-MOTION vs MONETIZATION. |
 | A-23 | D-06 | The noisy-expert success gate uses **bands per level role** (sandbox/teach ≥ 90%, develop 60–90%, mastery/boss 40–75%) rather than one 40–90% band. The open frontier opens the next world at **80% of world size** (worlds may hold 8–12 levels, D-27). |
+| A-24 | D-09 | The Starter Pack card is **hidden only when `no_ads` is owned through a different product** (Remove Ads or Founders). When Starter itself is owned, its card stays and shows **Owned**, so it does not vanish at the moment of purchase. Bundle-only cosmetics whose bundle is hidden do not cross-sell to it. |
 
