@@ -43,6 +43,20 @@ export const THEME = {
   TEXT_MUTED: '#8A8F98',
   TEXT_ON_PRIMARY: '#06231a', // dark text on bright green
 
+  // Toast (ui/toast.ts): a short glass pill for outcomes that need a word and no decision (purchase / restore).
+  TOAST_MAX_W: 320,
+  TOAST_PAD_X: 18,
+  TOAST_PAD_Y: 12,
+  TOAST_FONT_PX: 13,
+  TOAST_HOLD_BASE_MS: 2200, // hold = base + per-character, capped, so a longer message stays readable
+  TOAST_HOLD_PER_CHAR_MS: 28,
+  TOAST_HOLD_MAX_MS: 5200,
+  TOAST_FADE_MS: 240,
+  TOAST_POP_START_SCALE: 0.9,
+  TOAST_DEPTH: 90, // above scene content and the unlock fanfare (60-62)
+  TOAST_ERROR_COLOR: '#ff9a9a', // soft red text + hairline; >=4.5:1 on the glass panel
+  TOAST_ERROR_STROKE: 0xff9a9a,
+
   // Text-fit (long boss/signature titles must shrink/truncate, never collide
   // with fixed HUD chrome or overflow the screen — see utils/textFit.ts).
   HUD_LABEL_MIN_SCALE: 0.8, // floor for the HUD title chip (14px * 0.8 = 11.2px, still legible)

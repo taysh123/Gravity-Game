@@ -95,7 +95,7 @@ stateDiagram-v2
   Purchasing --> Success: resolved and target entitlement active
   Purchasing --> Verifying: resolved, entitlement not yet active
   Verifying --> Success: getCustomerInfo after 2 s shows entitlement
-  Verifying --> Failed: still inactive
+  Verifying --> Pending: still inactive (marker written; a late grant completes it)
   Purchasing --> Idle: code 1 cancelled (silent)
   Purchasing --> Pending: code 20
   Purchasing --> Restoring: code 6
@@ -113,11 +113,13 @@ stateDiagram-v2
 - **Lookup.** Find the package by package id, then by product id. If neither matches, the card is "Unavailable" and `purchase_failed{reason:no_package}` fires. **Never `[0]`.**
 - **Call.** `purchasePackage({ aPackage })` receives the exact object from `getOfferings()`. Native code rejects a package without `presentedOfferingContext` (VERIFIED).
 - **Success** means the target entitlement is active after `apply`. Nothing else counts.
+- **Verifying never ends in Failed (amended in P00-T17, from T16 review M5).** `purchasePackage` resolved but the target entitlement is still not active after the one re-read 2 s later: the outcome is **Pending**, not `not_entitled`/Failed. A pending marker is written (so the card reads "Payment pending — unlocks automatically", never a second Buy), `purchase_pending` fires, and the customer-info listener or the next foreground refresh completes it (firing `purchase_completed` once). `iap.notEntitled` is reported once per session, because a persistent case points at the dashboard (a product not attached to its entitlement). The marker clears on the entitlement turning active, after the 72 h TTL, or on that card's "Check status".
 
 | `e.code` (VERIFIED) | Outcome | UX | Analytics |
 |---|---|---|---|
 | `1` cancelled | Idle | Nothing: no toast, no shake | `purchase_failed{cancelled}` |
 | `20` payment pending | Pending | Card chip "Payment pending — unlocks automatically". The marker `{productId, at}` persists. | `purchase_pending` |
+| resolved, entitlement still inactive after the 2 s re-read ("Verifying", **amended in P00-T17**) | Pending (not Failed) | Same chip and marker as code 20. The store took the payment, so the player is never told a charged purchase failed. | `purchase_pending`, plus one `iap.notEntitled` Crashlytics report |
 | `6` already purchased | Restoring | `restorePurchases()` (user-initiated, so allowed), then `apply` | `purchase_failed{already_owned}` → `restore{…}` |
 | `10` network / `35` offline | NetworkError | "No connection — try again when you're online." | `purchase_failed{network}` |
 | `42` Test Store simulated failure | Failed | Generic error (DEV only) | `purchase_failed{error}` |
@@ -143,7 +145,7 @@ stateDiagram-v2
 ### A.6 Store price display and Starter visibility
 
 - **Prices** come only from `pkg.product.priceString`. Delete `BundleDef.priceLabel` and `REMOVE_ADS_PRICE_LABEL` (`monetization.config.ts:40,67`; Settings uses it at `SettingsScene.ts:148`). Until offerings load, show `…` with the button disabled. If there's no package, show "Unavailable".
-- **Starter is hidden once `no_ads` is active** (D-09), whatever granted it.
+- **Starter is hidden once `no_ads` is active** (D-09), whatever granted it. A Starter the player actually owns still reads OWNED (the rule hides the offer, not what they bought). Implemented in P00-T17 as `BundleDef.hideWhenNoAds` + `purchaseCardView` (`src/services/purchaseView.ts`).
 - **Interim honesty (P0).** If `no_ads` is active, the Founder's card's value line reads "Remove Ads ✓ already yours". P7 replaces this with cosmetic-only twin products (B.4).
 
 ### A.7 AdMob consent-first boot (D-10, D-25)

@@ -446,27 +446,27 @@ describe('silentRestoreDecision / afterSilentRestore (A-06, M3, M4)', () => {
   });
 
   it('a record for another identity (reinstall from backup) does not count', () => {
-    const old: SilentRestoreRecord = { id: '$RCAnonymousID:old', done: true, attempts: 1, nextAt: 0 };
+    const old: SilentRestoreRecord = { id: '$RCAnonymousID:old', done: true, attempts: 1, offline: 0, nextAt: 0 };
     expect(silentRestoreDecision({ ...base, record: old })).toBe('restore');
   });
 
   it('done for this identity -> skip (once per identity)', () => {
-    const rec = afterSilentRestore(null, '$RCAnonymousID:new', true, 10_000, LIMITS);
-    expect(rec).toEqual({ id: '$RCAnonymousID:new', done: true, attempts: 1, nextAt: 0 });
+    const rec = afterSilentRestore(null, '$RCAnonymousID:new', 'ok', 10_000, LIMITS);
+    expect(rec).toEqual({ id: '$RCAnonymousID:new', done: true, attempts: 1, offline: 0, nextAt: 0 });
     expect(silentRestoreDecision({ ...base, record: rec })).toBe('skip');
   });
 
   it('M4: a failure backs off exponentially, capped', () => {
-    let rec = afterSilentRestore(null, '$RCAnonymousID:new', false, 10_000, LIMITS);
-    expect(rec).toEqual({ id: '$RCAnonymousID:new', done: false, attempts: 1, nextAt: 11_000 });
+    let rec = afterSilentRestore(null, '$RCAnonymousID:new', 'error', 10_000, LIMITS);
+    expect(rec).toEqual({ id: '$RCAnonymousID:new', done: false, attempts: 1, offline: 0, nextAt: 11_000 });
     expect(silentRestoreDecision({ ...base, record: rec, now: 10_999 })).toBe('wait');
     expect(silentRestoreDecision({ ...base, record: rec, now: 11_000 })).toBe('restore');
-    rec = afterSilentRestore(rec, '$RCAnonymousID:new', false, 11_000, LIMITS);
+    rec = afterSilentRestore(rec, '$RCAnonymousID:new', 'error', 11_000, LIMITS);
     expect(rec.nextAt).toBe(13_000); // 2 s
-    rec = afterSilentRestore(rec, '$RCAnonymousID:new', false, 13_000, LIMITS);
+    rec = afterSilentRestore(rec, '$RCAnonymousID:new', 'error', 13_000, LIMITS);
     expect(rec.nextAt).toBe(17_000); // 4 s
     rec = { ...rec, attempts: 3 };
-    expect(afterSilentRestore(rec, '$RCAnonymousID:new', false, 20_000, LIMITS).nextAt).toBe(25_000); // capped at 5 s
+    expect(afterSilentRestore(rec, '$RCAnonymousID:new', 'error', 20_000, LIMITS).nextAt).toBe(25_000); // capped at 5 s
   });
 
   it('M4: at most maxPerSession attempts in one session', () => {
@@ -474,15 +474,71 @@ describe('silentRestoreDecision / afterSilentRestore (A-06, M3, M4)', () => {
   });
 
   it('M4: gives up after maxAttempts (the store truth then applies; Restore stays available)', () => {
-    const rec: SilentRestoreRecord = { id: '$RCAnonymousID:new', done: false, attempts: 4, nextAt: 0 };
+    const rec: SilentRestoreRecord = { id: '$RCAnonymousID:new', done: false, attempts: 4, offline: 0, nextAt: 0 };
     expect(silentRestoreDecision({ ...base, record: rec })).toBe('skip');
   });
 
+  // P00-T17 (T15/T16 review): offline is not a defect of the restore. A network failure lengthens the backoff but never
+  // moves the identity toward the give-up cap, so a backup-restored snapshot cannot be revoked by 'replace' just because
+  // the device spent days offline.
+  describe('network failures (RevenueCat 10 / 35) never count toward giving up', () => {
+    const ID = '$RCAnonymousID:new';
+
+    it('attempts stay put while the backoff grows (and is capped)', () => {
+      let rec = afterSilentRestore(null, ID, 'network', 10_000, LIMITS);
+      expect(rec).toEqual({ id: ID, done: false, attempts: 0, offline: 1, nextAt: 11_000 });
+      rec = afterSilentRestore(rec, ID, 'network', 11_000, LIMITS);
+      expect(rec).toEqual({ id: ID, done: false, attempts: 0, offline: 2, nextAt: 13_000 }); // 2 s
+      rec = afterSilentRestore(rec, ID, 'network', 13_000, LIMITS);
+      expect(rec).toEqual({ id: ID, done: false, attempts: 0, offline: 3, nextAt: 17_000 }); // 4 s
+      rec = afterSilentRestore(rec, ID, 'network', 17_000, LIMITS);
+      expect(rec.nextAt).toBe(22_000); // capped at 5 s
+      expect(rec.attempts).toBe(0);
+    });
+
+    it('however many fail, the next decision is "restore" (never "skip"), so a restored snapshot is never revoked', () => {
+      let rec: SilentRestoreRecord | null = null;
+      let now = 10_000;
+      for (let i = 0; i < 60; i++) {
+        rec = afterSilentRestore(rec, ID, 'network', now, LIMITS);
+        now = rec.nextAt;
+      }
+      expect(rec!.attempts).toBe(0);
+      expect(silentRestoreDecision({ ...base, record: rec, now })).toBe('restore');
+      expect(silentRestoreDecision({ ...base, record: rec, now: now - 1 })).toBe('wait');
+    });
+
+    it('persistent store errors still count, with network failures in between neither resetting nor advancing them', () => {
+      let rec = afterSilentRestore(null, ID, 'error', 10_000, LIMITS); // attempts 1
+      rec = afterSilentRestore(rec, ID, 'network', 20_000, LIMITS);
+      expect(rec).toMatchObject({ attempts: 1, offline: 1 });
+      rec = afterSilentRestore(rec, ID, 'error', 30_000, LIMITS); // attempts 2
+      rec = afterSilentRestore(rec, ID, 'network', 40_000, LIMITS);
+      rec = afterSilentRestore(rec, ID, 'error', 50_000, LIMITS); // attempts 3
+      expect(silentRestoreDecision({ ...base, record: rec, now: rec.nextAt })).toBe('restore');
+      rec = afterSilentRestore(rec, ID, 'error', 60_000, LIMITS); // attempts 4 = maxAttempts
+      expect(rec.attempts).toBe(4);
+      expect(silentRestoreDecision({ ...base, record: rec, now: rec.nextAt })).toBe('skip');
+    });
+
+    it('a restore that answers is done, and the offline count resets', () => {
+      let rec = afterSilentRestore(null, ID, 'network', 10_000, LIMITS);
+      rec = afterSilentRestore(rec, ID, 'ok', 12_000, LIMITS);
+      expect(rec).toEqual({ id: ID, done: true, attempts: 1, offline: 0, nextAt: 0 });
+      expect(silentRestoreDecision({ ...base, record: rec })).toBe('skip');
+    });
+
+    it('a record of another identity does not carry its offline count over', () => {
+      const old: SilentRestoreRecord = { id: '$RCAnonymousID:old', done: false, attempts: 3, offline: 9, nextAt: 0 };
+      expect(afterSilentRestore(old, ID, 'network', 10_000, LIMITS)).toEqual({ id: ID, done: false, attempts: 0, offline: 1, nextAt: 11_000 });
+    });
+  });
+
   it('M4: an unknown identity (getAppUserID failed) is recorded as null and is not retried every launch once done', () => {
-    const rec = afterSilentRestore(null, null, true, 10_000, LIMITS);
-    expect(rec).toEqual({ id: null, done: true, attempts: 1, nextAt: 0 });
+    const rec = afterSilentRestore(null, null, 'ok', 10_000, LIMITS);
+    expect(rec).toEqual({ id: null, done: true, attempts: 1, offline: 0, nextAt: 0 });
     expect(silentRestoreDecision({ ...base, appUserId: null, record: rec })).toBe('skip');
-    const failed = afterSilentRestore(null, null, false, 10_000, LIMITS);
+    const failed = afterSilentRestore(null, null, 'error', 10_000, LIMITS);
     expect(silentRestoreDecision({ ...base, appUserId: null, record: failed, now: 10_500 })).toBe('wait');
   });
 
@@ -492,9 +548,12 @@ describe('silentRestoreDecision / afterSilentRestore (A-06, M3, M4)', () => {
   });
 
   it('parseSilentRestoreRecord: round-trips, rejects junk', () => {
-    const rec: SilentRestoreRecord = { id: 'u', done: false, attempts: 2, nextAt: 5 };
+    const rec: SilentRestoreRecord = { id: 'u', done: false, attempts: 2, offline: 3, nextAt: 5 };
     expect(parseSilentRestoreRecord(JSON.stringify(rec))).toEqual(rec);
     expect(parseSilentRestoreRecord(JSON.stringify({ ...rec, id: null }))).toEqual({ ...rec, id: null });
+    // A record written before the offline count existed reads as zero offline failures.
+    expect(parseSilentRestoreRecord('{"id":"u","done":false,"attempts":2,"nextAt":5}')).toEqual({ ...rec, offline: 0 });
+    expect(parseSilentRestoreRecord('{"id":"u","done":false,"attempts":2,"offline":-1,"nextAt":5}')).toBeNull();
     for (const raw of [null, '', 'x', '[]', '{"id":3,"done":false,"attempts":0,"nextAt":0}', '{"id":"u","done":"no","attempts":0,"nextAt":0}', '{"id":"u","done":false,"attempts":-1,"nextAt":0}']) {
       expect(parseSilentRestoreRecord(raw), String(raw)).toBeNull();
     }

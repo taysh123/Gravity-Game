@@ -2,7 +2,7 @@
 
 > **The single source of truth for project state.** The Facts block is machine-generated; every other section is
 > edited by hand at the end of each task. Anything that contradicts this file is stale.
-> Last hand-edited **2026-10-07** · Position: **Step 1 complete except P00-T08 (AdMob 8.2.1 soak, deferred to >= 2026-10-13)** of the [execution order](roadmap/EXECUTION-ORDER.md); Step 2 is complete (P00-T09 to P00-T13 done; P00-T01 to P00-T07 done earlier). Step 3 (purchases, D-09): P00-T14, T15 and T16 done in code (device rows P1-P15 pending). Next: P00-T17 (purchase UI honesty).
+> Last hand-edited **2026-10-07** · Position: **Step 1 complete except P00-T08 (AdMob 8.2.1 soak, deferred to >= 2026-10-13)** of the [execution order](roadmap/EXECUTION-ORDER.md); Step 2 is complete (P00-T09 to P00-T13 done; P00-T01 to P00-T07 done earlier). Step 3 (purchases, D-09) is complete in code: P00-T14 to P00-T17 (device rows P1-P20 pending). Next: Step 4 (P00-T18 to T20: consent-first boot and ad plumbing).
 > Plan of record: [MASTER-ROADMAP](roadmap/MASTER-ROADMAP.md) · [EXECUTION-ORDER](roadmap/EXECUTION-ORDER.md) · [DECISIONS](roadmap/DECISIONS.md) (amendments override entry bodies).
 > Working title: **Gravity Flow** by True Story Labs. Package id `com.truestorylabs.gravityflow` is permanent.
 
@@ -18,7 +18,7 @@
 | Other content | 8 daily levels · 20 run chunks · 14 achievements · 28 cosmetics · 3 bundles |
 | Scenes registered | 14 |
 | Level files | 163 on disk · 13 retired (6, 22, 31, 35, 37, 39, 40, 45, 48, 55, 56, 63, 64) |
-| Tests | 46 files / 740 tests |
+| Tests | 47 files / 793 tests |
 | package.json version | 1.0.0 |
 | androidBuild | 1 |
 | Derived versionName / versionCode | 1.0.0 / 1000001 |
@@ -64,11 +64,11 @@ Regenerate with `npm run facts`; verify with `npm run facts:check` (CI runs the 
 
 ## Next 5 actions
 Step 0 complete. Step 1 complete except P00-T08 (AdMob 8.2.1 soak, deferred to >= 2026-10-13); done so far: P00-T01…T07 (CI v2, Capacitor 8.5.2 family, exact pins), P00-T09 (manifest, theme, WebView floor, system bars), P00-T10 (Back router + `PauseScene`, Endless pause button), P00-T11 (background/foreground contract, `Haptics.pulse`), P00-T12 (renderer-crash recovery: `MainActivity` recreates the activity on a dead WebView renderer, at most twice per process, and leaves a `platform:rendererGone` marker that `Saves.hydrate()` reports once to Crashlytics; null-bridge guard; `Crash` queues early reports until the plugin is ready) and P00-T13 (`@capacitor/preferences` save mirror, hydrate before Boot, migration ladder, backup rules limited to the two save locations); device checks pending in the M0 session (V18 renderer kill, R1 in the device checklist). AdMob stays pinned at exactly 8.0.0 until the soak.
-1. **P00-T17** — Purchase UI honesty on top of the P00-T16 service: `IAP.price(pkg)` (store `priceString`, `null` until offerings load), `IAP.buy(pkg)` outcomes (`purchased`/`pending`/`cancelled`/`network`/`unavailable`/`error`), `IAP.restore()` (`{ outcome, restored }`; a card's "Check status" calls `IAP.restore({ recheck: pkg })`, which is the only way a still-pending marker is cleared), `IAP.isPending(pkg)` (also set when a purchase resolved but its entitlement is not visible yet), `IAP.inFlight()`; production web resolves `unavailable` ("Available in the Android app"). Standing rules: P00-T22 appends migration 3 (delete with **`ctx.remove` only**, never `Saves.remove`); every new persisted key goes through `Saves.write`; P00-T19 raises `setExternalFlowActive(true|false, 'ads')` around ads.
-2. **P00-T08** — AdMob 8.2.1 soak commit, deferred until >= 2026-10-13.
-3. **Step 4: P00-T18…T20** — Consent-first boot and ad plumbing (D-10, D-11).
-4. **Step 5: P00-T21…T26** — Error boundary, store validation, analytics hygiene (A-10 level_end attempts), boot smoke.
-5. **Steps 6-7** — Physics (P01): fixed-timestep, frame-rate-independent forces and level clock (B-03, B-09).
+1. **P00-T08** — AdMob 8.2.1 soak commit, deferred until >= 2026-10-13.
+2. **Step 4: P00-T18…T20** — Consent-first boot and ad plumbing (D-10, D-11). Standing rules from Step 3: P00-T22 appends migration 3 (delete with **`ctx.remove` only**, never `Saves.remove`); every new persisted key goes through `Saves.write`; P00-T19 raises `setExternalFlowActive(true|false, 'ads')` around ads; surfaces that sell something call `IAP.refresh()` on open and read `IAP.storeStatus/owns/isPending/price` through `src/services/purchaseView.ts` (prices only from the store).
+3. **Step 5: P00-T21…T26** — Error boundary, store validation, analytics hygiene (A-10 level_end attempts), boot smoke.
+4. **Steps 6-7** — Physics (P01): fixed-timestep, frame-rate-independent forces and level clock (B-03, B-09).
+5. **M0 Truthful Build** — release AAB (versionCode >= 1000001), internal track and the device smoke: purchase rows P1-P20 (real localized prices P1/P13/P15, pending P4/P5, restore P17), then FORCE_SCALE feel A/B.
 
 ## Open bugs
 Top blockers from the [state audit](audit/2026-10-07/STATE-AUDIT.md) (section B.6/O). Target: 0 open P0 defects at M0.
@@ -84,7 +84,7 @@ Top blockers from the [state audit](audit/2026-10-07/STATE-AUDIT.md) (section B.
 | B-08 | P1 | Background now pauses the level behind `PauseScene` and suspends audio; foreground refits and never auto-resumes (P00-T11, headless-verified; Home / shade / split-screen device check pending). Android Back opens `PauseScene` instead of exiting mid-level (P00-T10, headless-verified; Android 16 gesture and 3-button device check pending). Portrait lock + `VIBRATE`: config-level fix in P00-T09, device check pending | [Step 2](roadmap/phases/P00-foundation.md) |
 | B-09 | P1 | Level clock is wall-clock (Settings, background and ads drain timers and par) | [Step 6](roadmap/phases/P01-physics.md) |
 | B-10 | P1 | An uncaught frame error freezes the game permanently | [Step 5](roadmap/phases/P00-foundation.md) |
-| B-11 | P1 | Web build on Vercel grants paid items for free (IAP stub) | FIXED in P00-T16 (production web: buy/restore resolve `unavailable`, nothing granted; headless-verified on the production bundle). Copy "Available in the Android app" is P00-T17 |
+| B-11 | P1 | Web build on Vercel grants paid items for free (IAP stub) | FIXED in P00-T16 (production web: buy/restore resolve `unavailable`, nothing granted; headless-verified on the production bundle). The copy "Available in the Android app" shipped in P00-T17 (shop and Settings, headless-verified on dev and the production preview) |
 
 ### Known dev-only advisories
 Full `npm audit` (dev dependencies included), 2026-10-07, after the lockfile-only `npm audit fix` in P00-T07: **9 vulnerabilities (2 critical, 2 high, 5 moderate)**, down from 15 (3 critical, 7 high, 5 moderate). None is in the APK or the web bundle: `npm audit --omit=dev --audit-level=critical` reports 0 and is the CI gate (D-11). This list is maintained by hand; CI does not check it.

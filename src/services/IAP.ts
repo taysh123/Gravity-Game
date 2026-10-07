@@ -17,7 +17,8 @@
 // A-06: on Android, ONE silent restorePurchases() runs per RevenueCat identity (a fresh install, or a reinstall restored
 //   from backup: RevenueCat's own storage is not backed up, D-11), whatever that identity already reports. Until it has
 //   answered, every answer is MERGED into the snapshot and nothing is revoked (review M3). A failing restore backs off
-//   exponentially across launches, is capped per session, and gives up after a maximum (review M4).
+//   exponentially across launches, is capped per session, and gives up after a maximum (review M4). A network failure
+//   (RevenueCat 10 / 35) lengthens the backoff but never counts toward that maximum (P00-T17 review).
 // Never revoke without a successful answer: offline, a failed call or a malformed answer leaves the snapshot as it is
 //   (A.12), so a migrated or offline player stays ad-free with their cosmetics. The first successful answer replaces
 //   the migration-2 seed with the store truth and deletes the legacy `premium` key (P00-foundation.md §5, §9).
@@ -70,7 +71,9 @@ import {
   type ProductRow,
   type ReconcileMode,
   type SilentRestoreLimits,
+  type SilentRestoreResult,
 } from './entitlements';
+import type { StoreStatus } from './purchaseView';
 
 // Once-per-device "first purchase" analytics flag (measure only).
 export const FIRST_PURCHASE_KEY = 'gravity-flow:firstPurchase';
@@ -133,10 +136,19 @@ export interface IAPApi {
   isPremium(): boolean; // `no_ads` active in the snapshot (synchronous)
   isPending(packageId: string): boolean; // a payment-pending marker is live for this package's product
   price(packageId: string): string | null; // store priceString of the cached package; null until offerings load
+  // What a purchase card can offer right now (A.6, A.12, A.13): 'web' (no purchases on this build), 'loading' (the store
+  // has not answered: init running or failed, offerings missing), 'unavailable' (not configured, or the package is not
+  // in the offering), 'ready' (a priceString exists).
+  storeStatus(packageId: string): StoreStatus;
+  owns(packageId: string): boolean; // every entitlement of the package's product is active in the snapshot
   buy(packageId: string): Promise<PurchaseOutcome>; // never rejects
   // Never rejects. `recheck`: the package whose "Check status" asked for this restore; only its pending marker is
   // cleared when it is still not owned (other products' markers are never touched).
   restore(options?: { recheck?: string }): Promise<RestoreResult>;
+  // A surface that sells something just opened (shop, Settings): retry a failed init and load missing offerings now
+  // instead of waiting for the next foreground, so a "..." card is never a dead end. Never rejects; a no-op on web and
+  // while a purchase or restore is running.
+  refresh(): Promise<void>;
   inFlight(): boolean; // a purchase or restore is running (buttons render disabled)
 }
 
@@ -158,12 +170,15 @@ export function createIAP(deps: IAPDeps): IAPApi {
   let legacyDropping = false;
   const reported = new Set<string>();
 
-  // Offline is expected, not a defect: network codes are never reported. One report per context per session, so a
-  // failure that repeats on every foreground cannot flood Crashlytics (review M4).
+  // Offline is expected, not a defect: network codes are never reported. One report per context AND error code per
+  // session, so a failure that repeats on every foreground cannot flood Crashlytics (review M4), while a different
+  // error under the same context still gets through (P00-T17 review).
   function report(error: unknown, context: string): void {
-    if (classifyPurchaseError(errorCode(error)) === 'network') return;
-    if (reported.has(context)) return;
-    reported.add(context);
+    const code = errorCode(error);
+    if (classifyPurchaseError(code) === 'network') return;
+    const key = `${context}|${code ?? ''}`;
+    if (reported.has(key)) return;
+    reported.add(key);
     try {
       deps.report(error, context);
     } catch {
@@ -214,8 +229,8 @@ export function createIAP(deps: IAPDeps): IAPApi {
     }
   }
 
-  function recordSilentRestore(id: string | null, ok: boolean): void {
-    const next = afterSilentRestore(parseSilentRestoreRecord(deps.kv.get(SILENT_RESTORE_KEY)), id, ok, deps.now(), SILENT_RESTORE_LIMITS);
+  function recordSilentRestore(id: string | null, result: SilentRestoreResult): void {
+    const next = afterSilentRestore(parseSilentRestoreRecord(deps.kv.get(SILENT_RESTORE_KEY)), id, result, deps.now(), SILENT_RESTORE_LIMITS);
     deps.kv.write(SILENT_RESTORE_KEY, JSON.stringify(next));
   }
 
@@ -244,17 +259,19 @@ export function createIAP(deps: IAPDeps): IAPApi {
       if (decision === 'restore') {
         silentAttempts++;
         let restored: CustomerInfo | undefined;
+        let failure: SilentRestoreResult = 'error';
         try {
           restored = (await api.restorePurchases()).customerInfo;
         } catch (error) {
+          if (classifyPurchaseError(errorCode(error)) === 'network') failure = 'network'; // offline: backs off, never gives up
           report(error, 'iap.silentRestore');
         }
         if (restored && apply(restored, 'replace')) {
-          recordSilentRestore(id, true);
+          recordSilentRestore(id, 'ok');
           freshChecked = true;
           return true;
         }
-        recordSilentRestore(id, false); // backs off; meanwhile take what the store says without revoking
+        recordSilentRestore(id, failure); // backs off; meanwhile take what the store says without revoking
         return apply(info, 'merge');
       }
       if (decision === 'skip') freshChecked = true;
@@ -377,7 +394,7 @@ export function createIAP(deps: IAPDeps): IAPApi {
     }
     if (!apply(info, 'replace')) return 'error';
     if (recheckProductId) deps.store.write(withoutPendingFor(deps.store.read(), recheckProductId));
-    if (deps.platform === 'android') recordSilentRestore(await appUserId(api), true); // this identity is restored
+    if (deps.platform === 'android') recordSilentRestore(await appUserId(api), 'ok'); // this identity is restored
     freshChecked = true;
     return 'ok';
   }
@@ -525,6 +542,19 @@ export function createIAP(deps: IAPDeps): IAPApi {
     }
   }
 
+  async function refresh(): Promise<void> {
+    if (!deps.native || busy || refreshing) return;
+    refreshing = true;
+    try {
+      await ensureReady(); // a failed init is retried once
+      if (state === 'ready' && !offerings?.current) await loadOfferings();
+    } catch (error) {
+      report(error, 'iap.refresh');
+    } finally {
+      refreshing = false;
+    }
+  }
+
   return {
     init,
     state: () => state,
@@ -538,8 +568,22 @@ export function createIAP(deps: IAPDeps): IAPApi {
       if (!row) return null;
       return findPackage(offerings, packageId, row.productId)?.product?.priceString ?? null;
     },
+    storeStatus(packageId) {
+      if (!deps.native) return 'web'; // production AND DEV web: purchases live in the Android app (A.13)
+      const row = productByPackage(packageId);
+      if (!row) return 'unavailable';
+      if (!initRun || state === 'initializing' || state === 'failed') return 'loading';
+      if (state === 'unconfigured') return 'unavailable';
+      if (!offerings) return 'loading'; // ready, but getOfferings has not answered (offline): refresh / foreground retries
+      return findPackage(offerings, packageId, row.productId)?.product?.priceString ? 'ready' : 'unavailable';
+    },
+    owns(packageId) {
+      const row = productByPackage(packageId);
+      return !!row && ownsProduct(deps.store.read().active, row.productId);
+    },
     buy,
     restore,
+    refresh,
     inFlight: () => busy,
   };
 }

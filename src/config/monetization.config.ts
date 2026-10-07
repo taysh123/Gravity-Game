@@ -81,40 +81,82 @@ export interface BundleDef {
   productId: string;
   packageId: PackageId;
   entitlement: Entitlement;
-  priceLabel: string; // display only — real price comes from the store at runtime
+  // No price lives here: the only price the UI ever shows is the store's own localized `priceString`
+  // (IAP.price(packageId), MONETIZATION.md A.6), so a figure can never be wrong for the player's country or currency.
   grants: string[];
   premium: boolean;
   blurb: string;
+  // D-09: the offer is hidden once `no_ads` is owned, whatever granted it (Starter is Remove Ads plus one trail; a
+  // player who already has Remove Ads would pay for it twice). An owned pack still reads OWNED. P7 replaces it with a
+  // cosmetic-only twin product.
+  hideWhenNoAds?: boolean;
   // ONE bundle only — an honest "BEST VALUE" tag (Wave 3 Task 4). Never fake
-  // savings math: 'starter' is flagged as the best value-PER-DOLLAR entry deal —
-  // the lowest-priced bundle that includes Remove Ads (a $1.99 standalone) AND an
-  // exclusive Legendary cosmetic, so the cosmetic effectively costs ~$1 on top of
-  // Remove Ads. This is a deliberate value-per-dollar framing, NOT a claim it
-  // dominates on every axis (Founders has higher-tier Mythic skins; Premium
-  // Collection has two Legendaries) — those trade more content/rarity for a
-  // higher price. Every fact in the framing is true; there is no fake discount.
+  // savings math: 'starter' is flagged as the best value-PER-PRICE entry deal —
+  // the cheapest bundle that includes Remove Ads AND an exclusive Legendary
+  // cosmetic, so the cosmetic effectively costs only a little on top of Remove
+  // Ads. This is a deliberate value-for-price framing, NOT a claim it dominates
+  // on every axis (Founders has higher-tier Mythic skins; Premium Collection
+  // has two Legendaries) — those trade more content/rarity for a higher price.
+  // The framing is written without any amount because prices differ by currency
+  // and region; it holds in every one, and there is no fake discount.
   bestValue?: boolean;
 }
 
 export const BUNDLES: BundleDef[] = [
-  { id: 'starter', name: 'Starter Pack', productId: 'starter_pack', packageId: PACKAGES.STARTER, entitlement: ENTITLEMENTS.PACK_STARTER, priceLabel: '$2.99', premium: true, grants: ['trail_galaxy'], blurb: 'Remove Ads + the exclusive Galaxy Trail', bestValue: true },
-  { id: 'premium_collection', name: 'Premium Collection', productId: 'premium_collection_pack', packageId: PACKAGES.PREMIUM_COLLECTION, entitlement: ENTITLEMENTS.PACK_PREMIUM_COLLECTION, priceLabel: '$4.99', premium: false, grants: ['cosmic_blackhole', 'arrival_bolt'], blurb: 'Black Hole skin + Lightning Strike arrival' },
-  { id: 'founders', name: "Founder's Pack", productId: 'founders_pack', packageId: PACKAGES.FOUNDERS, entitlement: ENTITLEMENTS.PACK_FOUNDERS, priceLabel: '$7.99', premium: true, grants: ['mythic_phoenix', 'mythic_dragon'], blurb: 'Remove Ads + two exclusive Mythic skins: Phoenix Core & Dragon Heart' },
+  { id: 'starter', name: 'Starter Pack', productId: 'starter_pack', packageId: PACKAGES.STARTER, entitlement: ENTITLEMENTS.PACK_STARTER, premium: true, grants: ['trail_galaxy'], blurb: 'Remove Ads + the exclusive Galaxy Trail', bestValue: true, hideWhenNoAds: true },
+  { id: 'premium_collection', name: 'Premium Collection', productId: 'premium_collection_pack', packageId: PACKAGES.PREMIUM_COLLECTION, entitlement: ENTITLEMENTS.PACK_PREMIUM_COLLECTION, premium: false, grants: ['cosmic_blackhole', 'arrival_bolt'], blurb: 'Black Hole skin + Lightning Strike arrival' },
+  { id: 'founders', name: "Founder's Pack", productId: 'founders_pack', packageId: PACKAGES.FOUNDERS, entitlement: ENTITLEMENTS.PACK_FOUNDERS, premium: true, grants: ['mythic_phoenix', 'mythic_dragon'], blurb: 'Remove Ads + two exclusive Mythic skins: Phoenix Core & Dragon Heart' },
 ];
 
 export function bundleById(id: string): BundleDef | undefined {
   return BUNDLES.find((b) => b.id === id);
 }
 
-// Display-only Remove-Ads price — shared by CosmeticsScene's standalone card and
-// SettingsScene's shortcut (Wave 3 Task 4) so the two never drift apart.
-export const REMOVE_ADS_PRICE_LABEL = '$1.99';
+// Purchase-UI copy (P00-T17; MONETIZATION.md A.4 outcome table, A.5, A.6, A.13). Every string a purchase card, toast or
+// restore message can show, in one place. No amount ever appears here: prices come from the store at runtime.
+export const PURCHASE_COPY = {
+  LOADING: '…', // a card while the store has not answered (disabled)
+  UNAVAILABLE: 'Unavailable', // no package in the offering, or the store is not configured on this build
+  OWNED: 'OWNED',
+  PENDING_TAG: 'PENDING',
+  PENDING_NOTE: 'Payment pending — unlocks automatically',
+  CHECK_STATUS: 'Check status',
+  WEB_ONLY: 'Available in the Android app', // A.13 / device row P20: the web build never sells or grants
+  NETWORK: "No connection — try again when you're online.", // codes 10 / 35 (A.4, A.12)
+  ERROR: "Purchase didn't go through. You were not charged unless Google Play says so.", // any other code
+  STORE_DOWN: 'The store is not available right now. Please try again later.', // native, not configured / init failed
+  RESTORED: 'Purchases restored',
+  NOTHING_TO_RESTORE: 'No purchases found for this Google account', // A.5, device row P17
+  RESTORE_ERROR: "Couldn't restore purchases. Please try again.",
+  STILL_PENDING: 'Not unlocked yet. If Google Play is still processing your payment, it unlocks automatically.',
+  ADS_REMOVED: 'Ads removed — thank you!',
+  ADS_ALREADY_YOURS: 'Remove Ads ✓ already yours', // A.6 interim honesty on a premium bundle card
+  REMOVE_ADS: 'Remove Ads',
+} as const;
+
+// Purchase-UI layout / timing (shop + Settings), consumed by scenes/CosmeticsScene.ts and scenes/SettingsScene.ts.
+export const PURCHASE_UI = {
+  // While a card is loading, pending or a purchase can complete elsewhere (the listener, a foreground refresh), the open
+  // surface re-reads the store this often and redraws only if what it shows changed.
+  POLL_MS: 600,
+  BUSY_ALPHA: 0.55, // a card / link while a purchase or restore it started is running (buttons disable on tap, A.11)
+  TAG_FONT_PX: 15, // price / OWNED tag
+  TAG_FONT_SMALL_PX: 12, // a long tag (PENDING, Unavailable)
+  TAG_LONG_LEN: 8, // labels longer than this use the small tag font
+  NOTE_FONT_PX: 11, // the pending / web note under a card
+  NOTE_BOTTOM_PAD: 14, // note + Check-status link sit this far above the card's bottom edge
+  NOTE_EXTRA_H: 12, // a card with a note is this much taller, so the note never crowds the text above it
+  CHECK_LINK_W: 120, // Check-status hit area (>=44px tall: 44x44 touch minimum)
+  CHECK_LINK_H: 44,
+  PENDING_COLOR: '#ffd166', // gold, the store's accent (STARDUST in CosmeticsScene)
+  PRICE_COLOR: '#7affb0', // green price highlight (same as STORE.BEST_VALUE_COLOR)
+} as const;
 
 // Store discoverability (Wave 3 Task 4) — an honest win-overlay spend nudge +
 // truthful bundle value framing. No dark patterns: no countdowns, no fake
 // urgency, no fake savings math. The BEST VALUE tag above is the only
-// persuasive element anywhere in this feature, and it's an honest value-per-
-// dollar framing (see BundleDef.bestValue), not a fabricated claim.
+// persuasive element anywhere in this feature, and it's an honest value-for-
+// price framing (see BundleDef.bestValue), not a fabricated claim.
 export const STORE = {
   // Win-overlay spend nudge: shown only when a persisted cooldown of ELIGIBLE
   // (campaign, non-first-win) wins has elapsed since it last showed, the

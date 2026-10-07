@@ -2,10 +2,12 @@ import Phaser from 'phaser';
 import { THEME } from '../config/theme.config';
 import { SPLASH } from '../config/splash.config';
 import { RARITY, type Rarity } from '../config/cosmetics.config';
-import { BUNDLES, PACKAGES, STORE, REMOVE_ADS_PRICE_LABEL, type BundleDef } from '../config/monetization.config';
+import { BUNDLES, PACKAGES, PURCHASE_COPY, PURCHASE_UI, STORE, type BundleDef } from '../config/monetization.config';
 import { CosmicBackground } from '../entities/CosmicBackground';
 import { Button } from '../ui/Button';
 import { drawGlass } from '../ui/glass';
+import { addCardNote, cardViewFor, isWebStore, showFeedbackToast, tagColor, tagFontPx, toastOf, type ToastMessage } from '../ui/purchaseUi';
+import { showToast } from '../ui/toast';
 import { fadeIn, fadeToScene } from '../utils/transitions';
 import { reducedMotionActive, safeAreaInsetsScaled } from '../utils/a11y';
 import { cosmeticsByCategory, cosmeticById, COSMETICS, type Cosmetic, type Category } from '../utils/cosmetics';
@@ -16,6 +18,7 @@ import { sharedAudio } from '../utils/AudioSynth';
 import { CurrencyStore } from '../utils/CurrencyStore';
 import { FragmentStore } from '../utils/FragmentStore';
 import { IAP } from '../services/IAP';
+import { bundleValueLine, purchaseFeedback, restoreFeedback, type Feedback } from '../services/purchaseView';
 import { Ads } from '../services/Ads';
 import { RewardStore } from '../utils/RewardStore';
 import { Analytics } from '../services/Analytics';
@@ -45,15 +48,26 @@ export class CosmeticsScene extends Phaser.Scene {
   private dragging = false;
   private enteredInternally = false; // true on an internal refresh restart (tab switch / post-purchase) — suppresses a redundant shop_open
   private highlightBundle?: string; // bundle id to pulse — set by a locked bundle-cosmetic cross-sell tap
+  private purchasing = false; // a purchase / restore started here is running (or its fanfare): taps are ignored, no redraw
+  private quiet = false; // a silent redraw (same content, new state): no entrance animation
+  private scrollOffset = 0; // list scroll carried across a redraw (0 = top, negative = scrolled down)
+  private pendingToast?: ToastMessage; // shown once after a redraw (the restart would destroy a live toast)
+  private toastY = 0; // where this scene's toasts sit (just above the Back button)
+  private listC?: Phaser.GameObjects.Container; // the scrolling card list
+  private contentTop = 0; // the list's resting y (scroll offset 0)
 
   constructor() {
     super({ key: 'CosmeticsScene' });
   }
 
-  init(data: { tab?: Tab; internal?: boolean; highlightBundle?: string }): void {
+  init(data: { tab?: Tab; internal?: boolean; highlightBundle?: string; quiet?: boolean; scrollOffset?: number; toast?: ToastMessage }): void {
     this.tab = data?.tab ?? 'skin';
     this.enteredInternally = data?.internal ?? false;
     this.highlightBundle = data?.highlightBundle;
+    this.purchasing = false;
+    this.quiet = data?.quiet ?? false;
+    this.scrollOffset = data?.scrollOffset ?? 0;
+    this.pendingToast = data?.toast;
   }
 
   create(): void {
@@ -69,7 +83,7 @@ export class CosmeticsScene extends Phaser.Scene {
     const insets = safeAreaInsetsScaled(sx, sy);
 
     this.cosmic = new CosmicBackground(this);
-    fadeIn(this);
+    if (!this.quiet) fadeIn(this); // a silent redraw must not flash the camera fade
 
     // Header: title + dual-currency chips.
     const topY = Math.max(height * 0.055, insets.top + 30);
@@ -118,19 +132,27 @@ export class CosmeticsScene extends Phaser.Scene {
     const viewportH = contentBottom - contentTop;
     const rowW = Math.min(width * 0.92, 360);
 
+    this.toastY = backY - 48;
+    this.contentTop = contentTop;
     const listC = this.add.container(cx, contentTop);
+    this.listC = listC;
+    // Bundles: a card the store/entitlements hide (Starter once no_ads is owned, D-09) is not built at all.
+    const shownBundles = BUNDLES.filter((b) => cardViewFor(b.packageId, b.hideWhenNoAds).visible);
     const cards = this.tab === 'bundle'
-      ? [this.freeFragmentsCard(rowW, 0), this.removeAdsCard(rowW, 1), ...BUNDLES.map((b, i) => this.bundleCard(b, rowW, i + 2, b.id === this.highlightBundle))]
+      ? [this.freeFragmentsCard(rowW, 0), this.removeAdsCard(rowW, 1), ...shownBundles.map((b, i) => this.bundleCard(b, rowW, i + 2, b.id === this.highlightBundle))]
       : cosmeticsByCategory(this.tab as Category).map((c, i) => this.itemCard(c, rowW, i));
-    let yy = CARD_H / 2;
-    cards.forEach((card) => { card.y = yy; listC.add(card); yy += card.height + CARD_GAP; });
-    // Restore-purchases link (store requirement) on the Bundles tab.
-    if (this.tab === 'bundle') {
+    // Stack by each card's TOP edge so cards of different heights (Remove Ads, bundles, a card with a note) keep an even
+    // gap; the half-card of padding below the last card is unchanged.
+    let yy = 0;
+    cards.forEach((card) => { card.y = yy + card.height / 2; listC.add(card); yy += card.height + CARD_GAP; });
+    yy += CARD_H / 2;
+    // Restore-purchases link (store requirement) on the Bundles tab. The web build has nothing to restore: no link.
+    if (this.tab === 'bundle' && !isWebStore()) {
       const restore = this.add.text(0, yy + 4, 'Restore Purchases', {
         fontFamily: THEME.FONT_BODY, fontSize: '13px', color: THEME.TEXT_MUTED, fontStyle: '600',
       }).setOrigin(0.5);
       restore.setInteractive({ useHandCursor: true });
-      restore.on('pointerup', async () => { if (this.dragging) return; await IAP.restore(); this.scene.restart({ tab: 'bundle', internal: true }); });
+      restore.on('pointerup', () => void this.restorePurchases(restore));
       listC.add(restore); yy += 36;
     }
     const totalH = yy;
@@ -143,6 +165,7 @@ export class CosmeticsScene extends Phaser.Scene {
     // Drag / wheel scroll.
     const minY = contentTop - Math.max(0, totalH - viewportH);
     const maxY = contentTop;
+    listC.y = Phaser.Math.Clamp(contentTop + this.scrollOffset, minY, maxY); // a silent redraw keeps the player's place
     let dragStartPy = 0; let listStartY = 0;
     this.input.on('pointerdown', (p: Phaser.Input.Pointer) => { dragStartPy = p.y; listStartY = listC.y; this.dragging = false; });
     this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
@@ -156,6 +179,82 @@ export class CosmeticsScene extends Phaser.Scene {
     });
 
     new Button(this, cx, backY, '← Back', () => fadeToScene(this, 'MainMenuScene'), { width: 150, height: 46, fontSize: 18 });
+
+    if (this.tab === 'bundle') {
+      void IAP.refresh(); // a failed init / missing offerings are retried now, so a "…" card is never a dead end
+      // Offerings arrive, a pending payment completes (listener / foreground), a pending marker times out: redraw when
+      // what the cards show actually changed, never mid-gesture or mid-purchase, and keep the scroll position.
+      const shown = this.purchaseSignature();
+      this.time.addEvent({
+        delay: PURCHASE_UI.POLL_MS,
+        loop: true,
+        callback: () => {
+          if (this.purchasing || this.dragging || this.input.activePointer.isDown) return;
+          if (this.purchaseSignature() === shown) return;
+          this.scene.restart({ tab: 'bundle', internal: true, quiet: true, scrollOffset: listC.y - contentTop });
+        },
+      });
+    }
+    if (this.pendingToast) showToast(this, this.pendingToast.message, { tone: this.pendingToast.tone, y: this.toastY });
+  }
+
+  // Everything the purchase cards render, as one string: equal means nothing visible changed.
+  private purchaseSignature(): string {
+    return JSON.stringify([
+      IAP.isPremium(),
+      cardViewFor(PACKAGES.REMOVE_ADS),
+      BUNDLES.map((b) => cardViewFor(b.packageId, b.hideWhenNoAds)),
+    ]);
+  }
+
+  // The shared tail of a purchase / restore: redraw (carrying the message across the restart) or just toast in place.
+  private finish(fb: Feedback, undim: () => void): void {
+    this.purchasing = false;
+    if (fb.refresh) {
+      this.scene.restart({ tab: 'bundle', internal: true, quiet: true, scrollOffset: this.scrollOffsetNow(), toast: toastOf(fb) });
+      return;
+    }
+    undim();
+    showFeedbackToast(this, fb, this.toastY); // a cancel has no message: nothing at all
+  }
+
+  private scrollOffsetNow(): number {
+    return this.listC ? this.listC.y - this.contentTop : 0;
+  }
+
+  // A tap on a buyable card. Disables synchronously (A.11) and ignores a second tap while anything is running.
+  private async buy(packageId: string, card: Phaser.GameObjects.Container, onPurchased: () => void): Promise<void> {
+    if (this.dragging || this.purchasing || IAP.inFlight()) return;
+    this.purchasing = true;
+    card.setAlpha(PURCHASE_UI.BUSY_ALPHA);
+    const outcome = await IAP.buy(packageId);
+    if (!this.scene.isActive()) return; // the player left the shop during the Play sheet: the entitlement is already applied
+    const fb = purchaseFeedback(outcome, isWebStore());
+    if (fb.kind === 'celebrate') {
+      onPurchased(); // the unlock fanfare, then a redraw (purchasing stays true until the scene restarts)
+      return;
+    }
+    this.finish(fb, () => card.setAlpha(1));
+  }
+
+  // "Check status" on a pending card: one restore of that product (the only way its marker is cleared early, A.5).
+  private async checkStatus(packageId: string, card: Phaser.GameObjects.Container): Promise<void> {
+    if (this.dragging || this.purchasing || IAP.inFlight()) return;
+    this.purchasing = true;
+    card.setAlpha(PURCHASE_UI.BUSY_ALPHA);
+    const result = await IAP.restore({ recheck: packageId });
+    if (!this.scene.isActive()) return;
+    this.finish(restoreFeedback(result, { web: isWebStore(), recheck: true, ownedNow: IAP.owns(packageId) }), () => card.setAlpha(1));
+  }
+
+  // The Restore Purchases link: a user-initiated restore of everything (A.5), with a toast that lists what came back.
+  private async restorePurchases(link: Phaser.GameObjects.Text): Promise<void> {
+    if (this.dragging || this.purchasing || IAP.inFlight()) return;
+    this.purchasing = true;
+    link.setAlpha(PURCHASE_UI.BUSY_ALPHA);
+    const result = await IAP.restore();
+    if (!this.scene.isActive()) return;
+    this.finish(restoreFeedback(result, { web: isWebStore(), recheck: false, ownedNow: false }), () => link.setAlpha(1));
   }
 
   // A cosmetic row: preview + name + rarity badge + status/price.
@@ -263,42 +362,51 @@ export class CosmeticsScene extends Phaser.Scene {
     return card;
   }
 
-  // Standalone Remove-Ads card (premium upsell, separate from the bundles).
+  // Standalone Remove-Ads card (premium upsell, separate from the bundles). Its tag and tap come from the store state
+  // (purchaseView): the store's price, OWNED, PENDING + Check status, "Available in the Android app" on web, or "…" / Unavailable.
   private removeAdsCard(w: number, i: number): Phaser.GameObjects.Container {
-    const premium = IAP.isPremium();
-    const h = CARD_H + 22;
+    const v = cardViewFor(PACKAGES.REMOVE_ADS);
+    const owned = v.tone === 'owned';
+    const h = CARD_H + 22 + (v.note ? PURCHASE_UI.NOTE_EXTRA_H : 0);
     const bg = this.add.graphics();
     drawGlass(bg, w, h, THEME.RADIUS_SM);
-    bg.lineStyle(2, premium ? 0x7affb0 : THEME.ACCENT_GOLD, 0.6);
+    bg.lineStyle(2, owned ? 0x7affb0 : THEME.ACCENT_GOLD, 0.6);
     bg.strokeRoundedRect(-w / 2, -h / 2, w, h, THEME.RADIUS_SM);
-    const name = this.add.text(-w / 2 + 18, -h / 2 + 16, 'Remove Ads', {
+    const name = this.add.text(-w / 2 + 18, -h / 2 + 16, PURCHASE_COPY.REMOVE_ADS, {
       fontFamily: THEME.FONT_DISPLAY, fontSize: '16px', color: STARDUST, fontStyle: '700',
     }).setOrigin(0, 0.5);
-    const blurb = this.add.text(-w / 2 + 18, 6, premium ? 'Ads removed — thank you!' : 'No interstitials, ever. Rewarded ads stay optional.', {
+    const blurb = this.add.text(-w / 2 + 18, 6, owned ? PURCHASE_COPY.ADS_REMOVED : 'No interstitials, ever. Rewarded ads stay optional.', {
       fontFamily: THEME.FONT_BODY, fontSize: '12px', color: THEME.TEXT_MUTED, wordWrap: { width: w - 120 },
     }).setOrigin(0, 0.5);
-    const price = this.add.text(w / 2 - 18, -h / 2 + 18, premium ? 'OWNED' : REMOVE_ADS_PRICE_LABEL, {
-      fontFamily: THEME.FONT_DISPLAY, fontSize: '15px', color: premium ? THEME.TEXT_MUTED : '#7affb0', fontStyle: '700',
+    const price = this.add.text(w / 2 - 18, -h / 2 + 18, v.label, {
+      fontFamily: THEME.FONT_DISPLAY, fontSize: `${tagFontPx(v.label)}px`, color: tagColor(v.tone), fontStyle: '700',
     }).setOrigin(1, 0.5);
     const card = this.add.container(0, 0, [bg, name, blurb, price]);
     card.setSize(w, h);
-    if (!premium) {
+    card.add(addCardNote(this, v, w, h / 2, () => void this.checkStatus(PACKAGES.REMOVE_ADS, card)));
+    if (v.action === 'buy') {
       card.setInteractive(new Phaser.Geom.Rectangle(-w / 2, -h / 2, w, h), Phaser.Geom.Rectangle.Contains);
-      card.on('pointerup', async () => {
-        if (this.dragging) return;
-        // Outcome copy (pending / network / "available in the app") is P00-T17; a cancel is always silent (A.4).
-        const outcome = await IAP.buy(PACKAGES.REMOVE_ADS);
-        if (outcome === 'purchased' || outcome === 'pending') this.scene.restart({ tab: 'bundle', internal: true });
-        else if (outcome !== 'cancelled') this.cameras.main.shake(110, 0.004);
-      });
+      card.on('pointerup', () => void this.buy(PACKAGES.REMOVE_ADS, card, () => this.celebrateRemoveAds()));
     }
     this.entrance(card, i);
     return card;
   }
 
+  // Remove Ads has no cosmetic to unveil: the level-complete chord and a thank-you toast carried across the redraw.
+  private celebrateRemoveAds(): void {
+    const audio = sharedAudio();
+    audio.resume();
+    audio.playLevelComplete();
+    this.scene.restart({
+      tab: 'bundle', internal: true, quiet: true, scrollOffset: this.scrollOffsetNow(),
+      toast: { message: PURCHASE_COPY.ADS_REMOVED, tone: 'info' } satisfies ToastMessage,
+    });
+  }
+
   // A truthful, one-line value summary of a bundle's real contents (e.g.
   // "2 Legendary items + Remove Ads") — derived from the actual catalog, never
-  // invented numbers. Wave 3 Task 4 bundle-framing requirement.
+  // invented numbers. Wave 3 Task 4 bundle-framing requirement. A premium bundle
+  // tells a player who already has Remove Ads so (A.6 interim honesty).
   private bundleValueLine(b: BundleDef): string {
     const counts = new Map<Rarity, number>();
     for (const id of b.grants) {
@@ -309,15 +417,16 @@ export class CosmeticsScene extends Phaser.Scene {
       ([rarity, n]) => `${n} ${RARITY[rarity].label} item${n > 1 ? 's' : ''}`,
     );
     const itemsStr = parts.join(' + ') || `${b.grants.length} item${b.grants.length === 1 ? '' : 's'}`;
-    return b.premium ? `${itemsStr} + Remove Ads` : itemsStr;
+    return bundleValueLine(itemsStr, b.premium, IAP.isPremium());
   }
 
-  // A premium bundle card (price button -> IAP.buy(packageId); owned = its entitlement-derived cosmetics).
+  // A premium bundle card (store price -> IAP.buy(packageId); owned = its pack entitlement is active).
   // `highlighted` = arrived here via a locked bundle-cosmetic cross-sell tap —
   // pulses to draw the eye to the ONE bundle that grants the tapped item.
   private bundleCard(b: BundleDef, w: number, i: number, highlighted: boolean): Phaser.GameObjects.Container {
-    const h = CARD_H + 40; // + the new value-framing line
-    const owned = b.grants.every((id) => CosmeticStore.isOwned(id));
+    const v = cardViewFor(b.packageId, b.hideWhenNoAds);
+    const h = CARD_H + 40 + (v.note ? PURCHASE_UI.NOTE_EXTRA_H : 0); // + the value-framing line (+ the pending / web note)
+    const owned = v.tone === 'owned';
     const bg = this.add.graphics();
     drawGlass(bg, w, h, THEME.RADIUS_SM);
     bg.lineStyle(
@@ -349,23 +458,24 @@ export class CosmeticsScene extends Phaser.Scene {
       fontFamily: THEME.FONT_BODY, fontSize: '11px', color: THEME.TEXT_MUTED,
       wordWrap: { width: w - 120 },
     }).setOrigin(0, 0.5);
-    const priceTxt = this.add.text(w / 2 - 18, -h / 2 + 18, owned ? 'OWNED' : b.priceLabel, {
-      fontFamily: THEME.FONT_DISPLAY, fontSize: '15px', color: owned ? THEME.TEXT_MUTED : '#7affb0', fontStyle: '700',
+    const priceTxt = this.add.text(w / 2 - 18, -h / 2 + 18, v.label, {
+      fontFamily: THEME.FONT_DISPLAY, fontSize: `${tagFontPx(v.label)}px`, color: tagColor(v.tone), fontStyle: '700',
     }).setOrigin(1, 0.5);
     children.push(blurb, valueLine, priceTxt);
 
     const card = this.add.container(0, 0, children);
     card.setSize(w, h);
-    if (!owned) {
+    card.add(addCardNote(this, v, w, h / 2, () => void this.checkStatus(b.packageId, card)));
+    if (v.action === 'buy') {
       card.setInteractive(new Phaser.Geom.Rectangle(-w / 2, -h / 2, w, h), Phaser.Geom.Rectangle.Contains);
-      card.on('pointerup', async () => {
-        if (this.dragging) return;
-        // Ownership is derived from the entitlement IAP.buy confirmed; outcome copy is P00-T17, a cancel is silent.
-        const outcome = await IAP.buy(b.packageId);
-        if (outcome === 'purchased') { claimCollectionRewards(); this.scene.restart({ tab: 'bundle', internal: true }); }
-        else if (outcome === 'pending') this.scene.restart({ tab: 'bundle', internal: true });
-        else if (outcome !== 'cancelled') this.cameras.main.shake(110, 0.004);
-      });
+      // Ownership is derived from the entitlement IAP.buy confirmed; a cancel is silent, every other outcome has its copy.
+      card.on('pointerup', () => void this.buy(b.packageId, card, () => {
+        claimCollectionRewards();
+        const first = cosmeticById(b.grants[0]);
+        const redraw = (): void => { this.scene.restart({ tab: 'bundle', internal: true, quiet: true, scrollOffset: this.scrollOffsetNow() }); };
+        if (first) this.playUnlockFanfare(first, redraw);
+        else redraw();
+      }));
     }
     if (highlighted) {
       card.setAlpha(1).setScale(1);
@@ -406,7 +516,7 @@ export class CosmeticsScene extends Phaser.Scene {
   }
 
   private entrance(card: Phaser.GameObjects.Container, i: number): void {
-    if (reducedMotionActive()) return;
+    if (reducedMotionActive() || this.quiet) return;
     card.setAlpha(0).setScale(0.97);
     this.tweens.add({ targets: card, alpha: 1, scale: 1, delay: 30 + i * 26, duration: 260, ease: THEME.EASE });
   }

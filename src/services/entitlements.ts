@@ -290,13 +290,20 @@ export function legacySeed(premiumRaw: string | null, ownedCosmetics: readonly s
 // backup (D-11), so a fresh install (or a reinstall restored from backup) always starts a new anonymous identity. The
 // restore runs whatever that identity already reports (review M3: a purchase or listener update made before it must
 // not skip it). A failure backs off exponentially across launches, is capped per session, and gives up after
-// `maxAttempts` (review M4). Persisted as `gravity-flow:iap:silentRestore` (services/IAP.ts).
+// `maxAttempts` (review M4). A NETWORK failure (RevenueCat 10 / 35) is not the restore's fault: it lengthens the
+// backoff (`offline`) but never counts toward `maxAttempts`, so an offline device cannot "give up" and let 'replace'
+// revoke a snapshot restored from backup (P00-T17, T15/T16 review). Persisted as `gravity-flow:iap:silentRestore`
+// (services/IAP.ts).
 export interface SilentRestoreRecord {
   id: string | null; // the RevenueCat app user id it is for (null: getAppUserID could not be read)
   done: boolean; // a restore answered for this identity
-  attempts: number; // restores tried for this identity
+  attempts: number; // restores that reached the store and failed (or answered), for this identity: the give-up count
+  offline: number; // restores that failed on the network: lengthens the backoff, never counted toward giving up
   nextAt: number; // epoch ms before which no new attempt is made (after a failure)
 }
+
+// How one silent-restore attempt ended: it answered, the store failed it, or the network did.
+export type SilentRestoreResult = 'ok' | 'error' | 'network';
 
 export interface SilentRestoreLimits {
   maxPerSession: number;
@@ -323,7 +330,10 @@ export function parseSilentRestoreRecord(raw: string | null): SilentRestoreRecor
     if (typeof o.done !== 'boolean') return null;
     if (typeof o.attempts !== 'number' || !Number.isInteger(o.attempts) || o.attempts < 0) return null;
     if (typeof o.nextAt !== 'number' || !Number.isFinite(o.nextAt)) return null;
-    return { id: o.id, done: o.done, attempts: o.attempts, nextAt: o.nextAt };
+    // `offline` is newer than the record: absent reads as 0, a present but invalid value is junk.
+    const offline = o.offline ?? 0;
+    if (typeof offline !== 'number' || !Number.isInteger(offline) || offline < 0) return null;
+    return { id: o.id, done: o.done, attempts: o.attempts, offline, nextAt: o.nextAt };
   } catch {
     return null;
   }
@@ -341,16 +351,20 @@ export function silentRestoreDecision(i: SilentRestoreInput): 'restore' | 'wait'
   return 'restore';
 }
 
-// The record after an attempt for `appUserId` (ok = the restore answered).
+// The record after an attempt for `appUserId`. 'ok' = the restore answered. 'error' counts toward giving up.
+// 'network' does not: it only lengthens the backoff (the exponent counts every failed try, online or not).
 export function afterSilentRestore(
   record: SilentRestoreRecord | null,
   appUserId: string | null,
-  ok: boolean,
+  result: SilentRestoreResult,
   now: number,
   limits: SilentRestoreLimits,
 ): SilentRestoreRecord {
-  const attempts = (record && record.id === appUserId ? record.attempts : 0) + 1;
-  if (ok) return { id: appUserId, done: true, attempts, nextAt: 0 };
-  const delay = Math.min(limits.backoffBaseMs * 2 ** (attempts - 1), limits.backoffMaxMs);
-  return { id: appUserId, done: false, attempts, nextAt: now + delay };
+  const prev = record && record.id === appUserId ? record : null;
+  const attempts = (prev?.attempts ?? 0) + (result === 'network' ? 0 : 1);
+  if (result === 'ok') return { id: appUserId, done: true, attempts, offline: 0, nextAt: 0 };
+  const offline = (prev?.offline ?? 0) + (result === 'network' ? 1 : 0);
+  const exponent = Math.min(Math.max(attempts + offline - 1, 0), 30); // 2 ** 30 is already past any sane cap
+  const delay = Math.min(limits.backoffBaseMs * 2 ** exponent, limits.backoffMaxMs);
+  return { id: appUserId, done: false, attempts, offline, nextAt: now + delay };
 }

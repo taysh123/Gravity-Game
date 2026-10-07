@@ -328,10 +328,10 @@ describe('A-06: one silent restore per new RevenueCat identity on Android', () =
   it('a failing silent restore keeps the snapshot (merge only) and retries after the backoff', async () => {
     const h = harness({}, { active: [], appUserID: '$RCAnonymousID:new' });
     h.box.snapshot = { v: 1, active: ['no_ads'], at: 123, pending: [] };
-    h.rc.restorePurchases.mockRejectedValue(rcError('10'));
+    h.rc.restorePurchases.mockRejectedValue(rcError('2'));
     await h.iap.init();
     expect(h.box.snapshot.active).toEqual(['no_ads']);
-    expect(restoreRecord(h.storage)).toEqual({ id: '$RCAnonymousID:new', done: false, attempts: 1, nextAt: NOW + LIMIT.base });
+    expect(restoreRecord(h.storage)).toEqual({ id: '$RCAnonymousID:new', done: false, attempts: 1, offline: 0, nextAt: NOW + LIMIT.base });
     h.fake.emit(); // an empty update cannot revoke while the identity's restore is outstanding
     expect(h.box.snapshot.active).toEqual(['no_ads']);
 
@@ -393,6 +393,58 @@ describe('A-06: one silent restore per new RevenueCat identity on Android', () =
     expect(h.rc.restorePurchases).not.toHaveBeenCalled();
     expect(h.iap.isPremium()).toBe(false);
     expect(last).not.toBeNull();
+  });
+
+  // P00-T17 (T15/T16 review): a network failure lengthens the backoff but never counts toward the give-up cap, or 'replace'
+  // could revoke a backup-restored snapshot after enough offline launches.
+  it('network failures (10 / 35) of the silent restore never give up: the backoff grows, attempts stay 0, nothing is revoked', async () => {
+    const storage = new Map<string, string>();
+    let now = NOW;
+    const launches = LIMIT.attempts + 4; // well past the cap that real store errors hit
+    for (let launch = 0; launch < launches; launch++) {
+      const h = harness({}, { active: [], appUserID: 'u5' });
+      for (const [k, v] of storage) h.storage.set(k, v);
+      h.box.now = now;
+      h.box.snapshot = { v: 1, active: ['no_ads', 'pack_founders'], at: 5, pending: [] }; // a snapshot restored from backup
+      h.rc.restorePurchases.mockRejectedValue(rcError(launch % 2 ? '35' : '10'));
+      await h.iap.init();
+      expect(h.rc.restorePurchases, `launch ${launch}`).toHaveBeenCalledTimes(1); // never given up
+      expect(h.box.snapshot.active, `launch ${launch}`).toEqual(['no_ads', 'pack_founders']); // never revoked
+      expect(h.iap.isPremium()).toBe(true);
+      expect((h.deps.report as ReturnType<typeof vi.fn>).mock.calls.filter((c) => c[1] === 'iap.silentRestore')).toHaveLength(0); // offline is not a defect
+      for (const [k, v] of h.storage) storage.set(k, v);
+      const rec = restoreRecord(storage);
+      expect(rec.attempts).toBe(0);
+      expect(rec.offline).toBe(launch + 1);
+      expect(rec.nextAt - now).toBe(Math.min(LIMIT.base * 2 ** launch, LIMIT.max)); // exponential, capped
+      now = rec.nextAt;
+    }
+    // Back online at last: the one restore answers and the record is done.
+    const h = harness({}, { active: [], appUserID: 'u5' });
+    for (const [k, v] of storage) h.storage.set(k, v);
+    h.box.now = now;
+    h.box.snapshot = { v: 1, active: ['no_ads', 'pack_founders'], at: 5, pending: [] };
+    h.rc.restorePurchases.mockImplementation(async () => {
+      for (const e of ['no_ads', 'pack_founders']) h.fake.st.active.add(e);
+      return { customerInfo: h.fake.info() };
+    });
+    await h.iap.init();
+    expect(h.box.snapshot.active).toEqual(['no_ads', 'pack_founders']);
+    expect(restoreRecord(h.storage)).toMatchObject({ id: 'u5', done: true, offline: 0 });
+  });
+
+  it('a network failure of the silent restore waits for the backoff before the next attempt', async () => {
+    const h = harness({}, { active: [], appUserID: 'u6' });
+    h.rc.restorePurchases.mockRejectedValue(rcError('35'));
+    await h.iap.init();
+    expect(h.rc.restorePurchases).toHaveBeenCalledTimes(1);
+    h.foreground(); // inside the backoff window
+    await settle();
+    expect(h.rc.restorePurchases).toHaveBeenCalledTimes(1);
+    h.box.now = NOW + LIMIT.base;
+    h.foreground();
+    await settle();
+    expect(h.rc.restorePurchases).toHaveBeenCalledTimes(2);
   });
 
   it('M4: an unreadable identity (getAppUserID fails) is restored once, then not every launch', async () => {
@@ -814,6 +866,168 @@ describe('prices (store priceString only)', () => {
     expect(h.iap.price('remove_ads')).toBe('₪7.90');
     expect(h.iap.price('founders')).toBe('₪29.90');
     expect(h.iap.price('nope')).toBeNull();
+  });
+});
+
+describe('crash reports (P00-T17 review: dedupe by context AND error code)', () => {
+  const reportsFor = (h: ReturnType<typeof harness>, context: string) =>
+    (h.deps.report as ReturnType<typeof vi.fn>).mock.calls.filter((c) => c[1] === context).map((c) => (c[0] as { code?: string }).code);
+
+  it('a different error under the same context is still reported; the same error again is not', async () => {
+    const h = harness();
+    h.rc.getOfferings
+      .mockRejectedValueOnce(rcError('3'))
+      .mockRejectedValueOnce(rcError('5'))
+      .mockRejectedValueOnce(rcError('5'))
+      .mockRejectedValueOnce(rcError('3'));
+    await h.iap.init(); // getOfferings fails with 3
+    for (let i = 0; i < 3; i++) {
+      h.foreground(); // offerings still missing: fails with 5, 5, 3
+      await settle();
+    }
+    expect(reportsFor(h, 'iap.getOfferings')).toEqual(['3', '5']); // 3 once, 5 once, the repeats dropped
+  });
+
+  it('network codes are still never reported, whatever the context', async () => {
+    const h = harness();
+    h.rc.getOfferings.mockRejectedValue(rcError('10'));
+    await h.iap.init();
+    h.foreground();
+    await settle();
+    expect(reportsFor(h, 'iap.getOfferings')).toEqual([]);
+  });
+});
+
+describe('purchase UI inputs: storeStatus / owns / refresh (P00-T17)', () => {
+  it('web, dev or production: "web" (nothing is offered), and no price', async () => {
+    for (const dev of [false, true]) {
+      const h = harness({ native: false, platform: 'web', dev });
+      await h.iap.init();
+      expect(h.iap.storeStatus('remove_ads')).toBe('web');
+      expect(h.iap.price('remove_ads')).toBeNull();
+    }
+  });
+
+  it('native before init, or while it runs: "loading"', async () => {
+    const h = harness();
+    expect(h.iap.storeStatus('remove_ads')).toBe('loading'); // init never started
+    const init = h.iap.init();
+    expect(h.iap.storeStatus('remove_ads')).toBe('loading'); // initializing
+    await init;
+    expect(h.iap.storeStatus('remove_ads')).toBe('ready');
+  });
+
+  it('an empty API key: "unavailable" (the store is not configured on this build)', async () => {
+    const h = harness({ apiKey: '' });
+    await h.iap.init();
+    expect(h.iap.storeStatus('remove_ads')).toBe('unavailable');
+  });
+
+  it('a failed init is "loading" (retried), then "ready" after refresh()', async () => {
+    const fake = fakeRC();
+    let fail = true;
+    const loadPurchases = vi.fn(async () => {
+      if (fail) throw new Error('bridge not ready');
+      return { Purchases: fake.rc, LOG_LEVEL: { DEBUG: 'DEBUG' } } as unknown as PurchasesModule;
+    });
+    const h = harness({ loadPurchases });
+    await h.iap.init();
+    expect(h.iap.state()).toBe('failed');
+    expect(h.iap.storeStatus('remove_ads')).toBe('loading');
+    fail = false;
+    await h.iap.refresh();
+    expect(h.iap.state()).toBe('ready');
+    expect(h.iap.storeStatus('remove_ads')).toBe('ready');
+    expect(h.iap.price('remove_ads')).toBe('₪7.90');
+  });
+
+  it('offerings that failed to load are "loading", and refresh() loads them', async () => {
+    const h = harness();
+    h.rc.getOfferings.mockRejectedValueOnce(rcError('35'));
+    await h.iap.init();
+    expect(h.iap.state()).toBe('ready');
+    expect(h.iap.storeStatus('founders')).toBe('loading');
+    expect(h.iap.price('founders')).toBeNull();
+    await h.iap.refresh();
+    expect(h.iap.storeStatus('founders')).toBe('ready');
+    expect(h.iap.price('founders')).toBe('₪29.90');
+  });
+
+  it('offerings that do not contain the package (a dashboard mix-up) are "unavailable", never another package', async () => {
+    const h = harness({}, { packages: [pkg('remove_ads', 'remove_ads', '₪7.90')] });
+    await h.iap.init();
+    expect(h.iap.storeStatus('remove_ads')).toBe('ready');
+    expect(h.iap.storeStatus('founders')).toBe('unavailable');
+    expect(h.iap.storeStatus('not_a_package')).toBe('unavailable');
+  });
+
+  it('an offering with no current set is "unavailable"', async () => {
+    const h = harness();
+    h.rc.getOfferings.mockResolvedValue({ all: {}, current: null } as never);
+    await h.iap.init();
+    expect(h.iap.storeStatus('remove_ads')).toBe('unavailable');
+  });
+
+  it('refresh() is a no-op on web and never rejects', async () => {
+    const web = harness({ native: false, platform: 'web', dev: false });
+    await web.iap.refresh();
+    expect(web.deps.loadPurchases).not.toHaveBeenCalled();
+
+    const h = harness({}, { appUserID: 'u1' });
+    markRestored(h.storage, 'u1');
+    h.rc.getOfferings.mockRejectedValue(new Error('boom'));
+    await h.iap.init();
+    await expect(h.iap.refresh()).resolves.toBeUndefined();
+    expect(h.iap.storeStatus('remove_ads')).toBe('loading');
+  });
+
+  it('refresh() does nothing while a purchase or restore is running', async () => {
+    const h = harness({}, { appUserID: 'u1' });
+    markRestored(h.storage, 'u1');
+    h.rc.getOfferings.mockRejectedValueOnce(rcError('35'));
+    await h.iap.init();
+    const offeringCalls = () => h.rc.getOfferings.mock.calls.length;
+    expect(offeringCalls()).toBe(1);
+    let release: () => void = () => undefined;
+    h.rc.restorePurchases.mockImplementationOnce(
+      () => new Promise((resolve) => {
+        release = () => resolve({ customerInfo: h.fake.info() } as never);
+      }),
+    );
+    const restoring = h.iap.restore();
+    await settle();
+    expect(h.iap.inFlight()).toBe(true);
+    await h.iap.refresh(); // busy: skipped
+    expect(offeringCalls()).toBe(1);
+    release();
+    await restoring;
+    await h.iap.refresh();
+    expect(offeringCalls()).toBe(2);
+  });
+
+  it('owns(): true only while every entitlement of the product is active (Starter is not owned because no_ads is)', () => {
+    const h = harness();
+    h.box.snapshot = { v: 1, active: ['no_ads'], at: 5, pending: [] };
+    expect(h.iap.owns('remove_ads')).toBe(true);
+    expect(h.iap.owns('starter')).toBe(false);
+    expect(h.iap.owns('founders')).toBe(false);
+    h.box.snapshot = { v: 1, active: ['no_ads', 'pack_starter', 'pack_premium_collection'], at: 5, pending: [] };
+    expect(h.iap.owns('starter')).toBe(true);
+    expect(h.iap.owns('premium_collection')).toBe(true);
+    expect(h.iap.owns('nope')).toBe(false);
+  });
+
+  it('a pending product is not owned; "Check status" (restore with recheck) clears only its marker', async () => {
+    const h = harness({}, { appUserID: 'u1' });
+    markRestored(h.storage, 'u1');
+    await h.iap.init();
+    h.rc.purchasePackage.mockRejectedValueOnce(rcError('20'));
+    expect(await h.iap.buy('starter')).toBe('pending');
+    expect(h.iap.isPending('starter')).toBe(true);
+    expect(h.iap.owns('starter')).toBe(false);
+    const r = await h.iap.restore({ recheck: 'starter' });
+    expect(r.outcome).toBe('none');
+    expect(h.iap.isPending('starter')).toBe(false);
   });
 });
 
