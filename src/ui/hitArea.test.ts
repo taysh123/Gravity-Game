@@ -402,4 +402,30 @@ describe('source guard: custom hit shapes go through ui/hitArea.ts', () => {
     expect(forbidden.test('x.setInteractive();')).toBe(false);
     expect(forbidden.test('setTapArea(card, w, h);')).toBe(false);
   });
+
+  // A mask clips drawing, never input: a scrolled-out row of a masked list keeps a live hit zone over whatever lies around the
+  // list. Every scene that masks content must put tap sinks around it (addTapSink), unless nothing in its list is interactive.
+  const masksContent = /\.setMask\(/;
+  const hasSinks = /\baddTapSink\(/;
+  const NO_INTERACTIVE_ROWS = [
+    'scenes/AchievementsScene.ts', // its rows are plain display objects; only the Back button is interactive, and it is outside the list
+  ];
+
+  it('every scene that masks a scrolling list also puts tap sinks around it (or has no interactive rows)', () => {
+    const offenders = files(srcRoot)
+      .filter((f) => masksContent.test(readFileSync(f, 'utf8')))
+      .filter((f) => !hasSinks.test(readFileSync(f, 'utf8')))
+      .map(rel)
+      .filter((r) => !NO_INTERACTIVE_ROWS.includes(r));
+    expect(offenders).toEqual([]);
+  });
+
+  it('the exemption list stays honest: an exempt scene really has no interactive object in its list', () => {
+    for (const r of NO_INTERACTIVE_ROWS) {
+      const src = readFileSync(join(srcRoot, r), 'utf8');
+      expect(masksContent.test(src), `${r} no longer masks a list: drop it from the list`).toBe(true);
+      expect(/setInteractive\(|setTapArea\(|setTapCircle\(/.test(src), `${r} gained something interactive: give it tap sinks`).toBe(false);
+      expect((src.match(/new Button\(/g) ?? []).length, `${r}: only the Back button may be interactive`).toBe(1);
+    }
+  });
 });

@@ -6,7 +6,7 @@ import { THEME } from '../config/theme.config';
 import { CosmicBackground } from '../entities/CosmicBackground';
 import { Button } from '../ui/Button';
 import { drawGlass } from '../ui/glass';
-import { setTapArea } from '../ui/hitArea';
+import { addTapSink, outsideBand, setTapArea } from '../ui/hitArea';
 import { fadeIn, fadeToScene } from '../utils/transitions';
 import { reducedMotionActive, safeAreaInsetsScaled } from '../utils/a11y';
 import { ProgressStore } from '../utils/ProgressStore';
@@ -99,6 +99,10 @@ export class LevelSelectScene extends Phaser.Scene {
     const maskShape = this.make.graphics({});
     maskShape.fillRect(0, viewTop, width, viewBottom - viewTop);
     this.content.setMask(maskShape.createGeometryMask());
+    // A mask clips drawing, never input: a cell scrolled out of the viewport (a world with more levels than fit) would keep its hit
+    // zone over the title and the strip above Back. Tap sinks outside the viewport take those taps; Back (depth 10) stays above them
+    // (the same fix as the shop list, ui/hitArea.ts addTapSink).
+    for (const r of outsideBand(width, height, viewTop, viewBottom)) addTapSink(this, r, THEME.LIST_SINK_DEPTH);
 
     const viewH = viewBottom - viewTop;
     this.scrollMin = Math.min(0, viewH - y);

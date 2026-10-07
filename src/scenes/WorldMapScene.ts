@@ -6,7 +6,7 @@ import { THEME } from '../config/theme.config';
 import { themeForWorld } from '../config/worldThemes';
 import { CosmicBackground } from '../entities/CosmicBackground';
 import { Button } from '../ui/Button';
-import { setTapCircle } from '../ui/hitArea';
+import { addTapSink, outsideBand, setTapCircle } from '../ui/hitArea';
 import { fadeIn, fadeToScene, warpToScene } from '../utils/transitions';
 import { reducedMotionActive, safeAreaInsetsScaled } from '../utils/a11y';
 import { ProgressStore } from '../utils/ProgressStore';
@@ -87,6 +87,10 @@ export class WorldMapScene extends Phaser.Scene {
     const maskShape = this.make.graphics({});
     maskShape.fillRect(0, viewTop, width, viewH);
     this.content.setMask(maskShape.createGeometryMask());
+    // A mask clips drawing, never input: a planet scrolled out of the viewport keeps its hit zone over the title and the strip above
+    // Back. Tap sinks over everything outside the viewport take those taps (Back, depth 10, stays above them), so a planet is
+    // tappable on its visible part only (the same fix as the shop list, ui/hitArea.ts addTapSink).
+    for (const r of outsideBand(width, height, viewTop, viewBottom)) addTapSink(this, r, THEME.LIST_SINK_DEPTH);
 
     const contentBottom = viewTop + WORLDS.length * NODE_GAP + NODE_GAP / 2;
     this.scrollMin = Math.min(0, viewBottom - contentBottom);

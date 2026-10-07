@@ -27,8 +27,9 @@ export const THEME = {
   TOGGLE_TAP_PAD: 8, // the Settings switch (52x30) is tappable 8 px past its track on every side (ui/hitArea.ts setTapArea)
   NODE_TAP_PAD: 8, // a World Map planet is tappable 8 px past its disc (ui/hitArea.ts setTapCircle)
   MIN_TAP: 44, // the smallest tap target in px (ui/hitArea.ts minTapPad pads a smaller one up to it without changing how it looks)
-  // Depths in a scene with a scrolling list (the shop): list rows 0 < tap sinks over the area around the list < the chrome that
-  // must stay tappable there (tabs, Back). A mask only clips drawing, so the sinks are what keep a scrolled-out row from taking a tap.
+  // Depths in a scene with a masked scrolling list (the shop, the Star Map, Level Select): list rows 0 < tap sinks over the area
+  // around the list < the chrome that must stay tappable there (shop tabs and Back; the Star Map and Level Select Back sit at depth
+  // 10, also above the sinks). A mask only clips drawing, so the sinks are what keep a scrolled-out row from taking a tap.
   LIST_SINK_DEPTH: 1,
   LIST_CHROME_DEPTH: 2,
 
