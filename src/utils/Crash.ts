@@ -17,21 +17,26 @@ type Crashlytics = {
 };
 
 let plugin: Crashlytics | null = null;
-let loaded = false;
+let ready: Promise<boolean> | null = null;
 
 // Resolves true once the native plugin is available. Does NOT return the proxy.
-async function ensure(): Promise<boolean> {
-  if (loaded) return plugin !== null;
-  loaded = true;
-  try {
-    const m = await import('./native/firebaseCrashlytics');
-    const p = m.FirebaseCrashlytics as unknown as Crashlytics;
-    await p.setEnabled({ enabled: true }); // a method CALL is fine (real promise)
-    plugin = p;
-  } catch {
-    plugin = null; // unavailable — fail silent
+// The in-flight promise is memoized, so every caller (init, log, recordError) waits on the same load instead of
+// seeing a half-initialised `plugin === null` and dropping its report. A failed load is not retried.
+function ensure(): Promise<boolean> {
+  if (!ready) {
+    ready = (async () => {
+      try {
+        const m = await import('./native/firebaseCrashlytics');
+        const p = m.FirebaseCrashlytics as unknown as Crashlytics;
+        await p.setEnabled({ enabled: true }); // a method CALL is fine (real promise)
+        plugin = p;
+      } catch {
+        plugin = null; // unavailable — fail silent
+      }
+      return plugin !== null;
+    })();
   }
-  return plugin !== null;
+  return ready;
 }
 
 export const Crash = {

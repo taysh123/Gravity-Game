@@ -162,6 +162,16 @@ describe('MainActivity.java stays in step with the platform config', () => {
     expect(java).not.toMatch(/\.apply\(\)/);
   });
 
+  it('returns before using the bridge when Capacitor fell back to no_webview (getBridge() is null)', () => {
+    // BridgeActivity.onCreate shows R.layout.no_webview and returns early if the WebView is missing, disabled or
+    // mid-update, leaving getBridge() null. The guard must be the first use of getBridge(), and precede the listener.
+    const firstUse = java.indexOf('getBridge()');
+    const guard = java.search(/getBridge\(\)\s*==\s*null\s*\)\s*\{?\s*return\s*;/);
+    expect(firstUse).toBeGreaterThan(java.indexOf('super.onCreate('));
+    expect(guard).toBe(firstUse);
+    expect(guard).toBeLessThan(java.indexOf('addWebViewListener('));
+  });
+
   it('adds the listener after super.onCreate, counts per process, recreates, and falls through past the limit', () => {
     const create = java.indexOf('super.onCreate(');
     expect(create).toBeGreaterThan(-1);

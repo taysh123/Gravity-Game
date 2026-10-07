@@ -2,7 +2,7 @@
 
 > **The single source of truth for project state.** The Facts block is machine-generated; every other section is
 > edited by hand at the end of each task. Anything that contradicts this file is stale.
-> Last hand-edited **2026-10-07** · Position: **Step 1 complete except P00-T08 (AdMob 8.2.1 soak, deferred to >= 2026-10-13)** of the [execution order](roadmap/EXECUTION-ORDER.md); Step 2 is in progress (P00-T01 to P00-T07, P00-T09 to P00-T11 and P00-T13 done; P00-T12 open).
+> Last hand-edited **2026-10-07** · Position: **Step 1 complete except P00-T08 (AdMob 8.2.1 soak, deferred to >= 2026-10-13)** of the [execution order](roadmap/EXECUTION-ORDER.md); Step 2 is complete (P00-T09 to P00-T13 done; P00-T01 to P00-T07 done earlier). Next: Step 3, P00-T14 to P00-T17 (purchases, D-09).
 > Plan of record: [MASTER-ROADMAP](roadmap/MASTER-ROADMAP.md) · [EXECUTION-ORDER](roadmap/EXECUTION-ORDER.md) · [DECISIONS](roadmap/DECISIONS.md) (amendments override entry bodies).
 > Working title: **Gravity Flow** by True Story Labs. Package id `com.truestorylabs.gravityflow` is permanent.
 
@@ -18,7 +18,7 @@
 | Other content | 8 daily levels · 20 run chunks · 14 achievements · 28 cosmetics · 3 bundles |
 | Scenes registered | 14 |
 | Level files | 163 on disk · 13 retired (6, 22, 31, 35, 37, 39, 40, 45, 48, 55, 56, 63, 64) |
-| Tests | 41 files / 565 tests |
+| Tests | 42 files / 571 tests |
 | package.json version | 1.0.0 |
 | androidBuild | 1 |
 | Derived versionName / versionCode | 1.0.0 / 1000001 |
@@ -40,7 +40,7 @@ Regenerate with `npm run facts`; verify with `npm run facts:check` (CI runs the 
 ### Milestones ([definitions](roadmap/MASTER-ROADMAP.md))
 | Milestone | Contents | Unlocks | Tag | State |
 |---|---|---|---|---|
-| **M0 Truthful Build** | P0 + P1 | Internal-track upload (versionCode >= 1000001); owner device validation | `v1.0.0-rc.2` | Not reached. Step 1 complete except P00-T08 (AdMob 8.2.1 soak, deferred to >= 2026-10-13); Step 2 platform contract in progress (P00-T09 static half done: manifest, theme, WebView floor, system bars) |
+| **M0 Truthful Build** | P0 + P1 | Internal-track upload (versionCode >= 1000001); owner device validation | `v1.0.0-rc.2` | Not reached. Step 1 complete except P00-T08 (AdMob 8.2.1 soak, deferred to >= 2026-10-13); Step 2 platform contract complete in code (P00-T09 to P00-T13; device checks pending in the M0 session) |
 | **M1 Closed Beta** | M0 + P2 + P3 + P4-alpha + P5-A | Closed test (12 testers x 14 days if required), working title | `v1.0.0-rc.3` | Not started |
 | **M2 Launch Candidate** | M1 + P4 + P5 + P6/P7 core + P11 (rename applied) | Production staged rollout | `v1.0.0-rc.4` | Not started |
 | **M3 Live 1.x** | P8, P9, P10, P12 optimisation, iOS track | Growth and live ops by data | `v1.0.0` at launch (Step 19) | Not started |
@@ -63,12 +63,12 @@ Regenerate with `npm run facts`; verify with `npm run facts:check` (CI runs the 
 | Data Safety form + privacy policy sign-off (drafts land in P0 Step 5) | Owner | before M2 | PENDING |
 
 ## Next 5 actions
-Step 0 complete. Step 1 complete except P00-T08 (AdMob 8.2.1 soak, deferred to >= 2026-10-13); done so far: P00-T01…T07 (CI v2, Capacitor 8.5.2 family, exact pins), P00-T09 (manifest, theme, WebView floor, system bars), P00-T10 (Back router + `PauseScene`, Endless pause button), P00-T11 (background/foreground contract, `Haptics.pulse`) and P00-T13 (`@capacitor/preferences` save mirror, hydrate before Boot, migration ladder, backup rules limited to the two save locations); device checks pending in the M0 session. AdMob stays pinned at exactly 8.0.0 until the soak.
-1. **Step 2: P00-T12** — renderer-crash recovery. `MainActivity` must write `platform:rendererGone` into `CapacitorStorage` as a **String** (the Preferences plugin reads with `getString`); the read/clear goes into `Saves.hydrate()` (`src/platform/saves.ts`, T13). P00-T16 appends migration 2 and P00-T22 migration 3 to `src/platform/migrations.ts` (delete keys with `ctx.remove` / `Saves.remove`, never a local-only delete); every new persisted key must go through `Saves.write` (a source guard enforces it). P00-T16 / T19 must call `setExternalFlowActive(true|false, source)` around purchase and ad flows so they do not open the pause overlay.
+Step 0 complete. Step 1 complete except P00-T08 (AdMob 8.2.1 soak, deferred to >= 2026-10-13); done so far: P00-T01…T07 (CI v2, Capacitor 8.5.2 family, exact pins), P00-T09 (manifest, theme, WebView floor, system bars), P00-T10 (Back router + `PauseScene`, Endless pause button), P00-T11 (background/foreground contract, `Haptics.pulse`), P00-T12 (renderer-crash recovery: `MainActivity` recreates the activity on a dead WebView renderer, at most twice per process, and leaves a `platform:rendererGone` marker that `Saves.hydrate()` reports once to Crashlytics; null-bridge guard; `Crash` queues early reports until the plugin is ready) and P00-T13 (`@capacitor/preferences` save mirror, hydrate before Boot, migration ladder, backup rules limited to the two save locations); device checks pending in the M0 session (V18 renderer kill, R1 in the device checklist). AdMob stays pinned at exactly 8.0.0 until the soak.
+1. **Step 3: P00-T14…T17** — Purchases (D-09): plugin config, ids, products, license testers. Standing rules from Step 2: P00-T16 appends migration 2 and P00-T22 migration 3 to `src/platform/migrations.ts`, and a migration step deletes keys with **`ctx.remove` only** (never `Saves.remove`, which is refused while the ladder runs); every new persisted key must go through `Saves.write` (a source guard enforces it). P00-T16 / T19 must call `setExternalFlowActive(true|false, source)` around purchase and ad flows so they do not open the pause overlay.
 2. **P00-T08** — AdMob 8.2.1 soak commit, deferred until >= 2026-10-13.
-3. **Step 3: P00-T14…T17** — Purchases (D-09): plugin config, ids, products, license testers.
-4. **Step 4: P00-T18…T20** — Consent-first boot and ad plumbing (D-10, D-11).
-5. **Step 5: P00-T21…T26** — Error boundary, store validation, analytics hygiene (A-10 level_end attempts), boot smoke.
+3. **Step 4: P00-T18…T20** — Consent-first boot and ad plumbing (D-10, D-11).
+4. **Step 5: P00-T21…T26** — Error boundary, store validation, analytics hygiene (A-10 level_end attempts), boot smoke.
+5. **Steps 6-7** — Physics (P01): fixed-timestep, frame-rate-independent forces and level clock (B-03, B-09).
 
 ## Open bugs
 Top blockers from the [state audit](audit/2026-10-07/STATE-AUDIT.md) (section B.6/O). Target: 0 open P0 defects at M0.

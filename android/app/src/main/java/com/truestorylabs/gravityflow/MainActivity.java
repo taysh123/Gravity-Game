@@ -32,6 +32,8 @@ public class MainActivity extends BridgeActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // BridgeActivity shows no_webview and returns early if the WebView is missing, disabled or mid-update.
+        if (getBridge() == null) return;
         getBridge().addWebViewListener(
             new WebViewListener() {
                 @Override
