@@ -9,6 +9,7 @@ import {
   type LifecycleActions,
 } from './lifecycleDecision';
 import { setExternalFlowActive, isExternalFlowActive } from './externalFlow';
+import { notifyForeground, onAppForeground } from './foreground';
 import type { SceneSnapshot } from './backRouter';
 
 // The pure half of the background/foreground contract (D-11, P00-T11). lifecycle.ts reads the live scenes and
@@ -255,6 +256,30 @@ describe('deriveLifecycleScenes', () => {
     expect(
       lifecycleDecision({ ...base, visibility: 'visible', gameplayActive: overlay.gameplayKey !== null, ...overlay }),
     ).toEqual({ requestPause: false, suspendAudio: false, refreshScale: true, resumeAudio: false });
+  });
+});
+
+// P00-T16: services that refresh on resume (IAP customer info) subscribe here; lifecycle.ts notifies on foreground.
+describe('foreground subscribers', () => {
+  it('notifies every subscriber; one that throws does not stop the others; unsubscribe works', () => {
+    const calls: string[] = [];
+    const offA = onAppForeground(() => calls.push('a'));
+    const offB = onAppForeground(() => {
+      throw new Error('boom');
+    });
+    const offC = onAppForeground(() => calls.push('c'));
+    expect(() => notifyForeground()).not.toThrow();
+    expect(calls).toEqual(['a', 'c']);
+    offA();
+    offB();
+    notifyForeground();
+    expect(calls).toEqual(['a', 'c', 'c']);
+    offC();
+  });
+
+  it('lifecycle.onForeground notifies them after running the foreground actions', () => {
+    const src = readFileSync(fileURLToPath(new URL('./lifecycle.ts', import.meta.url)), 'utf8');
+    expect(src).toMatch(/export function onForeground\(\)[^{]*\{\s*const actions = runLifecycle\('visible'\);\s*notifyForeground\(\);/);
   });
 });
 

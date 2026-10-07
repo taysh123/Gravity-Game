@@ -3,7 +3,7 @@
 // writes go through Saves.write (mirrored). `gravity-flow:save:schema` records the highest version completed.
 //
 //   1  mirror-seed            copy localStorage into the @capacitor/preferences mirror once (P00-T13, here)
-//   2  premium-entitlements   seed `entitlements:v1` from the legacy `premium` flag      (P00-T16, to be appended)
+//   2  premium-entitlements   seed `entitlements:v1` from the legacy `premium` flag and local bundle grants (P00-T16)
 //   3  dead-key-cleanup       remove `progress:v1…v8`, and `cosmetics:v1` once v2 exists (P00-T22, to be appended;
 //                             delete through ctx.remove so the mirror loses the keys too; never Saves.remove in a step)
 //
@@ -11,6 +11,16 @@
 // not complete stops the ladder, so later steps never run on data an earlier step has not finished), and reported
 // through `ctx.report`, never thrown into the boot.
 import type { AsyncKV, KV } from './saves';
+import {
+  ENTITLEMENTS_KEY,
+  LEGACY_PREMIUM_KEY,
+  isConfirmed,
+  isEntitlementCosmetic,
+  legacySeed,
+  parseSnapshot,
+  serializeSnapshot,
+  type EntitlementSnapshot,
+} from '../services/entitlements';
 
 export const SAVE_SCHEMA_KEY = 'gravity-flow:save:schema';
 // Lives in the mirror only: it says "the mirror holds a complete copy", which is a fact about the mirror.
@@ -77,7 +87,71 @@ export async function migrateV1(ctx: MigrationContext): Promise<boolean> {
   return true;
 }
 
-export const MIGRATIONS: readonly Migration[] = [{ version: 1, name: 'mirror-seed', recheck: true, run: migrateV1 }];
+// CosmeticStore's keys (src/utils/CosmeticStore.ts; a test pins them). Not imported: CosmeticStore depends on Saves,
+// which depends on this module.
+export const COSMETICS_V2_KEY = 'gravity-flow:cosmetics:v2';
+export const COSMETICS_V1_KEY = 'gravity-flow:cosmetics:v1';
+
+// The `owned` list of a cosmetics save, or null when absent or unreadable.
+function ownedIn(raw: string | null): string[] | null {
+  if (raw === null) return null;
+  try {
+    const data = JSON.parse(raw) as { owned?: unknown };
+    return Array.isArray(data?.owned) ? data.owned.filter((id): id is string => typeof id === 'string') : null;
+  } catch {
+    return null;
+  }
+}
+
+// Migration 2 (P00-T16, D-09; P00-foundation.md §5 + §9 step 2): the pre-D-09 purchase state becomes the entitlement
+// snapshot. Before D-09, Remove Ads was the `premium` flag ('1'), and bundle cosmetics were granted straight into
+// CosmeticStore's `owned` list (only the web stub ever did; every device purchase failed, MONETIZATION.md A.0 #1).
+//   1. Seed: `no_ads` when premium is '1', plus the pack entitlement of every locally owned bundle cosmetic. The seed
+//      is UNCONFIRMED (`at: 0`): the player keeps it until the first successful getCustomerInfo() replaces it with the
+//      store truth (services/IAP.ts). Nothing is revoked here, ever.
+//        - no snapshot (or an unreadable one): write the seed, when there is anything to seed;
+//        - an unconfirmed snapshot (an earlier run of this step): union the seed into it;
+//        - a snapshot RevenueCat confirmed (`at > 0`): the store truth wins, the seed is ignored.
+//   2. Strip: bundle cosmetics leave cosmetics:v2 `owned` (their ownership is derived from the snapshot from now on, so
+//      a refund removes them). Equips are kept; CosmeticStore validates them against the derived ownership on read.
+// The legacy `premium` key is NOT deleted here: §5 deletes it after the first successful getCustomerInfo() reconcile
+// (IAP, through Saves.remove, outside the ladder). This step never deletes anything, so it cannot strand a key that a
+// later kill or a mirror restore could resurrect; re-running it (a kill before the schema is recorded, a lost schema
+// record, a resurrected premium key) converges to the same state and writes nothing the second time. Writes go through
+// ctx.write (Saves.write: mirrored), never localStorage directly.
+export async function migrateV2(ctx: MigrationContext): Promise<boolean> {
+  const { local } = ctx;
+  const v2Raw = local.get(COSMETICS_V2_KEY);
+  const owned = ownedIn(v2Raw) ?? ownedIn(local.get(COSMETICS_V1_KEY)) ?? [];
+  const seed = legacySeed(local.get(LEGACY_PREMIUM_KEY), owned);
+
+  const existing = parseSnapshot(local.get(ENTITLEMENTS_KEY));
+  let next: EntitlementSnapshot | null = null;
+  if (!existing) {
+    if (seed.length) next = { v: 1, active: seed, at: 0, pending: [] };
+  } else if (!isConfirmed(existing) && seed.some((e) => !existing.active.includes(e))) {
+    next = { ...existing, active: [...existing.active, ...seed] };
+  }
+  if (next) ctx.write(ENTITLEMENTS_KEY, serializeSnapshot(next));
+
+  if (v2Raw !== null) {
+    try {
+      const data = JSON.parse(v2Raw) as { owned?: unknown };
+      if (data && Array.isArray(data.owned) && data.owned.some((id) => typeof id === 'string' && isEntitlementCosmetic(id))) {
+        data.owned = data.owned.filter((id) => !(typeof id === 'string' && isEntitlementCosmetic(id)));
+        ctx.write(COSMETICS_V2_KEY, JSON.stringify(data));
+      }
+    } catch {
+      // unreadable cosmetics save: left for CosmeticStore's own fallback (P00-T22 adds validation + backups)
+    }
+  }
+  return true;
+}
+
+export const MIGRATIONS: readonly Migration[] = [
+  { version: 1, name: 'mirror-seed', recheck: true, run: migrateV1 },
+  { version: 2, name: 'premium-entitlements', run: migrateV2 },
+];
 
 // The recorded ladder version; 0 when missing or unreadable (every step is idempotent, so re-running is safe).
 export function readSchema(local: KV): number {

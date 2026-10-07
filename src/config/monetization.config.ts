@@ -1,7 +1,7 @@
 // Monetization config — ad-unit / RevenueCat / product ids. NO SECRETS in source.
 // Defaults are Google's public AdMob TEST ids so a native build works before real
 // ids exist; replace with the real ids (and set the RevenueCat key) before a prod
-// release. Consumed by the guarded native branches in services/Ads.ts + services/IAP.ts.
+// release. Consumed by the guarded native branches in services/Ads.ts + services/IAP.ts (purchases: D-09).
 
 export const ADMOB = {
   // Google AdMob official TEST ad units (safe for dev + internal testing).
@@ -50,6 +50,18 @@ export const PACKAGES = {
   FOUNDERS: 'founders',
 } as const;
 export type PackageId = (typeof PACKAGES)[keyof typeof PACKAGES];
+
+// Purchase-flow timing (MONETIZATION.md A.4 / A.5), consumed by services/IAP.ts.
+export const PURCHASE_FLOW = {
+  // A payment-pending marker (code 20) is dropped after this long without the entitlement turning active. INFERRED
+  // from Play's pending window; verify with device row P5 (DEVICE-CHECKLIST-M0).
+  PENDING_TTL_MS: 72 * 60 * 60 * 1000,
+  // "Verifying": purchasePackage resolved but the target entitlement is not active yet; re-read customer info once
+  // after this delay before reporting a failure.
+  VERIFY_DELAY_MS: 2000,
+  // The setExternalFlowActive() source raised around the Play purchase sheet (src/platform/externalFlow.ts).
+  EXTERNAL_FLOW_SOURCE: 'iap',
+} as const;
 
 // Premium bundles (IAP). `productId` is the Play Console product, `packageId` its RevenueCat package and
 // `entitlement` the pack entitlement it grants. `grants` = the cosmetics that entitlement derives and `premium` = the

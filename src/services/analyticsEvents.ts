@@ -57,10 +57,13 @@ export const streakFrozen = (streak: number): AnalyticsEvent => ({ name: 'streak
 
 // --- Economy / shop -------------------------------------------------------
 // Wave 3 Task 3: the old `purchase` event fired at *attempt* — the first
-// statement in IAP.buyRemoveAds/buyBundle, before the native dialog even opens
+// statement of a buy, before the native dialog even opens
 // — so it measured buy-button taps, not revenue. Replaced by a real lifecycle:
-// purchaseInitiated (attempt) -> purchaseCompleted (gated on the real result) /
-// purchaseFailed (cancel/throw/no-package, carries a reason). firstPurchase
+// purchaseInitiated (attempt) -> purchaseCompleted (only once the target
+// entitlement is active, D-09) / purchasePending (Play code 20, completes later
+// via the customer-info listener) / purchaseFailed (carries a reason:
+// cancelled, already_owned, network, error, not_entitled, no_package,
+// unavailable). firstPurchase
 // fires once, on the first-ever completion (persisted flag lives in IAP.ts).
 // shopOpen now carries which tab the store opened on; storeTab fires on tab
 // switches — the Bundles-tab switch is the strongest IAP-intent signal.
@@ -76,6 +79,7 @@ export const cosmeticEquip = (id: string): AnalyticsEvent => ({ name: 'cosmetic_
 export const purchaseInitiated = (product: string): AnalyticsEvent => ({ name: 'purchase_initiated', params: sanitizeParams({ product }) });
 export const purchaseCompleted = (product: string): AnalyticsEvent => ({ name: 'purchase_completed', params: sanitizeParams({ product }) });
 export const purchaseFailed = (product: string, reason: string): AnalyticsEvent => ({ name: 'purchase_failed', params: sanitizeParams({ product, reason }) });
+export const purchasePending = (product: string): AnalyticsEvent => ({ name: 'purchase_pending', params: sanitizeParams({ product }) });
 export const firstPurchase = (product: string): AnalyticsEvent => ({ name: 'first_purchase', params: sanitizeParams({ product }) });
 export const restore = (): AnalyticsEvent => ({ name: 'restore', params: {} });
 

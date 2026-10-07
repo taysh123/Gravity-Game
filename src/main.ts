@@ -25,9 +25,10 @@ import { Saves } from './platform/saves';
 const hydrated = Saves.hydrate();
 // Crash reporting (Crashlytics on native; global error bridge everywhere).
 Crash.init();
-// Configure RevenueCat + refresh the cached premium entitlement (native only). After hydrate, so its premium write
-// lands on hydrated data and cannot reach the mirror before migration 1 has run.
-void hydrated.then(() => IAP.initNative());
+// Purchases (D-09, native only): configure RevenueCat and reconcile the entitlement snapshot. After hydrate, so the
+// snapshot it writes lands on hydrated data, after migration 2 has seeded it from the legacy premium flag. Never awaited:
+// boot does not wait on the store.
+void hydrated.then(() => IAP.init());
 
 const game = new Phaser.Game({
   type: Phaser.AUTO,

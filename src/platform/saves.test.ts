@@ -11,7 +11,7 @@ import {
   type SavesApi,
   type SavesDeps,
 } from './saves';
-import { MIGRATED_V1_KEY, SAVE_SCHEMA_KEY, type Migration } from './migrations';
+import { MIGRATED_V1_KEY, MIGRATIONS, SAVE_SCHEMA_KEY, type Migration } from './migrations';
 import { PLATFORM } from '../config/platform.config';
 
 // P00-T13 (D-12): the Preferences mirror. localStorage stays the synchronous source every store reads; Saves.write
@@ -33,6 +33,9 @@ interface MemoryKV extends KV {
   data: Map<string, string>;
   failSet: boolean;
 }
+
+// The real ladder's last version (2 since P00-T16): tests that run the default ladder expect it.
+const LATEST = MIGRATIONS[MIGRATIONS.length - 1].version;
 
 function memoryKV(init: Record<string, string> = {}): MemoryKV {
   const data = new Map(Object.entries(init));
@@ -143,8 +146,8 @@ describe('web: localStorage passthrough', () => {
   it('still runs the migration ladder (version recorded locally)', async () => {
     const { saves, local } = setup({ native: false });
     const r = await saves.hydrate();
-    expect(r.schema).toBe(1);
-    expect(local.get(SAVE_SCHEMA_KEY)).toBe('1');
+    expect(r.schema).toBe(LATEST);
+    expect(local.get(SAVE_SCHEMA_KEY)).toBe(String(LATEST));
   });
 
   it('a refused localStorage write (storage disabled) is swallowed silently, as before', () => {
@@ -336,16 +339,16 @@ describe('hydrate', () => {
     const { saves, mirror } = setup({ local });
     const r = await saves.hydrate();
     await tick();
-    expect(r).toMatchObject({ mode: 'mirror', reason: null, migrated: true, schema: 1 });
+    expect(r).toMatchObject({ mode: 'mirror', reason: null, migrated: true, schema: LATEST });
     for (const [k, v] of Object.entries(SAVE)) expect(mirror!.data.get(k)).toBe(v);
     expect(mirror!.data.get(MIGRATED_V1_KEY)).toBe('1');
-    expect(mirror!.data.get(SAVE_SCHEMA_KEY)).toBe('1');
+    expect(mirror!.data.get(SAVE_SCHEMA_KEY)).toBe(String(LATEST));
     expect(Object.fromEntries([...local.data].filter(([k]) => k in SAVE))).toEqual(SAVE);
   });
 
   it('fresh install: seeds an empty mirror with just the marker and the schema', async () => {
     const { saves, mirror } = setup();
-    expect(await saves.hydrate()).toMatchObject({ mode: 'mirror', migrated: true, schema: 1 });
+    expect(await saves.hydrate()).toMatchObject({ mode: 'mirror', migrated: true, schema: LATEST });
     await tick();
     expect([...mirror!.data.keys()].sort()).toEqual([MIGRATED_V1_KEY, SAVE_SCHEMA_KEY].sort());
   });
@@ -418,7 +421,7 @@ describe('hydrate', () => {
     mirror.sets.length = 0;
     const r = await setup({ local, mirror }).saves.hydrate();
     await tick();
-    expect(r).toMatchObject({ mode: 'mirror', restored: [], replaced: [], pushed: [], migrated: false, schema: 1 });
+    expect(r).toMatchObject({ mode: 'mirror', restored: [], replaced: [], pushed: [], migrated: false, schema: LATEST });
     expect(mirror.sets).toEqual([]);
     expect(Object.fromEntries(local.data)).toEqual(before.local);
     expect(Object.fromEntries(mirror.data)).toEqual(before.mirror);
@@ -523,7 +526,7 @@ describe('hydrate', () => {
 // default-based data overwrite the full mirror on the next good launch. A key the session's localStorage did not hold
 // when it started is recorded as "created" (not "unmirrored"): next time the mirror's copy wins for it.
 describe('WebView wipe + a launch without the mirror: the next launch restores the mirror', () => {
-  const FULL = { [PROGRESS]: 'full-progress', [CURRENCY]: '900', [SAVE_SCHEMA_KEY]: '1' };
+  const FULL = { [PROGRESS]: 'full-progress', [CURRENCY]: '900', [SAVE_SCHEMA_KEY]: String(LATEST) };
   type FirstLaunch = (m: FakeMirror) => Omit<Partial<SavesDeps>, 'local'> & { mirror?: FakeMirror | null };
   const badLaunches: Array<[string, FirstLaunch]> = [
     [
@@ -1036,8 +1039,8 @@ describe('save wiring source guards', () => {
     const hydrateAt = main.indexOf('Saves.hydrate()');
     expect(hydrateAt).toBeGreaterThan(-1);
     expect(hydrateAt).toBeLessThan(main.indexOf('new Phaser.Game('));
-    expect(main).toMatch(/\.then\(\s*\(\)\s*=>\s*IAP\.initNative\(\)\s*\)/);
-    expect(main.match(/IAP\.initNative\(/g)?.length).toBe(1);
+    expect(main).toMatch(/\.then\(\s*\(\)\s*=>\s*IAP\.init\(\)\s*\)/);
+    expect(main.match(/IAP\.init\(/g)?.length).toBe(1);
   });
 
   it('BootScene waits for hydrate together with the fonts before leaving Boot', () => {

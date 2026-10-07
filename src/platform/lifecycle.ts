@@ -25,6 +25,7 @@ import type { AppBridge } from '../utils/native/app';
 import { routeBack, deriveBackState, type BackAction, type BackState, type SceneSnapshot } from './backRouter';
 import { lifecycleDecision, deriveLifecycleScenes, type LifecycleActions, type Visibility } from './lifecycleDecision';
 import { isExternalFlowActive } from './externalFlow';
+import { notifyForeground } from './foreground';
 import { isDismissable, isPausable } from './pausable';
 
 // Ads / purchase / consent flows raise this around the native sheet so the background pause ignores them
@@ -226,8 +227,11 @@ export function onBackground(): LifecycleActions | null {
 }
 
 // The app is visible again. Never resumes gameplay: the pause overlay stays until the player taps CONTINUE or Back.
+// Foreground subscribers (src/platform/foreground.ts, e.g. the IAP customer-info refresh) are notified afterwards.
 export function onForeground(): LifecycleActions | null {
-  return runLifecycle('visible');
+  const actions = runLifecycle('visible');
+  notifyForeground();
+  return actions;
 }
 
 async function registerNativeLifecycle(): Promise<void> {

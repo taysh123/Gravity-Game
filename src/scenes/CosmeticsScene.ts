@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { THEME } from '../config/theme.config';
 import { SPLASH } from '../config/splash.config';
 import { RARITY, type Rarity } from '../config/cosmetics.config';
-import { BUNDLES, STORE, REMOVE_ADS_PRICE_LABEL, type BundleDef } from '../config/monetization.config';
+import { BUNDLES, PACKAGES, STORE, REMOVE_ADS_PRICE_LABEL, type BundleDef } from '../config/monetization.config';
 import { CosmicBackground } from '../entities/CosmicBackground';
 import { Button } from '../ui/Button';
 import { drawGlass } from '../ui/glass';
@@ -130,7 +130,7 @@ export class CosmeticsScene extends Phaser.Scene {
         fontFamily: THEME.FONT_BODY, fontSize: '13px', color: THEME.TEXT_MUTED, fontStyle: '600',
       }).setOrigin(0.5);
       restore.setInteractive({ useHandCursor: true });
-      restore.on('pointerup', async () => { if (this.dragging) return; await IAP.restorePurchases(); this.scene.restart({ tab: 'bundle', internal: true }); });
+      restore.on('pointerup', async () => { if (this.dragging) return; await IAP.restore(); this.scene.restart({ tab: 'bundle', internal: true }); });
       listC.add(restore); yy += 36;
     }
     const totalH = yy;
@@ -286,9 +286,10 @@ export class CosmeticsScene extends Phaser.Scene {
       card.setInteractive(new Phaser.Geom.Rectangle(-w / 2, -h / 2, w, h), Phaser.Geom.Rectangle.Contains);
       card.on('pointerup', async () => {
         if (this.dragging) return;
-        const ok = await IAP.buyRemoveAds();
-        if (ok) this.scene.restart({ tab: 'bundle', internal: true });
-        else this.cameras.main.shake(110, 0.004);
+        // Outcome copy (pending / network / "available in the app") is P00-T17; a cancel is always silent (A.4).
+        const outcome = await IAP.buy(PACKAGES.REMOVE_ADS);
+        if (outcome === 'purchased' || outcome === 'pending') this.scene.restart({ tab: 'bundle', internal: true });
+        else if (outcome !== 'cancelled') this.cameras.main.shake(110, 0.004);
       });
     }
     this.entrance(card, i);
@@ -311,7 +312,7 @@ export class CosmeticsScene extends Phaser.Scene {
     return b.premium ? `${itemsStr} + Remove Ads` : itemsStr;
   }
 
-  // A premium bundle card (price button -> IAP.buyBundle; web stub grants).
+  // A premium bundle card (price button -> IAP.buy(packageId); owned = its entitlement-derived cosmetics).
   // `highlighted` = arrived here via a locked bundle-cosmetic cross-sell tap —
   // pulses to draw the eye to the ONE bundle that grants the tapped item.
   private bundleCard(b: BundleDef, w: number, i: number, highlighted: boolean): Phaser.GameObjects.Container {
@@ -359,9 +360,11 @@ export class CosmeticsScene extends Phaser.Scene {
       card.setInteractive(new Phaser.Geom.Rectangle(-w / 2, -h / 2, w, h), Phaser.Geom.Rectangle.Contains);
       card.on('pointerup', async () => {
         if (this.dragging) return;
-        const ok = await IAP.buyBundle(b.id);
-        if (ok) { claimCollectionRewards(); this.scene.restart({ tab: 'bundle', internal: true }); }
-        else this.cameras.main.shake(110, 0.004);
+        // Ownership is derived from the entitlement IAP.buy confirmed; outcome copy is P00-T17, a cancel is silent.
+        const outcome = await IAP.buy(b.packageId);
+        if (outcome === 'purchased') { claimCollectionRewards(); this.scene.restart({ tab: 'bundle', internal: true }); }
+        else if (outcome === 'pending') this.scene.restart({ tab: 'bundle', internal: true });
+        else if (outcome !== 'cancelled') this.cameras.main.shake(110, 0.004);
       });
     }
     if (highlighted) {

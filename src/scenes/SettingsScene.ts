@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { THEME } from '../config/theme.config';
-import { REMOVE_ADS_PRICE_LABEL } from '../config/monetization.config';
+import { PACKAGES, REMOVE_ADS_PRICE_LABEL } from '../config/monetization.config';
 import { Toggle } from '../ui/Toggle';
 import { Button } from '../ui/Button';
 import { IconButton } from '../ui/IconButton';
@@ -157,8 +157,9 @@ export class SettingsScene extends Phaser.Scene implements Dismissable {
         extraY + removeAdsH / 2,
         `Remove Ads · ${REMOVE_ADS_PRICE_LABEL}`,
         async () => {
-          const ok = await IAP.buyRemoveAds();
-          if (ok) this.scene.restart({ caller: this.caller });
+          // Outcome copy is P00-T17; nothing happens on a cancel (A.4).
+          const outcome = await IAP.buy(PACKAGES.REMOVE_ADS);
+          if (outcome === 'purchased' || outcome === 'pending') this.scene.restart({ caller: this.caller });
         },
         { width: panelW - 44, height: removeAdsH, fontSize: 15, fill: THEME.ACCENT_GOLD, textColor: THEME.TEXT_ON_PRIMARY },
       );
@@ -178,7 +179,7 @@ export class SettingsScene extends Phaser.Scene implements Dismissable {
     restore.setInteractive(new Phaser.Geom.Rectangle(-110, -22, 220, 44), Phaser.Geom.Rectangle.Contains);
     if (restore.input) restore.input.cursor = 'pointer';
     restore.on('pointerup', async () => {
-      await IAP.restorePurchases();
+      await IAP.restore();
       this.scene.restart({ caller: this.caller });
     });
     card.add(restore);

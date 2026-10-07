@@ -25,6 +25,7 @@ import {
   purchaseInitiated,
   purchaseCompleted,
   purchaseFailed,
+  purchasePending,
   firstPurchase,
   storeNudgeShown,
   storeNudgeTapped,
@@ -72,6 +73,9 @@ describe('event creators', () => {
   });
   it('purchaseInitiated sanitizes the product', () => {
     expect(purchaseInitiated('remove_ads')).toEqual({ name: 'purchase_initiated', params: { product: 'remove_ads' } });
+  });
+  it('purchasePending sanitizes the product', () => {
+    expect(purchasePending('starter_pack')).toEqual({ name: 'purchase_pending', params: { product: 'starter_pack' } });
   });
   it('purchaseCompleted sanitizes the product', () => {
     expect(purchaseCompleted('starter_pack')).toEqual({ name: 'purchase_completed', params: { product: 'starter_pack' } });
