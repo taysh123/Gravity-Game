@@ -19,18 +19,45 @@ bug id in **Notes**. Leave a row blank until it is run. A `FAIL` becomes a bug i
 | Account (license tester) | |
 | Tester and date | |
 
-Debug-geography builds for C1-C3 need `VITE_UMP_DEBUG_GEOGRAPHY` (`EEA` or `NOT_EEA`) and `VITE_UMP_TEST_DEVICE_IDS`; they
-are never uploaded (the release guard refuses them).
-
 ## C: Consent (V13)
 
-`adb logcat | grep "Setting consent"` shows the analytics consent lines.
+Consent is requested by `bootServices` after the saves hydrate and never blocks the menu: UMP `requestConsentInfo`, then the form when the status is REQUIRED, then (once the player has answered) the player's real answer is read from the TCF purposes (`ConsentSignals.getTcf`), then the four analytics consent types are written (`FirebaseAnalytics.setConsent`), Crashlytics collection is enabled, and only then is the ad SDK initialised (`AdMob.initialize({ maxAdContentRating: 'ParentalGuidance' })`, never with a child-directed or under-age tag).
+
+Why the purposes are read: after "Do not consent" UMP still answers `OBTAINED` + `canRequestAds: true` (Google serves limited ads), the same as after "Consent". Only `IABTCF_PurposeConsents` (`00000000000` vs `11111111111`) tells them apart, so the four analytics types follow it (purpose 1 gates all four; `ad_user_data` also needs 7; `ad_personalization` also needs 3 and 4).
+
+**Debug-geography builds.** UMP only forces a region on a test device, so C1-C3 use debug APKs built with the region baked in. `VITE_UMP_DEBUG_GEOGRAPHY` is `EEA`, `US`, `OTHER` or `NOT_EEA` (deprecated); `VITE_UMP_TEST_DEVICE_IDS` is a comma-separated list of hashed device ids. They are read at build time, so rebuild `dist` for every region, and they are never uploaded (the release guard in P00-T20 refuses a release build that carries either). From the repo root, Git Bash:
+
+```
+# EEA debug APK (the consent form must appear)
+VITE_UMP_DEBUG_GEOGRAPHY=EEA VITE_UMP_TEST_DEVICE_IDS=<hashed id> npm run build && npx cap sync android
+cd android && ./gradlew -Dorg.gradle.java.home="$JAVA_HOME" assembleDebug && cd ..
+adb install -r android/app/build/outputs/apk/debug/app-debug.apk
+# US debug APK (no form): the same commands with VITE_UMP_DEBUG_GEOGRAPHY=US
+```
+
+PowerShell: `$env:VITE_UMP_DEBUG_GEOGRAPHY='EEA'; $env:VITE_UMP_TEST_DEVICE_IDS='<hashed id>'; npm run build`, then `Remove-Item Env:VITE_UMP_DEBUG_GEOGRAPHY, Env:VITE_UMP_TEST_DEVICE_IDS` so the next build is clean. Rebuild without them (`npm run build && npx cap sync android`) before any build you intend to upload. Reset between runs with `adb shell pm clear com.truestorylabs.gravityflow` (UMP remembers the answer, so a second launch shows no form).
+
+**Test device id.** The hashed id is only needed if the form does not honour the geography on a physical phone. Per Google's UMP documentation the SDK then logs `Use new ConsentDebugSettings.Builder().addTestDeviceHashedId("<ID>")` (`adb logcat | grep -i addTestDeviceHashedId`); put that id in `VITE_UMP_TEST_DEVICE_IDS` and rebuild. The same ids are passed to `AdMob.initialize` as testing devices, and only in a debug-geography build. The Android 16 emulator honoured `EEA` and `US` with no id at all.
+
+**The form.** With Google's sample AdMob app id (what `AndroidManifest.xml` has today) UMP serves Google's own "Publisher Test Ads" message, which is what the emulator run showed. For release the owner's AdMob app needs its own published GDPR message (AdMob > Privacy & messaging) and its real app id; that is an owner gate, see `docs/STATUS.md`.
+
+**Logcat.** Enable Firebase's own logging once per device (the plugin and Firebase do not print the words `Setting consent`, so that grep matches nothing; verified on an Android 16 emulator), force-stop and relaunch, then:
+
+```
+adb shell setprop log.tag.FA VERBOSE
+adb logcat | grep -E "Setting (storage|DMA) consent|Tcf preferences read|UserMessagingPlatform"
+adb logcat | grep "To native (Capacitor plugin)"      # the app's own calls, in order
+```
+
+Expected at process start: `Setting storage consent(FE): source=MANIFEST,ad_storage=denied,analytics_storage=denied` and `Setting DMA consent(FE): source=MANIFEST,ad_user_data=denied` (the manifest defaults, before any consent). After UMP has answered: `source=API` lines with `ad_storage`, `analytics_storage` and `ad_user_data` all `granted` or all `denied`, as the row says. The app's own call order is `AdMob.requestConsentInfo`, `AdMob.showConsentForm` (EEA only), `ConsentSignals.getTcf` (after an answered form), four `FirebaseAnalytics.setConsent`, `FirebaseCrashlytics.setEnabled`, and `AdMob.initialize` last and only when UMP allows ads.
 
 | ID | Scenario | Expected | Ref | Result | Date | Notes |
 |---|---|---|---|---|---|---|
-| C1 | Fresh install, `debugGeography: EEA` | The consent form appears before **any** ad request (no ad network calls in logcat beforehand). "Privacy choices" shows in Settings. | D-10 | | | |
-| C2 | EEA, "Do not consent" / Manage, reject all | Game fully playable. If `canRequestAds` is false, ads stay uninitialised and offers are hidden. No hang. | D-10, D-24 | | | |
-| C3 | `NOT_EEA` geography | No form. Privacy row hidden unless the status is REQUIRED. | D-10 | | | |
+| C1 | EEA debug APK, fresh install (`adb shell pm clear com.truestorylabs.gravityflow`), tap **Consent** | The menu appears at once; the consent form appears over it **before any ad request** (no `AdMob.initialize` and no ad-network traffic in logcat until the form is answered). No Pause overlay opens behind the form. After **Consent**: `IABTCF_PurposeConsents 11111111111`, four `setConsent` calls `GRANTED`, `FA: ... ad_storage=granted,analytics_storage=granted` and `ad_user_data=granted`, then `AdMob.initialize`. Settings shows **Privacy choices**, **Privacy policy**, **Reset analytics data**. Relaunching does not show the form again | D-10 | | | |
+| C2 | EEA debug APK, fresh install, tap **Do not consent** (also try Manage options, confirm with nothing selected) | Game fully playable, no hang. `IABTCF_PurposeConsents 00000000000`; UMP still answers `OBTAINED` + `canRequestAds: true`, so `AdMob.initialize` runs (limited, non-personalised ads: UMP's decision) **but all four `setConsent` calls are `DENIED`** and FA logs `analytics_storage=denied`, `ad_storage=denied`, `ad_user_data=denied`. `FirebaseCrashlytics.setEnabled` is still called (D-10.5, the STATUS legal-check gate). Privacy choices still shown. Also airplane mode on first launch: the form cannot load, all four are `DENIED`, **no** `AdMob.initialize`, the menu is still usable | D-10, D-24 | | | |
+| C3 | US debug APK (`VITE_UMP_DEBUG_GEOGRAPHY=US`), fresh install | **No form** and no `showConsentForm` call. UMP answers `NOT_REQUIRED`, so all four `setConsent` calls are `GRANTED`, then `AdMob.initialize`. UMP reports `privacyOptionsRequirementStatus: REQUIRED` for the US state geography, so **Privacy choices is shown here too** (observed); it is hidden only where the requirement is `NOT_REQUIRED` | D-10 | | | |
+| C4 | Settings > **Privacy policy** | The system browser opens the hosted policy (`https://taysh123.github.io/Gravity-Game/`); Back returns to the game with Settings still open. (Verified on an Android 16 emulator: `ActivityTaskManager: START u0 {act=android.intent.action.VIEW dat=https://taysh123.github.io/... cmp=com.android.chrome/...}` from the game's uid, Chrome resumed.) | D-10 | | | |
+| C5 | Settings > **Reset analytics data** (a two-tap confirm: the first tap reads "Tap again to reset", the second runs it; left alone for 4 s it disarms). Then, on the EEA build after **Consent**, Settings > **Privacy choices** > **Do not consent** | A toast "Analytics data reset" and `D/FA: Resetting analytics data (FE)` in logcat. After the withdrawal: `AdMob.showPrivacyOptionsForm`, a fresh `requestConsentInfo` (UMP still says `canRequestAds: true`), `ConsentSignals.getTcf` (purposes all `0`), four `setConsent` `DENIED`. No Pause overlay behind the form | D-10 | | | |
 
 ## A: Ads (V15)
 
@@ -134,7 +161,7 @@ Run each row twice: Android 16 **gesture** navigation and **3-button** navigatio
 
 ## Sign-off (M0)
 
-- [ ] C1-C3 pass (V13)
+- [ ] C1-C5 pass (V13: C1-C3; C4-C5 are the privacy entry points of P00-T18)
 - [ ] P1-P15 pass (V14)
 - [ ] A1-A5 pass (V15)
 - [ ] B, G and H rows pass on gesture and 3-button navigation (V16)

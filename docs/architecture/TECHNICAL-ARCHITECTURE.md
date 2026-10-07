@@ -194,8 +194,11 @@ export const Haptics: { pulse(pattern: number | number[]): void };       // navi
 ```ts
 export type ConsentOutcome = { canRequestAds: boolean; privacyOptionsRequired: boolean; analytics: 'granted' | 'denied'; adStorage: 'granted' | 'denied'; adUserData: 'granted' | 'denied'; adPersonalization: 'granted' | 'denied' };
 export const Consent: { resolve(): Promise<ConsentOutcome>; showPrivacyOptions(): Promise<ConsentOutcome>; current(): ConsentOutcome | null };
+// P00-T18: an OBTAINED answer is refined by what the player really chose. UMP's canRequestAds is also true after "Do not consent" (limited ads),
+// so the four analytics types follow the IAB TCF purposes read by the app's own native plugin ConsentSignals (IABTCF_PurposeConsents; consentState.ts).
 export const Ads: {
-  init(c: ConsentOutcome): Promise<void>;              // once, only when canRequestAds
+  init(c: ConsentOutcome): Promise<void>;              // once, only when canRequestAds (bootServices); idempotent. Any ad request before a successful init is refused as not ready: it never runs UMP or initialize (P00-T18)
+  revoke(): void;                                      // consent withdrawn in Settings > Privacy choices: no further ad is requested or shown this session (P00-T18)
   isRewardedReady(): boolean;                          // real cache state
   showRewarded(source: string): Promise<'earned' | 'dismissed' | 'unavailable'>;
   showInterstitialIfEligible(ctx: { flowProtected: boolean }): Promise<'shown' | 'skipped'>;
