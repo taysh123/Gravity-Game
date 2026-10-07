@@ -12,6 +12,7 @@ import { reducedMotionActive, safeAreaInsetsScaled } from '../utils/a11y';
 import { ProgressStore } from '../utils/ProgressStore';
 import { themeForWorld } from '../config/worldThemes';
 import { worldOf } from '../utils/world';
+import { canScroll, clampScroll, scrollRange, type ScrollRange } from '../utils/listScroll';
 
 const COLS = 3;
 const CELL_W = 84;
@@ -27,7 +28,7 @@ const DRAG_THRESHOLD = 8; // px of movement before a press counts as a scroll, n
 export class LevelSelectScene extends Phaser.Scene {
   private cosmic!: CosmicBackground;
   private content!: Phaser.GameObjects.Container;
-  private scrollMin = 0; // most-negative content.y (content bottom reached)
+  private scroll: ScrollRange = { max: 0, min: 0 }; // content.y from "first row at the viewport top" (rest) to "last row at the bottom"
   private scrolled = false; // true once a press has moved past the drag threshold
   private dragStartY = 0;
   private contentStartY = 0;
@@ -105,10 +106,10 @@ export class LevelSelectScene extends Phaser.Scene {
     for (const r of outsideBand(width, height, viewTop, viewBottom)) addTapSink(this, r, THEME.LIST_SINK_DEPTH);
 
     const viewH = viewBottom - viewTop;
-    this.scrollMin = Math.min(0, viewH - y);
+    this.scroll = scrollRange(viewTop, viewH, y);
     this.setupScroll(viewTop, viewBottom);
 
-    if (this.scrollMin < 0) {
+    if (canScroll(this.scroll)) {
       this.add
         .text(cx, viewBottom + 4, '▾ scroll', { fontFamily: THEME.FONT_BODY, fontSize: '11px', color: THEME.TEXT_MUTED })
         .setOrigin(0.5)
@@ -132,16 +133,16 @@ export class LevelSelectScene extends Phaser.Scene {
       this.contentStartY = this.content.y;
     });
     this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
-      if (!p.isDown || this.scrollMin === 0) return;
+      if (!p.isDown || !canScroll(this.scroll)) return;
       const dy = p.y - this.dragStartY;
       if (Math.abs(dy) > DRAG_THRESHOLD) this.scrolled = true;
       if (this.scrolled) {
-        this.content.y = Phaser.Math.Clamp(this.contentStartY + dy, this.scrollMin, 0);
+        this.content.y = clampScroll(this.contentStartY + dy, this.scroll);
       }
     });
     this.input.on('wheel', (_p: Phaser.Input.Pointer, _o: unknown, _dx: number, dy: number) => {
-      if (this.scrollMin === 0) return;
-      this.content.y = Phaser.Math.Clamp(this.content.y - dy, this.scrollMin, 0);
+      if (!canScroll(this.scroll)) return;
+      this.content.y = clampScroll(this.content.y - dy, this.scroll);
     });
   }
 

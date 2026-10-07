@@ -18,7 +18,7 @@
 | Other content | 8 daily levels · 20 run chunks · 14 achievements · 28 cosmetics · 3 bundles |
 | Scenes registered | 14 |
 | Level files | 163 on disk · 13 retired (6, 22, 31, 35, 37, 39, 40, 45, 48, 55, 56, 63, 64) |
-| Tests | 49 files / 885 tests |
+| Tests | 50 files / 895 tests |
 | package.json version | 1.0.0 |
 | androidBuild | 1 |
 | Derived versionName / versionCode | 1.0.0 / 1000001 |
@@ -85,6 +85,7 @@ Top blockers from the [state audit](audit/2026-10-07/STATE-AUDIT.md) (section B.
 | B-09 | P1 | Level clock is wall-clock (Settings, background and ads drain timers and par) | [Step 6](roadmap/phases/P01-physics.md) |
 | B-10 | P1 | An uncaught frame error freezes the game permanently | [Step 5](roadmap/phases/P00-foundation.md) |
 | B-11 | P1 | Web build on Vercel grants paid items for free (IAP stub) | FIXED in P00-T16 (production web: buy/restore resolve `unavailable`, nothing granted; headless-verified on the production bundle). The copy "Available in the Android app" shipped in P00-T17 (shop and Settings, headless-verified on dev and the production preview) |
+| B-12 | P1 | The 44 px touch floor holds in game px, but the fixed 390x844 canvas is FIT-scaled into the window (`main.ts` `Scale.FIT`), so 44 game px renders as about 40.6 CSS px on a 360x800 phone and about 33 CSS px at 360x640: every Button, level cell, shop card and toggle shrinks by the same factor, the layout does not change. Found in P00-T17b fix pass 2 (the headless run counts 146 zones under 44 CSS px at 360x640, 0 at 390x844). [UX-UI-MOTION](design/UX-UI-MOTION.md) states touch targets in logical px on the 390-wide canvas (1 logical px = 1 dp, section 1.3; section 7 "Touch targets" row: 48x48 logical) and covers a render scale k for text sharpness (section 6.4), but not this display scale-down, and the P5 audit `touch_targets.py` also measures logical px only: the scale-mode decision is unplanned | Owner: P5 (responsive layout / scale-mode decision, [P05](roadmap/phases/P05-ux-visual.md)); not scheduled, needs an owner decision |
 
 ### Known dev-only advisories
 Full `npm audit` (dev dependencies included), 2026-10-07, after the lockfile-only `npm audit fix` in P00-T07: **9 vulnerabilities (2 critical, 2 high, 5 moderate)**, down from 15 (3 critical, 7 high, 5 moderate). None is in the APK or the web bundle: `npm audit --omit=dev --audit-level=critical` reports 0 and is the CI gate (D-11). This list is maintained by hand; CI does not check it.

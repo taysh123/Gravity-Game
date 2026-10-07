@@ -9,6 +9,7 @@ import { reducedMotionActive, safeAreaInsetsScaled } from '../utils/a11y';
 import { ACHIEVEMENTS } from '../utils/achievements';
 import { AchievementStore } from '../utils/AchievementStore';
 import { StatsStore } from '../utils/StatsStore';
+import { canScroll, clampScroll, scrollRange, type ScrollRange } from '../utils/listScroll';
 
 const ROW_H = 56;
 const ROW_GAP = 8;
@@ -19,7 +20,7 @@ const DRAG_THRESHOLD = 8;
 export class AchievementsScene extends Phaser.Scene {
   private cosmic!: CosmicBackground;
   private content!: Phaser.GameObjects.Container;
-  private scrollMin = 0;
+  private scroll: ScrollRange = { max: 0, min: 0 }; // content.y from "first row at the viewport top" (rest) to "last row at the bottom"
   private dragStartY = 0;
   private contentStartY = 0;
   private scrolling = false;
@@ -116,7 +117,7 @@ export class AchievementsScene extends Phaser.Scene {
     maskShape.fillRect(0, viewTop, width, viewBottom - viewTop);
     this.content.setMask(maskShape.createGeometryMask());
 
-    this.scrollMin = Math.min(0, viewBottom - viewTop - y);
+    this.scroll = scrollRange(viewTop, viewBottom - viewTop, y);
     this.setupScroll(viewTop, viewBottom);
 
     new Button(this, cx, backY, '← Back', () => fadeToScene(this, 'MainMenuScene'), {
@@ -135,14 +136,14 @@ export class AchievementsScene extends Phaser.Scene {
       this.contentStartY = this.content.y;
     });
     this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
-      if (!p.isDown || this.scrollMin === 0) return;
+      if (!p.isDown || !canScroll(this.scroll)) return;
       const dy = p.y - this.dragStartY;
       if (Math.abs(dy) > DRAG_THRESHOLD) this.scrolling = true;
-      if (this.scrolling) this.content.y = Phaser.Math.Clamp(this.contentStartY + dy, this.scrollMin, 0);
+      if (this.scrolling) this.content.y = clampScroll(this.contentStartY + dy, this.scroll);
     });
     this.input.on('wheel', (_p: Phaser.Input.Pointer, _o: unknown, _dx: number, dy: number) => {
-      if (this.scrollMin === 0) return;
-      this.content.y = Phaser.Math.Clamp(this.content.y - dy, this.scrollMin, 0);
+      if (!canScroll(this.scroll)) return;
+      this.content.y = clampScroll(this.content.y - dy, this.scroll);
     });
   }
 
