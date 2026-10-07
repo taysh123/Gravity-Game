@@ -285,6 +285,10 @@ describe('levelFileStats', () => {
   it('counts level modules on disk and lists the ones index.ts no longer imports', () => {
     expect(levelFileStats(indexTs, files)).toEqual({ onDisk: 5, retired: [3, 6] });
   });
+
+  it('sorts retired numbers numerically, not in directory (lexicographic) order', () => {
+    expect(levelFileStats('', ['level100.ts', 'level13.ts', 'level9.ts']).retired).toEqual([9, 13, 100]);
+  });
 });
 
 describe('summarizeVitestReport', () => {
