@@ -18,11 +18,16 @@ import { Crash } from './utils/Crash';
 import { IAP } from './utils/IAP';
 import { sharedAudio } from './utils/AudioSynth';
 import { installBackNavigation, installLifecycle } from './platform/lifecycle';
+import { Saves } from './platform/saves';
 
+// Durable saves (D-12): start the Preferences -> localStorage hydrate before anything can read a store. BootScene
+// awaits the same promise together with the fonts, so no scene runs on unhydrated data. Web: localStorage only.
+const hydrated = Saves.hydrate();
 // Crash reporting (Crashlytics on native; global error bridge everywhere).
 Crash.init();
-// Configure RevenueCat + refresh the cached premium entitlement (native only).
-void IAP.initNative();
+// Configure RevenueCat + refresh the cached premium entitlement (native only). After hydrate, so its premium write
+// lands on hydrated data and cannot reach the mirror before migration 1 has run.
+void hydrated.then(() => IAP.initNative());
 
 const game = new Phaser.Game({
   type: Phaser.AUTO,

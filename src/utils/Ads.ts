@@ -17,6 +17,7 @@ import { Analytics } from './Analytics';
 import { rewardedShown, rewardedEarned, interstitialShown, interstitialSuppressed } from './analyticsEvents';
 import { interstitialDecision } from './interstitial';
 import type { AdMobPlugin } from './native/admob';
+import { Saves } from '../platform/saves';
 
 // Persisted cooldown — survives a reload/cold start, unlike the old in-memory
 // `let` (which reset every launch, leaving a brand-new player's first win the
@@ -35,11 +36,15 @@ function loadLastShownMs(): number {
 }
 
 let lastShownMs = loadLastShownMs();
+// Read at module load, i.e. before Saves.hydrate() settles: re-read if hydrate restores the key from the mirror.
+Saves.onRestore(COOLDOWN_KEY, () => {
+  lastShownMs = loadLastShownMs();
+});
 
 function persistLastShownMs(v: number): void {
   lastShownMs = v;
   try {
-    localStorage.setItem(COOLDOWN_KEY, JSON.stringify({ lastShownMs: v }));
+    Saves.write(COOLDOWN_KEY, JSON.stringify({ lastShownMs: v }));
   } catch {
     // storage disabled — cooldown still holds for the rest of this session
   }

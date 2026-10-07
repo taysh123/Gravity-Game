@@ -7,6 +7,7 @@ import { ProgressStore } from './ProgressStore';
 import { DailyStore } from './DailyStore';
 import { LEVELS } from '../config/levels';
 import { WORLDS } from '../config/worlds';
+import { Saves } from '../platform/saves';
 
 interface RawStats {
   deaths: number;
@@ -17,6 +18,10 @@ const KEY = 'gravity-flow:stats';
 const EMPTY: RawStats = { deaths: 0, portalJumps: 0 };
 
 let cache: RawStats | null = null;
+// Saves.hydrate() may restore this key from the Preferences mirror after an early read: drop the cache.
+Saves.onRestore(KEY, () => {
+  cache = null;
+});
 
 function load(): RawStats {
   if (cache) return cache;
@@ -31,7 +36,7 @@ function load(): RawStats {
 
 function persist(): void {
   try {
-    localStorage.setItem(KEY, JSON.stringify(cache));
+    Saves.write(KEY, JSON.stringify(cache));
   } catch {
     // storage disabled — keep in-memory
   }

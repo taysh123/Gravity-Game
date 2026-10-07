@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 7-11 (API 24-30) Auto Backup rules (D-11/D-12, P00-T13). Same two locations as
+     data_extraction_rules.xml (Android 12+); keep them identical. Pinned by src/platform/saves.test.ts. -->
+<full-backup-content>
+    <include domain="sharedpref" path="CapacitorStorage.xml" />
+    <include domain="root" path="app_webview/Default/Local Storage/" />
+</full-backup-content>

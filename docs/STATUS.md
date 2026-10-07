@@ -2,7 +2,7 @@
 
 > **The single source of truth for project state.** The Facts block is machine-generated; every other section is
 > edited by hand at the end of each task. Anything that contradicts this file is stale.
-> Last hand-edited **2026-10-07** · Position: **Step 1 complete except P00-T08 (AdMob 8.2.1 soak, deferred to >= 2026-10-13)** of the [execution order](roadmap/EXECUTION-ORDER.md); Step 2 is in progress (P00-T01 to P00-T07 and P00-T09 done).
+> Last hand-edited **2026-10-07** · Position: **Step 1 complete except P00-T08 (AdMob 8.2.1 soak, deferred to >= 2026-10-13)** of the [execution order](roadmap/EXECUTION-ORDER.md); Step 2 is in progress (P00-T01 to P00-T07, P00-T09 to P00-T11 and P00-T13 done; P00-T12 open).
 > Plan of record: [MASTER-ROADMAP](roadmap/MASTER-ROADMAP.md) · [EXECUTION-ORDER](roadmap/EXECUTION-ORDER.md) · [DECISIONS](roadmap/DECISIONS.md) (amendments override entry bodies).
 > Working title: **Gravity Flow** by True Story Labs. Package id `com.truestorylabs.gravityflow` is permanent.
 
@@ -18,7 +18,7 @@
 | Other content | 8 daily levels · 20 run chunks · 14 achievements · 28 cosmetics · 3 bundles |
 | Scenes registered | 14 |
 | Level files | 163 on disk · 13 retired (6, 22, 31, 35, 37, 39, 40, 45, 48, 55, 56, 63, 64) |
-| Tests | 38 files / 445 tests |
+| Tests | 40 files / 514 tests |
 | package.json version | 1.0.0 |
 | androidBuild | 1 |
 | Derived versionName / versionCode | 1.0.0 / 1000001 |
@@ -63,8 +63,8 @@ Regenerate with `npm run facts`; verify with `npm run facts:check` (CI runs the 
 | Data Safety form + privacy policy sign-off (drafts land in P0 Step 5) | Owner | before M2 | PENDING |
 
 ## Next 5 actions
-Step 0 complete. Step 1 complete except P00-T08 (AdMob 8.2.1 soak, deferred to >= 2026-10-13); done so far: P00-T01…T07 (CI v2, Capacitor 8.5.2 family, exact pins), P00-T09 (manifest, theme, WebView floor, system bars), P00-T10 (Back router + `PauseScene`, Endless pause button) and P00-T11 (background/foreground contract, `Haptics.pulse`); device checks pending in the M0 session. AdMob stays pinned at exactly 8.0.0 until the soak.
-1. **Step 2: P00-T12…T13** — renderer-crash recovery (T12), then the Preferences mirror, hydrate and backup rules (T13; wires `@capacitor/preferences`, installed in T07 but not yet imported). P00-T09 to T11 are done (`@capacitor/app` is wired for Back and `pause`/`resume`). P00-T16 / T19 must call `setExternalFlowActive(true|false, source)` around purchase and ad flows so they do not open the pause overlay.
+Step 0 complete. Step 1 complete except P00-T08 (AdMob 8.2.1 soak, deferred to >= 2026-10-13); done so far: P00-T01…T07 (CI v2, Capacitor 8.5.2 family, exact pins), P00-T09 (manifest, theme, WebView floor, system bars), P00-T10 (Back router + `PauseScene`, Endless pause button), P00-T11 (background/foreground contract, `Haptics.pulse`) and P00-T13 (`@capacitor/preferences` save mirror, hydrate before Boot, migration ladder, backup rules limited to the two save locations); device checks pending in the M0 session. AdMob stays pinned at exactly 8.0.0 until the soak.
+1. **Step 2: P00-T12** — renderer-crash recovery. `MainActivity` must write `platform:rendererGone` into `CapacitorStorage` as a **String** (the Preferences plugin reads with `getString`); the read/clear goes into `Saves.hydrate()` (`src/platform/saves.ts`, T13). P00-T16 appends migration 2 and P00-T22 migration 3 to `src/platform/migrations.ts`; every new persisted key must go through `Saves.write` (a source guard enforces it). P00-T16 / T19 must call `setExternalFlowActive(true|false, source)` around purchase and ad flows so they do not open the pause overlay.
 2. **P00-T08** — AdMob 8.2.1 soak commit, deferred until >= 2026-10-13.
 3. **Step 3: P00-T14…T17** — Purchases (D-09): plugin config, ids, products, license testers.
 4. **Step 4: P00-T18…T20** — Consent-first boot and ad plumbing (D-10, D-11).

@@ -16,13 +16,14 @@ import {
 } from './analyticsEvents';
 import { CosmeticStore } from './CosmeticStore';
 import type { PurchasesPlugin } from './native/revenueCat';
+import { Saves } from '../platform/saves';
 
 const PREMIUM_KEY = 'gravity-flow:premium';
 const FIRST_PURCHASE_KEY = 'gravity-flow:firstPurchase';
 
 function setCachedPremium(v: boolean): void {
   try {
-    localStorage.setItem(PREMIUM_KEY, v ? '1' : '0');
+    Saves.write(PREMIUM_KEY, v ? '1' : '0');
   } catch {
     // storage disabled — premium not persisted
   }
@@ -38,7 +39,8 @@ function trackPurchaseCompleted(product: string): void {
   Analytics.track(purchaseCompleted(product));
   try {
     if (localStorage.getItem(FIRST_PURCHASE_KEY) === '1') return;
-    localStorage.setItem(FIRST_PURCHASE_KEY, '1');
+    Saves.write(FIRST_PURCHASE_KEY, '1'); // never throws, so check the flag really persisted before trusting it
+    if (localStorage.getItem(FIRST_PURCHASE_KEY) !== '1') return;
     Analytics.track(firstPurchase(product));
   } catch {
     // storage disabled — skip first-purchase attribution

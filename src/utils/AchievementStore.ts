@@ -2,10 +2,15 @@
 // layer against a stats snapshot, persists the union, and reports what was newly
 // unlocked (so the win overlay can toast it).
 import { ACHIEVEMENTS, evaluate, type AchievementDef, type StatsSnapshot } from './achievements';
+import { Saves } from '../platform/saves';
 
 const KEY = 'gravity-flow:achievements';
 
 let cache: Set<string> | null = null;
+// Saves.hydrate() may restore this key from the Preferences mirror after an early read: drop the cache.
+Saves.onRestore(KEY, () => {
+  cache = null;
+});
 
 function load(): Set<string> {
   if (cache) return cache;
@@ -20,7 +25,7 @@ function load(): Set<string> {
 
 function persist(): void {
   try {
-    localStorage.setItem(KEY, JSON.stringify([...(cache ?? [])]));
+    Saves.write(KEY, JSON.stringify([...(cache ?? [])]));
   } catch {
     // storage disabled — keep in-memory
   }

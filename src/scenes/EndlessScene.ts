@@ -16,6 +16,7 @@ import { IconButton } from '../ui/IconButton';
 import { safeAreaInsetsScaled } from '../utils/a11y';
 import { PLATFORM } from '../config/platform.config';
 import type { Pausable, PauseAction, PauseReason } from '../platform/pausable';
+import { Saves } from '../platform/saves';
 import { generateRun, weekKey, runScore, stardustForRun } from '../utils/endless';
 import type { RunChunk } from '../config/endless/chunks';
 import { fadeToScene } from '../utils/transitions';
@@ -209,7 +210,7 @@ export class EndlessScene extends Phaser.Scene implements Pausable {
       .setScrollFactor(0)
       .setDepth(100)
       .setAlpha(0.92);
-    try { localStorage.setItem('gravity-flow:run:coached', '1'); } catch { /* storage off */ }
+    Saves.write('gravity-flow:run:coached', '1');
     this.time.delayedCall(4200, () => this.dismissCoach());
   }
 

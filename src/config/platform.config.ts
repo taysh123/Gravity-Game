@@ -67,8 +67,13 @@ export const PLATFORM = {
   // mirror lists and restores keys by this prefix.
   SAVE_PREFIX: 'gravity-flow:',
   // Kill switch for the Preferences mirror. false = stop mirroring writes and restoring on hydrate;
-  // localStorage is never removed, so progress is safe either way.
+  // localStorage is never removed, so progress is safe either way. Keys written while it is off are
+  // remembered locally, so turning it back on keeps them instead of the older mirror copies.
   SAVE_MIRROR_ENABLED: true,
+  // Upper bound on how long BootScene waits for Saves.hydrate() (src/platform/saves.ts). The target is
+  // <= 60 ms (V19); this only guards against a bridge that never answers. Past it the session runs on
+  // localStorage alone and its writes are reconciled on the next launch.
+  SAVE_HYDRATE_TIMEOUT_MS: 2500,
 
   // Frame-error guard (src/platform/frameGuard.ts): this many uncaught frame errors inside the window
   // freeze the loop and show the "Tap to restart" overlay.

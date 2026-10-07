@@ -23,6 +23,7 @@ import { grantLoginBonus } from './Rewards';
 import { Analytics } from './Analytics';
 import { streakFrozen } from './analyticsEvents';
 import { RETENTION } from '../config/retention.config';
+import { Saves } from '../platform/saves';
 
 interface StoredDaily extends DailyState {
   bestStreak: number;
@@ -46,6 +47,10 @@ const EMPTY: StoredDaily = {
 };
 
 let cache: StoredDaily | null = null;
+// Saves.hydrate() may restore this key from the Preferences mirror after an early read: drop the cache.
+Saves.onRestore(KEY, () => {
+  cache = null;
+});
 
 function load(): StoredDaily {
   if (cache) return cache;
@@ -60,7 +65,7 @@ function load(): StoredDaily {
 
 function persist(): void {
   try {
-    localStorage.setItem(KEY, JSON.stringify(cache));
+    Saves.write(KEY, JSON.stringify(cache));
   } catch {
     // storage disabled — keep in-memory
   }

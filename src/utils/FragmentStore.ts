@@ -1,9 +1,14 @@
 // Persisted premium currency (Cosmic Fragments) — localStorage. Mirrors
 // CurrencyStore (Stardust). Earned from rewarded ads, achievements, and collection
 // milestones; spent on epic/legendary/mythic cosmetics. Thin store, no manager.
+import { Saves } from '../platform/saves';
 const KEY = 'gravity-flow:fragments:v1';
 
 let cache: number | null = null;
+// Saves.hydrate() may restore this key from the Preferences mirror after an early read: drop the cache.
+Saves.onRestore(KEY, () => {
+  cache = null;
+});
 
 function load(): number {
   if (cache !== null) return cache;
@@ -18,7 +23,7 @@ function load(): number {
 
 function persist(): void {
   try {
-    localStorage.setItem(KEY, JSON.stringify(cache ?? 0));
+    Saves.write(KEY, JSON.stringify(cache ?? 0));
   } catch {
     // storage disabled — keep in-memory
   }

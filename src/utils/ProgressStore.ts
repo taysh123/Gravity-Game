@@ -1,6 +1,7 @@
 // Persisted per-level progress (localStorage). Keeps the player's best result
 // per level and drives stars, best-time, and sequential unlock. Thin store —
 // mirrors SettingsStore, not a manager.
+import { Saves } from '../platform/saves';
 
 export interface LevelProgress {
   stars: number; // 0..3 (best achieved)
@@ -22,6 +23,10 @@ const KEY = 'gravity-flow:progress:v9';
 const EMPTY: LevelProgress = { stars: 0, bestTimeMs: 0, gem: false };
 
 let cache: Record<number, LevelProgress> | null = null;
+// Saves.hydrate() may restore this key from the Preferences mirror after an early read: drop the cache.
+Saves.onRestore(KEY, () => {
+  cache = null;
+});
 
 function load(): Record<number, LevelProgress> {
   if (cache) return cache;
@@ -36,7 +41,7 @@ function load(): Record<number, LevelProgress> {
 
 function persist(): void {
   try {
-    localStorage.setItem(KEY, JSON.stringify(cache));
+    Saves.write(KEY, JSON.stringify(cache));
   } catch {
     // storage disabled — keep in-memory
   }

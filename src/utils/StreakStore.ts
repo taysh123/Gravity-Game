@@ -3,6 +3,7 @@
 // (pure, tested). Broken ONLY by a death (GameScene.triggerDeath) — a manual
 // restart (R key / nav) or leaving a level is a player choice, not a loss, and
 // must never call reset().
+import { Saves } from '../platform/saves';
 const KEY = 'gravity-flow:streak:v1';
 
 interface StoredStreak {
@@ -13,6 +14,10 @@ interface StoredStreak {
 const EMPTY: StoredStreak = { current: 0, best: 0 };
 
 let cache: StoredStreak | null = null;
+// Saves.hydrate() may restore this key from the Preferences mirror after an early read: drop the cache.
+Saves.onRestore(KEY, () => {
+  cache = null;
+});
 
 function load(): StoredStreak {
   if (cache) return cache;
@@ -27,7 +32,7 @@ function load(): StoredStreak {
 
 function persist(): void {
   try {
-    localStorage.setItem(KEY, JSON.stringify(cache));
+    Saves.write(KEY, JSON.stringify(cache));
   } catch {
     // storage disabled — keep in-memory
   }

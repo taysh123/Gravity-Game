@@ -2,6 +2,21 @@ import Phaser from 'phaser';
 import { IMAGES } from '../config/assets';
 import { Analytics } from '../utils/Analytics';
 import { sessionStart } from '../utils/analyticsEvents';
+import { Saves } from '../platform/saves';
+
+// V19: the boot time hydrate ADDS, i.e. how long Boot still waited for it after
+// the fonts were ready (about 0 when hydrate settled first). A User Timing entry
+// in every build (chrome://inspect on a device:
+// performance.getEntriesByName('boot:saves-wait')), a console line in dev only.
+function traceSavesWait(fontsAt: number): void {
+  const waited = Math.max(0, performance.now() - fontsAt);
+  try {
+    performance.measure('boot:saves-wait', { start: fontsAt, duration: waited });
+  } catch {
+    // User Timing unavailable: diagnostics only
+  }
+  if (import.meta.env.DEV) console.info(`[saves] boot waited ${waited.toFixed(1)} ms for hydrate after the fonts`);
+}
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -20,8 +35,15 @@ export class BootScene extends Phaser.Scene {
     this.generateSparkTexture();
     this.generateGlowTexture();
     // Wait for the custom fonts so the first text rendered to canvas isn't a
-    // fallback (canvas text doesn't re-render on late font load).
-    this.loadFonts().then(() => this.scene.start('CompanySplashScene'));
+    // fallback (canvas text doesn't re-render on late font load), and for the
+    // save hydrate main.ts started (D-12): every store reads localStorage
+    // synchronously, so it must hold the restored data before any menu reads it.
+    // Neither promise rejects; the catch is belt-and-braces so Boot always ends.
+    const fontsReady = this.loadFonts().then(() => performance.now());
+    void Promise.all([fontsReady, Saves.hydrate()])
+      .then(([fontsAt]) => traceSavesWait(fontsAt))
+      .catch(() => undefined)
+      .then(() => this.scene.start('CompanySplashScene'));
   }
 
   private async loadFonts(): Promise<void> {

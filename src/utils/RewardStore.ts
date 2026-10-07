@@ -1,5 +1,6 @@
 // Tracks once-per-day rewarded claims (e.g. free Fragments) so opt-in rewards can
 // be daily-capped. Thin store, localStorage, keyed by reward name -> claim date.
+import { Saves } from '../platform/saves';
 const KEY = 'gravity-flow:rewards:v1';
 
 function todayKey(now: Date = new Date()): string {
@@ -7,6 +8,10 @@ function todayKey(now: Date = new Date()): string {
 }
 
 let cache: Record<string, string> | null = null;
+// Saves.hydrate() may restore this key from the Preferences mirror after an early read: drop the cache.
+Saves.onRestore(KEY, () => {
+  cache = null;
+});
 
 function load(): Record<string, string> {
   if (cache) return cache;
@@ -21,7 +26,7 @@ function load(): Record<string, string> {
 
 function persist(): void {
   try {
-    localStorage.setItem(KEY, JSON.stringify(cache));
+    Saves.write(KEY, JSON.stringify(cache));
   } catch {
     // storage disabled — keep in-memory
   }

@@ -2,8 +2,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Backup (D-11/D-12): Auto Backup and device transfer carry only the saves, i.e. the Preferences mirror
+         (CapacitorStorage.xml) and the WebView's localStorage, never third-party SDK ids. dataExtractionRules is
+         read on Android 12+ (API 31+), fullBackupContent on Android 7-11 (API 24-30). -->
     <application
         android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
         android:appCategory="game"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"

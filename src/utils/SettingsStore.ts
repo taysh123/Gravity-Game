@@ -1,5 +1,6 @@
 // Lightweight persisted user settings (localStorage). Single source of truth
 // for sound/music/haptics/motion across scenes. No framework, no deps.
+import { Saves } from '../platform/saves';
 
 export type MotionPref = 'system' | 'on' | 'off';
 
@@ -24,6 +25,10 @@ const DEFAULTS: Settings = {
 };
 
 let cache: Settings | null = null;
+// Saves.hydrate() may restore this key from the Preferences mirror after an early read: drop the cache.
+Saves.onRestore(KEY, () => {
+  cache = null;
+});
 
 function load(): Settings {
   if (cache) return cache;
@@ -38,7 +43,7 @@ function load(): Settings {
 
 function persist(): void {
   try {
-    localStorage.setItem(KEY, JSON.stringify(cache));
+    Saves.write(KEY, JSON.stringify(cache));
   } catch {
     // Private mode / storage disabled — keep the in-memory cache.
   }

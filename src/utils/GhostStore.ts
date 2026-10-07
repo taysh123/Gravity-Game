@@ -3,10 +3,15 @@
 // mastery feedback that fuels the 3-star / one-more-try loop. Thin store, mirrors
 // ProgressStore (not a manager).
 import type { PathPoint } from './ghost';
+import { Saves } from '../platform/saves';
 
 const KEY = 'gravity-flow:ghost:v1';
 
 let cache: Record<number, PathPoint[]> | null = null;
+// Saves.hydrate() may restore this key from the Preferences mirror after an early read: drop the cache.
+Saves.onRestore(KEY, () => {
+  cache = null;
+});
 
 function load(): Record<number, PathPoint[]> {
   if (cache) return cache;
@@ -21,7 +26,7 @@ function load(): Record<number, PathPoint[]> {
 
 function persist(): void {
   try {
-    localStorage.setItem(KEY, JSON.stringify(cache));
+    Saves.write(KEY, JSON.stringify(cache));
   } catch {
     // storage disabled — keep in-memory
   }

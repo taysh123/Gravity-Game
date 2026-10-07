@@ -38,6 +38,7 @@ import { downsamplePath } from '../utils/ghost';
 import { Analytics } from '../utils/Analytics';
 import { Crash } from '../utils/Crash';
 import { CosmeticStore } from '../utils/CosmeticStore';
+import { Saves } from '../platform/saves';
 import { COSMETICS, type ArrivalStyle } from '../utils/cosmetics';
 import { purchaseCost } from '../utils/cosmeticsLogic';
 import { canAffordAnyUnowned, nudgeDue } from '../utils/storeNudge';
@@ -102,7 +103,7 @@ function loadWinsSinceStoreNudge(): number {
 }
 function persistWinsSinceStoreNudge(n: number): void {
   try {
-    localStorage.setItem(STORE_NUDGE_KEY, JSON.stringify(n));
+    Saves.write(STORE_NUDGE_KEY, JSON.stringify(n));
   } catch {
     // storage disabled — cooldown just resets each session; never blocks gameplay
   }

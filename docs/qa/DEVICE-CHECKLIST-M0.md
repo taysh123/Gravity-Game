@@ -105,8 +105,10 @@ Run each row twice: Android 16 **gesture** navigation and **3-button** navigatio
 
 | ID | Scenario | Expected | Ref | Result | Date | Notes |
 |---|---|---|---|---|---|---|
-| S1 | Play to some progress, `adb shell bmgr backupnow com.truestorylabs.gravityflow`, uninstall, reinstall | Progress, stars and settings are restored | D-12 | | | |
-| S2 | Cold start with existing progress | Menu appears with no visible delay; hydrate cost is at most 60 ms in a debug build (V19) | D-12 | | | |
+| S1 | Play to some progress (stars, Stardust, a setting changed), `adb shell bmgr backupnow com.truestorylabs.gravityflow`, uninstall, reinstall | Progress, stars, Stardust and settings are restored. Before uninstalling, `adb shell run-as com.truestorylabs.gravityflow ls -R app_webview shared_prefs` shows `app_webview/Default/Local Storage/leveldb` and `shared_prefs/CapacitorStorage.xml` (the two paths the backup rules include) | D-12 | | | |
+| S2 | Cold start with existing progress, debug build, `chrome://inspect` console | Menu appears with no visible delay. `performance.getEntriesByName('boot:saves-wait')[0].duration` (boot time hydrate adds after the fonts) is at most 60 ms (V19); also note `saves:hydrate` (wall time from `main.ts`, overlaps Phaser start-up). Repeat on the lowest-end device available | D-12 | | | |
+| S3 | WebView storage loss: with progress saved, clear only the WebView data (`adb shell am force-stop com.truestorylabs.gravityflow`, then `adb shell run-as com.truestorylabs.gravityflow rm -r app_webview`), then relaunch | Progress, stars and settings are back on the first frame of the menu (restored from `CapacitorStorage.xml`); a second relaunch is unchanged | D-12 | | | |
+| S4 | Upgrade path: install the previous build (before P00-T13), play some progress, install this build over it, launch, then repeat S3 | After the upgrade nothing is lost; `run-as ... cat shared_prefs/CapacitorStorage.xml` lists the `gravity-flow:*` keys and `gravity-flow:save:migratedV1`; S3 then restores everything | D-12 | | | |
 
 ## R: Renderer and WebView
 
@@ -130,6 +132,6 @@ Run each row twice: Android 16 **gesture** navigation and **3-button** navigatio
 - [ ] P1-P15 pass (V14)
 - [ ] A1-A5 pass (V15)
 - [ ] B, G and H rows pass on gesture and 3-button navigation (V16)
-- [ ] S1 passes (V17)
+- [ ] S1, S3 and S4 pass (V17); S2 recorded (V19)
 - [ ] R1 passes (V18)
 - [ ] Results copied to the *Gates* table in [`docs/STATUS.md`](../STATUS.md)

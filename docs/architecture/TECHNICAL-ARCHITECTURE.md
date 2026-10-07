@@ -178,11 +178,11 @@ export function stateHash(s: { x: number; y: number; vx: number; vy: number; ang
 
 ### 4.2 Platform (`src/platform/`, P0)
 ```ts
-export interface KV { get(k: string): string | null; set(k: string, v: string): void; remove(k: string): void }
+export interface KV { get(k: string): string | null; set(k: string, v: string): void; remove(k: string): void; keys(): string[] }
 export interface AsyncKV { get(k: string): Promise<string | null>; set(k: string, v: string): Promise<void>; keys(): Promise<string[]> }
-export const Saves: { hydrate(): Promise<HydrateReport>; read(k: string): string | null; write(k: string, v: string): void };
+export const Saves: { hydrate(): Promise<HydrateReport>; write(k: string, v: string): void; onRestore(k: string, reset: () => void): void }; // as built in P00-T13 (src/platform/saves.ts); read(k) arrives with decodeStore (T22) if needed
 export function decodeStore<T>(raw: string | null, bak: string | null, validate: (x: unknown) => x is T, fallback: T): { value: T; source: 'primary' | 'backup' | 'default'; corrupt: boolean };
-export function runMigrations(kv: KV, from: number): number;               // ordered, idempotent ladder
+export function runMigrations(ctx: MigrationContext, from: number): Promise<number>; // ordered, idempotent ladder; async because migration 1 copies into the mirror (P00-T13)
 export type BackAction = { type: 'closeOverlay' | 'pause' | 'resume'; key: string } | { type: 'toScene'; key: string } | { type: 'system' } | { type: 'none' };
 export function routeBack(s: { overlay: string | null; active: string; gameplayEnded: boolean; parents: Record<string, string> }): BackAction;
 export function lifecycleDecision(e: LifecycleInput): { pauseGameplay: boolean; audio: 'suspend' | 'resume' | 'keep'; refreshScale: boolean };

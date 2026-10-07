@@ -1,6 +1,8 @@
 // Leaderboard-ready architecture. Daily results are recorded in a structured form
 // behind this interface; the local impl persists to localStorage now, and Sprint 2+
 // can swap in Google Play Games Services / a backend without touching callers.
+import { Saves } from '../platform/saves';
+
 export interface DailyResult {
   date: string; // YYYY-MM-DD
   index: number; // which curated daily level
@@ -44,7 +46,7 @@ export const Leaderboard = {
       all.push(r);
     }
     try {
-      localStorage.setItem(KEY, JSON.stringify(all));
+      Saves.write(KEY, JSON.stringify(all));
     } catch {
       // storage disabled — keep nothing
     }
@@ -67,7 +69,7 @@ export const Leaderboard = {
     } else {
       all.push(r);
     }
-    try { localStorage.setItem(RUN_KEY, JSON.stringify(all)); } catch { /* storage off */ }
+    try { Saves.write(RUN_KEY, JSON.stringify(all)); } catch { /* storage off */ }
     return this.bestRun(r.week);
   },
 
@@ -85,7 +87,7 @@ export const Leaderboard = {
   submitEndless(score: number): number {
     const best = this.bestEndless();
     if (score > best) {
-      try { localStorage.setItem(ENDLESS_KEY, String(score)); } catch { /* storage off */ }
+      try { Saves.write(ENDLESS_KEY, String(score)); } catch { /* storage off */ }
       return score;
     }
     return best;

@@ -5,6 +5,7 @@ import { cosmeticById, cosmeticOr, DEFAULT_IDS, type Cosmetic, type Category } f
 import { purchaseCost } from './cosmeticsLogic';
 import { CurrencyStore } from './CurrencyStore';
 import { FragmentStore } from './FragmentStore';
+import { Saves } from '../platform/saves';
 
 interface StoredCosmetics {
   owned: string[];
@@ -22,6 +23,10 @@ function fresh(): StoredCosmetics {
 }
 
 let cache: StoredCosmetics | null = null;
+// Saves.hydrate() may restore this key from the Preferences mirror after an early read: drop the cache.
+Saves.onRestore(KEY, () => {
+  cache = null;
+});
 
 // Migrate the v1 save ({ owned: string[], equipped: string }) into v2 — keep all
 // previously-owned skins + the equipped skin; seed the default trail + arrival.
@@ -62,7 +67,7 @@ function load(): StoredCosmetics {
 
 function persist(): void {
   try {
-    localStorage.setItem(KEY, JSON.stringify(cache));
+    Saves.write(KEY, JSON.stringify(cache));
   } catch {
     // storage disabled — keep in-memory
   }
