@@ -11,13 +11,15 @@
 // Consent is never cached by the app (Google guidance): every launch asks again, and current() is only the last answer of this
 // session. Nothing here throws: any failure (plugin missing, network, no form configured) is "all denied". Both forms raise the
 // external-flow flag (src/platform/externalFlow.ts) for their duration and clear it in `finally`, because Android pauses the
-// Activity while a native sheet is up and that must not open the game's Pause overlay.
+// Activity while a native sheet is up and that must not open the game's Pause overlay. A watchdog (CONSENT.FORM_WATCHDOG_MS) also
+// clears the consent source if a form never settles, so a hung form cannot hold the flag up for the whole session.
 //
 // The AdMob plugin object is a thenable Capacitor proxy: it is only ever held in a variable and called, never returned from an
 // async function (loadAdMob resolves the module namespace, which holds it as a property).
 import { Capacitor } from '@capacitor/core';
 import { CONSENT, UMP_DEBUG } from '../config/consent.config';
 import { setExternalFlowActive } from '../platform/externalFlow';
+import { Crash } from './Crash';
 import { CONSENT_DENIED, outcomeFromUmp, type ConsentOutcome, type TcfSignals } from './consentState';
 import type { AdMobConsentInfo, AdMobConsentRequestOptions, AdMobPlugin } from './native/admob';
 
@@ -33,6 +35,8 @@ export interface ConsentDeps {
   // Debug-only overrides (VITE_UMP_DEBUG_GEOGRAPHY / VITE_UMP_TEST_DEVICE_IDS). Empty in a normal build.
   debug: { readonly geography: number | undefined; readonly testDeviceIds: readonly string[] };
   setExternalFlow(active: boolean, source: string): void;
+  // Breadcrumb sink for the form watchdog (Crash.log in the app). Optional; a throwing sink is ignored.
+  log?(message: string): void;
 }
 
 export interface ConsentSeam {
@@ -52,12 +56,23 @@ export function createConsent(deps: ConsentDeps): ConsentSeam {
     return options;
   }
 
-  // Runs one native sheet with the external-flow flag up, and clears it however the sheet ends.
+  // Runs one native sheet with the external-flow flag up, and clears it however the sheet ends. If the sheet has not settled after
+  // CONSENT.FORM_WATCHDOG_MS the watchdog clears ONLY the consent source (another flow's source stays) and leaves a breadcrumb;
+  // the sheet's promise keeps running, so a late answer is still used and its own clear in `finally` is harmless.
   async function inSheet<T>(show: () => Promise<T>): Promise<T> {
     deps.setExternalFlow(true, CONSENT.EXTERNAL_FLOW_SOURCE);
+    const watchdog = setTimeout(() => {
+      deps.setExternalFlow(false, CONSENT.EXTERNAL_FLOW_SOURCE);
+      try {
+        deps.log?.(`consent: native form still pending after ${CONSENT.FORM_WATCHDOG_MS} ms, external-flow flag cleared`);
+      } catch {
+        // a breadcrumb must never break consent
+      }
+    }, CONSENT.FORM_WATCHDOG_MS);
     try {
       return await show();
     } finally {
+      clearTimeout(watchdog);
       deps.setExternalFlow(false, CONSENT.EXTERNAL_FLOW_SOURCE);
     }
   }
@@ -137,4 +152,5 @@ export const Consent: ConsentSeam = createConsent({
   },
   debug: UMP_DEBUG,
   setExternalFlow: setExternalFlowActive,
+  log: (message) => Crash.log(message),
 });

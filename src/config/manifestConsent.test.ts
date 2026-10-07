@@ -1,10 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-// P00-T18 / D-10: the source half of V10. Firebase must start with every Consent Mode default denied, automatic screen reporting off
-// and Crashlytics collection off, so that nothing is stored or sent before bootServices has the UMP outcome. The merged manifest
-// (what Gradle really ships) is checked by hand per docs/roadmap/phases/P00-foundation.md V10; this pins the source it merges from.
+// P00-T18 / D-10: the source half of V10. A fresh install must start with every Consent Mode default denied, automatic screen
+// reporting off and Crashlytics collection off, so that nothing is stored or sent on the first launch before bootServices has the UMP
+// outcome. These are first-launch defaults only: Firebase consent and the Crashlytics switch are persisted by the SDKs and override
+// them on later launches (TECHNICAL-ARCHITECTURE 4.3). The merged manifest (what Gradle really ships) is checked by hand per
+// docs/roadmap/phases/P00-foundation.md V10; this pins the source it merges from.
+// com.google.android.gms.ads.DELAY_APP_MEASUREMENT_INIT is deliberately absent (obsolete since Mobile Ads SDK 18.1.0; see the manifest).
 
 const read = (rel: string): string => readFileSync(fileURLToPath(new URL(`../../${rel}`, import.meta.url)), 'utf8');
 const manifest = read('android/app/src/main/AndroidManifest.xml').replace(/<!--[\s\S]*?-->/g, ''); // comments never count
@@ -60,10 +64,12 @@ describe('consent-first wiring (source guards)', () => {
     expect(consent).not.toMatch(/tagForChildDirectedTreatment|tagForUnderAgeOfConsent/);
   });
 
-  it('Crash.ts enables collection only inside enable()', () => {
+  it('Crash.ts changes collection only through enable() and disable()', () => {
     const crash = read('src/services/Crash.ts').replace(/\/\/.*$/gm, '');
     expect(crash.match(/\.setEnabled\(/g) ?? []).toHaveLength(1); // the type declaration of setEnabled has no leading dot
-    expect(/enable\(\): void \{[\s\S]*?setEnabled\(\{ enabled: true \}\)/.test(crash)).toBe(true);
+    expect(crash.match(/setCollection\(/g) ?? []).toHaveLength(3); // its definition, enable() and disable(): nothing else calls it
+    expect(/enable\(\): void \{\s*setCollection\(true\);/.test(crash)).toBe(true);
+    expect(/disable\(\): void \{\s*setCollection\(false\);/.test(crash)).toBe(true);
   });
 
   // The native half of the real consent answer (see consentState.ts: canRequestAds is also true after "Do not consent").
@@ -86,9 +92,49 @@ describe('consent-first wiring (source guards)', () => {
     expect(read('src/services/consentState.ts')).toMatch(/IABTCF_PurposeConsents/);
   });
 
-  it('only bootServices.ts, Settings and the Consent module touch the consent calls', () => {
-    const settings = read('src/scenes/SettingsScene.ts');
-    expect(settings).toMatch(/openPrivacyChoices/);
-    expect(settings).not.toMatch(/showPrivacyOptionsForm|requestConsentInfo/); // it goes through bootServices.openPrivacyChoices
+  // The name is the claim: every consent API is reached from the files listed and nowhere else under src/ (tests excluded, comments
+  // stripped). A new caller means a new decision, so it has to be added here on purpose.
+  describe('only the allowed files touch the consent calls', () => {
+    const srcRoot = fileURLToPath(new URL('../', import.meta.url));
+    const sources = (readdirSync(srcRoot, { recursive: true }) as string[])
+      .map((f) => f.replace(/\\/g, '/'))
+      .filter((f) => f.endsWith('.ts') && !f.endsWith('.test.ts') && !f.endsWith('.d.ts'))
+      .map((file) => ({
+        file,
+        code: readFileSync(join(srcRoot, file), 'utf8')
+          .replace(/\/\*[\s\S]*?\*\//g, '')
+          .replace(/(^|\s)\/\/.*$/gm, '$1'),
+      }));
+    const filesUsing = (pattern: RegExp): string[] => sources.filter((s) => pattern.test(s.code)).map((s) => s.file).sort();
+
+    const RULES: Array<{ what: string; pattern: RegExp; allowed: string[]; mustInclude: string }> = [
+      { what: 'the UMP calls (requestConsentInfo, showConsentForm, showPrivacyOptionsForm)', pattern: /\b(requestConsentInfo|showConsentForm|showPrivacyOptionsForm)\b/, allowed: ['services/Consent.ts', 'services/native/admob.ts'], mustInclude: 'services/Consent.ts' },
+      { what: 'the Firebase Consent Mode write (setConsent)', pattern: /\bsetConsent\b/, allowed: ['services/Analytics.ts', 'services/native/firebaseAnalytics.ts'], mustInclude: 'services/Analytics.ts' },
+      { what: 'Analytics.applyConsent', pattern: /\bapplyConsent\b/, allowed: ['services/Analytics.ts', 'services/bootServices.ts'], mustInclude: 'services/bootServices.ts' },
+      { what: 'the native TCF read (ConsentSignals / getTcf)', pattern: /\b(ConsentSignals|getTcf)\b/, allowed: ['services/Consent.ts', 'services/native/consentSignals.ts'], mustInclude: 'services/Consent.ts' },
+      { what: 'openPrivacyChoices', pattern: /\bopenPrivacyChoices\b/, allowed: ['scenes/SettingsScene.ts', 'services/bootServices.ts'], mustInclude: 'scenes/SettingsScene.ts' },
+      { what: 'Consent.resolve / Consent.showPrivacyOptions (the seam methods)', pattern: /\b[Cc]onsent\.(resolve|showPrivacyOptions)\b/, allowed: ['services/bootServices.ts'], mustInclude: 'services/bootServices.ts' },
+      { what: 'importing the Consent seam', pattern: /from '[^']*\/Consent'/, allowed: ['scenes/SettingsScene.ts', 'services/bootServices.ts'], mustInclude: 'services/bootServices.ts' },
+    ];
+
+    for (const rule of RULES) {
+      it(`${rule.what}: ${rule.allowed.join(', ')} only`, () => {
+        const hits = filesUsing(rule.pattern);
+        expect(hits).toContain(rule.mustInclude); // the scan is not vacuous
+        expect(hits.filter((f) => !rule.allowed.includes(f))).toEqual([]);
+      });
+    }
+
+    it('Settings reaches the consent flow only through openPrivacyChoices, and reads the answer with Consent.current() alone', () => {
+      const settings = sources.find((s) => s.file === 'scenes/SettingsScene.ts')?.code ?? '';
+      expect(settings).toMatch(/\bopenPrivacyChoices\(/);
+      expect(settings).toMatch(/\bConsent\.current\(/);
+      expect(settings).not.toMatch(/\bConsent\.(?!current\b)\w+/);
+    });
+
+    it('the scan sees the whole tree (a guard against an empty or mis-rooted readdir)', () => {
+      expect(sources.length).toBeGreaterThan(50);
+      expect(sources.some((s) => s.file === 'scenes/GameScene.ts')).toBe(true);
+    });
   });
 });

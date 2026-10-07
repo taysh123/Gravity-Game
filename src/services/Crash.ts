@@ -9,9 +9,12 @@
 // Promise.resolve it) — that would invoke proxy.then -> "not implemented on android".
 // `ensure()` therefore resolves to a boolean; callers use the module-scoped `plugin`.
 //
-// Consent-first (D-10.5): the manifest sets firebase_crashlytics_collection_enabled=false, so Crashlytics keeps what it records on
-// the device and sends nothing. Loading the plugin (init, log, recordError) never changes that. Only enable() turns collection on;
-// bootServices calls it once consent has resolved, whatever the outcome (the legal check on that default is a STATUS gate).
+// Collection switch (D-10.5). The manifest sets firebase_crashlytics_collection_enabled=false, which is the default of a FRESH
+// install only: setCrashlyticsCollectionEnabled() is persisted by Crashlytics (DataCollectionArbiter, SharedPreferences) and takes
+// precedence over the manifest, so once enable() has run, collection is already on at process start from the next launch, before
+// UMP has answered. Loading the plugin (init, log, recordError) never changes collection. enable() / disable() are the only
+// switches; bootServices calls enable() once consent has resolved, whatever the outcome, and disable() only when
+// CRASH_REQUIRES_ANALYTICS_CONSENT is on and analytics_storage is denied (the legal check on that default is a STATUS gate).
 import { Capacitor } from '@capacitor/core';
 
 type Crashlytics = {
@@ -22,12 +25,13 @@ type Crashlytics = {
 
 let plugin: Crashlytics | null = null;
 let ready: Promise<boolean> | null = null;
-let enableRequested = false;
+// The last collection state asked for in this session (null = nothing asked yet). A repeat of the same state is not sent again.
+let collection: boolean | null = null;
 
 // Resolves true once the native plugin is available. Does NOT return the proxy.
 // The in-flight promise is memoized, so every caller (init, log, recordError, enable) waits on the same load instead of
-// seeing a half-initialised `plugin === null` and dropping its report. A failed load is not retried. It does NOT enable
-// collection: that is enable()'s job, after consent.
+// seeing a half-initialised `plugin === null` and dropping its report. A failed load is not retried. It does NOT change
+// collection: that is enable() / disable()'s job, after consent.
 function ensure(): Promise<boolean> {
   if (!ready) {
     ready = (async () => {
@@ -43,6 +47,17 @@ function ensure(): Promise<boolean> {
   return ready;
 }
 
+function setCollection(on: boolean): void {
+  if (!Capacitor.isNativePlatform() || collection === on) return;
+  collection = on;
+  void ensure().then((ok) => {
+    if (!ok) return;
+    plugin?.setEnabled({ enabled: on }).catch(() => {
+      if (collection === on) collection = null; // not applied: let the next call retry
+    });
+  });
+}
+
 export const Crash = {
   init(): void {
     if (Capacitor.isNativePlatform()) void ensure();
@@ -56,14 +71,18 @@ export const Crash = {
     }
   },
 
-  // Turns Crashlytics collection on (D-10.5). Called by bootServices after consent has resolved, in every outcome. Idempotent: the
-  // native call is made once. Never throws; a native failure leaves collection off (the manifest default).
+  // Turns Crashlytics collection on (D-10.5). Called by bootServices after consent has resolved, in every outcome. Single-flight per
+  // state: a repeat of the same state makes no second native call. Never throws; a failed native call is forgotten so the next
+  // call tries again (the value Crashlytics holds is then whatever an earlier launch persisted).
   enable(): void {
-    if (!Capacitor.isNativePlatform() || enableRequested) return;
-    enableRequested = true;
-    void ensure().then((ok) => {
-      if (ok) plugin?.setEnabled({ enabled: true }).catch(() => {});
-    });
+    setCollection(true);
+  },
+
+  // Turns Crashlytics collection off. The off-switch for CRASH_REQUIRES_ANALYTICS_CONSENT: bootServices / Privacy choices call it
+  // when analytics_storage is denied. Sent even if enable() never ran this session, because an earlier launch may have persisted
+  // "on". Same guarantees as enable(): single-flight per state, never throws.
+  disable(): void {
+    setCollection(false);
   },
 
   log(message: string): void {

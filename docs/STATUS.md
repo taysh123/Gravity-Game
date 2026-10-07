@@ -18,7 +18,7 @@
 | Other content | 8 daily levels · 20 run chunks · 14 achievements · 28 cosmetics · 3 bundles |
 | Scenes registered | 14 |
 | Level files | 163 on disk · 13 retired (6, 22, 31, 35, 37, 39, 40, 45, 48, 55, 56, 63, 64) |
-| Tests | 57 files / 1008 tests |
+| Tests | 57 files / 1059 tests |
 | package.json version | 1.0.0 |
 | androidBuild | 1 |
 | Derived versionName / versionCode | 1.0.0 / 1000001 |
@@ -57,7 +57,7 @@ Regenerate with `npm run facts`; verify with `npm run facts:check` (CI runs the 
 | AdMob and RevenueCat dashboards ([MONETIZATION A.14](design/MONETIZATION.md), [audit](launch/EXTERNAL-SERVICES-AUDIT.md)). RevenueCat, needed before any purchase can work: the 4 Play products imported and each set to **Non-consumable**; entitlements `no_ads`, `pack_starter`, `pack_premium_collection`, `pack_founders` attached exactly per A.2; offering `default` set as **Current** with packages `remove_ads`, `starter`, `premium_collection`, `founders`; service credentials + RTDN; license testers; the **public `goog_` SDK key** in `REVENUECAT.apiKey` (empty today, so IAP stays "unconfigured" on device) | Owner | before M0 device purchase/ad tests | UNKNOWN |
 | **Naming decision** (D-19, USER-GATED): pick from [NAMING-STUDY](launch/NAMING-STUDY.md) + trademark knockout; gates production, not the closed test (A-14) | Owner | before M2 | PENDING |
 | `FORCE_SCALE` on-device A/B (1.0 / 1.5 / 2.08 / 2.2; provisional 2.08, A-19) | Owner | before M0 | PENDING |
-| **Crashlytics-without-consent legal check** (D-10.5): `Crash.enable()` runs after consent resolves in EVERY outcome, including when the player refused analytics in the EEA (the manifest keeps collection off until then). Confirm that is lawful for crash diagnostics, or switch it to follow the analytics choice (a one-line change in `src/services/bootServices.ts`) | Owner | before M0 upload | PENDING |
+| **Crashlytics collection without consent** (D-10.5) — owner legal check. Today collection is enabled in every consent outcome; the enable is persisted by Crashlytics, so from the second launch collection is on at process start. If the check requires consent, set `CRASH_REQUIRES_ANALYTICS_CONSENT = true` in `src/config/consent.config.ts`: a denied outcome then calls `Crash.disable()` and collection follows the player's last choice from the next launch. | Owner | before M0 upload | PENDING |
 | Confirm dropping the stale git stash `stash@{0}` ("abandoned sprint4 wip", 2026-05-31) with `git stash drop stash@{0}` (P00-T04; not dropped, needs owner OK) | Owner | any time | PENDING |
 | Age Signals plugin scheduled (D-25; CA AB 1043 starts 2027-01-01) | Claude + Owner | 2026-12-15 | SCHEDULED |
 | Data Safety form + privacy policy sign-off (drafts land in P0 Step 5) | Owner | before M2 | PENDING |

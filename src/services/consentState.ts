@@ -70,9 +70,11 @@ function uniform(grant: ConsentGrant, canRequestAds: boolean, privacyOptionsRequ
   };
 }
 
-// TCF purposes (1-based) -> the four Consent Mode types, per Google's TCF / Consent Mode mapping (the four purposes the Firebase
-// SDK itself logs as AuthorizePurpose1 / 3 / 4 / 7): storage = 1, ad_user_data = 1 and 7, ad_personalization = 1, 3 and 4. Every
-// type needs purpose 1 (store and/or access information on a device).
+// TCF purposes (1-based) -> the four Consent Mode types (DECISIONS A-25). Google's published mapping is: P1 -> ad_storage and
+// ad_user_data, P7 -> ad_user_data, P3 and P4 -> ad_personalization (the Firebase SDK itself logs AuthorizePurpose1 / 3 / 4 / 7).
+// Two requirements go beyond Google and are this project's stricter choice: ad_personalization also needs P1, and analytics_storage,
+// which Google does not map, needs P1 (store and/or access information on a device, ePrivacy Art. 5(3)). So here: analytics and
+// ad_storage = P1; ad_user_data = P1 and P7; ad_personalization = P1, P3 and P4.
 function purpose(purposeConsents: string, n: number): boolean {
   return purposeConsents.charAt(n - 1) === '1';
 }

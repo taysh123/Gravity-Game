@@ -27,11 +27,18 @@
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-3940256099942544~3347511713" />
 
-        <!-- Consent-first Firebase (D-10, P00-T18). Firebase starts with every Consent Mode default DENIED, with automatic screen
-             reporting off and with Crashlytics collection off, so nothing is stored, linked or sent before the app has the UMP
-             outcome. src/services/bootServices.ts then writes the four consent types (Analytics.applyConsent) and turns
-             Crashlytics collection on (Crash.enable, whatever the outcome: D-10.5, pending the legal check in docs/STATUS.md).
-             src/config/manifestConsent.test.ts pins all six values; the merged manifest is checked by V10. -->
+        <!-- Consent-first Firebase (D-10, P00-T18). These are the defaults of a FRESH install: Firebase starts with every Consent
+             Mode default DENIED, with automatic screen reporting off and with Crashlytics collection off, so on the first launch
+             nothing is stored, linked or sent before the app has the UMP outcome. They are NOT a guarantee on later launches: the
+             Firebase setConsent values and the Crashlytics setEnabled value are persisted by the SDKs and take precedence over these
+             defaults, so from the second launch the last explicit choice applies at process start until UMP answers again.
+             src/services/bootServices.ts writes the four consent types (Analytics.applyConsent) and sets Crashlytics collection
+             (Crash.enable in every outcome: D-10.5, pending the legal check in docs/STATUS.md; Crash.disable instead when
+             CRASH_REQUIRES_ANALYTICS_CONSENT is on). src/config/manifestConsent.test.ts pins all six values; the merged manifest is
+             checked by V10.
+             Deliberately not added: com.google.android.gms.ads.DELAY_APP_MEASUREMENT_INIT. It is a Mobile Ads SDK 18.1.0 (2019) flag
+             that SDK 24.x no longer reads (the string is absent from the 24.9.0 artifacts, and Google's Mobile Ads SDK forum advisor
+             confirmed on 2025-04-10 that it is not supported), so it would only look like a guard. -->
         <meta-data android:name="google_analytics_default_allow_analytics_storage" android:value="false" />
         <meta-data android:name="google_analytics_default_allow_ad_storage" android:value="false" />
         <meta-data android:name="google_analytics_default_allow_ad_user_data" android:value="false" />

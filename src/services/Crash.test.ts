@@ -4,8 +4,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 // 1. The boot race: a report made while the plugin is still loading must be delivered once it is ready, not dropped. This matters
 //    most for the earliest reports (the renderer-gone marker is already cleared by the time it is reported, so a lost report is
 //    lost for good).
-// 2. Consent-first (D-10.5): the manifest keeps Crashlytics collection OFF, init() never turns it on, and only enable() (called
-//    by bootServices once consent has resolved, whatever the outcome) does, exactly once.
+// 2. Collection switch (D-10.5): the manifest default is OFF for a fresh install, init() never changes it, and only enable() /
+//    disable() do, each making one native call per state change. Crashlytics PERSISTS the last setEnabled value and it overrides
+//    the manifest, so from the second launch the persisted value is what applies at process start; disable() is the off-switch
+//    bootServices uses when CRASH_REQUIRES_ANALYTICS_CONSENT is on and the outcome denies analytics_storage.
 
 type Deferred = { promise: Promise<void>; resolve: () => void; reject: (e: Error) => void };
 
@@ -35,7 +37,9 @@ interface LoadOptions {
 async function load(native: boolean, opts: LoadOptions = {}) {
   vi.resetModules();
   const plugin = {
-    setEnabled: vi.fn(opts.setEnabled ?? (async () => {})),
+    setEnabled: vi.fn(async (_o: { enabled: boolean }) => {
+      await opts.setEnabled?.();
+    }),
     addLogMessage: vi.fn(async (_o: { message: string }) => {}),
     recordException: vi.fn(async (_o: { message: string }) => {}),
   };
@@ -118,7 +122,7 @@ describe('Crash (native)', () => {
   });
 });
 
-describe('Crash consent-first collection (D-10.5)', () => {
+describe('Crash collection switch (D-10.5)', () => {
   beforeEach(() => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.spyOn(console, 'debug').mockImplementation(() => {});
@@ -129,7 +133,7 @@ describe('Crash consent-first collection (D-10.5)', () => {
     vi.doUnmock('./native/firebaseCrashlytics');
   });
 
-  it('init() and reports never turn collection on: the manifest default (off) stands until enable()', async () => {
+  it('init() and reports never change collection: the manifest default (off on a fresh install) stands until enable() or disable()', async () => {
     const { Crash, plugin } = await load(true);
     Crash.init();
     Crash.log('hello');
@@ -178,6 +182,83 @@ describe('Crash consent-first collection (D-10.5)', () => {
   });
 });
 
+describe('Crash.disable (the off-switch)', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'debug').mockImplementation(() => {});
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.doUnmock('@capacitor/core');
+    vi.doUnmock('./native/firebaseCrashlytics');
+  });
+
+  it('disable() turns collection off through setEnabled({ enabled: false }), once, however many times it is called', async () => {
+    const { Crash, plugin } = await load(true);
+    Crash.init();
+    Crash.disable();
+    Crash.disable();
+    await flush();
+    Crash.disable();
+    await flush();
+    expect(plugin.setEnabled).toHaveBeenCalledTimes(1);
+    expect(plugin.setEnabled).toHaveBeenCalledWith({ enabled: false });
+  });
+
+  it('disable() is sent even if enable() never ran this session (the persisted value from an earlier launch may be on)', async () => {
+    const { Crash, plugin } = await load(true);
+    Crash.disable();
+    await flush();
+    expect(plugin.setEnabled.mock.calls.map((c) => c[0])).toEqual([{ enabled: false }]);
+  });
+
+  it('enable, disable, enable reach the plugin in that order, one call each (a withdrawal then a new grant in one session)', async () => {
+    const { Crash, plugin } = await load(true);
+    Crash.enable();
+    Crash.disable();
+    Crash.enable();
+    await flush();
+    expect(plugin.setEnabled.mock.calls.map((c) => c[0])).toEqual([{ enabled: true }, { enabled: false }, { enabled: true }]);
+  });
+
+  it('disable() called before the plugin has loaded waits for it', async () => {
+    const gate = deferred();
+    const { Crash, plugin } = await load(true, { loadGate: gate.promise });
+    Crash.disable();
+    await flush();
+    expect(plugin.setEnabled).not.toHaveBeenCalled();
+    gate.resolve();
+    await flush();
+    expect(plugin.setEnabled).toHaveBeenCalledWith({ enabled: false });
+  });
+
+  it('disable() never throws when the native call rejects, reporting still works, and the next disable() tries again', async () => {
+    let fail = true;
+    const { Crash, plugin } = await load(true, {
+      setEnabled: async () => {
+        if (fail) throw new Error('native failure');
+      },
+    });
+    expect(() => Crash.disable()).not.toThrow();
+    await flush();
+    Crash.recordError('after a failed disable');
+    await flush();
+    expect(plugin.recordException).toHaveBeenCalledWith({ message: 'after a failed disable' });
+    // A failed off-switch must not be remembered as done: the player withdrew, so the next call retries.
+    fail = false;
+    Crash.disable();
+    await flush();
+    expect(plugin.setEnabled).toHaveBeenCalledTimes(2);
+  });
+
+  it('sends nothing, and does not throw, when the plugin fails to load', async () => {
+    const { Crash, plugin } = await load(true, { loadFails: true });
+    expect(() => Crash.disable()).not.toThrow();
+    await flush();
+    expect(plugin.setEnabled).not.toHaveBeenCalled();
+  });
+});
+
 describe('Crash (web / non-native)', () => {
   beforeEach(() => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -193,6 +274,7 @@ describe('Crash (web / non-native)', () => {
     const { Crash, plugin } = await load(false);
     Crash.init();
     Crash.enable();
+    Crash.disable();
     Crash.log('hello');
     Crash.recordError(new Error('web boom'), 'ctx');
     await flush();

@@ -2,9 +2,20 @@
 // services/Ads.ts and scenes/SettingsScene.ts; the pure UMP mapping is services/consentState.ts.
 // The setExternalFlowActive() source raised around the native consent form and the privacy options form
 // (src/platform/externalFlow.ts). While one of them is up Android pauses the Activity; this flag stops the pause overlay.
+// FORM_WATCHDOG_MS: if a native form has not settled after this long, the consent source is cleared anyway (the form promise keeps
+// running), so a form that never answers cannot hold the flag up, and the pause overlay down, for the whole session.
 export const CONSENT = {
   EXTERNAL_FLOW_SOURCE: 'consent',
+  FORM_WATCHDOG_MS: 120000,
 } as const;
+
+// D-10.5 (pending the owner's legal check, docs/STATUS.md): does Crashlytics collection follow the analytics_storage choice?
+//   false (default): Crash.enable() runs in EVERY consent outcome, including after a refusal in the EEA.
+//   true: bootServices and Settings > Privacy choices call Crash.enable() when the outcome grants analytics_storage and
+//         Crash.disable() otherwise. Crashlytics persists the last setEnabled value across launches, so the player's last choice
+//         applies from the next process start, until UMP answers again.
+// Flipping this is a legal decision, not a tuning knob; the default ships as D-10.5 says.
+export const CRASH_REQUIRES_ANALYTICS_CONSENT: boolean = false;
 
 // UMP debug geography numbers, mirrored from @capacitor-community/admob 8.0.0 AdmobConsentDebugGeography
 // (dist/esm/consent/consent-debug-geography.enum.d.ts). The web bundle never imports the plugin package, so the values live

@@ -352,12 +352,12 @@ The SQL files live in `scripts/analytics/queries/`: `q_level_health.sql`, `q_ttp
 1. **Manifest:**
    - `google_analytics_default_allow_analytics_storage`, `_ad_storage`, `_ad_user_data` and `_ad_personalization` are all **`false`** (Consent Mode v2 defaults denied).
    - `google_analytics_automatic_screen_reporting_enabled=false`.
-   - `firebase_crashlytics_collection_enabled=false`.
+   - `firebase_crashlytics_collection_enabled=false` (the default of a fresh install only; the SDK's persisted value wins on later launches).
 2. Firebase initializes. The JS seam (`Analytics.ts`) is **queued**: `track()`, `screen()` and `setUserProp()` append to an in-memory FIFO capped at **50 events**, dropping the oldest.
 3. UMP `requestConsentInfoUpdate` runs, followed by `showConsentForm` when required. Firebase initializes before UMP (research Q1).
 4. Apply the outcome. If consent is not required, call `setConsent` with all four types granted. If consent was obtained, UMP ≥ 3.2 writes consent mode; read it back and log it to logcat ("Setting consent").
 5. **Flush the queue.** With `analytics_storage` denied, the SDK sends cookieless pings without identifiers. That is lawful; denied users simply don't join cohorts.
-6. Crashlytics collection follows the analytics choice after consent resolves. This is the D-10 default, pending a legal check.
+6. Crashlytics collection after consent resolves: enabled in every outcome today (D-10.5, pending the owner's legal check). `CRASH_REQUIRES_ANALYTICS_CONSENT` in `src/config/consent.config.ts` makes it follow the analytics choice (`Crash.disable()` when `analytics_storage` is denied). Crashlytics persists the last value, so it applies at process start from the second launch.
 7. AdMob initializes **only when `canRequestAds`** (D-10).
 
 ### 9.2 Settings entry points

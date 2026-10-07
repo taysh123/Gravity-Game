@@ -22,16 +22,19 @@ async function load(native: boolean, overrides: Partial<Record<'setConsent' | 'r
     setCurrentScreen: vi.fn(async () => {}),
     resetAnalyticsData: vi.fn(overrides.resetAnalyticsData ?? (async () => {})),
   };
+  const crashLog = vi.fn((_message: string) => {});
   vi.doMock('@capacitor/core', () => ({ Capacitor: { isNativePlatform: () => native } }));
   vi.doMock('./native/firebaseAnalytics', () => ({ FirebaseAnalytics: plugin }));
+  vi.doMock('./Crash', () => ({ Crash: { log: crashLog } }));
   const { Analytics } = await import('./Analytics');
-  return { Analytics, plugin };
+  return { Analytics, plugin, crashLog };
 }
 
 afterEach(() => {
   vi.restoreAllMocks();
   vi.doUnmock('@capacitor/core');
   vi.doUnmock('./native/firebaseAnalytics');
+  vi.doUnmock('./Crash');
 });
 
 describe('consentModeSettings (pure)', () => {
@@ -96,6 +99,54 @@ describe('Analytics.applyConsent (native)', () => {
     });
     await expect(Analytics.applyConsent(GRANTED)).resolves.toBeUndefined();
     expect(plugin.setConsent).toHaveBeenCalledTimes(4);
+  });
+
+  // A rejected write means Firebase keeps its previous consent value for that type (possibly "granted" after a withdrawal), so it
+  // must be visible. The breadcrumb names the type and the status we tried to set, nothing else: no error text, no ids.
+  it('a rejected setConsent leaves a Crash breadcrumb with the type and status only', async () => {
+    const { Analytics, crashLog } = await load(true, {
+      setConsent: async (o) => {
+        if ((o as { type: string }).type === 'AD_STORAGE') throw new Error('native failure with details: user@example.com');
+      },
+    });
+    await Analytics.applyConsent(GRANTED);
+    expect(crashLog).toHaveBeenCalledTimes(1);
+    expect(crashLog).toHaveBeenCalledWith('consent: setConsent AD_STORAGE GRANTED failed');
+    expect(crashLog.mock.calls[0][0]).not.toContain('user@example.com');
+  });
+
+  it('every rejected write gets its own breadcrumb, with the status that was attempted', async () => {
+    const { Analytics, crashLog, plugin } = await load(true, {
+      setConsent: async () => {
+        throw new Error('native failure');
+      },
+    });
+    await expect(Analytics.applyConsent(CONSENT_DENIED)).resolves.toBeUndefined();
+    expect(plugin.setConsent).toHaveBeenCalledTimes(4);
+    expect(crashLog.mock.calls.map((c) => c[0])).toEqual([
+      'consent: setConsent ANALYTICS_STORAGE DENIED failed',
+      'consent: setConsent AD_STORAGE DENIED failed',
+      'consent: setConsent AD_USER_DATA DENIED failed',
+      'consent: setConsent AD_PERSONALIZATION DENIED failed',
+    ]);
+  });
+
+  it('no breadcrumb when every write succeeds', async () => {
+    const { Analytics, crashLog } = await load(true);
+    await Analytics.applyConsent(GRANTED);
+    expect(crashLog).not.toHaveBeenCalled();
+  });
+
+  it('a throwing Crash.log cannot make applyConsent reject', async () => {
+    const { Analytics, crashLog } = await load(true, {
+      setConsent: async () => {
+        throw new Error('native failure');
+      },
+    });
+    crashLog.mockImplementation(() => {
+      throw new Error('crash seam');
+    });
+    await expect(Analytics.applyConsent(GRANTED)).resolves.toBeUndefined();
   });
 
   it('the plugin failing to load resolves without throwing', async () => {

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { AdmobConsentDebugGeography, AdmobConsentStatus, MaxAdContentRating } from '@capacitor-community/admob';
 // Not re-exported by the package root (consent/index.d.ts omits it), so it is imported from its file; the package has no exports map.
 import { PrivacyOptionsRequirementStatus } from '@capacitor-community/admob/dist/esm/consent/privacy-options-requirement-status.enum';
-import { PRIVACY_UI, UMP_DEBUG_GEOGRAPHY, parseDebugGeography, parseTestDeviceIds } from './consent.config';
+import { CONSENT, CRASH_REQUIRES_ANALYTICS_CONSENT, PRIVACY_UI, UMP_DEBUG_GEOGRAPHY, parseDebugGeography, parseTestDeviceIds } from './consent.config';
 import { ADMOB_TARGETING } from './monetization.config';
 import { PLATFORM } from './platform.config';
 import { PRIVACY_OPTIONS_REQUIRED, UMP_STATUS } from '../services/consentState';
@@ -71,5 +71,18 @@ describe('privacy entry points: config values', () => {
     expect(PRIVACY_UI.LINK_H).toBeGreaterThanOrEqual(THEME.MIN_TAP);
     expect(PRIVACY_UI.LINK_W).toBeGreaterThanOrEqual(THEME.MIN_TAP);
     expect(PRIVACY_UI.RESET_CONFIRM_MS).toBeGreaterThanOrEqual(2000);
+  });
+});
+
+describe('Crashlytics and form-watchdog switches', () => {
+  // D-10.5 is "enabled in every consent outcome" until the owner's legal check (STATUS gate). Turning the flag on is a legal decision:
+  // whoever does it updates this line on purpose, together with the STATUS row.
+  it('CRASH_REQUIRES_ANALYTICS_CONSENT ships off (D-10.5: Crashlytics is enabled in every consent outcome)', () => {
+    expect(CRASH_REQUIRES_ANALYTICS_CONSENT).toBe(false);
+  });
+
+  it('the consent form watchdog is 120 s and the external-flow source is "consent"', () => {
+    expect(CONSENT.FORM_WATCHDOG_MS).toBe(120000);
+    expect(CONSENT.EXTERNAL_FLOW_SOURCE).toBe('consent');
   });
 });

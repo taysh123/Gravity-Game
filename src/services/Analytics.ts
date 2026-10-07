@@ -12,6 +12,7 @@
 import { Capacitor } from '@capacitor/core';
 import type { AnalyticsEvent } from './analyticsEvents';
 import { consentModeSettings, type ConsentOutcome } from './consentState';
+import { Crash } from './Crash';
 import type { FirebaseAnalyticsPlugin } from './native/firebaseAnalytics';
 
 let plugin: FirebaseAnalyticsPlugin | null = null;
@@ -46,12 +47,23 @@ export const Analytics = {
   },
 
   // Writes the UMP outcome to Firebase Consent Mode. Never throws: one rejected type must not stop the other three, and analytics
-  // must never break boot. No-op on the web (no consent layer, no native plugin).
+  // must never break boot. A rejected write is not silent: Firebase then keeps its previous value for that type (which persists
+  // across launches), so each one leaves a Crash breadcrumb with the type and the status that was attempted, nothing else (no error
+  // text, no ids). No-op on the web (no consent layer, no native plugin).
   async applyConsent(outcome: ConsentOutcome): Promise<void> {
     if (!Capacitor.isNativePlatform()) return;
     if (!(await ensureNative()) || !plugin) return;
     const p = plugin;
-    await Promise.allSettled(consentModeSettings(outcome).map((s) => p.setConsent(s)));
+    const settings = consentModeSettings(outcome);
+    const results = await Promise.allSettled(settings.map((s) => p.setConsent(s)));
+    results.forEach((r, i) => {
+      if (r.status !== 'rejected') return;
+      try {
+        Crash.log(`consent: setConsent ${settings[i].type} ${settings[i].status} failed`);
+      } catch {
+        // a breadcrumb must never break boot
+      }
+    });
     // P00-T23: flush the pre-consent analytics queue here, once, after the four types are set (and drop it when analytics is denied).
   },
 

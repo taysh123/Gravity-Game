@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach, type Mock } from 'vitest';
+import { describe, it, expect, vi, afterEach, beforeEach, type Mock } from 'vitest';
 import { createConsent, type ConsentApi, type ConsentDeps } from './Consent';
 import { CONSENT_DENIED, type TcfSignals } from './consentState';
 import { CONSENT } from '../config/consent.config';
@@ -304,5 +304,138 @@ describe('Consent.showPrivacyOptions', () => {
     const { consent, loadAdMob } = make(api, { native: false });
     expect(await consent.showPrivacyOptions()).toEqual(CONSENT_DENIED);
     expect(loadAdMob).not.toHaveBeenCalled();
+  });
+});
+
+// A native form that never answers (no network, a hung WebView) must not keep the "external flow" flag up for the whole session:
+// the flag suppresses the Pause overlay on background. After CONSENT.FORM_WATCHDOG_MS the consent source is cleared and a breadcrumb
+// is logged; the form promise keeps running, so a late answer is still used and its own clear in `finally` is harmless.
+describe('Consent: watchdog on the native forms (CONSENT.FORM_WATCHDOG_MS)', () => {
+  const WATCHDOG = CONSENT.FORM_WATCHDOG_MS;
+  const OTHER_SOURCE = 'ad';
+
+  function pendingForm() {
+    let answer!: (i: AdMobConsentInfo) => void;
+    const api = fakeApi({
+      requestConsentInfo: vi.fn(async () => REQUIRED),
+      showConsentForm: vi.fn(() => new Promise<AdMobConsentInfo>((res) => (answer = res))),
+    });
+    return { api, answer: (i: AdMobConsentInfo) => answer(i) };
+  }
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    setExternalFlowActive(false, OTHER_SOURCE);
+  });
+
+  it('the budget is 120 s', () => {
+    expect(WATCHDOG).toBe(120000);
+  });
+
+  it('a consent form that never settles: the flag stays up until the budget, then only the consent source is cleared and a breadcrumb is logged', async () => {
+    const { api } = pendingForm();
+    const log = vi.fn();
+    const { consent } = make(api, { log });
+    setExternalFlowActive(true, OTHER_SOURCE); // an unrelated flow (an ad) that must survive the watchdog
+    void consent.resolve();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(isExternalFlowActive()).toBe(true);
+
+    await vi.advanceTimersByTimeAsync(WATCHDOG - 1);
+    expect(log).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(1);
+    expect(log).toHaveBeenCalledTimes(1);
+    expect(log.mock.calls[0][0]).toMatch(/consent/i);
+    // Only the consent source went: the other source still holds the flag...
+    expect(isExternalFlowActive()).toBe(true);
+    // ...and once it clears too, nothing is left, so the consent source really was cleared.
+    setExternalFlowActive(false, OTHER_SOURCE);
+    expect(isExternalFlowActive()).toBe(false);
+  });
+
+  it('the form keeps running: a late answer is still used, and the watchdog does not fire twice', async () => {
+    const { api, answer } = pendingForm();
+    const log = vi.fn();
+    const { consent } = make(api, { log });
+    const pending = consent.resolve();
+    await vi.advanceTimersByTimeAsync(WATCHDOG);
+    expect(isExternalFlowActive()).toBe(false);
+    expect(log).toHaveBeenCalledTimes(1);
+
+    answer(OBTAINED_YES);
+    const outcome = await pending;
+    expect(outcome).toMatchObject({ canRequestAds: true, analytics: 'granted' });
+    expect(isExternalFlowActive()).toBe(false); // the late `finally` clear is harmless
+    await vi.advanceTimersByTimeAsync(WATCHDOG * 2);
+    expect(log).toHaveBeenCalledTimes(1);
+  });
+
+  it('a form that answers in time cancels the watchdog: no breadcrumb, no timer left behind', async () => {
+    const { api, answer } = pendingForm();
+    const log = vi.fn();
+    const { consent } = make(api, { log });
+    const pending = consent.resolve();
+    await vi.advanceTimersByTimeAsync(1000);
+    answer(OBTAINED_YES);
+    await pending;
+    expect(vi.getTimerCount()).toBe(0);
+    await vi.advanceTimersByTimeAsync(WATCHDOG * 2);
+    expect(log).not.toHaveBeenCalled();
+  });
+
+  it('a form that fails in time also cancels the watchdog', async () => {
+    const api = fakeApi({
+      requestConsentInfo: vi.fn(async () => REQUIRED),
+      showConsentForm: vi.fn(async (): Promise<AdMobConsentInfo> => {
+        throw new Error('no form configured');
+      }),
+    });
+    const log = vi.fn();
+    const { consent } = make(api, { log });
+    await consent.resolve();
+    expect(vi.getTimerCount()).toBe(0);
+    expect(log).not.toHaveBeenCalled();
+  });
+
+  it('the privacy options form is guarded the same way', async () => {
+    let finish!: () => void;
+    const api = fakeApi({ showPrivacyOptionsForm: vi.fn(() => new Promise<void>((res) => (finish = res))) });
+    const log = vi.fn();
+    const { consent } = make(api, { log });
+    const pending = consent.showPrivacyOptions();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(isExternalFlowActive()).toBe(true);
+    await vi.advanceTimersByTimeAsync(WATCHDOG);
+    expect(isExternalFlowActive()).toBe(false);
+    expect(log).toHaveBeenCalledTimes(1);
+    finish();
+    await pending;
+    expect(isExternalFlowActive()).toBe(false);
+  });
+
+  it('works without a log dependency (the breadcrumb is optional)', async () => {
+    const { api } = pendingForm();
+    const { consent } = make(api);
+    void consent.resolve();
+    await expect(vi.advanceTimersByTimeAsync(WATCHDOG)).resolves.not.toThrow();
+    expect(isExternalFlowActive()).toBe(false);
+  });
+
+  it('a throwing log cannot break the watchdog or the flow', async () => {
+    const { api, answer } = pendingForm();
+    const { consent } = make(api, {
+      log: () => {
+        throw new Error('crash seam');
+      },
+    });
+    const pending = consent.resolve();
+    await vi.advanceTimersByTimeAsync(WATCHDOG);
+    expect(isExternalFlowActive()).toBe(false);
+    answer(OBTAINED_YES);
+    await expect(pending).resolves.toMatchObject({ canRequestAds: true });
   });
 });

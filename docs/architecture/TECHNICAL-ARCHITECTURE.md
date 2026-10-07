@@ -209,9 +209,10 @@ export function deriveOwnership(active: readonly string[]): { noAds: boolean; bu
 export function classifyPurchaseError(code: string | number | undefined): 'cancelled' | 'already_owned' | 'pending' | 'network' | 'error';
 export const IAP: { init(): Promise<void>; isPremium(): boolean; price(pkgId: string): string | null; buy(pkgId: string): Promise<'purchased' | 'pending' | 'cancelled' | 'network' | 'unavailable' | 'error'>; restore(): Promise<{ restored: Entitlement[] }>; inFlight(): boolean };
 export const Analytics: { track(e: AnalyticsEvent): void; screen(name: string): void; applyConsent(c: ConsentOutcome): Promise<void>; resetData(): Promise<void> };
-export const Crash: { init(): void; enable(): void; log(m: string): void; recordError(e: unknown, ctx?: string): void; setKeys(k: Record<string, string | number>): void };
+export const Crash: { init(): void; enable(): void; disable(): void; log(m: string): void; recordError(e: unknown, ctx?: string): void; setKeys(k: Record<string, string | number>): void };
 export const RemoteConfig: { activateCached(): Promise<void>; fetchWithTimeout(ms: number): Promise<void>; get<K extends keyof RcValues>(k: K): RcValues[K] }; // P6, clamped via src/config/rcConfig.ts
 ```
+Firebase consent (`setConsent`) and the Crashlytics collection switch (`Crash.enable()` / `disable()`) both persist across launches and take precedence over the manifest defaults, which only describe a fresh install; so the last explicit choice applies from process start until UMP answers on the next launch. `CRASH_REQUIRES_ANALYTICS_CONSENT` (`src/config/consent.config.ts`, default `false` = D-10.5) selects whether `bootServices` and Privacy choices enable Crashlytics in every outcome or follow `analytics_storage` (`enable()` when granted, `disable()` otherwise).
 
 ---
 
@@ -227,7 +228,7 @@ sequenceDiagram
   participant FA as Firebase Analytics
   participant AD as services/Ads
   M->>S: Saves.hydrate() (promise)
-  M->>M: Crash.init() — global handlers, collection off by manifest
+  M->>M: Crash.init() — global handlers, collection off by manifest on a fresh install (persisted value after that)
   B->>S: await hydrate + fonts
   B->>C: bootServices() — not awaited by the menu
   C->>C: requestConsentInfo → showConsentForm if REQUIRED
@@ -236,7 +237,7 @@ sequenceDiagram
   AD->>AD: preload rewarded (+ interstitial unless no_ads)
   C->>M: Crash.enable() after consent resolves (D-10.5 default)
 ```
-Firebase starts with all four `google_analytics_default_allow_*` manifest flags `false`, automatic screen reporting off and Crashlytics collection off; nothing leaves the device before the outcome is applied.
+On a fresh install Firebase starts with all four `google_analytics_default_allow_*` manifest flags `false`, automatic screen reporting off and Crashlytics collection off, so nothing leaves the device before the outcome is applied. From the second launch the persisted Firebase consent and Crashlytics values apply instead (§4.3), until UMP answers.
 
 ### 5.2 Frame and step (D-01, D-03)
 ```mermaid
