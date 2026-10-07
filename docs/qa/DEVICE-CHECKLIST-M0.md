@@ -84,11 +84,14 @@ Run each row twice: Android 16 **gesture** navigation and **3-button** navigatio
 
 | ID | Scenario | Expected | Ref | Result | Date | Notes |
 |---|---|---|---|---|---|---|
-| G1 | Home button mid-level, then return | Pause overlay is showing; the run did not advance; no auto-resume | D-11 | | | |
+| G1 | Home button mid-level, then return | Silent while away. On return the pause overlay is showing, the run did not advance, audio stays silent until CONTINUE; no auto-resume | D-11 | | | |
 | G2 | Pull the notification shade mid-level | Pause or a clean resume; no stuck state | D-11 | | | |
 | G3 | Split screen / resize mid-level | Layout refits; no stuck pause overlay | D-11 | | | |
 | G4 | App in the background | Game audio and music are silent | D-11 | | | |
 | G5 | Return from the background with Sound and Music off | Audio stays off | D-11 | | | |
+| G6 | Incoming phone call mid-level (the call UI covers the game), answer or decline, return | Pause overlay showing on return; the run did not advance; audio silent until CONTINUE | D-11 | | | |
+| G7 | Lock the screen mid-level, then unlock | Same as G1: pause overlay, no auto-resume, silent until CONTINUE | D-11 | | | |
+| G8 | Rewarded ad or purchase sheet over a level or Gravity Run (needs P00-T16 / T19 to raise `setExternalFlowActive`) | The ad / sheet does not open the pause overlay; the flow completes and audio returns | D-11, D-24 | | | |
 
 ## H: Haptics (V16)
 

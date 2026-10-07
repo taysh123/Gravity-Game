@@ -282,12 +282,67 @@ describe('Back wiring source guards', () => {
     expect(offenders).toEqual([]);
   });
 
-  it('never imports @capacitor/app as a value (it is reached only through the native-guarded wrapper)', () => {
-    const offenders = files.filter((f) =>
-      code(f)
-        .split('\n')
-        .some((line) => /^\s*import\s+(?!type\b)[^;]*from\s+['"]@capacitor\/app['"]/.test(line)),
-    );
+  // The native plugin is reached only by NAME through registerPlugin('App') in src/utils/native/app.ts, so no source
+  // file may import the package at all: a value import would put the plugin's web implementation into the bundle,
+  // where its listeners are not gated by Capacitor.isNativePlatform(). Type-only imports are erased and are fine.
+  // The matcher runs over the comment-stripped source as ONE string, so it also catches multi-line named imports,
+  // side-effect imports, re-exports, dynamic import() and require().
+  const PKG = String.raw`['"]@capacitor\/app['"]`;
+  const VALUE_USES = [
+    new RegExp(String.raw`\bimport\s+(?!type\b)[^;'"]*?\bfrom\s*${PKG}`), // import x / { a,\n b } / * as x from
+    new RegExp(String.raw`\bimport\s*${PKG}`), // import '@capacitor/app'
+    new RegExp(String.raw`\bexport\s+(?!type\b)[^;'"]*?\bfrom\s*${PKG}`), // export { a } from
+    new RegExp(String.raw`\bimport\s*\(\s*${PKG}\s*\)`), // import('@capacitor/app')
+    new RegExp(String.raw`\brequire\s*\(\s*${PKG}\s*\)`), // require('@capacitor/app')
+  ];
+  const usesCapacitorApp = (src: string): boolean => VALUE_USES.some((re) => re.test(src));
+
+  it('never imports @capacitor/app as a value anywhere in src (it is reached only by name through the native seam)', () => {
+    const offenders = files.filter((f) => usesCapacitorApp(code(f)));
     expect(offenders).toEqual([]);
+  });
+
+  it('the @capacitor/app matcher catches every value-import form, including multi-line and dynamic', () => {
+    const bad = [
+      "import { App } from '@capacitor/app';",
+      'import {\n  App,\n  type AppState,\n} from "@capacitor/app";',
+      "import * as capApp from '@capacitor/app'",
+      "import App from '@capacitor/app'",
+      "import '@capacitor/app';",
+      "export { App } from '@capacitor/app';",
+      "const m = await import('@capacitor/app');",
+      'const m = await import(\n  "@capacitor/app"\n);',
+      "const m = require('@capacitor/app');",
+    ];
+    for (const src of bad) expect(usesCapacitorApp(src), src).toBe(true);
+  });
+
+  it('the @capacitor/app matcher allows type-only imports and unrelated modules', () => {
+    const ok = [
+      "import type { AppPlugin } from '@capacitor/app';",
+      'import type {\n  AppState,\n} from "@capacitor/app";',
+      "import { registerPlugin } from '@capacitor/core';",
+      "import { Preferences } from '@capacitor/preferences';",
+      "const m = await import('../utils/native/app');",
+      "registerPlugin<AppBridge>('App');",
+    ];
+    for (const src of ok) expect(usesCapacitorApp(src), src).toBe(false);
+  });
+
+  it('the old single-line guard missed multi-line and dynamic imports (why the matcher above exists)', () => {
+    const legacy = (src: string): boolean =>
+      src.split('\n').some((line) => /^\s*import\s+(?!type\b)[^;]*from\s+['"]@capacitor\/app['"]/.test(line));
+    const multiLine = 'import {\n  App,\n} from "@capacitor/app";';
+    const dynamic = "const m = await import('@capacitor/app');";
+    expect(legacy(multiLine)).toBe(false);
+    expect(legacy(dynamic)).toBe(false);
+    expect(usesCapacitorApp(multiLine)).toBe(true);
+    expect(usesCapacitorApp(dynamic)).toBe(true);
+  });
+
+  it('the native seam loads the plugin by name via registerPlugin, with no package import', () => {
+    const seam = code(join(srcRoot, 'utils', 'native', 'app.ts'));
+    expect(seam).toMatch(/registerPlugin<AppBridge>\(\s*'App'\s*\)/);
+    expect(usesCapacitorApp(seam)).toBe(false);
   });
 });

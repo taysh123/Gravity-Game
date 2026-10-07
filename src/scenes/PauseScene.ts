@@ -94,13 +94,20 @@ export class PauseScene extends Phaser.Scene implements Dismissable {
   close(): void {
     if (this.closing) return;
     this.closing = true;
+    this.resumeAudio();
+    this.scene.resume(this.caller);
+    this.scene.stop();
+  }
+
+  // Leaving this overlay by any route (CONTINUE, RESTART, HOME) un-silences the audio that the background pause
+  // suspended: src/platform/lifecycle.ts deliberately keeps it suspended while this overlay is up. It is a user tap,
+  // so the browser allows it; gameplay SFX are gated by the Sound setting as usual.
+  private resumeAudio(): void {
     try {
-      sharedAudio().resume(); // audio unlock/resume; gameplay SFX are gated by the Sound setting as usual
+      sharedAudio().resume();
     } catch {
       // audio unavailable: ignore
     }
-    this.scene.resume(this.caller);
-    this.scene.stop();
   }
 
   // RESTART / HOME: let the caller run its own teardown. The caller is resumed first because its leave path (camera
@@ -108,6 +115,7 @@ export class PauseScene extends Phaser.Scene implements Dismissable {
   private act(action: PauseAction): void {
     if (this.closing) return;
     this.closing = true;
+    this.resumeAudio();
     this.scene.resume(this.caller);
     this.scene.get(this.caller)?.events.emit(PLATFORM.PAUSE_ACTION_EVENT, action);
     this.scene.stop();

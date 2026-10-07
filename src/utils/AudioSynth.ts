@@ -9,6 +9,7 @@ export class AudioSynth {
   private pad: Array<{ osc: OscillatorNode; gain: GainNode }> = [];
   private worldPad: Array<{ osc: OscillatorNode; gain: GainNode }> = [];
   private currentThemeKey: string | null = null; // `${worldId}:${boss}` — continuity within a world
+  private suspendPending = false; // suspend() issued and not yet settled (ctx.state still reads 'running')
 
   constructor(ctx: AudioContext) {
     this.ctx = ctx;
@@ -19,11 +20,28 @@ export class AudioSynth {
     return SettingsStore.get().sound;
   }
 
-  // Browsers suspend audio until a user gesture; call from a pointer handler.
+  // Browsers suspend audio until a user gesture; call from a pointer handler. Also the foreground path after
+  // suspend(): ctx.state only flips to 'suspended' once suspend() settles, so a suspend still in flight counts too
+  // (hidden then visible within one task must not leave the context suspended).
   resume(): void {
-    if (this.ctx.state === 'suspended') {
-      void this.ctx.resume();
+    if (this.ctx.state === 'suspended' || this.suspendPending) {
+      this.ctx.resume().catch(() => undefined); // closed context: nothing to resume
     }
+  }
+
+  // App backgrounded (D-11, P00-T11): drop the hum and suspend the context so nothing sounds while hidden. The ambient
+  // pad / world bed oscillators are left in place and continue from where they were on resume(). The hum is cut hard
+  // instead of faded: the context clock stops while suspended, so a scheduled fade would be heard after resume.
+  suspend(): void {
+    this.killHum();
+    if (this.ctx.state === 'closed') return;
+    this.suspendPending = true;
+    this.ctx
+      .suspend()
+      .catch(() => undefined)
+      .finally(() => {
+        this.suspendPending = false;
+      });
   }
 
   // AudioContext state ('suspended' | 'running' | 'closed') — for the gesture-unlock check.
@@ -65,6 +83,19 @@ export class AudioSynth {
     gain.gain.setValueAtTime(Math.max(gain.gain.value, 0.0001), t);
     gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.1);
     osc.stop(t + 0.12);
+  }
+
+  // Silence the hum right now (no fade). Safe if not humming.
+  private killHum(): void {
+    if (!this.humOsc || !this.humGain) return;
+    const osc = this.humOsc;
+    const gain = this.humGain;
+    this.humOsc = null;
+    this.humGain = null;
+    const t = this.ctx.currentTime;
+    gain.gain.cancelScheduledValues(t);
+    gain.gain.setValueAtTime(0.0001, t);
+    osc.stop(t);
   }
 
   // Soft low blip when the gravity field activates.

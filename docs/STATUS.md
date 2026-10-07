@@ -18,7 +18,7 @@
 | Other content | 8 daily levels · 20 run chunks · 14 achievements · 28 cosmetics · 3 bundles |
 | Scenes registered | 14 |
 | Level files | 163 on disk · 13 retired (6, 22, 31, 35, 37, 39, 40, 45, 48, 55, 56, 63, 64) |
-| Tests | 34 files / 370 tests |
+| Tests | 37 files / 429 tests |
 | package.json version | 1.0.0 |
 | androidBuild | 1 |
 | Derived versionName / versionCode | 1.0.0 / 1000001 |
@@ -63,8 +63,8 @@ Regenerate with `npm run facts`; verify with `npm run facts:check` (CI runs the 
 | Data Safety form + privacy policy sign-off (drafts land in P0 Step 5) | Owner | before M2 | PENDING |
 
 ## Next 5 actions
-Step 0 complete. Step 1 complete except P00-T08 (AdMob 8.2.1 soak, deferred to >= 2026-10-13); done so far: P00-T01…T07 (CI v2, Capacitor 8.5.2 family, exact pins), P00-T09 (manifest, theme, WebView floor, system bars) and P00-T10 (Back router + `PauseScene`, Endless pause button); device checks pending in the M0 session. AdMob stays pinned at exactly 8.0.0 until the soak.
-1. **Step 2: P00-T11…T13** — lifecycle/audio suspend (T11), then T12 and T13 (backup rules; wires `@capacitor/preferences`, installed in T07 but not yet imported). P00-T09 and P00-T10 are done (`@capacitor/app` is wired for Back only).
+Step 0 complete. Step 1 complete except P00-T08 (AdMob 8.2.1 soak, deferred to >= 2026-10-13); done so far: P00-T01…T07 (CI v2, Capacitor 8.5.2 family, exact pins), P00-T09 (manifest, theme, WebView floor, system bars), P00-T10 (Back router + `PauseScene`, Endless pause button) and P00-T11 (background/foreground contract, `Haptics.pulse`); device checks pending in the M0 session. AdMob stays pinned at exactly 8.0.0 until the soak.
+1. **Step 2: P00-T12…T13** — renderer-crash recovery (T12), then the Preferences mirror, hydrate and backup rules (T13; wires `@capacitor/preferences`, installed in T07 but not yet imported). P00-T09 to T11 are done (`@capacitor/app` is wired for Back and `pause`/`resume`). P00-T16 / T19 must call `setExternalFlowActive(true|false, source)` around purchase and ad flows so they do not open the pause overlay.
 2. **P00-T08** — AdMob 8.2.1 soak commit, deferred until >= 2026-10-13.
 3. **Step 3: P00-T14…T17** — Purchases (D-09): plugin config, ids, products, license testers.
 4. **Step 4: P00-T18…T20** — Consent-first boot and ad plumbing (D-10, D-11).
@@ -81,7 +81,7 @@ Top blockers from the [state audit](audit/2026-10-07/STATE-AUDIT.md) (section B.
 | B-05 | P0 | Google test AdMob ids shipped; no real AdMob/RevenueCat ids anywhere | [Steps 3-4](roadmap/phases/P00-foundation.md) + owner gates |
 | B-06 | P0 | Lazy consent, analytics before consent, no privacy-options entry, incomplete Data Safety | [Steps 4-5](roadmap/phases/P00-foundation.md) |
 | B-07 | P0 | Misleading "leaderboard" claim in the store listing (metadata policy) | [Step 5](roadmap/phases/P00-foundation.md) |
-| B-08 | P1 | No audio suspend or pause on background (P00-T11). Android Back now opens `PauseScene` instead of exiting mid-level (P00-T10, headless-verified; Android 16 gesture and 3-button device check pending). Portrait lock + `VIBRATE`: config-level fix in P00-T09, device check pending | [Step 2](roadmap/phases/P00-foundation.md) |
+| B-08 | P1 | Background now pauses the level behind `PauseScene` and suspends audio; foreground refits and never auto-resumes (P00-T11, headless-verified; Home / shade / split-screen device check pending). Android Back opens `PauseScene` instead of exiting mid-level (P00-T10, headless-verified; Android 16 gesture and 3-button device check pending). Portrait lock + `VIBRATE`: config-level fix in P00-T09, device check pending | [Step 2](roadmap/phases/P00-foundation.md) |
 | B-09 | P1 | Level clock is wall-clock (Settings, background and ads drain timers and par) | [Step 6](roadmap/phases/P01-physics.md) |
 | B-10 | P1 | An uncaught frame error freezes the game permanently | [Step 5](roadmap/phases/P00-foundation.md) |
 | B-11 | P1 | Web build on Vercel grants paid items for free (IAP stub) | [Step 3](roadmap/phases/P00-foundation.md) |

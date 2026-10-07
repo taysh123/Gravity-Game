@@ -1,22 +1,38 @@
-// Android Back wiring (D-11, P00-T10). The routing decision is pure (backRouter.ts); this module reads the live
-// Phaser scenes, executes the resulting action, and registers the two inputs that mean "Back":
-//   - native: the @capacitor/app `backButton` event (gesture and 3-button navigation, incl. predictive back)
-//   - everywhere: the Escape key, so the same router can be driven from a desktop browser
-// The native plugin is dynamically imported behind Capacitor.isNativePlatform() (same pattern as Ads.ts), so the
-// web bundle never loads it. exitApp() is never called: leaving the app is the system's warm background exit,
-// which works because MainMenuScene disables the handler (setBackHandlerEnabled).
+// Android platform wiring (D-11). Two halves, both with their decision logic pure and unit-tested:
 //
-// P00-T11 extends this module with the background/foreground hooks.
-import type Phaser from 'phaser';
+// 1. Back (P00-T10). The routing decision is pure (backRouter.ts); this module reads the live Phaser scenes, executes
+//    the resulting action, and registers the two inputs that mean "Back":
+//      - native: the @capacitor/app `backButton` event (gesture and 3-button navigation, incl. predictive back)
+//      - everywhere: the Escape key, so the same router can be driven from a desktop browser
+//    exitApp() is never called: leaving the app is the system's warm background exit, which works because
+//    MainMenuScene disables the handler (setBackHandlerEnabled).
+//
+// 2. Background / foreground (P00-T11). The decision is pure (lifecycleDecision.ts): hidden = pause live gameplay
+//    behind the pause overlay + silence audio; visible = refit, resume audio unless the overlay is up, and never
+//    auto-resume gameplay. Triggers: `visibilitychange` on every platform, plus the @capacitor/app `pause` / `resume`
+//    events on native (Activity onPause / onResume, which also covers split-screen focus loss).
+//
+// The native plugin is dynamically imported behind Capacitor.isNativePlatform() (same pattern as Ads.ts), so the
+// web bundle never loads it.
+import Phaser from 'phaser';
 import { Capacitor } from '@capacitor/core';
 import { PLATFORM } from '../config/platform.config';
 import { fadeToScene } from '../utils/transitions';
+import { sharedAudio } from '../utils/AudioSynth';
+import { SettingsStore } from '../utils/SettingsStore';
 import type { AppBridge } from '../utils/native/app';
 import { routeBack, deriveBackState, type BackAction, type BackState, type SceneSnapshot } from './backRouter';
+import { lifecycleDecision, deriveLifecycleScenes, type LifecycleActions, type Visibility } from './lifecycleDecision';
+import { isExternalFlowActive } from './externalFlow';
 import { isDismissable, isPausable } from './pausable';
+
+// Ads / purchase / consent flows raise this around the native sheet so the background pause ignores them
+// (P00-T16 IAP, P00-T19 Ads). Re-exported so callers can import everything lifecycle-related from one place.
+export { setExternalFlowActive, isExternalFlowActive } from './externalFlow';
 
 let game: Phaser.Game | null = null;
 let installed = false;
+let lifecycleInstalled = false;
 
 // NOTE: a Capacitor registerPlugin() proxy is thenable, so ensureApp() must NOT return the proxy (await would call
 // proxy.then and throw "App.then() is not implemented"). It resolves to a boolean; callers use the module-scoped
@@ -31,7 +47,10 @@ function ensureApp(): Promise<boolean> {
       const m = await import('../utils/native/app');
       app = m.App;
     } catch {
-      app = null; // plugin unavailable: Back stays with the system
+      // Plugin unavailable: no native listener can be registered. That leaves Back dead, NOT with the system:
+      // AppPlugin's OnBackPressedCallback is enabled by default and, with no 'backButton' listener, it only walks
+      // WebView history (there is none). The plugin ships in the synced Android project, so this is a broken build.
+      app = null;
     }
     return app !== null;
   })();
@@ -105,7 +124,8 @@ async function registerNativeBack(): Promise<void> {
       handleBack();
     });
   } catch {
-    // listener unavailable: Android keeps its default Back handling
+    // Listener not registered: Back is dead until the next launch, not handed to the system (see ensureApp: the
+    // plugin's callback is enabled by default and, without a listener, only walks WebView history).
   }
 }
 
@@ -133,7 +153,95 @@ export function setBackHandlerEnabled(enabled: boolean): void {
     try {
       await app.toggleBackButtonHandler({ enabled });
     } catch {
-      // plugin callback not ready: leave Android's default
+      // plugin callback not ready: it stays as it is (enabled by default, so Back reaches the JS router)
     }
   });
+}
+
+// ── Background / foreground (P00-T11) ────────────────────────────────────────────────────────────────────────────
+
+// A background pause has been requested but PauseScene has not launched yet. ScenePlugin.pause() / launch() are queued
+// and applied at the start of the next scene-manager step, which does not run while the page is hidden. Until that
+// step, the scene snapshot cannot see the overlay, so a second trigger in the same background period (native `pause`
+// plus `visibilitychange`) must not open it twice, and the foreground path must not resume audio under an overlay
+// that is about to appear. Cleared after the first step, by which time PauseScene is visible to the snapshot.
+let pausePending = false;
+
+function runLifecycle(visibility: Visibility): LifecycleActions | null {
+  if (!game) return null;
+  const g = game;
+  const scenes = deriveLifecycleScenes(snapshotScenes(g));
+  const settings = SettingsStore.get();
+  const actions = lifecycleDecision({
+    visibility,
+    gameplayActive: scenes.gameplayKey !== null,
+    pauseOverlayUp: scenes.pauseOverlayUp || pausePending,
+    externalFlowActive: isExternalFlowActive(),
+    sound: settings.sound,
+    music: settings.music,
+  });
+
+  if (actions.requestPause && scenes.gameplayKey !== null) {
+    const scene = g.scene.getScene(scenes.gameplayKey);
+    if (isPausable(scene)) {
+      scene.requestPause('background');
+      pausePending = true;
+      g.events.once(Phaser.Core.Events.POST_STEP, () => {
+        pausePending = false;
+      });
+    }
+  }
+  if (actions.suspendAudio) {
+    try {
+      sharedAudio().suspend();
+    } catch {
+      // audio unavailable: nothing to suspend
+    }
+  }
+  if (actions.refreshScale) g.scale.refresh();
+  if (actions.resumeAudio) {
+    try {
+      sharedAudio().resume();
+    } catch {
+      // audio unavailable: ignore
+    }
+  }
+  return actions;
+}
+
+// The app went to the background (Home, app switcher, screen off, another app on top). Returns the actions taken
+// (tests and the headless check read them). Idempotent: a second trigger in the same background period is harmless.
+export function onBackground(): LifecycleActions | null {
+  return runLifecycle('hidden');
+}
+
+// The app is visible again. Never resumes gameplay: the pause overlay stays until the player taps CONTINUE or Back.
+export function onForeground(): LifecycleActions | null {
+  return runLifecycle('visible');
+}
+
+async function registerNativeLifecycle(): Promise<void> {
+  if (!(await ensureApp()) || !app) return;
+  try {
+    await app.addListener('pause', () => {
+      onBackground();
+    });
+    await app.addListener('resume', () => {
+      onForeground();
+    });
+  } catch {
+    // listeners unavailable: visibilitychange still drives the contract
+  }
+}
+
+// Called once from main.ts after the Phaser.Game exists; replaces the interim audio-only visibilitychange handler.
+export function installLifecycle(g: Phaser.Game): void {
+  if (lifecycleInstalled) return;
+  lifecycleInstalled = true;
+  game = g;
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') onBackground();
+    else onForeground();
+  });
+  void registerNativeLifecycle();
 }

@@ -65,6 +65,7 @@ import { nearMiss } from '../utils/nearMiss';
 import { fitScale, truncateToWidth } from '../utils/textFit';
 import { PLATFORM } from '../config/platform.config';
 import type { Pausable, PauseAction, PauseReason } from '../platform/pausable';
+import { Haptics } from '../platform/haptics';
 
 const SAFE_PAD = 12; // minimum padding from any screen edge for HUD/nav
 
@@ -187,9 +188,7 @@ export class GameScene extends Phaser.Scene implements Pausable {
   }
 
   private haptics(pattern: number | number[]): void {
-    if (!PHYSICS.HAPTICS_ENABLED) return;
-    if (!SettingsStore.get().haptics) return;
-    navigator.vibrate?.(pattern);
+    Haptics.pulse(pattern); // kill switch, Settings toggle and API support are handled in platform/haptics.ts
   }
 
   create(): void {

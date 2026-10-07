@@ -17,7 +17,7 @@ import { EndScene } from './scenes/EndScene';
 import { Crash } from './utils/Crash';
 import { IAP } from './utils/IAP';
 import { sharedAudio } from './utils/AudioSynth';
-import { installBackNavigation } from './platform/lifecycle';
+import { installBackNavigation, installLifecycle } from './platform/lifecycle';
 
 // Crash reporting (Crashlytics on native; global error bridge everywhere).
 Crash.init();
@@ -62,6 +62,8 @@ const game = new Phaser.Game({
 
 // Android Back (native backButton event) + Escape on the web both go through the pure router (D-11).
 installBackNavigation(game);
+// Background / foreground (D-11, P00-T11): hidden = pause overlay + silent, visible = refit, never auto-resume.
+installLifecycle(game);
 
 // Size the Phaser parent (#app) to the *visible* viewport. iOS Chrome resolves
 // CSS 100dvh to the larger toolbar-hidden layout viewport, so FIT was scaling the
@@ -90,20 +92,6 @@ window.visualViewport?.addEventListener('scroll', syncViewport);
 // A couple of delayed passes catch iOS Chrome's toolbar settling after first paint.
 setTimeout(syncViewport, 300);
 setTimeout(syncViewport, 1200);
-
-// App background → foreground: the WebView suspends the AudioContext (and stalls the
-// game loop) while hidden. On return, resume audio (suspended oscillators — incl. the
-// ambient pad — pick back up) and re-fit the viewport. visibilitychange works in the
-// Android WebView, so no native @capacitor/app dependency is needed.
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState !== 'visible') return;
-  try {
-    sharedAudio().resume();
-  } catch {
-    // audio unavailable — ignore
-  }
-  game.scale.refresh();
-});
 
 // First user gesture: resume the (custom) shared AudioContext SYNCHRONOUSLY inside the
 // DOM handler. The Android WebView only unlocks audio when resume() runs inside a real

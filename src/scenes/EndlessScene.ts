@@ -68,6 +68,9 @@ export class EndlessScene extends Phaser.Scene implements Pausable {
   private starsCollected = 0;
   private score = 0;
   private isDead = false;
+  // True once a scene-leaving path (PauseScene HOME, run-over tap) has started its fade. Back / Escape during that
+  // ~300 ms fade must not open PauseScene over a departing scene (the overlay would be orphaned).
+  private leaving = false;
   private canReturn = false;
   private revived = false;
   private invulnUntil = 0;
@@ -98,6 +101,7 @@ export class EndlessScene extends Phaser.Scene implements Pausable {
     this.viewH = this.scale.height;
     this.playX = Math.round((this.viewW - PHYSICS.PLAY_WIDTH) / 2);
     this.isDead = false;
+    this.leaving = false;
     this.canReturn = false;
     this.live = [];
     this.runIndex = 0;
@@ -165,12 +169,12 @@ export class EndlessScene extends Phaser.Scene implements Pausable {
 
   // Pausable contract (D-11, src/platform/pausable.ts): Android Back and the HUD button open PauseScene.
   get gameplayEnded(): boolean {
-    return this.isDead;
+    return this.isDead || this.leaving;
   }
 
   // No-op once the run is over or while an overlay already holds this scene paused.
   requestPause(reason: PauseReason): void {
-    if (this.isDead || !this.scene.isActive()) return;
+    if (this.gameplayEnded || !this.scene.isActive()) return;
     if (this.scene.isActive(PLATFORM.BACK.PAUSE_SCENE) || this.scene.isActive('SettingsScene')) return;
     this.getAudio().stopHum();
     this.attractor?.destroy();
@@ -181,8 +185,15 @@ export class EndlessScene extends Phaser.Scene implements Pausable {
 
   private onPauseAction = (action: PauseAction): void => {
     if (action === 'restart') this.retry();
-    else fadeToScene(this, 'MainMenuScene');
+    else this.goHome();
   };
+
+  // Every "leave to the menu" path (PauseScene HOME, run-over tap) goes through here so `leaving` is always set.
+  private goHome(): void {
+    if (this.leaving) return;
+    this.leaving = true;
+    fadeToScene(this, 'MainMenuScene');
+  }
 
   // One-time coach hint on the player's first run (either mode). Dismissed on the
   // first press or after a few seconds; persisted so it never nags again.
@@ -435,7 +446,7 @@ export class EndlessScene extends Phaser.Scene implements Pausable {
     scrim.fillStyle(0x000000, THEME.SCRIM_ALPHA);
     scrim.fillRect(0, 0, this.viewW, this.viewH);
     scrim.setInteractive(new Phaser.Geom.Rectangle(0, 0, this.viewW, this.viewH), Phaser.Geom.Rectangle.Contains);
-    scrim.on('pointerup', () => { if (this.canReturn) fadeToScene(this, 'MainMenuScene'); });
+    scrim.on('pointerup', () => { if (this.canReturn) this.goHome(); });
 
     const panelW = Math.min(this.viewW * 0.8, 300);
     const panelH = 150;
