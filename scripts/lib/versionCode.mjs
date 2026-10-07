@@ -5,7 +5,7 @@
 // MAJOR.MINOR.PATCH is `version` in package.json (it is also the Android versionName), BUILD is
 // `androidBuild` in package.json. The rc label lives only in git tags, never in `version`.
 // scripts/version.mjs and scripts/facts/factsLib.mjs both import this file; android/app/build.gradle
-// mirrors the same rules in Groovy (CI compares the two outputs, P00-T06).
+// mirrors the same rules in Groovy (the `android-debug` CI job compares the two outputs).
 //
 // Pure: no filesystem, no clock, no child processes. Errors are VersionError.
 

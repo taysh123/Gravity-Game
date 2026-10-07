@@ -4,9 +4,10 @@ apply plugin: 'com.android.application'
 
 // Versioning (D-20): ONE version file, package.json. versionName is its semver `version`;
 //   versionCode = MAJOR*1_000_000 + MINOR*10_000 + PATCH*100 + BUILD      (BUILD = `androidBuild`)
-// The same rules live in scripts/lib/versionCode.mjs (`node scripts/version.mjs --code`); CI compares the
-// two outputs. MINOR, PATCH and BUILD must each be 0-99 and the code at most Google Play's 2_100_000_000,
-// otherwise the build fails. The rc label lives only in the git tag. See docs/release/RUNBOOK.md section 4.
+// The same rules live in scripts/lib/versionCode.mjs (`node scripts/version.mjs --code`). The `android-debug` job in
+// .github/workflows/ci.yml compares that output with `./gradlew -q :app:printVersionCode` and fails on any mismatch.
+// MINOR, PATCH and BUILD must each be 0-99 and the code at most Google Play's 2_100_000_000, otherwise the build
+// fails. The rc label lives only in the git tag. See docs/release/RUNBOOK.md section 4.
 def appVersionCap = 2100000000G
 def packageJson = new JsonSlurper().parse(file('../../package.json'))
 def semver = (packageJson.version instanceof String) ? (packageJson.version =~ /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/) : null
@@ -31,7 +32,7 @@ def appVersionName = packageJson.version as String
 
 tasks.register('printVersionCode') {
     group = 'help'
-    description = 'Prints the versionCode derived from package.json (CI compares it with node scripts/version.mjs --code).'
+    description = 'Prints the versionCode derived from package.json; the android-debug CI job fails if it differs from node scripts/version.mjs --code.'
     def printed = appVersionCode.toString()
     doLast {
         println printed

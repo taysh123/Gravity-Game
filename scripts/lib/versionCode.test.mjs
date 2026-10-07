@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { FactsError, deriveVersion as factsDeriveVersion } from '../facts/factsLib.mjs';
+import * as versionLib from './versionCode.mjs';
 import {
   MAX_VERSION_CODE,
   MIN_UPLOAD_VERSION_CODE,
@@ -185,10 +186,21 @@ describe('single implementation', () => {
     expect(() => factsDeriveVersion('2100.0.0', 1)).toThrow(FactsError);
   });
 
-  it('factsLib.mjs no longer carries a copy of the D-20 formula', () => {
+  // Structural guard (no number matching): factsLib imports versionCode.mjs, re-declares none of its functions,
+  // and its one version adapter calls the imported deriveVersion instead of computing a code itself.
+  it('factsLib.mjs imports versionCode.mjs and defines no local formula function', () => {
     const source = readFileSync(new URL('../facts/factsLib.mjs', import.meta.url), 'utf8');
-    expect(source).not.toMatch(/1_000_000|10_000|1000000|10000/);
-    expect(source).toMatch(/from '\.\.\/lib\/versionCode\.mjs'/);
+    expect(source).toMatch(/^import\s*\{[^}]*\}\s*from\s*'\.\.\/lib\/versionCode\.mjs';?$/m);
+
+    const declared = [...source.matchAll(/\bfunction\s+(\w+)/g)].map((m) => m[1]);
+    const libFunctions = Object.keys(versionLib).filter((name) => /^[a-z]/.test(name));
+    expect(libFunctions).toContain('deriveVersionCode'); // the guard is meaningless if the export list changes shape
+    const redefined = libFunctions.filter((name) => name !== 'deriveVersion' && declared.includes(name));
+    expect(redefined).toEqual([]);
+
+    const adapter = /export function deriveVersion\([^)]*\) \{\r?\n([\s\S]*?)\r?\n\}\r?\n/.exec(source);
+    expect(adapter, 'the deriveVersion adapter was not found in factsLib.mjs').not.toBeNull();
+    expect(adapter[1]).toMatch(/\bderiveD20Version\(/);
   });
 });
 

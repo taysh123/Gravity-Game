@@ -1,26 +1,53 @@
 name: CI
 
+# Runs on master, on phase branches (p0-foundation, p1-..., so a branch is verified before it is merged) and on
+# every pull request. No secrets are used anywhere: both jobs are debug/web builds and nothing signed is uploaded.
+# Release builds (keystore, google-services.json, store ids) are made locally per docs/release/RUNBOOK.md.
 on:
   push:
-    branches: [master]
+    branches: [master, 'p[0-9]*-*']
   pull_request:
+
+# A newer push to the same branch/PR supersedes the older run; master runs always finish.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
+
+permissions:
+  contents: read
 
 jobs:
   web:
-    name: Typecheck · Test · Web build
+    name: Typecheck · Test · Facts · Web build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
-      # `npm install` (not `npm ci`): the lockfile is reconciled on first install
-      # because some native plugin deps (AdMob, RevenueCat) were added to
-      # package.json without a local install (build machine had no disk). Once a
-      # committed lockfile includes them, switch this to `npm ci` for reproducibility.
-      - run: npm install
+          node-version: 22
+          cache: npm
+      - run: npm ci
       - run: npx tsc --noEmit
-      - run: npm test
+      # One vitest run: the console reporter for the log, the JSON report for the facts check below.
+      # A red test fails this step (and so the job) before the facts check is reached.
+      - name: Unit tests (console + JSON report)
+        run: npx vitest run --reporter=default --reporter=json --outputFile.json="$RUNNER_TEMP/vitest-report.json"
+      # scripts/facts.mjs exit codes: 0 block current, 1 block stale, 2 error (red report, bad markers, ...).
+      # Anything but 0 fails the job; the annotation says which case it was.
+      - name: Facts block is current (docs/STATUS.md, README.md)
+        run: |
+          set +e
+          node scripts/facts.mjs --check --vitest-json "$RUNNER_TEMP/vitest-report.json"
+          code=$?
+          set -e
+          case "$code" in
+            0) ;;
+            1) echo "::error title=Stale facts block::Run 'npm run facts' locally and commit docs/STATUS.md / README.md."; exit 1 ;;
+            2) echo "::error title=facts.mjs failed::See the log above (exit 2 = error, not drift)."; exit 2 ;;
+            *) echo "::error title=facts.mjs crashed::Unexpected exit code $code."; exit "$code" ;;
+          esac
+      - name: Version data is valid (package.json -> versionCode, floor 1000001)
+        run: node scripts/version.mjs --check
       - run: npm run build
       - uses: actions/upload-artifact@v4
         with:
@@ -28,24 +55,40 @@ jobs:
           path: dist
           if-no-files-found: error
 
-  # --- Android build (manual / documented — not enabled until the user adds the
-  # signing keystore + google-services.json + AdMob/RevenueCat ids as repo secrets).
-  # Sketch to enable later:
-  #
-  # android:
-  #   name: Android AAB
-  #   runs-on: ubuntu-latest
-  #   needs: web
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: actions/setup-node@v4
-  #       with: { node-version: 20 }
-  #     - uses: actions/setup-java@v4
-  #       with: { distribution: temurin, java-version: 17 }
-  #     - uses: android-actions/setup-android@v3
-  #     - run: npm install && npm run build
-  #     - run: npx cap sync android
-  #     # decode google-services.json + keystore from secrets, then:
-  #     - run: cd android && ./gradlew bundleRelease
-  #     - uses: actions/upload-artifact@v4
-  #       with: { name: app-aab, path: android/app/build/outputs/bundle/release/*.aab }
+  # Debug APK only. No keystore.properties and no android/app/google-services.json exist on the runner (both are
+  # gitignored): build.gradle then leaves the release build unsigned and skips the google-services / crashlytics
+  # plugins, which a debug build does not need. The APK is not uploaded.
+  android-debug:
+    name: Android debug build · Version cross-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - uses: android-actions/setup-android@v3
+      - run: npm ci
+      - run: npm run build
+      - run: npx cap sync android
+      - name: Assemble debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug
+      # D-20: package.json is the single version file. The Node tool and the Gradle task derive versionCode
+      # independently from it; they must print the same number.
+      - name: Version cross-check (scripts/version.mjs vs Gradle printVersionCode)
+        working-directory: android
+        run: |
+          expected="$(node ../scripts/version.mjs --code)"
+          actual="$(./gradlew -q --console=plain :app:printVersionCode | tail -n 1)"
+          echo "scripts/version.mjs --code           : $expected"
+          echo "gradlew :app:printVersionCode        : $actual"
+          if ! [[ "$expected" =~ ^[0-9]+$ ]] || [ "$expected" != "$actual" ]; then
+            echo "::error title=versionCode mismatch::scripts/version.mjs says '$expected', Gradle says '$actual'."
+            exit 1
+          fi

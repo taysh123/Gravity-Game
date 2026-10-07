@@ -87,7 +87,9 @@ function loadVitestReport(vitestJson) {
 }
 
 function gitLine() {
-  const git = (...args) => execFileSync('git', args, { cwd: ROOT, encoding: 'utf8' }).trim();
+  // stderr is discarded: a shallow CI checkout has no tags, and `git describe` would print "fatal: No names found".
+  const git = (...args) =>
+    execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
   try {
     const head = git('rev-parse', '--short', 'HEAD');
     let tag = 'none';

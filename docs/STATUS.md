@@ -30,7 +30,7 @@
 | `@capacitor-firebase/analytics` | 8.3.0 |
 | `@capacitor-firebase/crashlytics` | 8.3.0 |
 | Android SDK (min / compile / target) | 24 / 36 / 36 |
-| CI Node | 20 |
+| CI Node | 22 |
 <!-- facts:end -->
 
 Regenerate with `npm run facts`; verify with `npm run facts:check` (CI runs the check; a stale block fails the build).

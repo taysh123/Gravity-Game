@@ -8,7 +8,8 @@
 //   node scripts/version.mjs --check        validate package.json: plain MAJOR.MINOR.PATCH, MINOR/PATCH/androidBuild 0-99,
 //                                           code <= 2_100_000_000 (Play cap) and >= 1_000_001 (Play already holds code 1)
 //
-// `./gradlew -q :app:printVersionCode` (android/app/build.gradle) must print the same number as --code.
+// `./gradlew -q :app:printVersionCode` (android/app/build.gradle) must print the same number as --code; the
+// `android-debug` job in .github/workflows/ci.yml compares the two and fails on any mismatch.
 // Exit codes: 0 ok, 1 invalid version data (VersionError), 2 usage or I/O error.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
