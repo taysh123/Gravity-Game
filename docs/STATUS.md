@@ -2,7 +2,7 @@
 
 > **The single source of truth for project state.** The Facts block is machine-generated; every other section is
 > edited by hand at the end of each task. Anything that contradicts this file is stale.
-> Last hand-edited **2026-10-07** · Position: **Step 0** of the [execution order](roadmap/EXECUTION-ORDER.md) (docs SSOT; P00-T01 and P00-T02 done).
+> Last hand-edited **2026-10-07** · Position: **Step 0** of the [execution order](roadmap/EXECUTION-ORDER.md) (docs SSOT; P00-T01 to P00-T03 done).
 > Plan of record: [MASTER-ROADMAP](roadmap/MASTER-ROADMAP.md) · [EXECUTION-ORDER](roadmap/EXECUTION-ORDER.md) · [DECISIONS](roadmap/DECISIONS.md) (amendments override entry bodies).
 > Working title: **Gravity Flow** by True Story Labs. Package id `com.truestorylabs.gravityflow` is permanent.
 
@@ -62,12 +62,12 @@ Regenerate with `npm run facts`; verify with `npm run facts:check` (CI runs the 
 | Data Safety form + privacy policy sign-off (drafts land in P0 Step 5) | Owner | before M2 | PENDING |
 
 ## Next 5 actions
-Step 0 continues ([P00 task list](roadmap/phases/P00-foundation.md)); then Step 1 (Capacitor 8.5.2 security bump).
-1. **P00-T03**: make `CLAUDE.md` state-free; add the README facts line.
-2. **P00-T04**: repo hygiene (JDK path out of `gradle.properties`, untrack `.ai/*`, `proguard-android-optimize.txt`).
-3. **P00-T05**: D-20 versioning (versionCode derived from `package.json`, next upload 1000001); rewrites the RUNBOOK versioning section.
-4. **P00-T06**: CI v2 (Node 22, `npm ci`, `facts:check`, Android debug build).
-5. **P00-T07**: Capacitor 8.5.2 family and exact pins (Step 1).
+Step 0 continues ([P00 task list](roadmap/phases/P00-foundation.md)); then Step 1 (Capacitor 8.5.2 security bump) and Step 2.
+1. **P00-T04**: repo hygiene (JDK path out of `gradle.properties`, untrack `.ai/*`, `proguard-android-optimize.txt`).
+2. **P00-T05**: D-20 versioning (versionCode derived from `package.json`, next upload 1000001); rewrites the RUNBOOK versioning section.
+3. **P00-T06**: CI v2 (Node 22, `npm ci`, `facts:check`, Android debug build).
+4. **P00-T07**: Capacitor 8.5.2 family and exact pins (Step 1).
+5. **P00-T09**: manifest, theme, WebView floor and system bars (Step 2; the AdMob bump P00-T08 waits for its soak window).
 
 ## Open bugs
 Top blockers from the [state audit](audit/2026-10-07/STATE-AUDIT.md) (section B.6/O). Target: 0 open P0 defects at M0.
