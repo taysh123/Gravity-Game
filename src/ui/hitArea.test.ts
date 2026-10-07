@@ -13,7 +13,7 @@ vi.mock('phaser', async () => {
 });
 
 import Phaser from 'phaser';
-import { setScrimTapArea, setTapArea, setTapCircle, tapCircle, tapRect } from './hitArea';
+import { addTapSink, minTapPad, outsideBand, setScrimTapArea, setTapArea, setTapCircle, tapCircle, tapRect } from './hitArea';
 
 // ---- A minimal container stand-in that tests a point EXACTLY the way Phaser 3.90 does ------------------------------
 //   Container.js:299    displayOriginX = width * 0.5   (0 until setSize is called), same for Y
@@ -240,6 +240,130 @@ describe('setScrimTapArea', () => {
     expect(scrim.input!.hitAreaCallback).toBe(Phaser.Geom.Rectangle.Contains);
     for (const [x, y] of [[1, 1], [389, 1], [1, 843], [389, 843], [195, 422]]) expect(scrim.hits(x, y), `${x},${y}`).toBe(true);
     for (const [x, y] of [[-1, 400], [391, 400], [200, -1], [200, 845]]) expect(scrim.hits(x, y), `${x},${y}`).toBe(false);
+  });
+});
+
+// ---- minTapPad: lift a short target to the 44 px minimum without changing how it looks (F4: the 42 px Endless pills) ------------
+describe('minTapPad', () => {
+  it('is 0 when both sides already meet the minimum', () => {
+    expect(minTapPad(220, 58, 44)).toBe(0);
+    expect(minTapPad(44, 44, 44)).toBe(0);
+    expect(minTapPad(300, 60, 44)).toBe(0);
+  });
+
+  it('pads each side by half the shortfall of the SHORTER side (42 px pill -> 1 px a side -> 44 px)', () => {
+    expect(minTapPad(168, 42, 44)).toBe(1);
+    expect(minTapPad(124, 42, 44)).toBe(1);
+    expect(minTapPad(30, 30, 44)).toBe(7);
+  });
+
+  it('rounds up so an odd shortfall still reaches the minimum', () => {
+    expect(minTapPad(100, 43, 44)).toBe(1); // 43 + 2 = 45 >= 44
+    expect(minTapPad(100, 18, 44)).toBe(13); // 26 / 2
+    expect(minTapPad(100, 17, 44)).toBe(14); // 27 / 2 = 13.5 -> 14
+  });
+
+  it('always yields a zone of at least min on both sides once applied through tapRect', () => {
+    for (const [w, h] of [[168, 42], [124, 42], [90, 18], [30, 30], [100, 43.5], [44, 44], [300, 64]] as Array<[number, number]>) {
+      const r = tapRect(w, h, minTapPad(w, h, 44));
+      expect(Math.min(r.width, r.height), `${w}x${h}`).toBeGreaterThanOrEqual(44);
+    }
+  });
+
+  it('a tapped pill keeps its visible edge live and leaks at most the pad beyond it', () => {
+    const c = fake();
+    setTapArea(c, 168, 42, minTapPad(168, 42, 44));
+    for (const [name, x, y] of corners(168, 42)) expect(c.hits(x, y), name).toBe(true);
+    expect(c.hits(0, 21.9)).toBe(true); // 0.9 px past the visible bottom edge, inside the 1 px pad
+    expect(c.hits(0, 22.1)).toBe(false);
+  });
+});
+
+// ---- outsideBand + addTapSink: the dead zones around a scrolling list (F1: rows scrolled out of view stay live otherwise) --------
+describe('outsideBand', () => {
+  it('returns the strip above and the strip below a vertical band, full width', () => {
+    expect(outsideBand(390, 844, 134, 764)).toEqual([
+      { x: 0, y: 0, width: 390, height: 134 },
+      { x: 0, y: 764, width: 390, height: 80 },
+    ]);
+  });
+
+  it('leaves out a strip that has no height (band flush with the top or the bottom)', () => {
+    expect(outsideBand(390, 844, 0, 700)).toEqual([{ x: 0, y: 700, width: 390, height: 144 }]);
+    expect(outsideBand(390, 844, 100, 844)).toEqual([{ x: 0, y: 0, width: 390, height: 100 }]);
+    expect(outsideBand(390, 844, 0, 844)).toEqual([]);
+  });
+
+  it('clamps a band that sticks out of the screen', () => {
+    expect(outsideBand(390, 844, -50, 900)).toEqual([]);
+    expect(outsideBand(390, 844, 900, 1000)).toEqual([{ x: 0, y: 0, width: 390, height: 844 }]);
+    expect(outsideBand(390, 844, -200, -10)).toEqual([{ x: 0, y: 0, width: 390, height: 844 }]);
+  });
+
+  it('never overlaps the band and never overlaps itself, and an empty or inverted band leaves the whole screen covered', () => {
+    for (const [top, bottom] of [[134, 764], [300, 300], [400, 200], [0, 100], [700, 844]] as Array<[number, number]>) {
+      const rects = outsideBand(390, 844, top, bottom);
+      const lo = top; // an inverted band is read as an empty one at `top`
+      const hi = Math.max(top, bottom);
+      for (const r of rects) expect(r.y + r.height <= lo || r.y >= hi, `band ${top}..${bottom}`).toBe(true);
+      for (let i = 0; i < rects.length; i++) {
+        for (let j = i + 1; j < rects.length; j++) {
+          const a = rects[i]; const b = rects[j];
+          expect(a.y + a.height <= b.y || b.y + b.height <= a.y).toBe(true);
+        }
+      }
+      if (hi === lo) expect(rects.reduce((sum, r) => sum + r.height, 0), `empty band ${top}..${bottom}`).toBe(844);
+    }
+  });
+});
+
+describe('addTapSink', () => {
+  class Placed extends FakeContainer {
+    x = 0;
+    y = 0;
+    depth = 0;
+    setDepth(d: number): this {
+      this.depth = d;
+      return this;
+    }
+    // A point in world (screen) space, as the engine reaches it: undo the container position, then the displayOrigin shift.
+    hitsWorld(wx: number, wy: number): boolean {
+      return this.hits(wx - this.x, wy - this.y);
+    }
+  }
+  const made: Placed[] = [];
+  const scene = {
+    add: {
+      container: (x: number, y: number): Placed => {
+        const c = new Placed();
+        c.x = x;
+        c.y = y;
+        made.push(c);
+        return c;
+      },
+    },
+  } as never;
+
+  it('covers exactly the given screen rectangle (top-left based) and sits at the given depth', () => {
+    made.length = 0;
+    const sink = addTapSink(scene, { x: 0, y: 0, width: 390, height: 134 }, 1) as unknown as Placed;
+    expect(sink.depth).toBe(1);
+    for (const [x, y] of [[1, 1], [389, 1], [1, 133], [389, 133], [195, 67]]) expect(sink.hitsWorld(x, y), `in ${x},${y}`).toBe(true);
+    for (const [x, y] of [[195, 135], [-1, 60], [391, 60]]) expect(sink.hitsWorld(x, y), `out ${x},${y}`).toBe(false);
+  });
+
+  it('the two sinks of a list viewport tile the screen minus the band: every probe outside is caught once, none inside', () => {
+    made.length = 0;
+    const [top, bottom] = [134, 764];
+    for (const r of outsideBand(390, 844, top, bottom)) addTapSink(scene, r, 1);
+    expect(made).toHaveLength(2);
+    for (let y = 0; y <= 844; y += 7) {
+      for (let x = 0; x <= 390; x += 13) {
+        const caught = made.filter((s) => s.hitsWorld(x, y)).length;
+        if (y > top && y < bottom) expect(caught, `inside the band ${x},${y}`).toBe(0);
+        else if (y < top - 0.5 || y > bottom + 0.5) expect(caught, `outside the band ${x},${y}`).toBe(1);
+      }
+    }
   });
 });
 

@@ -14,7 +14,6 @@ import { worldOf } from '../utils/world';
 
 const NODE_GAP = 98;   // vertical spacing between world nodes
 const NODE_R = 23;     // planet node radius
-const NODE_TAP_PAD = 8; // a planet is tappable 8 px past its disc (ui/hitArea.ts setTapCircle)
 const WIND = 64;       // horizontal wind amplitude of the constellation path
 const DRAG_THRESHOLD = 8;
 
@@ -167,7 +166,7 @@ export class WorldMapScene extends Phaser.Scene {
     const node = this.add.container(x, y, children);
 
     if (unlocked) {
-      setTapCircle(node, NODE_R, NODE_TAP_PAD);
+      setTapCircle(node, NODE_R, THEME.NODE_TAP_PAD);
       if (node.input) node.input.cursor = 'pointer';
       node.on('pointerup', () => {
         if (this.scrolled) return;

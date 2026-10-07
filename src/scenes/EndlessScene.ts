@@ -12,7 +12,7 @@ import { GravityZone } from '../entities/GravityZone';
 import { Magnet } from '../entities/Magnet';
 import { Collectible } from '../entities/Collectible';
 import { drawGlass } from '../ui/glass';
-import { setScrimTapArea, setTapArea } from '../ui/hitArea';
+import { minTapPad, setScrimTapArea, setTapArea } from '../ui/hitArea';
 import { IconButton } from '../ui/IconButton';
 import { safeAreaInsetsScaled } from '../utils/a11y';
 import { PLATFORM } from '../config/platform.config';
@@ -514,7 +514,7 @@ export class EndlessScene extends Phaser.Scene implements Pausable {
       fontFamily: THEME.FONT_DISPLAY, fontSize: '15px', color: colorHex, fontStyle: '700',
     }).setOrigin(0.5);
     const c = this.add.container(x, y, [bg, txt]).setScrollFactor(0).setDepth(112);
-    setTapArea(c, width, h);
+    setTapArea(c, width, h, minTapPad(width, h, THEME.MIN_TAP)); // 42 px tall to the eye, 44 px to a finger: padded, not redrawn
     c.on('pointerup', () => onTap(c));
     return c;
   }

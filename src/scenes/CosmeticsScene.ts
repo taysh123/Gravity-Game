@@ -23,7 +23,7 @@ import {
   type PurchaseSurface,
   type ToastMessage,
 } from '../ui/purchaseUi';
-import { setTapArea } from '../ui/hitArea';
+import { addTapSink, outsideBand, setTapArea } from '../ui/hitArea';
 import { showToast } from '../ui/toast';
 import { fadeIn, fadeToScene } from '../utils/transitions';
 import { reducedMotionActive, safeAreaInsetsScaled } from '../utils/a11y';
@@ -136,14 +136,18 @@ export class CosmeticsScene extends Phaser.Scene {
       const g = this.add.graphics();
       if (active) {
         g.fillStyle(THEME.ACCENT_GOLD, 0.16);
-        g.fillRoundedRect(tx - tabW / 2 + 3, tabY - 15, tabW - 6, 30, 8);
+        g.fillRoundedRect(-tabW / 2 + 3, -15, tabW - 6, 30, 8);
       }
-      const txt = this.add.text(tx, tabY, t.label, {
+      const txt = this.add.text(0, 0, t.label, {
         fontFamily: THEME.FONT_DISPLAY, fontSize: '14px',
         color: active ? STARDUST : THEME.TEXT_MUTED, fontStyle: '600',
       }).setOrigin(0.5);
-      txt.setInteractive({ useHandCursor: true });
-      txt.on('pointerup', () => {
+      // The label is 18 px tall: the tab is a container so its tap area can be tabW x 44 (the drawing is unchanged). It sits above
+      // the list's tap sinks (LIST_CHROME_DEPTH), so a row scrolled up under the tab bar never takes a tap meant for a tab.
+      const tab = this.add.container(tx, tabY, [g, txt]).setDepth(THEME.LIST_CHROME_DEPTH);
+      setTapArea(tab, tabW, THEME.MIN_TAP);
+      if (tab.input) tab.input.cursor = 'pointer';
+      tab.on('pointerup', () => {
         if (this.dragging || t.key === this.tab) return;
         Analytics.track(storeTab(t.key)); // tab-switch intent (Bundles = strongest IAP signal)
         this.scene.restart({ tab: t.key, internal: true });
@@ -159,6 +163,10 @@ export class CosmeticsScene extends Phaser.Scene {
 
     this.toastY = backY - PURCHASE_UI.SHOP_TOAST_ABOVE_BACK;
     this.contentTop = contentTop;
+    // A mask clips drawing, never input: a row scrolled out of the viewport keeps a live hit zone over the header, the tab bar and
+    // the strip under the list. Tap sinks over everything OUTSIDE the viewport take those taps (the tabs and Back sit above them),
+    // so a row is tappable on its visible part only. This also covers a link nested inside a row (Check status, Restore).
+    for (const r of outsideBand(width, height, contentTop, contentBottom)) addTapSink(this, r, THEME.LIST_SINK_DEPTH);
     const listC = this.add.container(cx, contentTop);
     this.listC = listC;
     // Bundles: a card the store/entitlements hide (Starter once no_ads is owned, D-09) is not built at all.
@@ -208,7 +216,8 @@ export class CosmeticsScene extends Phaser.Scene {
       listC.y = Phaser.Math.Clamp(listC.y - dyy * 0.5, minY, maxY);
     });
 
-    new Button(this, cx, backY, '← Back', () => fadeToScene(this, 'MainMenuScene'), { width: 150, height: 46, fontSize: 18 });
+    new Button(this, cx, backY, '← Back', () => fadeToScene(this, 'MainMenuScene'), { width: 150, height: 46, fontSize: 18 })
+      .container.setDepth(THEME.LIST_CHROME_DEPTH);
 
     if (this.tab === 'bundle') {
       // A "…" card, a pending payment that completes, a marker that times out: redraw when what the cards show changed,

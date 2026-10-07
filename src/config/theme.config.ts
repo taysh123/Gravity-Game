@@ -25,6 +25,12 @@ export const THEME = {
   LINK_TAP_W: 220, // a text-only link (menu "GRAVITY RUN", end-screen store link) is tappable over 220 x 44, not just its glyphs
   LINK_TAP_H: 44,
   TOGGLE_TAP_PAD: 8, // the Settings switch (52x30) is tappable 8 px past its track on every side (ui/hitArea.ts setTapArea)
+  NODE_TAP_PAD: 8, // a World Map planet is tappable 8 px past its disc (ui/hitArea.ts setTapCircle)
+  MIN_TAP: 44, // the smallest tap target in px (ui/hitArea.ts minTapPad pads a smaller one up to it without changing how it looks)
+  // Depths in a scene with a scrolling list (the shop): list rows 0 < tap sinks over the area around the list < the chrome that
+  // must stay tappable there (tabs, Back). A mask only clips drawing, so the sinks are what keep a scrolled-out row from taking a tap.
+  LIST_SINK_DEPTH: 1,
+  LIST_CHROME_DEPTH: 2,
 
   // Glass surfaces (Phaser fills: color + alpha)
   PANEL_FILL: 0x0c0e1a, // frosted panel base

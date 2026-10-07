@@ -50,6 +50,35 @@ export function setScrimTapArea(scrim: Phaser.GameObjects.Graphics, w: number, h
   scrim.setInteractive(new Phaser.Geom.Rectangle(r.x, r.y, r.width, r.height), Phaser.Geom.Rectangle.Contains);
 }
 
+// The pad per side that lifts the SHORTER side of a w x h target to `min` px (0 when it is already big enough), for a target
+// that is a little too small to hit with a finger but must not change how it looks. Rounded up, so the result never falls short.
+export function minTapPad(w: number, h: number, min: number): number {
+  return Math.ceil(Math.max(0, min - Math.min(w, h)) / 2);
+}
+
+// The parts of a viewW x viewH screen that lie outside the horizontal band [top, bottom], full width: the strip above it and the
+// strip below it. A strip with no height is left out; a band that sticks out of the screen, or is empty, is clamped, so the
+// strips never overlap the band or each other. Pure.
+export function outsideBand(viewW: number, viewH: number, top: number, bottom: number): TapRect[] {
+  const t = Math.min(Math.max(top, 0), viewH);
+  const b = Math.min(Math.max(bottom, top, 0), viewH);
+  const rects: TapRect[] = [];
+  if (t > 0) rects.push({ x: 0, y: 0, width: viewW, height: t });
+  if (b < viewH) rects.push({ x: 0, y: b, width: viewW, height: viewH - b });
+  return rects;
+}
+
+/**
+ * An invisible, interactive rectangle over `r` (screen space, top-left based) that only swallows taps. Input is `topOnly`, so any
+ * interactive object at a LOWER depth that lies under it never sees a tap there; anything that must stay tappable in that area
+ * is given a higher depth. A mask clips drawing, never input, so this is how a scrolling list keeps its off-screen rows dead.
+ */
+export function addTapSink(scene: Phaser.Scene, r: TapRect, depth: number): Phaser.GameObjects.Container {
+  const sink = scene.add.container(r.x + r.width / 2, r.y + r.height / 2).setDepth(depth);
+  setTapArea(sink, r.width, r.height);
+  return sink;
+}
+
 /** Sizes `c` to the 2r×2r square around a disc of radius `r` and makes that disc (optionally grown by `pad`) tappable. */
 export function setTapCircle(c: Phaser.GameObjects.Container, r: number, pad = 0): void {
   c.setSize(2 * r, 2 * r);

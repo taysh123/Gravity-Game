@@ -5,6 +5,7 @@ import { Toggle } from '../ui/Toggle';
 import { Button } from '../ui/Button';
 import { IconButton } from '../ui/IconButton';
 import { drawGlass } from '../ui/glass';
+import { setTapArea } from '../ui/hitArea';
 import { drawIcon, type IconName } from '../ui/icons';
 import { sharedAudio } from '../utils/AudioSynth';
 import { SettingsStore } from '../utils/SettingsStore';
@@ -264,6 +265,11 @@ export class SettingsScene extends Phaser.Scene implements Dismissable {
         ),
       );
     }
+
+    // The panel body swallows taps: only the scrim OUTSIDE the panel closes the overlay. The card is interactive over the panel's
+    // rectangle but has no handler; its controls are children of it, and a child sorts above its parent container, so they still
+    // get their own taps. Without this, a tap on blank panel space (between two rows) fell through to the scrim and closed Settings.
+    setTapArea(card, panelW, panelH);
 
     if (!reducedMotionActive() && !quiet) {
       card.setScale(0.85);
