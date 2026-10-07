@@ -63,6 +63,8 @@ import { StreakStore } from '../utils/StreakStore';
 import { streakTier } from '../utils/streak';
 import { nearMiss } from '../utils/nearMiss';
 import { fitScale, truncateToWidth } from '../utils/textFit';
+import { PLATFORM } from '../config/platform.config';
+import type { Pausable, PauseAction, PauseReason } from '../platform/pausable';
 
 const SAFE_PAD = 12; // minimum padding from any screen edge for HUD/nav
 
@@ -105,7 +107,7 @@ function persistWinsSinceStoreNudge(n: number): void {
   }
 }
 
-export class GameScene extends Phaser.Scene {
+export class GameScene extends Phaser.Scene implements Pausable {
   private ball!: Ball;
   private goal!: Goal;
   private attractor: Attractor | null = null;
@@ -202,6 +204,10 @@ export class GameScene extends Phaser.Scene {
     this.isDying = false;
     this.leaving = false;
     this.advanceConsumed = false;
+    // PauseScene hands RESTART / HOME back here so this scene keeps owning its teardown.
+    // off-before-on: this scene instance is reused across restarts, so never stack the listener.
+    this.events.off(PLATFORM.PAUSE_ACTION_EVENT, this.onPauseAction);
+    this.events.on(PLATFORM.PAUSE_ACTION_EVENT, this.onPauseAction);
 
     const config = this.isDaily
       ? DAILY_LEVELS[this.dailyIndex] ?? DAILY_LEVELS[0]
@@ -817,6 +823,28 @@ export class GameScene extends Phaser.Scene {
     this.scene.pause();
     this.scene.launch('SettingsScene', { caller: 'GameScene' });
   }
+
+  // Pausable contract (D-11, src/platform/pausable.ts): Android Back opens PauseScene.
+  get gameplayEnded(): boolean {
+    return this.isWon || this.isDying || this.leaving;
+  }
+
+  // No-op once the level is won / dying / leaving or while an overlay already holds this scene paused.
+  // Level timers still read the wall clock until P1 (P01-T08), so time spent paused still drains a countdown.
+  requestPause(reason: PauseReason): void {
+    if (this.gameplayEnded || !this.scene.isActive()) return;
+    if (this.scene.isActive(PLATFORM.BACK.PAUSE_SCENE) || this.scene.isActive('SettingsScene')) return;
+    this.getAudio().stopHum();
+    this.attractor?.destroy();
+    this.attractor = null;
+    this.scene.pause();
+    this.scene.launch(PLATFORM.BACK.PAUSE_SCENE, { caller: 'GameScene', reason });
+  }
+
+  private onPauseAction = (action: PauseAction): void => {
+    if (action === 'restart') this.triggerRestart();
+    else this.goHome();
+  };
 
   // Onboarding tip near the bottom. Auto-fades, or dismisses on first touch.
   private showHint(hint?: string): void {

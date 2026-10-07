@@ -4,6 +4,7 @@ export type IconName =
   | 'home'
   | 'settings'
   | 'restart'
+  | 'pause'
   | 'close'
   | 'sound'
   | 'music'
@@ -63,6 +64,12 @@ export function drawIcon(
         [ax, ay],
         [ax - h * 0.02, ay - h * 0.32],
       ]);
+      break;
+    }
+    case 'pause': {
+      // Two vertical bars.
+      line(g, -h * 0.3, -h * 0.5, -h * 0.3, h * 0.5);
+      line(g, h * 0.3, -h * 0.5, h * 0.3, h * 0.5);
       break;
     }
     case 'close': {

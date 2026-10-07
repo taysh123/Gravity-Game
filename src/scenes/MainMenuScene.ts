@@ -13,6 +13,7 @@ import { DailyStore } from '../utils/DailyStore';
 import { LEVELS } from '../config/levels';
 import { RETENTION } from '../config/retention.config';
 import { drawGlass } from '../ui/glass';
+import { setBackHandlerEnabled } from '../platform/lifecycle';
 
 // Stage 3: the home screen. Logo title (bobbing) + tagline + PLAY / LEVELS,
 // with a staggered cinematic entrance. Shares the cosmic backdrop with the intro.
@@ -33,6 +34,20 @@ export class MainMenuScene extends Phaser.Scene {
 
     this.cosmic = new CosmicBackground(this);
     fadeIn(this);
+
+    // Back on the menu is the system's own warm background exit (with the predictive-back animation), so the JS
+    // handler is off here. It is on again while the Settings overlay is open (this scene is paused, so Back must
+    // close the overlay) and whenever this scene shuts down. No-op on web.
+    setBackHandlerEnabled(false);
+    const onPause = (): void => setBackHandlerEnabled(true);
+    const onResume = (): void => setBackHandlerEnabled(false);
+    this.events.on(Phaser.Scenes.Events.PAUSE, onPause);
+    this.events.on(Phaser.Scenes.Events.RESUME, onResume);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.events.off(Phaser.Scenes.Events.PAUSE, onPause);
+      this.events.off(Phaser.Scenes.Events.RESUME, onResume);
+      setBackHandlerEnabled(true);
+    });
 
     // Settings gear (top-right, safe-area aware).
     const gearSize = 46;

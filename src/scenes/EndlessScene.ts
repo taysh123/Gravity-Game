@@ -12,6 +12,10 @@ import { GravityZone } from '../entities/GravityZone';
 import { Magnet } from '../entities/Magnet';
 import { Collectible } from '../entities/Collectible';
 import { drawGlass } from '../ui/glass';
+import { IconButton } from '../ui/IconButton';
+import { safeAreaInsetsScaled } from '../utils/a11y';
+import { PLATFORM } from '../config/platform.config';
+import type { Pausable, PauseAction, PauseReason } from '../platform/pausable';
 import { generateRun, weekKey, runScore, stardustForRun } from '../utils/endless';
 import type { RunChunk } from '../config/endless/chunks';
 import { fadeToScene } from '../utils/transitions';
@@ -41,7 +45,7 @@ interface LiveChunk {
 // dodging a seeded sequence of handcrafted chunks. One death (fall behind / hazard)
 // ends the run. Entities are placed at fixed world coords and the CAMERA scrolls,
 // so every campaign entity is reused as-is. (G2 prototype — feel tuning to follow.)
-export class EndlessScene extends Phaser.Scene {
+export class EndlessScene extends Phaser.Scene implements Pausable {
   private cosmic!: CosmicBackground;
   private ball!: Ball;
   private attractor: Attractor | null = null;
@@ -75,6 +79,7 @@ export class EndlessScene extends Phaser.Scene {
 
   private scoreText!: Phaser.GameObjects.Text;
   private coachText?: Phaser.GameObjects.Text;
+  private pauseBtn?: IconButton;
 
   private get ballHomeX(): number {
     return this.playX + PHYSICS.PLAY_WIDTH / 2;
@@ -107,6 +112,10 @@ export class EndlessScene extends Phaser.Scene {
     this.awardedStardust = 0;
     this.overlay = [];
     this.overlayActions = [];
+    // PauseScene hands RESTART / HOME back here so this scene keeps owning its teardown.
+    // off-before-on: this scene instance is reused across restarts, so never stack the listener.
+    this.events.off(PLATFORM.PAUSE_ACTION_EVENT, this.onPauseAction);
+    this.events.on(PLATFORM.PAUSE_ACTION_EVENT, this.onPauseAction);
 
     this.cosmic = new CosmicBackground(this);
     this.cosmic.setScrollFactor(0); // backdrop pinned to the screen
@@ -138,8 +147,42 @@ export class EndlessScene extends Phaser.Scene {
       .setScrollFactor(0)
       .setDepth(100);
 
+    this.createPauseButton();
     this.maybeShowCoach();
   }
+
+  // Pause icon, top-right (D-11 / A-08: Endless can be paused). Opens the same PauseScene as Android Back.
+  private createPauseButton(): void {
+    const U = PLATFORM.PAUSE_UI;
+    const sx = this.scale.displaySize.width / this.scale.gameSize.width;
+    const sy = this.scale.displaySize.height / this.scale.gameSize.height;
+    const insets = safeAreaInsetsScaled(sx, sy);
+    const x = this.viewW - Math.max(U.HUD_SAFE_PAD, insets.right) - U.HUD_BUTTON_MARGIN - U.HUD_BUTTON_SIZE / 2;
+    const y = Math.max(U.HUD_SAFE_PAD, insets.top) + U.HUD_BUTTON_MARGIN + U.HUD_BUTTON_SIZE / 2;
+    this.pauseBtn = new IconButton(this, x, y, 'pause', () => this.requestPause('button'), { size: U.HUD_BUTTON_SIZE });
+    this.pauseBtn.container.setScrollFactor(0).setDepth(U.HUD_DEPTH);
+  }
+
+  // Pausable contract (D-11, src/platform/pausable.ts): Android Back and the HUD button open PauseScene.
+  get gameplayEnded(): boolean {
+    return this.isDead;
+  }
+
+  // No-op once the run is over or while an overlay already holds this scene paused.
+  requestPause(reason: PauseReason): void {
+    if (this.isDead || !this.scene.isActive()) return;
+    if (this.scene.isActive(PLATFORM.BACK.PAUSE_SCENE) || this.scene.isActive('SettingsScene')) return;
+    this.getAudio().stopHum();
+    this.attractor?.destroy();
+    this.attractor = null;
+    this.scene.pause();
+    this.scene.launch(PLATFORM.BACK.PAUSE_SCENE, { caller: 'EndlessScene', reason });
+  }
+
+  private onPauseAction = (action: PauseAction): void => {
+    if (action === 'restart') this.retry();
+    else fadeToScene(this, 'MainMenuScene');
+  };
 
   // One-time coach hint on the player's first run (either mode). Dismissed on the
   // first press or after a few seconds; persisted so it never nags again.
@@ -180,8 +223,9 @@ export class EndlessScene extends Phaser.Scene {
 
   private setupInput(): void {
     this.input.mouse?.disableContextMenu();
-    this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
+    this.input.on('pointerdown', (p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => {
       if (this.isDead) return; // the run-over overlay's scrim handles "tap to return"
+      if (over.length > 0) return; // a tap on the pause button must not also spawn an attractor
       this.dismissCoach();
       const audio = this.getAudio();
       audio.resume();
@@ -347,6 +391,7 @@ export class EndlessScene extends Phaser.Scene {
   private die(): void {
     if (this.isDead) return;
     this.isDead = true;
+    this.pauseBtn?.container.setVisible(false);
     const audio = this.getAudio();
     audio.stopHum();
     audio.playFail();
@@ -480,6 +525,7 @@ export class EndlessScene extends Phaser.Scene {
     RawMatter.Body.setVelocity(this.ball.body, { x: 0, y: 0 });
     this.invulnUntil = this.time.now + 1500;
     this.isDead = false;
+    this.pauseBtn?.container.setVisible(true);
     this.canReturn = false;
     this.matter.world.enabled = true;
   }

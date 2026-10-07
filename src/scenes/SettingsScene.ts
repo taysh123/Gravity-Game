@@ -10,6 +10,7 @@ import { sharedAudio } from '../utils/AudioSynth';
 import { SettingsStore } from '../utils/SettingsStore';
 import { reducedMotionActive } from '../utils/a11y';
 import { IAP } from '../utils/IAP';
+import type { Dismissable } from '../platform/pausable';
 
 interface Row {
   icon: IconName;
@@ -20,7 +21,7 @@ interface Row {
 
 // Settings overlay launched on top of a paused caller scene (game or menu).
 // Lightweight glass panel: Sound / Music / Haptics / Reduce Motion + close.
-export class SettingsScene extends Phaser.Scene {
+export class SettingsScene extends Phaser.Scene implements Dismissable {
   private caller = 'MainMenuScene';
   private closing = false;
 
@@ -181,7 +182,8 @@ export class SettingsScene extends Phaser.Scene {
     this.input.keyboard?.once('keydown-ESC', () => this.close());
   }
 
-  private close(): void {
+  // Public: the Android Back router closes this overlay through the Dismissable contract (src/platform/lifecycle.ts).
+  close(): void {
     if (this.closing) return; // scrim + ✕ + ESC can all fire; resume the caller exactly once
     this.closing = true;
     this.scene.resume(this.caller);

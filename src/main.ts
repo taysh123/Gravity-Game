@@ -9,6 +9,7 @@ import { WorldMapScene } from './scenes/WorldMapScene';
 import { AchievementsScene } from './scenes/AchievementsScene';
 import { CosmeticsScene } from './scenes/CosmeticsScene';
 import { SettingsScene } from './scenes/SettingsScene';
+import { PauseScene } from './scenes/PauseScene';
 import { GameScene } from './scenes/GameScene';
 import { EndlessScene } from './scenes/EndlessScene';
 import { RunSelectScene } from './scenes/RunSelectScene';
@@ -16,6 +17,7 @@ import { EndScene } from './scenes/EndScene';
 import { Crash } from './utils/Crash';
 import { IAP } from './utils/IAP';
 import { sharedAudio } from './utils/AudioSynth';
+import { installBackNavigation } from './platform/lifecycle';
 
 // Crash reporting (Crashlytics on native; global error bridge everywhere).
 Crash.init();
@@ -50,12 +52,16 @@ const game = new Phaser.Game({
     AchievementsScene,
     CosmeticsScene,
     SettingsScene,
+    PauseScene,
     GameScene,
     EndlessScene,
     RunSelectScene,
     EndScene,
   ],
 });
+
+// Android Back (native backButton event) + Escape on the web both go through the pure router (D-11).
+installBackNavigation(game);
 
 // Size the Phaser parent (#app) to the *visible* viewport. iOS Chrome resolves
 // CSS 100dvh to the larger toolbar-hidden layout viewport, so FIT was scaling the
