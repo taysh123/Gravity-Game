@@ -226,9 +226,10 @@ stateDiagram-v2
 
 ### A.13 Release guards
 
-- A Vite build-time check fails a **release** build if:
-  - the ad unit or app ids are Google test ids (`ca-app-pub-3940256099942544…`, currently at `monetization.config.ts:9-11`), or
-  - the RC key is empty or is the Test Store key.
+- A build-time check fails a **release** build (`vite build --mode release`; implemented in P00-T20, see the RUNBOOK section 6) if:
+  - a production ad unit or app id is empty or a Google test id (`ca-app-pub-3940256099942544…`; the test ids are `ADMOB_TEST` in `monetization.config.ts` and only non-release modes select them), or
+  - the RC key is empty or is not a `goog_` key (which includes the Test Store key), or
+  - a UMP debug variable is set, or the versionCode is not above the last upload.
 - **Production web build.** IAP buttons read "Available in the Android app" and no web build, dev included, grants anything: buy and restore resolve `unavailable`, and the DEV grant stub was deleted in the P00-T17 fix pass (fixes defect #14). Rewarded on web stays a DEV-only stub. Production web never grants ad rewards.
 
 ### A.14 Owner dashboard setup checklist
@@ -251,14 +252,14 @@ stateDiagram-v2
 | R5 | RC → Products | Import the 4 products; set each to **Non-consumable** | Type column shows Non-consumable |
 | R6 | RC → Entitlements | `no_ads`, `pack_starter`, `pack_premium_collection`, `pack_founders`, attached exactly as in A.2 | Map matches A.2 |
 | R7 | RC → Offerings | Offering `default` set as **Current**, packages `remove_ads`, `starter`, `premium_collection`, `founders` (custom ids) | `getOfferings().current` lists 4 |
-| R8 | RC → API keys | Copy the **public** `goog_…` key into `REVENUECAT.apiKey` (safe to commit). The Test Store key goes only into `.env.development`, never into a release. | Release guard passes |
+| R8 | RC → API keys | Copy the **public** `goog_…` key into `REVENUECAT_API_KEY_PROD` in `monetization.config.ts` (safe to commit). A Test Store key (`test_…`) never goes into that slot: the release guard refuses anything that is not `goog_…`. | Release guard passes |
 | **AdMob + UMP** ||||
 | M1 | AdMob → Apps | Create or confirm the app for the package. Link it to the Play listing once the listing is public. | App id issued |
 | M2 | AdMob → Ad units | One **Interstitial** (`interstitial_level_break`) and one **Rewarded** (`rewarded_main`). Optional per-surface rewarded units are a P7 reporting choice. | Unit ids issued |
 | M3 | Interstitial unit → Frequency capping | 1 impression per 3 min **and** 10 per day per user (backstop for D-24) | Cap saved |
 | M4 | AdMob → Blocking controls | Maximum ad content rating **PG** (matches D-25) | Saved |
 | M5 | AdMob → Settings → Test devices | Register every QA device | Test label on ads |
-| M6 | Repo (developer) | App id → `AndroidManifest.xml:17-19` + `ADMOB.appId`; unit ids → `ADMOB` (release). DEV keeps Google test ids. | Release guard passes |
+| M6 | Repo (developer) | App id → `ADMOB_PROD.appId` and, at build time, `-PADMOB_APP_ID` (the manifest holds the `${admobAppId}` placeholder); unit ids → `ADMOB_PROD`. Every non-release mode keeps Google test ids (`ADMOB_TEST`). | Release guard passes |
 | U1 | Privacy & messaging → GDPR | Message for EEA + UK + CH: Consent / Do not consent / Manage options; privacy-policy URL | Published |
 | U2 | Privacy & messaging → US state regulations | Message for the app | Published |
 | **app-ads.txt** ||||

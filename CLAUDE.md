@@ -33,6 +33,8 @@ npm run build           # TypeScript check + Vite production build
 npx tsc --noEmit        # Type-check only, no output
 npm run facts           # Regenerate the facts blocks in docs/STATUS.md and README.md
 npm run facts:check     # Fail if a facts block is stale (CI runs this)
+npm run build:release   # Release-mode build (production AdMob/RevenueCat ids); refuses until the owner supplies real ids
+npm run release:check   # List what blocks a release; `-- --assets` scans the synced bundle (RUNBOOK section 6)
 npm run fonts:fetch     # Download self-hosted Orbitron + Exo 2 woff2 into assets/fonts
 npm run optimize:assets # Downscale/quantize raw logos → assets/images (sharp)
 ```
@@ -166,6 +168,7 @@ src/
     theme.config.ts             ← Design system: fonts, Expo easing, radius, glass + text tokens.
     splash.config.ts            ← Splash/menu constants (timings, polish tokens). Reuses PHYSICS colors.
     fx.config.ts · retention.config.ts · monetization.config.ts · cosmetics.config.ts   ← Domain constants.
+    build.config.ts             ← Build mode: RELEASE_MODE / IS_RELEASE_BUILD pick the AdMob/RevenueCat ids (monetization.config.ts).
     assets.ts                   ← IMAGES map — import-bundled logo URLs (Vite hashes them).
     worlds.ts · worldThemes.ts  ← WORLDS chapter metadata (name/theme/level range) over flat LEVELS[].
     dailyLevels.ts · endless/   ← Daily levels; Gravity Run chunk library.

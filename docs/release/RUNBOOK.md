@@ -83,8 +83,9 @@ cd android && ./gradlew -Dorg.gradle.java.home="<path to a JDK 21 home>" bundleR
   | `cd android && ./gradlew -q :app:printVersionCode` | prints the versionCode Gradle will build; compare with `--code` |
 
 - **Before every upload:** run `--bump-build` (a code is never reused), commit `package.json`, check that `--code` and
-  `printVersionCode` agree, then `./gradlew bundleRelease`. Record the uploaded code in the *Gates* table of
-  [`docs/STATUS.md`](../STATUS.md).
+  `printVersionCode` agree, then follow the release sequence in section 6 (which ends in `./gradlew bundleRelease`).
+  Record the uploaded code in the *Gates* table of [`docs/STATUS.md`](../STATUS.md) and in its
+  `last-uploaded-version-code` marker (section 8): `npm run release:check` refuses a code that is not above it.
 - **New version:** edit `version` in `package.json` (and `package-lock.json`) and set `androidBuild` to 1.
   If `androidBuild` reaches 99, bump PATCH instead; the code keeps increasing.
 
@@ -118,12 +119,48 @@ project is already committed.
 - **AdMob app id is mandatory.** The Mobile Ads SDK's startup provider reads
   `com.google.android.gms.ads.APPLICATION_ID` from `<application>` in `AndroidManifest.xml`. If it is missing the app dies
   on launch (`IllegalStateException ... Missing application ID`, then `Unable to get provider
-  com.google.android.gms.ads.MobileAdsInitProvider`). The manifest edit survives `npx cap sync android`. *(P00-T20)* The
-  literal becomes the `admobAppId` manifest placeholder, supplied as `-PADMOB_APP_ID=...`, and a release build fails
-  without it.
-- **Ids in code:** real AdMob ad-unit ids and the RevenueCat public key go in `src/config/monetization.config.ts`; rebuild
-  and `cap sync` afterwards. *(P00-T20)* `scripts/release-check.mjs` and a release-config test refuse Google test ids, the
-  RevenueCat Test Store key and debug UMP geography in a release build.
+  com.google.android.gms.ads.MobileAdsInitProvider`). The manifest edit survives `npx cap sync android`. The value is the
+  `${admobAppId}` manifest placeholder, set per build type in `android/app/build.gradle`: Google's **test** app id for
+  `assembleDebug` (no property needed, so CI and a fresh clone build), and the real id for release, passed as
+  `-PADMOB_APP_ID=ca-app-pub-XXXXXXXXXXXXXXXX~NNNNNNNNNN` (or set `ADMOB_APP_ID` in your user-level
+  `~/.gradle/gradle.properties`, never in the repo). The task `verifyReleaseAdmobAppId` runs before every release variant
+  (`bundleRelease`, `assembleRelease`, `lintRelease`) and fails with "Release build refused: ..." when the property is
+  missing, is not an AdMob app id, or is Google's test id.
+- **Ids in code (the owner supplies them):** in `src/config/monetization.config.ts` paste the real AdMob app id and both
+  ad-unit ids into `ADMOB_PROD` and the RevenueCat public Google Play SDK key (starts with `goog_`) into
+  `REVENUECAT_API_KEY_PROD`. They are public client ids, safe to commit; they are empty until the owner pastes them, which
+  is what keeps a release refused. Only `vite build --mode release` selects them; every other mode (dev, `npm run build`,
+  CI) selects Google's test ids and an empty RevenueCat key (`ADMOB_TEST`). Never put a RevenueCat **Test Store** key
+  (`test_...`) or a secret key (`sk_...`) in either slot.
+- **What the guard refuses** (`scripts/release-check.mjs`, `npm run release:check`, and the same check inside
+  `vite build --mode release`): any `ADMOB_PROD` id that is empty, malformed, Google's test publisher
+  `ca-app-pub-3940256099942544`, or from a different publisher than the app id; a RevenueCat key that is not `goog_` plus
+  a key body; `VITE_UMP_DEBUG_GEOGRAPHY` or `VITE_UMP_TEST_DEVICE_IDS` set (shell, `.env`, `.env.local`, `.env.release`);
+  a `versionCode` that is not greater than the last uploaded one in `docs/STATUS.md`. The release Vite build also refuses a
+  `NODE_ENV` other than `production`. After `cap sync`, `npm run release:check -- --assets` refuses a synced bundle that
+  holds Google's test publisher or a baked-in debug override, which is what a debug bundle synced into a release AAB looks
+  like. A release build also ignores the two UMP variables, so `initializeForTesting` cannot be on.
+
+### The release sequence (P00-T20)
+
+From the repository root, JDK 21 for the Gradle step (section 3). The first step is the owner's; every later step stops at
+the first problem and lists all of them.
+
+```
+# 0. Owner: paste the ids into src/config/monetization.config.ts (ADMOB_PROD, REVENUECAT_API_KEY_PROD).
+#    Unset VITE_UMP_DEBUG_GEOGRAPHY / VITE_UMP_TEST_DEVICE_IDS. If a code was uploaded since the last build,
+#    node scripts/version.mjs --bump-build, and commit.
+npm run release:check -- --admob-app-id ca-app-pub-XXXXXXXXXXXXXXXX~NNNNNNNNNN   # 1. config; the id must equal ADMOB_PROD.appId
+npm run build:release                                                              # 2. tsc + vite build --mode release (re-runs the check)
+npx cap sync android                                                               # 3. copy dist/ into android/
+npm run release:check -- --assets                                                  # 4. the synced bundle has no test id / debug override
+cd android
+./gradlew -Dorg.gradle.java.home="<JDK 21 home>" bundleRelease -PADMOB_APP_ID=ca-app-pub-XXXXXXXXXXXXXXXX~NNNNNNNNNN   # 5. signs when keystore.properties exists
+```
+
+`npm run build` and `npm run cap:sync` make **debug-id** bundles. Never sync one before a release: step 4 refuses it, and
+step 3 must always follow step 2. Run `release:check` with no flags at any time to see what is still missing; it changes
+nothing.
 
 ## 7. Sign and build the AAB
 
@@ -141,10 +178,11 @@ configures and emits an **unsigned** bundle, so fresh clones and CI never break.
 3. **Never commit, paste or log** the keystore, its path or the passwords.
 4. **Back up the keystore and its passwords** in two places (a password manager and one offline copy). Losing the upload
    key means a reset request through Play support. Backup is an owner gate in `docs/STATUS.md` (risk R-21).
-5. **Build:**
+5. **Build:** follow the release sequence in section 6 (`release:check`, `build:release`, `cap sync`, `release:check --assets`), then
    ```
-   cd android; ./gradlew bundleRelease     # JDK 21, see section 3
+   cd android; ./gradlew bundleRelease -PADMOB_APP_ID=ca-app-pub-XXXXXXXXXXXXXXXX~NNNNNNNNNN     # JDK 21, see section 3
    ```
+   Without the property the build fails with "Release build refused" before anything is signed.
    Output: `android/app/build/outputs/bundle/release/app-release.aab`. A debug APK is `./gradlew assembleDebug`.
    Android Studio's Generate Signed Bundle reuses the same keystore.
 6. **Verify:** `jarsigner -verify -verbose -certs android/app/build/outputs/bundle/release/app-release.aab` prints
@@ -165,7 +203,9 @@ configures and emits an **unsigned** bundle, so fresh clones and CI never break.
    developer account may need 12 testers for 14 days before production access; the owner confirms whether that applies
    (STATUS gate).
 5. **Production**: final Data safety, pricing and countries, staged rollout, submit for review.
-6. Update the *Gates* table in `docs/STATUS.md` with the uploaded versionCode.
+6. Update `docs/STATUS.md` with the uploaded versionCode: the *Gates* table row **and** the machine-read marker
+   `<!-- last-uploaded-version-code: N -->` under it. `npm run release:check` refuses any later release whose
+   versionCode is not greater than N, and refuses too if the marker is missing.
 
 CI (`.github/workflows/ci.yml`) runs on master and on phase branches. It has two jobs. **Web** runs Node 22 and: typechecks, runs the test suite (reporting JSON for the facts check), runs the facts block drift check against `docs/STATUS.md` and `README.md`, runs `scripts/version.mjs --check` to validate version data, and builds the production web bundle. **Android-debug** runs Temurin 21 and: syncs Capacitor, assembles an unsigned debug APK, and cross-checks the versionCode from `scripts/version.mjs` against `gradlew printVersionCode`. Both jobs use no secrets and produce no signed artifacts; release builds are made locally per this runbook.
 
