@@ -5,7 +5,9 @@
 // Contract:
 //   hidden  -> pause live gameplay (open the pause overlay) unless an ad / purchase flow is in flight or an
 //              overlay is already up; always suspend audio (AudioSynth.suspend: ctx.suspend() + hum off).
-//   visible -> refit the canvas; resume audio only if Sound or Music is on AND the pause overlay is not up.
+//   visible -> refit the canvas; resume audio only if Sound or Music is on AND the pause overlay is not up AND no ad is on screen
+//              (AdMob's AdActivity is translucent: after Home -> return the WebView can report visible while the ad is still on top;
+//              Ads gives the audio back itself when the ad ends).
 //   Gameplay is NEVER resumed here: only an explicit CONTINUE / Back on the overlay does that. There is no
 //   "resume gameplay" action in the result type, so no input can produce one.
 import { PLATFORM } from '../config/platform.config';
@@ -22,6 +24,9 @@ export interface LifecycleInput {
   // An ad, purchase or consent flow is in flight (src/platform/externalFlow.ts): the app only looks "hidden" because
   // a native sheet covers it, so the pause overlay must not open for it.
   externalFlowActive: boolean;
+  // An ad is on screen or being shown (the ads source of the external flow alone, not IAP or consent): the foreground path must not
+  // start the game audio under it. Ads.finishShow resumes it when the ad ends.
+  adFlowActive: boolean;
   sound: boolean;
   music: boolean;
 }
@@ -46,13 +51,13 @@ export function lifecycleDecision(i: LifecycleInput): LifecycleActions {
     requestPause: false,
     suspendAudio: false,
     refreshScale: true,
-    resumeAudio: !i.pauseOverlayUp && (i.sound || i.music),
+    resumeAudio: !i.pauseOverlayUp && !i.adFlowActive && (i.sound || i.music),
   };
 }
 
 export interface AdAudioInput {
   wasWanted: boolean; // game audio was playing (wanted) when the ad took the screen
-  foreground: boolean; // the app is in front right now (isAppForeground)
+  foreground: boolean; // the activity is resumed right now (isActivityResumed)
   pauseOverlayUp: boolean;
   sound: boolean;
   music: boolean;

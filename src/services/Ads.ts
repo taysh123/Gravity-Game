@@ -35,7 +35,7 @@ import { initialAdState, isBusy, isReady, nextDeadline, reduceAd, type AdEffect,
 import type { AdMobInitializeOptions, AdMobListenerHandle, AdMobPlugin } from './native/admob';
 import { Saves } from '../platform/saves';
 import { setExternalFlowActive } from '../platform/externalFlow';
-import { isAppForeground, isPauseOverlayUp, onAppBackground, onAppForeground } from '../platform/foreground';
+import { isActivityResumed, isPauseOverlayUp, onActivityChange, onAppForeground } from '../platform/foreground';
 import { resumeAudioAfterAd } from '../platform/lifecycleDecision';
 import { sharedAudio } from '../utils/AudioSynth';
 import { SettingsStore } from '../utils/SettingsStore';
@@ -245,7 +245,7 @@ function finishShow(format: AdFormat, outcome: ShowOutcome): void {
       const settings = SettingsStore.get();
       const give = resumeAudioAfterAd({
         wasWanted: wanted,
-        foreground: isAppForeground(),
+        foreground: isActivityResumed(),
         pauseOverlayUp: isPauseOverlayUp(),
         sound: settings.sound,
         music: settings.music,
@@ -335,16 +335,17 @@ function closeGate(): void {
   dispatch({ type: 'disable' });
 }
 
-// Follow the app to the background and back for good (the lifecycle reports both, platform/foreground.ts): the reducer's show timers
-// count foreground time only, and a return re-checks expiry and any due retry, which a hidden app's timers may have held back.
+// Follow the host activity for good (platform/foreground.ts): the reducer's show timers count the time it is RESUMED, and nothing else.
+// On Android that is the native pause / resume, not the WebView's visibility: AdMob's AdActivity is translucent, so after Home -> return
+// during an ad the WebView reports visible while the ad is still on top (fix pass 2). A return to the app also re-checks expiry and any
+// due retry, which a hidden app's timers may have held back.
 function trackVisibility(): void {
   if (visibilityTracked) return;
   visibilityTracked = true;
-  onAppBackground(() => {
-    dispatch({ type: 'hidden', now: monoNow() });
+  onActivityChange((resumed) => {
+    dispatch({ type: resumed ? 'visible' : 'hidden', now: monoNow() });
   });
   onAppForeground(() => {
-    dispatch({ type: 'visible', now: monoNow() });
     if (consented) dispatch({ type: 'tick', now: monoNow() });
   });
 }
@@ -364,7 +365,7 @@ export const Ads = {
     if (!(await initSdk())) return;
     if (!consented) return; // revoked while the SDK was coming up
     trackVisibility();
-    dispatch({ type: isAppForeground() ? 'visible' : 'hidden', now: monoNow() }); // where the app is right now
+    dispatch({ type: isActivityResumed() ? 'visible' : 'hidden', now: monoNow() }); // where the activity is right now
     dispatch({ type: 'enable', now: monoNow() });
   },
 

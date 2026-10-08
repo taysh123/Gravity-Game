@@ -5,8 +5,9 @@
 // (P00-T16 IAP, P00-T19 Ads). The default is false.
 //
 // Each caller passes its own `source` so two overlapping flows cannot clear each other's flag: the flag is up until
-// every source that raised it has cleared it. This module is dependency-free on purpose (services import it without
-// pulling in Phaser); lifecycle.ts re-exports it.
+// every source that raised it has cleared it. isExternalFlowActive(source) asks about ONE source: Android Back and the audio
+// resume ask about the ads source alone, so a stuck IAP or consent flag can never swallow Back or keep the game silent (P00-T19 fix
+// pass 2). This module is dependency-free on purpose (services import it without pulling in Phaser); lifecycle.ts re-exports it.
 const DEFAULT_SOURCE = 'external';
 const active = new Set<string>();
 
@@ -15,6 +16,7 @@ export function setExternalFlowActive(isActive: boolean, source: string = DEFAUL
   else active.delete(source);
 }
 
-export function isExternalFlowActive(): boolean {
-  return active.size > 0;
+// No argument: is any flow up. With a source: is THAT source up.
+export function isExternalFlowActive(source?: string): boolean {
+  return source === undefined ? active.size > 0 : active.has(source);
 }

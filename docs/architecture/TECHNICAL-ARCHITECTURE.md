@@ -205,9 +205,12 @@ export const Ads: {
   isShowing(): boolean;                                // a show is in flight, from the request until it settles (busy guard); every show also raises setExternalFlowActive(true, 'ads') and mutes game audio. Back, RETRY, SHARE, the HUD toolbar and the shop tabs / Back are inert while it is true (ui/adOffer.unlessAdShowing, backRouter adShowing)
   noteLevelAdvance(): void;                            // a level whose interstitial is skipped (the 2x) still counts toward the session grace
 };
-// Ad timers (P00-T19 fix pass 1): the 5 s show watchdog and the 3 min on-screen ceiling count FOREGROUND time only (platform/foreground.ts, fed by
-// lifecycle.ts), on a monotonic clock (performance.now()); a loaded ad still ages through a device sleep. The end of an ad gives audio back only through
-// platform/lifecycleDecision.resumeAudioAfterAd (app in front, no pause overlay, Sound or Music on).
+// Ad timers (P00-T19 fix passes 1-2): the 5 s show watchdog and the 3 min on-screen ceiling count only the time the host ACTIVITY is resumed
+// (platform/foreground.ts reportActivity: the native App pause / resume on Android, visibilitychange on the web; the WebView's visibility is not used on
+// Android because AdMob's AdActivity is translucent), on a monotonic clock (performance.now()); a loaded ad still ages through a device sleep. The end of
+// an ad gives audio back only through platform/lifecycleDecision.resumeAudioAfterAd (activity resumed, no pause overlay, Sound or Music on), and the
+// lifecycle's own foreground path does not resume audio while the ads external-flow source is up. platform may not import services/Ads: Android Back
+// reads isExternalFlowActive(AD_EXTERNAL_FLOW_SOURCE), which is up exactly while Ads.isShowing() (pinned in Ads.test.ts; src/platform/boundaries.test.ts).
 export type Entitlement = 'no_ads' | 'pack_starter' | 'pack_premium_collection' | 'pack_founders';
 export function deriveOwnership(active: readonly string[]): { noAds: boolean; bundleCosmetics: string[] };
 export function classifyPurchaseError(code: string | number | undefined): 'cancelled' | 'already_owned' | 'pending' | 'network' | 'error';

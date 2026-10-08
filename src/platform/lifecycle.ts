@@ -21,12 +21,12 @@ import { fadeToScene } from '../utils/transitions';
 import { sharedAudio } from '../utils/AudioSynth';
 import { SettingsStore } from '../utils/SettingsStore';
 import { Crash } from '../services/Crash';
-import { Ads } from '../services/Ads';
 import type { AppBridge } from '../utils/native/app';
 import { routeBack, deriveBackState, type BackAction, type BackState, type SceneSnapshot } from './backRouter';
 import { lifecycleDecision, deriveLifecycleScenes, type LifecycleActions, type Visibility } from './lifecycleDecision';
 import { isExternalFlowActive } from './externalFlow';
-import { notifyBackground, notifyForeground, setPauseOverlayReader } from './foreground';
+import { notifyForeground, reportActivity, setPauseOverlayReader } from './foreground';
+import { AD_EXTERNAL_FLOW_SOURCE } from '../config/monetization.config';
 import { isDismissable, isPausable } from './pausable';
 
 // Ads / purchase / consent flows raise this around the native sheet so the background pause ignores them
@@ -105,7 +105,9 @@ function execute(g: Phaser.Game, action: BackAction, state: BackState): void {
 // Route one Back press. Returns the action taken (tests and the headless check read it).
 export function handleBack(): BackAction {
   if (!game) return { type: 'none' };
-  const state = deriveBackState(snapshotScenes(game), PLATFORM.PARENT_SCENE, Ads.isShowing());
+  // A full-screen ad is requested or on screen: Back does nothing. The ADS source of the external flow only (it is up exactly while
+  // Ads.isShowing(); platform may not import services/Ads), so a stuck IAP or consent flag cannot swallow Back for good.
+  const state = deriveBackState(snapshotScenes(game), PLATFORM.PARENT_SCENE, isExternalFlowActive(AD_EXTERNAL_FLOW_SOURCE));
   const action = routeBack(state);
   execute(game, action, state);
   return action;
@@ -180,6 +182,7 @@ function runLifecycle(visibility: Visibility): LifecycleActions | null {
     gameplayActive: scenes.gameplayKey !== null,
     pauseOverlayUp: scenes.pauseOverlayUp || pausePending,
     externalFlowActive: isExternalFlowActive(),
+    adFlowActive: isExternalFlowActive(AD_EXTERNAL_FLOW_SOURCE),
     sound: settings.sound,
     music: settings.music,
   });
@@ -223,11 +226,8 @@ function runLifecycle(visibility: Visibility): LifecycleActions | null {
 
 // The app went to the background (Home, app switcher, screen off, another app on top, or a native ad covering the activity). Returns
 // the actions taken (tests and the headless check read them). Idempotent: a second trigger in the same background period is harmless.
-// Background subscribers (src/platform/foreground.ts, e.g. Ads, whose show timers count foreground time only) are told afterwards.
 export function onBackground(): LifecycleActions | null {
-  const actions = runLifecycle('hidden');
-  notifyBackground();
-  return actions;
+  return runLifecycle('hidden');
 }
 
 // The app is visible again. Never resumes gameplay: the pause overlay stays until the player taps CONTINUE or Back.
@@ -241,11 +241,15 @@ export function onForeground(): LifecycleActions | null {
 async function registerNativeLifecycle(): Promise<void> {
   if (!(await ensureApp()) || !app) return;
   try {
+    // The native pause / resume are the activity state on Android (foreground.ts): AdMob's translucent AdActivity pauses ours while
+    // the WebView can still report visible, and Ads' show timers must not run while an ad is on top.
     await app.addListener('pause', () => {
       onBackground();
+      reportActivity('native', false);
     });
     await app.addListener('resume', () => {
       onForeground();
+      reportActivity('native', true);
     });
   } catch {
     // listeners unavailable: visibilitychange still drives the contract
@@ -260,8 +264,10 @@ export function installLifecycle(g: Phaser.Game): void {
   // Lets services (Ads: give audio back after an ad?) ask what only the live scenes know.
   setPauseOverlayReader(() => pausePending || deriveLifecycleScenes(snapshotScenes(g)).pauseOverlayUp);
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') onBackground();
+    const hidden = document.visibilityState === 'hidden';
+    if (hidden) onBackground();
     else onForeground();
+    reportActivity('visibility', !hidden); // the activity state on the web; on Android it is ignored once a native event was seen
   });
   void registerNativeLifecycle();
 }

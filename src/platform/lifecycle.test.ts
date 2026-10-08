@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -10,15 +10,8 @@ import {
   type LifecycleActions,
 } from './lifecycleDecision';
 import { setExternalFlowActive, isExternalFlowActive } from './externalFlow';
-import {
-  isAppForeground,
-  isPauseOverlayUp,
-  notifyBackground,
-  notifyForeground,
-  onAppBackground,
-  onAppForeground,
-  setPauseOverlayReader,
-} from './foreground';
+import { isPauseOverlayUp, notifyForeground, onAppForeground, setPauseOverlayReader } from './foreground';
+import { AD_EXTERNAL_FLOW_SOURCE } from '../config/monetization.config';
 import type { SceneSnapshot } from './backRouter';
 
 // The pure half of the background/foreground contract (D-11, P00-T11). lifecycle.ts reads the live scenes and
@@ -29,6 +22,7 @@ const base: LifecycleInput = {
   gameplayActive: true,
   pauseOverlayUp: false,
   externalFlowActive: false,
+  adFlowActive: false,
   sound: true,
   music: true,
 };
@@ -122,6 +116,23 @@ describe('lifecycleDecision: visible (foreground)', () => {
     });
   });
 
+  // P00-T19 fix pass 2: AdMob's AdActivity is translucent, so after Home -> return during an ad the WebView can report visible while
+  // the ad is still on top. The foreground path must not start the game audio under it; Ads.finishShow gives it back when the ad ends.
+  it('an ad is still on screen (the ads flow source is up): refit, but no audio under it', () => {
+    expect(visible({ adFlowActive: true, gameplayActive: false })).toEqual({
+      requestPause: false,
+      suspendAudio: false,
+      refreshScale: true,
+      resumeAudio: false,
+    });
+    expect(visible({ adFlowActive: true, gameplayActive: true, sound: true, music: false }).resumeAudio).toBe(false);
+  });
+
+  it('the ad flag only matters for the audio: the pause rules of the hidden path are unchanged by it', () => {
+    expect(hidden({ adFlowActive: true })).toEqual(hidden());
+    expect(hidden({ adFlowActive: true, externalFlowActive: true }).requestPause).toBe(false);
+  });
+
   it('always refits the scale', () => {
     for (const pauseOverlayUp of [true, false]) {
       for (const gameplayActive of [true, false]) {
@@ -138,9 +149,11 @@ describe('lifecycleDecision: invariants over the whole input space', () => {
     for (const gameplayActive of bools) {
       for (const pauseOverlayUp of bools) {
         for (const externalFlowActive of bools) {
-          for (const sound of bools) {
-            for (const music of bools) {
-              all.push({ visibility, gameplayActive, pauseOverlayUp, externalFlowActive, sound, music });
+          for (const adFlowActive of bools) {
+            for (const sound of bools) {
+              for (const music of bools) {
+                all.push({ visibility, gameplayActive, pauseOverlayUp, externalFlowActive, adFlowActive, sound, music });
+              }
             }
           }
         }
@@ -148,8 +161,8 @@ describe('lifecycleDecision: invariants over the whole input space', () => {
     }
   }
 
-  it('covers 64 combinations', () => {
-    expect(all).toHaveLength(64);
+  it('covers 128 combinations', () => {
+    expect(all).toHaveLength(128);
   });
 
   it('never auto-resumes gameplay: there is no resume-gameplay action at all', () => {
@@ -182,12 +195,13 @@ describe('lifecycleDecision: invariants over the whole input space', () => {
     }
   });
 
-  it('audio never resumes under the pause overlay nor with both audio settings off', () => {
+  it('audio never resumes under the pause overlay, under an ad, nor with both audio settings off', () => {
     for (const i of all) {
       const a = lifecycleDecision(i);
       if (i.pauseOverlayUp) expect(a.resumeAudio).toBe(false);
+      if (i.adFlowActive) expect(a.resumeAudio).toBe(false);
       if (!i.sound && !i.music) expect(a.resumeAudio).toBe(false);
-      if (i.visibility === 'visible') expect(a.resumeAudio).toBe(!i.pauseOverlayUp && (i.sound || i.music));
+      if (i.visibility === 'visible') expect(a.resumeAudio).toBe(!i.pauseOverlayUp && !i.adFlowActive && (i.sound || i.music));
     }
   });
 });
@@ -291,60 +305,95 @@ describe('foreground subscribers', () => {
     expect(src).toMatch(/export function onForeground\(\)[^{]*\{\s*const actions = runLifecycle\('visible'\);\s*notifyForeground\(\);/);
   });
 
-  it('lifecycle.onBackground tells them after the hidden actions ran (audio is already suspended by then)', () => {
+  it('lifecycle reports the activity from the right source: visibilitychange as "visibility", the native pause / resume as "native"', () => {
     const src = readFileSync(fileURLToPath(new URL('./lifecycle.ts', import.meta.url)), 'utf8');
-    expect(src).toMatch(/export function onBackground\(\)[^{]*\{\s*const actions = runLifecycle\('hidden'\);\s*notifyBackground\(\);/);
+    expect(src).toMatch(/reportActivity\('visibility', /);
+    expect(src).toMatch(/addListener\('pause', \(\) => \{\s*onBackground\(\);\s*reportActivity\('native', false\);/);
+    expect(src).toMatch(/addListener\('resume', \(\) => \{\s*onForeground\(\);\s*reportActivity\('native', true\);/);
   });
 });
 
-// P00-T19 fix pass 1 (I1): services (Ads) need to know whether the app is in front. lifecycle.ts is the only owner of that fact (it is
-// fed by visibilitychange and the native pause / resume), so foreground.ts just keeps the latest answer.
-describe('app foreground state and background subscribers', () => {
+// P00-T19 fix passes 1-2: the ad reducer must know whether OUR ACTIVITY is resumed, not whether the WebView is visible. AdMob's
+// AdActivity is translucent, so after Home -> return during an ad the WebView reports `visible` while the ad is still on top. On Android
+// the signal is therefore the native App pause / resume; on the web it is visibilitychange. platform/foreground.ts routes the two
+// sources and keeps the latest answer. (Each test loads a fresh module: the routing remembers that a native event was seen.)
+describe('activity state: reportActivity routes the two sources', () => {
+  async function fresh() {
+    vi.resetModules();
+    return await import('./foreground');
+  }
+
+  it('starts resumed', async () => {
+    const f = await fresh();
+    expect(f.isActivityResumed()).toBe(true);
+  });
+
+  it('web: visibilitychange drives it', async () => {
+    const f = await fresh();
+    f.reportActivity('visibility', false);
+    expect(f.isActivityResumed()).toBe(false);
+    f.reportActivity('visibility', true);
+    expect(f.isActivityResumed()).toBe(true);
+  });
+
+  it('Android: the native pause / resume drive it', async () => {
+    const f = await fresh();
+    f.reportActivity('native', false);
+    expect(f.isActivityResumed()).toBe(false);
+    f.reportActivity('native', true);
+    expect(f.isActivityResumed()).toBe(true);
+  });
+
+  it('WebView visible + native paused (the translucent ad is still on top): stays paused; only the native resume brings it back', async () => {
+    const f = await fresh();
+    f.reportActivity('native', false); // the ad's activity paused ours
+    f.reportActivity('visibility', true); // Home -> return: the WebView reports visible, the ad is still on top
+    expect(f.isActivityResumed()).toBe(false);
+    f.reportActivity('visibility', false);
+    f.reportActivity('visibility', true);
+    expect(f.isActivityResumed()).toBe(false);
+    f.reportActivity('native', true); // the ad closed, MainActivity resumed
+    expect(f.isActivityResumed()).toBe(true);
+  });
+
+  it('once a native event was seen the WebView no longer drives it (it cannot pause it either)', async () => {
+    const f = await fresh();
+    f.reportActivity('native', true);
+    f.reportActivity('visibility', false);
+    expect(f.isActivityResumed()).toBe(true);
+  });
+
+  it('before any native event (the first moments, or a plugin that never loaded) visibilitychange still drives it', async () => {
+    const f = await fresh();
+    f.reportActivity('visibility', false);
+    expect(f.isActivityResumed()).toBe(false);
+  });
+
+  it('notifies subscribers only on a change, with the new value, after the state is current; a throwing subscriber breaks nothing', async () => {
+    const f = await fresh();
+    const seen: Array<[boolean, boolean]> = [];
+    const off = f.onActivityChange((resumed) => seen.push([resumed, f.isActivityResumed()]));
+    f.onActivityChange(() => {
+      throw new Error('boom');
+    });
+    f.reportActivity('native', true); // already resumed: no change
+    expect(seen).toEqual([]);
+    expect(() => f.reportActivity('native', false)).not.toThrow();
+    f.reportActivity('native', false); // same again: no change
+    f.reportActivity('native', true);
+    expect(seen).toEqual([[false, false], [true, true]]);
+    off();
+    f.reportActivity('native', false);
+    expect(seen).toHaveLength(2);
+  });
+});
+
+describe('pause overlay reader', () => {
   afterEach(() => {
-    notifyForeground();
     setPauseOverlayReader(() => false);
   });
 
-  it('starts in the foreground and follows notifyBackground / notifyForeground', () => {
-    notifyForeground();
-    expect(isAppForeground()).toBe(true);
-    notifyBackground();
-    expect(isAppForeground()).toBe(false);
-    notifyBackground();
-    expect(isAppForeground()).toBe(false);
-    notifyForeground();
-    expect(isAppForeground()).toBe(true);
-  });
-
-  it('notifies background subscribers; one that throws does not stop the others; unsubscribe works', () => {
-    const calls: string[] = [];
-    const offA = onAppBackground(() => calls.push('a'));
-    const offB = onAppBackground(() => {
-      throw new Error('boom');
-    });
-    const offC = onAppBackground(() => calls.push('c'));
-    expect(() => notifyBackground()).not.toThrow();
-    expect(calls).toEqual(['a', 'c']);
-    expect(isAppForeground()).toBe(false); // the state is already updated when subscribers run
-    offA();
-    offB();
-    notifyBackground();
-    expect(calls).toEqual(['a', 'c', 'c']);
-    offC();
-  });
-
-  it('the state is already current when a foreground subscriber runs', () => {
-    notifyBackground();
-    let seen: boolean | null = null;
-    const off = onAppForeground(() => {
-      seen = isAppForeground();
-    });
-    notifyForeground();
-    off();
-    expect(seen).toBe(true);
-  });
-
-  it('the pause overlay reader defaults to "not up" and is replaced by the lifecycle once the game exists', () => {
+  it('defaults to "not up" and is replaced by the lifecycle once the game exists', () => {
     expect(isPauseOverlayUp()).toBe(false);
     setPauseOverlayReader(() => true);
     expect(isPauseOverlayUp()).toBe(true);
@@ -422,6 +471,29 @@ describe('external flow flag (Ads.showing / IAP.inFlight will drive it in P00-T1
     setExternalFlowActive(false, 'iap');
     expect(isExternalFlowActive()).toBe(true);
   });
+
+  // P00-T19 fix pass 2: Android Back asks about the ADS source only (a stuck IAP or consent flag must never kill Back for good).
+  it('asked about one source it answers for that source alone; asked about none it answers for all', () => {
+    expect(isExternalFlowActive(AD_EXTERNAL_FLOW_SOURCE)).toBe(false);
+    setExternalFlowActive(true, 'iap');
+    expect(isExternalFlowActive()).toBe(true);
+    expect(isExternalFlowActive('iap')).toBe(true);
+    expect(isExternalFlowActive(AD_EXTERNAL_FLOW_SOURCE)).toBe(false); // an IAP flow alone is not an ad
+    setExternalFlowActive(true, AD_EXTERNAL_FLOW_SOURCE);
+    expect(isExternalFlowActive(AD_EXTERNAL_FLOW_SOURCE)).toBe(true);
+    setExternalFlowActive(false, 'iap');
+    expect(isExternalFlowActive(AD_EXTERNAL_FLOW_SOURCE)).toBe(true);
+    expect(isExternalFlowActive('iap')).toBe(false);
+    setExternalFlowActive(false, AD_EXTERNAL_FLOW_SOURCE);
+    expect(isExternalFlowActive(AD_EXTERNAL_FLOW_SOURCE)).toBe(false);
+    expect(isExternalFlowActive()).toBe(false);
+  });
+
+  it('the default (unnamed) source is its own source', () => {
+    setExternalFlowActive(true);
+    expect(isExternalFlowActive(AD_EXTERNAL_FLOW_SOURCE)).toBe(false);
+    expect(isExternalFlowActive('external')).toBe(true);
+  });
 });
 
 // Source-level guards: the background contract has exactly one owner (lifecycle.ts), installed once from main.ts.
@@ -443,6 +515,17 @@ describe('lifecycle wiring source guards', () => {
   it('only platform/lifecycle.ts listens to visibilitychange (no second, audio-only handler)', () => {
     const offenders = files.filter((f) => /visibilitychange/.test(code(f))).map(rel);
     expect(offenders).toEqual(['platform/lifecycle.ts']);
+  });
+
+  it('handleBack asks the router about the ADS flow source only (platform may not import services/Ads, and an IAP or consent flag must not swallow Back)', () => {
+    const src = code(join(srcRoot, 'platform/lifecycle.ts'));
+    expect(src).toMatch(/deriveBackState\(snapshotScenes\(game\), PLATFORM\.PARENT_SCENE, isExternalFlowActive\(AD_EXTERNAL_FLOW_SOURCE\)\)/);
+    expect(src).not.toMatch(/services\/Ads/);
+  });
+
+  it('the foreground path is told whether an ad is up (it must not resume audio under it)', () => {
+    const src = code(join(srcRoot, 'platform/lifecycle.ts'));
+    expect(src).toMatch(/adFlowActive: isExternalFlowActive\(AD_EXTERNAL_FLOW_SOURCE\)/);
   });
 
   it('main.ts installs the lifecycle exactly once', () => {

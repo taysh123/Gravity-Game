@@ -132,6 +132,16 @@ async function load(opts: LoadOptions = {}) {
 
 type T = Awaited<ReturnType<typeof load>>;
 
+// Android: the host activity pauses and resumes (Capacitor App `pause` / `resume`). lifecycle.ts reports them as the "native" source of the
+// activity state; on resume its onForeground() also notifies the merged foreground subscribers (the expiry re-check).
+const pause = (t: T): void => {
+  t.foreground.reportActivity('native', false);
+};
+const resume = (t: T): void => {
+  t.foreground.reportActivity('native', true);
+  t.foreground.notifyForeground();
+};
+
 // A booted app: consent allowed, SDK up, both formats loaded.
 async function up(opts: LoadOptions = {}): Promise<T> {
   const t = await load(opts);
@@ -650,13 +660,13 @@ describe('I1: the on-screen ceiling counts foreground time only', () => {
 
   it('hidden for ten minutes does not trip it: still in flight, the flag still up, no audio under the hidden app; a later finish is rewarded', async () => {
     const { t, p, seen } = await onScreen();
-    t.foreground.notifyBackground();
+    pause(t);
     await vi.advanceTimersByTimeAsync(10 * 60_000);
     expect(seen.outcome).toBeUndefined();
     expect(t.Ads.isShowing()).toBe(true);
     expect(t.flow.isExternalFlowActive()).toBe(true);
     expect(t.audio.resume).not.toHaveBeenCalled();
-    t.foreground.notifyForeground();
+    resume(t);
     t.emit(RW.REWARDED, { type: 'coin', amount: 1 });
     t.emit(RW.DISMISSED);
     await expect(p).resolves.toBe('earned');
@@ -684,9 +694,9 @@ describe('I1: the on-screen ceiling counts foreground time only', () => {
 
   it('the count restarts on return: ten hidden minutes, then the full ceiling of foreground time, to the millisecond', async () => {
     const { t, seen } = await onScreen();
-    t.foreground.notifyBackground();
+    pause(t);
     await vi.advanceTimersByTimeAsync(10 * 60_000);
-    t.foreground.notifyForeground();
+    resume(t);
     await vi.advanceTimersByTimeAsync(AD_SHOWING_MAX_MS - 1);
     expect(seen.outcome).toBeUndefined();
     await vi.advanceTimersByTimeAsync(1);
@@ -697,9 +707,9 @@ describe('I1: the on-screen ceiling counts foreground time only', () => {
   it('foreground time spent before leaving counts: 100 s in front, ten minutes away, then 80 s trips it', async () => {
     const { t, seen } = await onScreen();
     await vi.advanceTimersByTimeAsync(100_000);
-    t.foreground.notifyBackground();
+    pause(t);
     await vi.advanceTimersByTimeAsync(10 * 60_000);
-    t.foreground.notifyForeground();
+    resume(t);
     await vi.advanceTimersByTimeAsync(AD_SHOWING_MAX_MS - 100_000 - 1);
     expect(seen.outcome).toBeUndefined();
     await vi.advanceTimersByTimeAsync(1);
@@ -708,12 +718,12 @@ describe('I1: the on-screen ceiling counts foreground time only', () => {
 
   it('the usual native order (the ad pauses the app, Dismissed arrives while it is still hidden, the app resumes) settles once, earned', async () => {
     const { t, p } = await onScreen();
-    t.foreground.notifyBackground();
+    pause(t);
     t.emit(RW.REWARDED, { type: 'coin', amount: 1 });
     t.emit(RW.DISMISSED);
     await expect(p).resolves.toBe('earned');
     expect(t.flow.isExternalFlowActive()).toBe(false);
-    t.foreground.notifyForeground();
+    resume(t);
     await vi.advanceTimersByTimeAsync(AD_SHOWING_MAX_MS * 2);
     expect(t.tracked.filter((e) => e.name === 'rewarded_earned')).toHaveLength(1);
   });
@@ -722,10 +732,10 @@ describe('I1: the on-screen ceiling counts foreground time only', () => {
     const t = await up();
     const p = t.Ads.showInterstitialIfEligible({ flowProtected: false, now: Date.now() + 3_600_000 });
     t.emit(IN.SHOWED);
-    t.foreground.notifyBackground();
+    pause(t);
     await vi.advanceTimersByTimeAsync(10 * 60_000);
     expect(t.Ads.isShowing()).toBe(true);
-    t.foreground.notifyForeground();
+    resume(t);
     await vi.advanceTimersByTimeAsync(AD_SHOWING_MAX_MS);
     await expect(p).resolves.toBe('shown');
     expect(t.flow.isExternalFlowActive()).toBe(false);
@@ -742,6 +752,195 @@ describe('I1: the on-screen ceiling counts foreground time only', () => {
     expect(t.tracked.map((e) => e.name)).not.toContain('rewarded_earned');
     expect(t.flow.isExternalFlowActive()).toBe(false);
     expect(t.Ads.isShowing()).toBe(false);
+  });
+});
+
+// Fix pass 2 (3): AdMob's AdActivity is translucent. After Home -> return during an ad the WebView reports `visible` (visibilitychange,
+// and the merged foreground notification) while the ad is still on top and MainActivity is still paused. The ceiling must follow the
+// NATIVE activity state on Android, so it never starts counting while the ad is still showing. On the web visibilitychange drives it.
+describe('fix pass 2: the ad timers follow the native activity state, not the WebView', () => {
+  async function onScreen(opts: LoadOptions = {}) {
+    const t = await up(opts);
+    const p = t.Ads.showRewarded('campaign_2x');
+    const seen: { outcome?: string } = {};
+    void p.then((o) => { seen.outcome = o; });
+    t.emit(RW.SHOWED);
+    return { t, p, seen };
+  }
+
+  it('WebView visible + native paused: the ceiling does not count, however long the ad stays on top', async () => {
+    const { t, p, seen } = await onScreen();
+    pause(t); // the ad's activity paused ours
+    await vi.advanceTimersByTimeAsync(30_000);
+    t.foreground.reportActivity('visibility', true); // Home -> return: visibilitychange says visible, the ad is still on top
+    t.foreground.notifyForeground(); // ... and the lifecycle's merged foreground notification
+    await vi.advanceTimersByTimeAsync(10 * 60_000);
+    expect(seen.outcome).toBeUndefined();
+    expect(t.Ads.isShowing()).toBe(true);
+    expect(t.flow.isExternalFlowActive()).toBe(true);
+    expect(t.audio.resume).not.toHaveBeenCalled();
+    // the ad closes: MainActivity resumes, Reward and Dismissed arrive, the player is rewarded
+    resume(t);
+    t.emit(RW.REWARDED, { type: 'coin', amount: 1 });
+    t.emit(RW.DISMISSED);
+    await expect(p).resolves.toBe('earned');
+    expect(t.audio.resume).toHaveBeenCalledTimes(1);
+  });
+
+  it('the count starts at the NATIVE resume, not at the WebView becoming visible', async () => {
+    const { t, seen } = await onScreen();
+    pause(t);
+    t.foreground.reportActivity('visibility', true);
+    await vi.advanceTimersByTimeAsync(10 * 60_000);
+    resume(t);
+    await vi.advanceTimersByTimeAsync(AD_SHOWING_MAX_MS - 1);
+    expect(seen.outcome).toBeUndefined();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(seen.outcome).toBe('dismissed');
+  });
+
+  it('a WebView hidden event cannot pause the count once the native state is in use', async () => {
+    const { t, seen } = await onScreen();
+    resume(t); // a native event proves the native signal is live
+    t.foreground.reportActivity('visibility', false);
+    await vi.advanceTimersByTimeAsync(AD_SHOWING_MAX_MS);
+    expect(seen.outcome).toBe('dismissed');
+  });
+
+  it('on the web (no native event ever) visibilitychange drives the same timers', async () => {
+    const { t, seen } = await onScreen();
+    t.foreground.reportActivity('visibility', false);
+    await vi.advanceTimersByTimeAsync(10 * 60_000);
+    expect(seen.outcome).toBeUndefined();
+    t.foreground.reportActivity('visibility', true);
+    await vi.advanceTimersByTimeAsync(AD_SHOWING_MAX_MS);
+    expect(seen.outcome).toBe('dismissed');
+  });
+
+  it('an ad that ends while the activity is still paused leaves the audio to the lifecycle (its native resume follows)', async () => {
+    const t = await up();
+    const p = t.Ads.showRewarded('campaign_2x');
+    t.emit(RW.SHOWED);
+    pause(t);
+    t.foreground.reportActivity('visibility', true); // the WebView says visible, the activity is not resumed yet
+    t.emit(RW.REWARDED, { type: 'coin', amount: 1 });
+    t.emit(RW.DISMISSED);
+    await expect(p).resolves.toBe('earned');
+    expect(t.audio.resume).not.toHaveBeenCalled();
+    expect(t.flow.isExternalFlowActive()).toBe(false); // so the lifecycle's resume, which comes next, is no longer blocked by the ad flag
+  });
+});
+
+// Fix pass 2 (1): lifecycle.ts no longer imports Ads; it asks the dependency-free external-flow flag for the ADS source instead. That is
+// only equivalent to Ads.isShowing() if the flag is up exactly while a show is in flight (raised first in startShow, cleared first in
+// finishShow). Pinned at every step of every path.
+describe('fix pass 2: the ads external-flow source is up exactly while Ads.isShowing()', () => {
+  const same = (t: T): void => {
+    expect(t.flow.isExternalFlowActive(AD_EXTERNAL_FLOW_SOURCE)).toBe(t.Ads.isShowing());
+  };
+
+  it('rewarded, earned: requested, showing, reward, dismissed, and the grace', async () => {
+    const t = await up();
+    same(t);
+    const p = t.Ads.showRewarded('campaign_2x');
+    same(t);
+    expect(t.Ads.isShowing()).toBe(true);
+    t.emit(RW.SHOWED);
+    same(t);
+    t.emit(RW.REWARDED, { type: 'coin', amount: 1 });
+    same(t);
+    t.emit(RW.DISMISSED);
+    await p;
+    same(t);
+    expect(t.Ads.isShowing()).toBe(false);
+  });
+
+  it('rewarded, closed early: the 300 ms grace keeps both up, then both go down together', async () => {
+    const t = await up();
+    const p = t.Ads.showRewarded('campaign_2x');
+    t.emit(RW.SHOWED);
+    t.emit(RW.DISMISSED);
+    same(t);
+    expect(t.Ads.isShowing()).toBe(true);
+    await vi.advanceTimersByTimeAsync(AD_LATE_REWARD_GRACE_MS - 1);
+    same(t);
+    expect(t.Ads.isShowing()).toBe(true);
+    await vi.advanceTimersByTimeAsync(1);
+    await p;
+    same(t);
+    expect(t.Ads.isShowing()).toBe(false);
+  });
+
+  it('failed, rejected, refused, watchdog, ceiling, revoke: never out of step', async () => {
+    const failed = await up();
+    const f = failed.Ads.showRewarded('campaign_2x');
+    same(failed);
+    failed.emit(RW.FAILED_TO_SHOW, { code: 1, message: 'x' });
+    await f;
+    same(failed);
+
+    const rejected = await up({ show: 'reject' });
+    const r = rejected.Ads.showRewarded('campaign_2x');
+    await rejected.flush();
+    await r;
+    same(rejected);
+
+    const busy = await up();
+    const first = busy.Ads.showRewarded('endless_revive');
+    await busy.Ads.showRewarded('endless_2x'); // refused while the first is in flight: must not clear or raise anything
+    same(busy);
+    expect(busy.Ads.isShowing()).toBe(true);
+    busy.emit(RW.FAILED_TO_SHOW, { code: 1, message: 'x' });
+    await first;
+    same(busy);
+
+    const dog = await up();
+    const d = dog.Ads.showRewarded('campaign_2x');
+    await vi.advanceTimersByTimeAsync(AD_SHOW_WATCHDOG_MS);
+    await d;
+    same(dog);
+
+    const ceiling = await up();
+    const c = ceiling.Ads.showRewarded('campaign_2x');
+    ceiling.emit(RW.SHOWED);
+    await vi.advanceTimersByTimeAsync(AD_SHOWING_MAX_MS);
+    await c;
+    same(ceiling);
+
+    const revoked = await up();
+    const v = revoked.Ads.showRewarded('campaign_2x');
+    revoked.emit(RW.SHOWED);
+    revoked.Ads.revoke();
+    await v;
+    same(revoked);
+  });
+
+  it('interstitial: requested, showing, dismissed', async () => {
+    const t = await up();
+    const p = t.Ads.showInterstitialIfEligible({ flowProtected: false, now: Date.now() + 3_600_000 });
+    same(t);
+    expect(t.Ads.isShowing()).toBe(true);
+    t.emit(IN.SHOWED);
+    same(t);
+    t.emit(IN.DISMISSED);
+    await p;
+    same(t);
+  });
+
+  it('the flag is already up when the native show is called (the plugin call sees it)', async () => {
+    const t = await up();
+    const p = t.Ads.showRewarded('campaign_2x');
+    expect(t.flowAtShow).toEqual([true]);
+    t.emit(RW.FAILED_TO_SHOW, { code: 1, message: 'x' });
+    await p;
+  });
+
+  it('another flow alone (IAP, consent) is NOT an ad: Ads.isShowing() stays false, and the ads source stays down', async () => {
+    const t = await up();
+    t.flow.setExternalFlowActive(true, 'iap');
+    expect(t.Ads.isShowing()).toBe(false);
+    expect(t.flow.isExternalFlowActive(AD_EXTERNAL_FLOW_SOURCE)).toBe(false);
+    t.flow.setExternalFlowActive(false, 'iap');
   });
 });
 
@@ -764,18 +963,18 @@ describe('I1 (b): the end of an ad gives audio back only when the lifecycle coul
 
   it('settled while HIDDEN: not resumed (the foreground path owns it), the flag is cleared and the caller released', async () => {
     const t = await up();
-    t.foreground.notifyBackground();
+    pause(t);
     await expect(ended(t)).resolves.toBe('earned');
     expect(t.audio.resume).not.toHaveBeenCalled();
     expect(t.flow.isExternalFlowActive()).toBe(false);
-    t.foreground.notifyForeground(); // the lifecycle's own foreground path would resume it here; Ads must not do it a second time
+    resume(t); // the lifecycle's own foreground path would resume it here; Ads must not do it a second time
     expect(t.audio.resume).not.toHaveBeenCalled();
   });
 
   it('a failed show that settles while hidden leaves the audio alone too', async () => {
     const t = await up();
     const p = t.Ads.showRewarded('campaign_2x');
-    t.foreground.notifyBackground();
+    pause(t);
     t.emit(RW.FAILED_TO_SHOW, { code: 1, message: 'x' });
     await expect(p).resolves.toBe('unavailable');
     expect(t.audio.resume).not.toHaveBeenCalled();
@@ -800,10 +999,10 @@ describe('I1 (b): the end of an ad gives audio back only when the lifecycle coul
     const t = await up();
     const p = t.Ads.showRewarded('campaign_2x');
     t.emit(RW.SHOWED);
-    t.foreground.notifyBackground();
+    pause(t);
     await vi.advanceTimersByTimeAsync(10 * 60_000);
     expect(t.audio.resume).not.toHaveBeenCalled();
-    t.foreground.notifyForeground();
+    resume(t);
     await vi.advanceTimersByTimeAsync(AD_SHOWING_MAX_MS);
     await expect(p).resolves.toBe('dismissed');
     expect(t.audio.resume).toHaveBeenCalledTimes(1);
@@ -821,13 +1020,13 @@ describe('I1: the external-flow flag is cleared on every path', () => {
     ['the ceiling, in front', async (t) => { t.emit(RW.SHOWED); await vi.advanceTimersByTimeAsync(AD_SHOWING_MAX_MS); }],
     ['the ceiling, after a trip to the background', async (t) => {
       t.emit(RW.SHOWED);
-      t.foreground.notifyBackground();
+      pause(t);
       await vi.advanceTimersByTimeAsync(10 * 60_000);
-      t.foreground.notifyForeground();
+      resume(t);
       await vi.advanceTimersByTimeAsync(AD_SHOWING_MAX_MS);
     }],
-    ['Dismissed while hidden', async (t) => { t.emit(RW.SHOWED); t.foreground.notifyBackground(); t.emit(RW.REWARDED, {}); t.emit(RW.DISMISSED); }],
-    ['FailedToShow while hidden', async (t) => { t.foreground.notifyBackground(); t.emit(RW.FAILED_TO_SHOW, { code: 1, message: 'x' }); }],
+    ['Dismissed while hidden', async (t) => { t.emit(RW.SHOWED); pause(t); t.emit(RW.REWARDED, {}); t.emit(RW.DISMISSED); }],
+    ['FailedToShow while hidden', async (t) => { pause(t); t.emit(RW.FAILED_TO_SHOW, { code: 1, message: 'x' }); }],
     ['consent revoked mid-show', async (t) => { t.emit(RW.SHOWED); t.Ads.revoke(); }],
     ['consent revoked before Showed', async (t) => { t.Ads.revoke(); }],
   ];
@@ -855,7 +1054,7 @@ describe('I1: the external-flow flag is cleared on every path', () => {
       expect(t.Ads.isShowing()).toBe(false);
     };
     await run(async (t) => { t.emit(IN.SHOWED); await vi.advanceTimersByTimeAsync(AD_SHOWING_MAX_MS); });
-    await run(async (t) => { t.emit(IN.SHOWED); t.foreground.notifyBackground(); t.emit(IN.DISMISSED); });
+    await run(async (t) => { t.emit(IN.SHOWED); pause(t); t.emit(IN.DISMISSED); });
     await run(async (t) => { t.emit(IN.SHOWED); t.Ads.revoke(); });
   });
 });
@@ -867,7 +1066,7 @@ describe('m1: the 5 s watchdog counts foreground time only', () => {
     let outcome: string | undefined;
     void p.then((o) => { outcome = o; });
     await vi.advanceTimersByTimeAsync(2000);
-    t.foreground.notifyBackground(); // the ad activity paused ours, a slow Showed is still on its way
+    pause(t); // the ad activity paused ours, a slow Showed is still on its way
     await vi.advanceTimersByTimeAsync(60_000);
     expect(outcome).toBeUndefined();
     t.emit(RW.SHOWED);
@@ -882,9 +1081,9 @@ describe('m1: the 5 s watchdog counts foreground time only', () => {
     let outcome: string | undefined;
     void p.then((o) => { outcome = o; });
     await vi.advanceTimersByTimeAsync(2000);
-    t.foreground.notifyBackground();
+    pause(t);
     await vi.advanceTimersByTimeAsync(60_000);
-    t.foreground.notifyForeground();
+    resume(t);
     await vi.advanceTimersByTimeAsync(AD_SHOW_WATCHDOG_MS - 2000 - 1);
     expect(outcome).toBeUndefined();
     await vi.advanceTimersByTimeAsync(1);

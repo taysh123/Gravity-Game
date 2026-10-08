@@ -115,8 +115,13 @@ describe('ad call sites (P00-T19, D-24)', () => {
     expect(/this\.gate\.purchasing = /.test(body)).toBe(false);
   });
 
-  it('Android Back asks Ads: handleBack passes Ads.isShowing() to the router state', () => {
+  // Fix pass 2: platform may not import services/Ads (layering, src/platform/boundaries.test.ts), so Back asks the dependency-free
+  // external-flow flag for the ADS source, which is up exactly while Ads.isShowing() (pinned in Ads.test.ts). The ADS source only: a
+  // stuck IAP or consent flag must never swallow Back for good.
+  it('Android Back asks the ads external-flow source: handleBack passes it to the router state, and lifecycle.ts does not import Ads', () => {
     const text = sources.find((s) => s.path === 'platform/lifecycle.ts')!.text;
-    expect(/deriveBackState\(snapshotScenes\(game\), PLATFORM\.PARENT_SCENE, Ads\.isShowing\(\)\)/.test(text)).toBe(true);
+    expect(/deriveBackState\(snapshotScenes\(game\), PLATFORM\.PARENT_SCENE, isExternalFlowActive\(AD_EXTERNAL_FLOW_SOURCE\)\)/.test(text)).toBe(true);
+    expect(/services\/Ads/.test(text)).toBe(false);
+    expect(/isExternalFlowActive\(\)/.test(text.slice(text.indexOf('export function handleBack'), text.indexOf('async function minimizeApp')))).toBe(false);
   });
 });
