@@ -202,8 +202,12 @@ export const Ads: {
   isRewardedReady(): boolean;                          // real cache state (services/adState.ts reducer: loaded, fresh <= 55 min, not busy); web: a DEV-only stub, false in a production web build (P00-T19)
   showRewarded(source: string): Promise<'earned' | 'dismissed' | 'unavailable'>;
   showInterstitialIfEligible(ctx: { flowProtected: boolean }): Promise<'shown' | 'skipped'>; // only a preloaded interstitial, never waits on a load; GameScene awaits it before scene.restart
-  isShowing(): boolean;                                // a show is in flight (busy guard); every show also raises setExternalFlowActive(true, 'ads') and mutes game audio
+  isShowing(): boolean;                                // a show is in flight, from the request until it settles (busy guard); every show also raises setExternalFlowActive(true, 'ads') and mutes game audio. Back, RETRY, SHARE, the HUD toolbar and the shop tabs / Back are inert while it is true (ui/adOffer.unlessAdShowing, backRouter adShowing)
+  noteLevelAdvance(): void;                            // a level whose interstitial is skipped (the 2x) still counts toward the session grace
 };
+// Ad timers (P00-T19 fix pass 1): the 5 s show watchdog and the 3 min on-screen ceiling count FOREGROUND time only (platform/foreground.ts, fed by
+// lifecycle.ts), on a monotonic clock (performance.now()); a loaded ad still ages through a device sleep. The end of an ad gives audio back only through
+// platform/lifecycleDecision.resumeAudioAfterAd (app in front, no pause overlay, Sound or Music on).
 export type Entitlement = 'no_ads' | 'pack_starter' | 'pack_premium_collection' | 'pack_founders';
 export function deriveOwnership(active: readonly string[]): { noAds: boolean; bundleCosmetics: string[] };
 export function classifyPurchaseError(code: string | number | undefined): 'cancelled' | 'already_owned' | 'pending' | 'network' | 'error';
