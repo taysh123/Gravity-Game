@@ -25,6 +25,7 @@ import { sharedAudio } from '../utils/AudioSynth';
 import { CurrencyStore } from '../utils/CurrencyStore';
 import { Leaderboard } from '../utils/Leaderboard';
 import { Ads } from '../services/Ads';
+import { runRewardedOffer } from '../ui/adOffer';
 import { Share } from '../utils/Share';
 import { dateKey } from '../utils/daily';
 import { Analytics } from '../services/Analytics';
@@ -448,7 +449,8 @@ export class EndlessScene extends Phaser.Scene implements Pausable {
     scrim.fillStyle(0x000000, THEME.SCRIM_ALPHA);
     scrim.fillRect(0, 0, this.viewW, this.viewH);
     setScrimTapArea(scrim, this.viewW, this.viewH);
-    scrim.on('pointerup', () => { if (this.canReturn) this.goHome(); });
+    // A tap that falls through a disabled offer while its ad is up must not walk away from the run (device row A5).
+    scrim.on('pointerup', () => { if (this.canReturn && !Ads.isShowing()) this.goHome(); });
 
     const panelW = Math.min(this.viewW * 0.8, 300);
     const panelH = 150;
@@ -477,12 +479,14 @@ export class EndlessScene extends Phaser.Scene implements Pausable {
     // RETRY first — instant restart of the same mode (the "one more try" loop).
     actions.push(this.pill('↻ RETRY', '#ffffff', 0xffd166, 168, cx, ay, () => this.retry()));
     ay += 50;
-    if (!this.revived) {
+    // Rewarded offers render only while a rewarded ad is loaded and ready (D-24), and not at all on a production web build.
+    const adReady = Ads.isRewardedReady();
+    if (!this.revived && adReady) {
       Analytics.track(rewardedOffered('endless_revive')); // offer impression, fires once on render
-      actions.push(this.pill('▶ REVIVE', '#7affb0', 0x7affb0, 168, cx, ay, () => void this.tryRevive()));
+      actions.push(this.pill('▶ REVIVE', '#7affb0', 0x7affb0, 168, cx, ay, (self) => void this.tryRevive(self)));
       ay += 50;
     }
-    const hasDouble = this.awardedStardust > 0;
+    const hasDouble = this.awardedStardust > 0 && adReady;
     actions.push(this.pill('SHARE', '#cfe0ff', 0x6a8cff, 124, hasDouble ? cx - 68 : cx, ay, () => this.shareRun()));
     if (hasDouble) {
       Analytics.track(rewardedOffered('endless_2x')); // offer impression, fires once on render
@@ -519,9 +523,12 @@ export class EndlessScene extends Phaser.Scene implements Pausable {
     return c;
   }
 
-  private async tryRevive(): Promise<void> {
-    const earned = await Ads.showRewarded('endless_revive');
-    if (earned) this.doRevive();
+  // The button is disabled before the ad is awaited and nothing is granted if the scene was left meanwhile (runRewardedOffer), and
+  // a revive needs a dead, not yet revived run: no double revive (device row A5).
+  private tryRevive(btn: Phaser.GameObjects.Container): Promise<void> {
+    return runRewardedOffer(this, btn, 'endless_revive', {
+      onEarned: () => { if (this.isDead && !this.revived) this.doRevive(); },
+    });
   }
 
   // Clear the immediate threats, recentre the star, grant brief invulnerability, and
@@ -542,13 +549,14 @@ export class EndlessScene extends Phaser.Scene implements Pausable {
     this.matter.world.enabled = true;
   }
 
-  private async tryDouble(btn: Phaser.GameObjects.Container): Promise<void> {
-    const earned = await Ads.showRewarded('endless_2x');
-    if (!earned) return;
-    CurrencyStore.add(this.awardedStardust);
-    const txt = btn.list.find((o) => o instanceof Phaser.GameObjects.Text) as Phaser.GameObjects.Text | undefined;
-    txt?.setText('✦ ×2!');
-    btn.disableInteractive();
+  private tryDouble(btn: Phaser.GameObjects.Container): Promise<void> {
+    return runRewardedOffer(this, btn, 'endless_2x', {
+      onEarned: () => {
+        CurrencyStore.add(this.awardedStardust);
+        const txt = btn.list.find((o) => o instanceof Phaser.GameObjects.Text) as Phaser.GameObjects.Text | undefined;
+        txt?.setText('✦ ×2!');
+      },
+    });
   }
 
   private shareRun(): void {

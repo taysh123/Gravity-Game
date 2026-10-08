@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { THEME } from '../config/theme.config';
 import { SPLASH } from '../config/splash.config';
 import { RARITY, type Rarity } from '../config/cosmetics.config';
-import { BUNDLES, PACKAGES, PURCHASE_COPY, PURCHASE_UI, STORE, bundleById, type BundleDef } from '../config/monetization.config';
+import { AD_UI, BUNDLES, PACKAGES, PURCHASE_COPY, PURCHASE_UI, STORE, bundleById, type BundleDef } from '../config/monetization.config';
 import { CosmicBackground } from '../entities/CosmicBackground';
 import { Button } from '../ui/Button';
 import { drawGlass } from '../ui/glass';
@@ -25,6 +25,7 @@ import {
 } from '../ui/purchaseUi';
 import { addTapSink, outsideBand, setTapArea } from '../ui/hitArea';
 import { showToast } from '../ui/toast';
+import { runRewardedOffer } from '../ui/adOffer';
 import { fadeIn, fadeToScene } from '../utils/transitions';
 import { reducedMotionActive, safeAreaInsetsScaled } from '../utils/a11y';
 import { cosmeticsByCategory, cosmeticById, COSMETICS, type Cosmetic, type Category } from '../utils/cosmetics';
@@ -171,9 +172,16 @@ export class CosmeticsScene extends Phaser.Scene {
     this.listC = listC;
     // Bundles: a card the store/entitlements hide (Starter once no_ads is owned, D-09) is not built at all.
     const shownBundles = BUNDLES.filter((b) => cardViewFor(b.packageId, b.hideWhenNoAds).visible);
-    const cards = this.tab === 'bundle'
-      ? [this.freeFragmentsCard(rowW, 0), this.removeAdsCard(rowW, 1), ...shownBundles.map((b, i) => this.bundleCard(b, rowW, i + 2, b.id === this.highlightBundle))]
-      : cosmeticsByCategory(this.tab as Category).map((c, i) => this.itemCard(c, rowW, i));
+    // Free Fragments is a rewarded offer: it is built only when a rewarded ad is ready to watch (D-24), or as the "claimed today"
+    // note. A production web build has no rewarded ad, so there the card is simply absent.
+    let cards: Phaser.GameObjects.Container[];
+    if (this.tab === 'bundle') {
+      const free = this.freeFragmentsCard(rowW, 0);
+      const n = free ? 1 : 0; // the cards after it shift up by one when it is absent
+      cards = [...(free ? [free] : []), this.removeAdsCard(rowW, n), ...shownBundles.map((b, i) => this.bundleCard(b, rowW, i + n + 1, b.id === this.highlightBundle))];
+    } else {
+      cards = cosmeticsByCategory(this.tab as Category).map((c, i) => this.itemCard(c, rowW, i));
+    }
     // Stack by each card's TOP edge so cards of different heights (Remove Ads, bundles, a card with a note) keep an even
     // gap; the half-card of padding below the last card is unchanged.
     let yy = 0;
@@ -224,7 +232,8 @@ export class CosmeticsScene extends Phaser.Scene {
       // never mid-gesture or mid-purchase, keeping the scroll position and the cross-sell highlight.
       startPurchasePoll(
         this.surface,
-        () => purchaseSignature([{ packageId: PACKAGES.REMOVE_ADS }, ...BUNDLES]),
+        // The Free Fragments card appears when a rewarded ad finishes loading and goes when it is spent.
+        () => purchaseSignature([{ packageId: PACKAGES.REMOVE_ADS }, ...BUNDLES]) + (Ads.isRewardedReady() ? ':ad' : ''),
         () => this.quietRestart(),
       );
     }
@@ -320,9 +329,11 @@ export class CosmeticsScene extends Phaser.Scene {
     return card;
   }
 
-  // Free Fragments — an optional, daily-capped rewarded ad (never required).
-  private freeFragmentsCard(w: number, i: number): Phaser.GameObjects.Container {
+  // Free Fragments — an optional, daily-capped rewarded ad (never required). null = not offered: not claimed yet and no rewarded ad
+  // is ready (D-24: offers are hidden when no ad is loaded).
+  private freeFragmentsCard(w: number, i: number): Phaser.GameObjects.Container | null {
     const claimed = RewardStore.claimedToday('free_fragments');
+    if (!claimed && !Ads.isRewardedReady()) return null;
     const h = CARD_H;
     const bg = this.add.graphics();
     drawGlass(bg, w, h, THEME.RADIUS_SM);
@@ -341,15 +352,24 @@ export class CosmeticsScene extends Phaser.Scene {
     if (!claimed) {
       Analytics.track(rewardedOffered('free_fragments')); // offer impression, fires once on render
       setTapArea(card, w, h);
-      card.on('pointerup', async () => {
-        if (this.dragging) return;
-        const earned = await Ads.showRewarded('free_fragments');
-        if (earned) {
-          FragmentStore.add(FREE_FRAGMENTS);
-          RewardStore.claim('free_fragments');
-          Analytics.track(fragmentEarned(FREE_FRAGMENTS, 'rewarded'));
-          this.scene.restart({ tab: 'bundle', internal: true });
-        }
+      card.on('pointerup', () => {
+        if (this.dragging || this.gate.purchasing) return;
+        this.gate.purchasing = true; // no purchase, restore or redraw while the ad runs (the same guard as a purchase)
+        // Disables the card before awaiting; nothing is granted if the shop was left (or redrawn) while the ad ran.
+        void runRewardedOffer(this, card, 'free_fragments', {
+          onEarned: () => {
+            if (RewardStore.claimedToday('free_fragments')) return; // never twice in a day
+            FragmentStore.add(FREE_FRAGMENTS);
+            RewardStore.claim('free_fragments');
+            Analytics.track(fragmentEarned(FREE_FRAGMENTS, 'rewarded'));
+            this.scene.restart({ tab: 'bundle', internal: true });
+          },
+          // Closed early or failed: redraw the list without the offer (the ad is spent) so no gap is left; say so when it failed.
+          onNotEarned: (outcome) => {
+            this.gate.purchasing = false;
+            this.quietRestart(outcome === 'unavailable' ? { message: AD_UI.UNAVAILABLE, tone: 'info' } : undefined);
+          },
+        });
       });
     } else {
       card.setSize(w, h); // claimed: not tappable, but still sized like its neighbours

@@ -1,32 +1,102 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { CONSENT_DENIED, type ConsentOutcome } from './consentState';
+import {
+  ADMOB,
+  ADMOB_EVENTS,
+  AD_EXTERNAL_FLOW_SOURCE,
+  AD_LATE_REWARD_GRACE_MS,
+  AD_MAX_AGE_MS,
+  AD_RETRY_BACKOFF_MS,
+  AD_SHOW_WATCHDOG_MS,
+} from '../config/monetization.config';
 
 // Ads is consent-gated (D-10, P00-T18): the ad SDK is initialised only by Ads.init(outcome) from bootServices, only when UMP says
 // canRequestAds, with the A-07 content rating and no child-directed / under-age tags (D-25). Any ad request before a successful
-// init is refused as not ready and NEVER triggers UMP or initialize. These tests run the native path against a fake plugin.
+// init is refused as not ready and NEVER triggers UMP or initialize.
+// P00-T19 (D-24): once initialised, both formats are preloaded, the plugin's events drive a pure reducer (adState.ts), a rewarded
+// outcome (earned | dismissed | unavailable) is read from events and a 5 s watchdog and never from the showRewardVideoAd() promise,
+// every show is wrapped in the external-flow flag and mutes game audio, and the interstitial is awaited, never waited on to load.
+// These tests run the native path against a fake plugin that emits the real event names.
 
 const ALLOWED: ConsentOutcome = { canRequestAds: true, privacyOptionsRequired: false, analytics: 'granted', adStorage: 'granted', adUserData: 'granted', adPersonalization: 'granted' };
+const START = new Date('2026-10-08T12:00:00Z');
+const RW = ADMOB_EVENTS.REWARDED;
+const IN = ADMOB_EVENTS.INTERSTITIAL;
+const COOLDOWN_KEY = 'gravity-flow:interstitial:v1';
+
+type Fmt = 'rewarded' | 'interstitial';
+type LoadBehavior = 'ok' | 'fail' | 'hang';
 
 interface LoadOptions {
   native?: boolean;
   initialize?: () => Promise<void>;
   debug?: { geography: number | undefined; testDeviceIds: string[] };
+  load?: Partial<Record<Fmt, LoadBehavior>>; // what prepare does (mutable through `t.behavior` afterwards)
+  show?: 'hang' | 'reject'; // what showRewardVideoAd / showInterstitial do ('hang' = like the real plugin: nothing until an event)
+  failListenerAt?: number; // the Nth addListener call rejects
+  wantsAudio?: boolean;
+  settings?: { sound: boolean; music: boolean };
+  decision?: { show: boolean; reason: string };
 }
 
 async function load(opts: LoadOptions = {}) {
   const native = opts.native ?? true;
   vi.resetModules();
+  const listeners = new Map<string, Array<(payload?: unknown) => void>>();
+  const behavior: Record<Fmt, LoadBehavior> = { rewarded: 'ok', interstitial: 'ok', ...opts.load };
+  const showMode = { value: opts.show ?? 'hang' };
+  const flowAtShow: boolean[] = [];
+  const audioWanted = { value: opts.wantsAudio ?? true };
+  let addListenerCalls = 0;
+  // The real plugin reports a load through an event and also settles the prepare promise; events arrive asynchronously.
+  const emit = (name: string, payload?: unknown) => {
+    for (const fn of [...(listeners.get(name) ?? [])]) fn(payload);
+  };
+  const emitLater = (name: string, payload?: unknown) => {
+    queueMicrotask(() => emit(name, payload));
+  };
+  const prepare = (fmt: Fmt) => async (_o: { adId: string }) => {
+    const ev = fmt === 'rewarded' ? RW : IN;
+    if (behavior[fmt] === 'hang') return new Promise(() => {});
+    if (behavior[fmt] === 'fail') {
+      emitLater(ev.FAILED_TO_LOAD, { code: 3, message: 'no fill' });
+      throw new Error('no fill');
+    }
+    emitLater(ev.LOADED, { adUnitId: fmt === 'rewarded' ? ADMOB.rewardedAdId : ADMOB.interstitialAdId });
+    return { adUnitId: 'x' };
+  };
+  const noShowPromise = (): Promise<never> => new Promise(() => {});
   const plugin = {
     initialize: vi.fn(async (_options?: Record<string, unknown>): Promise<void> => (opts.initialize ? opts.initialize() : undefined)),
     requestConsentInfo: vi.fn(async () => ({ status: 'NOT_REQUIRED', canRequestAds: true })),
     showConsentForm: vi.fn(async () => ({ status: 'OBTAINED', canRequestAds: true })),
     showPrivacyOptionsForm: vi.fn(async () => {}),
-    prepareRewardVideoAd: vi.fn(async () => ({})),
-    showRewardVideoAd: vi.fn(async () => ({ type: 'coin', amount: 1 })),
-    prepareInterstitial: vi.fn(async () => ({})),
-    showInterstitial: vi.fn(async () => {}),
+    addListener: vi.fn(async (name: string, fn: (payload?: unknown) => void) => {
+      addListenerCalls += 1;
+      if (opts.failListenerAt === addListenerCalls) throw new Error('bridge down');
+      listeners.set(name, [...(listeners.get(name) ?? []), fn]);
+      return { remove: vi.fn(async () => { listeners.set(name, (listeners.get(name) ?? []).filter((f) => f !== fn)); }) };
+    }),
+    prepareRewardVideoAd: vi.fn(prepare('rewarded')),
+    showRewardVideoAd: vi.fn((): Promise<never> => {
+      flowAtShow.push(flow.isExternalFlowActive());
+      return showMode.value === 'reject' ? Promise.reject(new Error('No Reward Video Ad can be shown')) : noShowPromise();
+    }),
+    prepareInterstitial: vi.fn(prepare('interstitial')),
+    showInterstitial: vi.fn((): Promise<void> => {
+      flowAtShow.push(flow.isExternalFlowActive());
+      return showMode.value === 'reject' ? Promise.reject(new Error('No Interstitial can be shown')) : noShowPromise();
+    }),
   };
-  const tracked: string[] = [];
+  const tracked: Array<{ name: string; params?: Record<string, unknown> }> = [];
+  const writes: Array<[string, string]> = [];
+  const decisions: Array<{ lastShownMs: number; sessionLevels: number; now: number }> = [];
+  const settings = opts.settings ?? { sound: true, music: true };
+  const audio = {
+    get wantsAudio() { return audioWanted.value; },
+    suspend: vi.fn(() => { audioWanted.value = false; }),
+    resume: vi.fn(() => { audioWanted.value = true; }),
+  };
   let adMobModuleLoads = 0;
   vi.doMock('@capacitor/core', () => ({ Capacitor: { isNativePlatform: () => native } }));
   vi.doMock('./native/admob', () => {
@@ -34,52 +104,88 @@ async function load(opts: LoadOptions = {}) {
     return { AdMob: plugin };
   });
   vi.doMock('./IAP', () => ({ IAP: { isPremium: () => false } }));
-  vi.doMock('./Analytics', () => ({ Analytics: { track: (e: { name: string }) => tracked.push(e.name) } }));
-  vi.doMock('../platform/saves', () => ({ Saves: { onRestore: () => {}, write: () => {} } }));
-  vi.doMock('./interstitial', () => ({ interstitialDecision: () => ({ show: true }) }));
+  vi.doMock('./Analytics', () => ({ Analytics: { track: (e: { name: string; params?: Record<string, unknown> }) => tracked.push(e) } }));
+  vi.doMock('../platform/saves', () => ({ Saves: { onRestore: () => {}, write: (k: string, v: string) => writes.push([k, v]) } }));
+  vi.doMock('../utils/AudioSynth', () => ({ sharedAudio: () => audio }));
+  vi.doMock('../utils/SettingsStore', () => ({ SettingsStore: { get: () => settings } }));
+  vi.doMock('./interstitial', () => ({
+    interstitialDecision: (ctx: { lastShownMs: number; sessionLevels: number; now: number }) => {
+      decisions.push(ctx);
+      return opts.decision ?? { show: true, reason: 'ok' };
+    },
+  }));
   if (opts.debug) {
     const debug = opts.debug;
     vi.doMock('../config/consent.config', async (orig) => ({ ...(await orig<Record<string, unknown>>()), UMP_DEBUG: debug }));
   }
+  const flow = await import('../platform/externalFlow');
+  const foreground = await import('../platform/foreground');
   const { Ads } = await import('./Ads');
-  return { Ads, plugin, tracked, adMobModuleLoads: () => adMobModuleLoads };
+  const flush = () => vi.advanceTimersByTimeAsync(0);
+  return {
+    Ads, plugin, tracked, writes, decisions, audio, settings, flow, foreground, behavior, showMode, flowAtShow, emit, flush,
+    audioWanted, adMobModuleLoads: () => adMobModuleLoads, registered: () => [...listeners.keys()].sort(),
+    listenerCount: () => [...listeners.values()].reduce((n, l) => n + l.length, 0),
+  };
 }
 
-function expectNoConsentOrInitCalls(plugin: Awaited<ReturnType<typeof load>>['plugin']): void {
+type T = Awaited<ReturnType<typeof load>>;
+
+// A booted app: consent allowed, SDK up, both formats loaded.
+async function up(opts: LoadOptions = {}): Promise<T> {
+  const t = await load(opts);
+  await t.Ads.init(ALLOWED);
+  await t.flush();
+  return t;
+}
+
+function expectNoConsentOrInitCalls(plugin: T['plugin']): void {
   expect(plugin.initialize).not.toHaveBeenCalled();
   expect(plugin.requestConsentInfo).not.toHaveBeenCalled();
   expect(plugin.showConsentForm).not.toHaveBeenCalled();
   expect(plugin.showPrivacyOptionsForm).not.toHaveBeenCalled();
 }
 
-afterEach(() => {
-  vi.restoreAllMocks();
-  for (const m of ['@capacitor/core', './native/admob', './IAP', './Analytics', '../platform/saves', './interstitial', '../config/consent.config']) vi.doUnmock(m);
+beforeEach(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(START);
 });
 
-describe('Ads before init (native): refused, and it never starts consent or the SDK', () => {
-  it('a rewarded request returns not-earned without calling initialize or any consent API, and loads no plugin', async () => {
+afterEach(() => {
+  vi.useRealTimers();
+  vi.unstubAllEnvs();
+  vi.restoreAllMocks();
+  for (const m of ['@capacitor/core', './native/admob', './IAP', './Analytics', '../platform/saves', './interstitial', '../config/consent.config', '../utils/AudioSynth', '../utils/SettingsStore']) vi.doUnmock(m);
+});
+
+describe('Ads before init (native): refused, and it never starts consent, the SDK or a load', () => {
+  it('a rewarded request resolves unavailable without calling initialize, any consent API, prepare or show, and loads no plugin', async () => {
     const { Ads, plugin, tracked, adMobModuleLoads } = await load();
-    expect(await Ads.showRewarded('campaign_2x')).toBe(false);
+    expect(await Ads.showRewarded('campaign_2x')).toBe('unavailable');
     expectNoConsentOrInitCalls(plugin);
     expect(plugin.prepareRewardVideoAd).not.toHaveBeenCalled();
     expect(plugin.showRewardVideoAd).not.toHaveBeenCalled();
+    expect(plugin.addListener).not.toHaveBeenCalled();
     expect(adMobModuleLoads()).toBe(0);
     expect(tracked).toEqual([]); // no rewarded_shown event for an ad that was never requested
   });
 
   it('an interstitial opportunity does not request or show anything', async () => {
     const { Ads, plugin, adMobModuleLoads } = await load();
-    await Ads.maybeInterstitial({ flowProtected: false, now: Date.now() + 3_600_000 });
+    expect(await Ads.showInterstitialIfEligible({ flowProtected: false, now: Date.now() + 3_600_000 })).toBe('skipped');
     expectNoConsentOrInitCalls(plugin);
     expect(plugin.prepareInterstitial).not.toHaveBeenCalled();
     expect(plugin.showInterstitial).not.toHaveBeenCalled();
     expect(adMobModuleLoads()).toBe(0);
   });
 
-  it('isRewardedReady() is false until init succeeds', async () => {
-    const { Ads } = await load();
+  it('isRewardedReady() and isShowing() are false until init succeeds, and time passing loads nothing', async () => {
+    const { Ads, plugin } = await load();
     expect(Ads.isRewardedReady()).toBe(false);
+    expect(Ads.isShowing()).toBe(false);
+    await vi.advanceTimersByTimeAsync(AD_MAX_AGE_MS * 2);
+    expect(plugin.prepareRewardVideoAd).not.toHaveBeenCalled();
+    expect(plugin.prepareInterstitial).not.toHaveBeenCalled();
   });
 });
 
@@ -104,82 +210,545 @@ describe('Ads.init(outcome)', () => {
     expect(plugin.initialize).toHaveBeenCalledWith({ maxAdContentRating: 'ParentalGuidance', initializeForTesting: true, testingDevices: ['AAA', 'BBB'] });
   });
 
-  it('an outcome that does not allow ads never initialises', async () => {
+  it('an outcome that does not allow ads never initialises, registers nothing and loads nothing', async () => {
     const { Ads, plugin, adMobModuleLoads } = await load();
     await Ads.init({ ...CONSENT_DENIED });
     expect(plugin.initialize).not.toHaveBeenCalled();
+    expect(plugin.addListener).not.toHaveBeenCalled();
+    expect(plugin.prepareRewardVideoAd).not.toHaveBeenCalled();
     expect(adMobModuleLoads()).toBe(0);
-    expect(await Ads.showRewarded('endless_revive')).toBe(false);
+    expect(await Ads.showRewarded('endless_revive')).toBe('unavailable');
     expect(Ads.isRewardedReady()).toBe(false);
   });
 
-  it('is idempotent: concurrent and repeated calls initialise the SDK once', async () => {
-    const { Ads, plugin } = await load();
+  it('is idempotent: concurrent and repeated calls initialise the SDK, register the listeners and preload once', async () => {
+    const { Ads, plugin, flush } = await load();
     await Promise.all([Ads.init(ALLOWED), Ads.init(ALLOWED)]);
     await Ads.init(ALLOWED);
+    await flush();
     expect(plugin.initialize).toHaveBeenCalledTimes(1);
+    expect(plugin.addListener).toHaveBeenCalledTimes(11);
+    expect(plugin.prepareRewardVideoAd).toHaveBeenCalledTimes(1);
+    expect(plugin.prepareInterstitial).toHaveBeenCalledTimes(1);
   });
 
-  it('a failing initialize leaves ads not ready and does not throw; a later init may try again', async () => {
+  it('a failing initialize leaves ads not ready, registers and loads nothing, and does not throw; a later init may try again', async () => {
     let fail = true;
-    const { Ads, plugin } = await load({
+    const { Ads, plugin, flush } = await load({
       initialize: async () => {
         if (fail) throw new Error('SDK failure');
       },
     });
     await expect(Ads.init(ALLOWED)).resolves.toBeUndefined();
     expect(Ads.isRewardedReady()).toBe(false);
-    expect(await Ads.showRewarded('campaign_2x')).toBe(false);
+    expect(await Ads.showRewarded('campaign_2x')).toBe('unavailable');
     expect(plugin.prepareRewardVideoAd).not.toHaveBeenCalled();
+    expect(plugin.addListener).not.toHaveBeenCalled();
     fail = false;
     await Ads.init(ALLOWED);
+    await flush();
     expect(plugin.initialize).toHaveBeenCalledTimes(2);
     expect(Ads.isRewardedReady()).toBe(true);
   });
 });
 
-describe('Ads after a successful init', () => {
-  it('a rewarded request prepares and shows, and reports earned', async () => {
-    const { Ads, plugin, tracked } = await load();
-    await Ads.init(ALLOWED);
-    expect(Ads.isRewardedReady()).toBe(true);
-    expect(await Ads.showRewarded('campaign_2x')).toBe(true);
-    expect(plugin.prepareRewardVideoAd).toHaveBeenCalledTimes(1);
-    expect(plugin.showRewardVideoAd).toHaveBeenCalledTimes(1);
-    expect(tracked).toContain('rewarded_shown');
-    expect(tracked).toContain('rewarded_earned');
-    expect(plugin.requestConsentInfo).not.toHaveBeenCalled();
+describe('listeners: registered once, exactly the eleven the reducer needs', () => {
+  it('registers every rewarded and interstitial event name once, before any load is requested', async () => {
+    const t = await load();
+    await t.Ads.init(ALLOWED);
+    await t.flush();
+    expect(t.plugin.addListener).toHaveBeenCalledTimes(11);
+    expect(t.registered()).toEqual([...Object.values(RW), ...Object.values(IN)].sort());
+    expect(t.listenerCount()).toBe(11);
+    // all eleven were in place before the first prepare was called, so no load event can be missed
+    const lastListener = Math.max(...t.plugin.addListener.mock.invocationCallOrder);
+    const firstPrepare = Math.min(...t.plugin.prepareRewardVideoAd.mock.invocationCallOrder, ...t.plugin.prepareInterstitial.mock.invocationCallOrder);
+    expect(lastListener).toBeLessThan(firstPrepare);
   });
 
-  it('an interstitial opportunity shows', async () => {
-    const { Ads, plugin } = await load();
-    await Ads.init(ALLOWED);
-    await Ads.maybeInterstitial({ flowProtected: false, now: Date.now() + 3_600_000 });
-    expect(plugin.prepareInterstitial).toHaveBeenCalledTimes(1);
-    expect(plugin.showInterstitial).toHaveBeenCalledTimes(1);
+  it('a revoke and a second init re-use them: still eleven registrations', async () => {
+    const t = await up();
+    t.Ads.revoke();
+    await t.Ads.init(ALLOWED);
+    await t.flush();
+    expect(t.plugin.addListener).toHaveBeenCalledTimes(11);
+    expect(t.listenerCount()).toBe(11);
+    expect(t.plugin.initialize).toHaveBeenCalledTimes(1);
   });
 
-  it('revoke() (the player withdrew consent in Privacy choices) closes the gate again without re-initialising', async () => {
-    const { Ads, plugin } = await load();
-    await Ads.init(ALLOWED);
-    Ads.revoke();
-    expect(Ads.isRewardedReady()).toBe(false);
-    expect(await Ads.showRewarded('endless_2x')).toBe(false);
-    expect(plugin.prepareRewardVideoAd).not.toHaveBeenCalled();
-    await Ads.init(ALLOWED); // consent given again: the gate reopens, the SDK is not initialised twice
-    expect(plugin.initialize).toHaveBeenCalledTimes(1);
-    expect(Ads.isRewardedReady()).toBe(true);
+  it('a registration that fails fails the init (not ready, nothing loaded), leaks no listener, and a retry registers cleanly', async () => {
+    const t = await load({ failListenerAt: 5 });
+    await expect(t.Ads.init(ALLOWED)).resolves.toBeUndefined();
+    await t.flush();
+    expect(t.Ads.isRewardedReady()).toBe(false);
+    expect(t.plugin.prepareRewardVideoAd).not.toHaveBeenCalled();
+    expect(t.listenerCount()).toBe(0); // the four that did register were removed again
+    await t.Ads.init(ALLOWED);
+    await t.flush();
+    expect(t.listenerCount()).toBe(11);
+    expect(t.Ads.isRewardedReady()).toBe(true);
+  });
+});
+
+describe('preload and readiness', () => {
+  it('init preloads both formats with the ad unit ids; nothing before it', async () => {
+    const t = await load();
+    expect(t.plugin.prepareRewardVideoAd).not.toHaveBeenCalled();
+    expect(t.plugin.prepareInterstitial).not.toHaveBeenCalled();
+    await t.Ads.init(ALLOWED);
+    expect(t.plugin.prepareRewardVideoAd).toHaveBeenCalledWith({ adId: ADMOB.rewardedAdId });
+    expect(t.plugin.prepareInterstitial).toHaveBeenCalledWith({ adId: ADMOB.interstitialAdId });
+  });
+
+  it('isRewardedReady() turns true only when the Loaded event arrives', async () => {
+    const t = await load({ load: { rewarded: 'hang' } });
+    await t.Ads.init(ALLOWED);
+    await t.flush();
+    expect(t.Ads.isRewardedReady()).toBe(false); // prepare is pending
+    t.emit(RW.LOADED, { adUnitId: ADMOB.rewardedAdId });
+    expect(t.Ads.isRewardedReady()).toBe(true);
+  });
+
+  it('a failed load retries after 30 s, 60 s, 120 s, 300 s (the last repeats), never in a tight loop', async () => {
+    const t = await load({ load: { rewarded: 'fail' } });
+    await t.Ads.init(ALLOWED);
+    await t.flush();
+    expect(t.plugin.prepareRewardVideoAd).toHaveBeenCalledTimes(1);
+    expect(t.Ads.isRewardedReady()).toBe(false);
+    let calls = 1;
+    for (const wait of [...AD_RETRY_BACKOFF_MS, 300_000]) {
+      await vi.advanceTimersByTimeAsync(wait - 1);
+      expect(t.plugin.prepareRewardVideoAd).toHaveBeenCalledTimes(calls);
+      await vi.advanceTimersByTimeAsync(1);
+      calls += 1;
+      expect(t.plugin.prepareRewardVideoAd).toHaveBeenCalledTimes(calls);
+    }
+    t.behavior.rewarded = 'ok';
+    await vi.advanceTimersByTimeAsync(300_000);
+    expect(t.Ads.isRewardedReady()).toBe(true);
+  });
+
+  it('a loaded ad older than 55 minutes is reloaded, never offered', async () => {
+    const t = await up();
+    expect(t.Ads.isRewardedReady()).toBe(true);
+    await vi.advanceTimersByTimeAsync(AD_MAX_AGE_MS);
+    expect(t.plugin.prepareRewardVideoAd).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(1);
+    await t.flush();
+    expect(t.plugin.prepareRewardVideoAd).toHaveBeenCalledTimes(2);
+    expect(t.plugin.prepareInterstitial).toHaveBeenCalledTimes(2);
+    expect(t.Ads.isRewardedReady()).toBe(true); // the replacement loaded
+  });
+
+  it('returning to the foreground re-checks expiry even if the timer was held back while hidden', async () => {
+    const t = await up();
+    vi.setSystemTime(Date.now() + AD_MAX_AGE_MS + 60_000); // the clock moved, no timer callback ran
+    expect(t.Ads.isRewardedReady()).toBe(false); // honest against the clock
+    t.foreground.notifyForeground();
+    await t.flush();
+    expect(t.plugin.prepareRewardVideoAd).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('revoke() (consent withdrawn): stops preloading, cancels retries, nothing is ready', () => {
+  it('makes isRewardedReady() false and refuses shows without calling the plugin', async () => {
+    const t = await up();
+    t.Ads.revoke();
+    expect(t.Ads.isRewardedReady()).toBe(false);
+    expect(await t.Ads.showRewarded('endless_2x')).toBe('unavailable');
+    expect(await t.Ads.showInterstitialIfEligible({ flowProtected: false, now: Date.now() + 3_600_000 })).toBe('skipped');
+    expect(t.plugin.showRewardVideoAd).not.toHaveBeenCalled();
+    expect(t.plugin.showInterstitial).not.toHaveBeenCalled();
+  });
+
+  it('cancels a pending load retry (control: without revoke the same retry fires)', async () => {
+    const control = await load({ load: { rewarded: 'fail' } });
+    await control.Ads.init(ALLOWED);
+    await control.flush();
+    await vi.advanceTimersByTimeAsync(AD_RETRY_BACKOFF_MS[0]);
+    expect(control.plugin.prepareRewardVideoAd).toHaveBeenCalledTimes(2);
+
+    const t = await load({ load: { rewarded: 'fail' } });
+    await t.Ads.init(ALLOWED);
+    await t.flush();
+    expect(t.plugin.prepareRewardVideoAd).toHaveBeenCalledTimes(1);
+    t.Ads.revoke();
+    await vi.advanceTimersByTimeAsync(AD_MAX_AGE_MS * 2);
+    expect(t.plugin.prepareRewardVideoAd).toHaveBeenCalledTimes(1);
+    expect(t.plugin.prepareInterstitial).toHaveBeenCalledTimes(1); // nor does the expiry reload run
+  });
+
+  it('plugin events that are still in flight after the revoke change nothing, and init(allowed) preloads again without re-initialising', async () => {
+    const t = await load({ load: { rewarded: 'hang' } });
+    await t.Ads.init(ALLOWED);
+    await t.flush();
+    t.Ads.revoke();
+    t.emit(RW.LOADED, { adUnitId: ADMOB.rewardedAdId }); // a load that finished after the withdrawal
+    expect(t.Ads.isRewardedReady()).toBe(false);
+    t.behavior.rewarded = 'ok';
+    await t.Ads.init(ALLOWED);
+    await t.flush();
+    expect(t.plugin.initialize).toHaveBeenCalledTimes(1);
+    expect(t.plugin.prepareRewardVideoAd).toHaveBeenCalledTimes(2);
+    expect(t.Ads.isRewardedReady()).toBe(true);
+  });
+
+  it('a revoke that lands while the SDK is still coming up wins: the late init does not preload', async () => {
+    let release: () => void = () => {};
+    const t = await load({ initialize: () => new Promise<void>((r) => { release = r; }) });
+    const pending = t.Ads.init(ALLOWED);
+    await t.flush();
+    t.Ads.revoke();
+    release();
+    await pending;
+    await t.flush();
+    expect(t.plugin.prepareRewardVideoAd).not.toHaveBeenCalled();
+    expect(t.Ads.isRewardedReady()).toBe(false);
+  });
+});
+
+describe('showRewarded: outcome from events, never from showRewardVideoAd()', () => {
+  it('earned: Showed, Reward, Dismissed. Resolves although the plugin call never settles; tracks shown and earned once; reloads', async () => {
+    const t = await up();
+    expect(t.Ads.isRewardedReady()).toBe(true);
+    const p = t.Ads.showRewarded('campaign_2x');
+    expect(t.plugin.showRewardVideoAd).toHaveBeenCalledTimes(1);
+    expect(t.Ads.isShowing()).toBe(true);
+    expect(t.Ads.isRewardedReady()).toBe(false); // busy
+    t.emit(RW.SHOWED);
+    t.emit(RW.REWARDED, { type: 'coin', amount: 1 });
+    t.emit(RW.DISMISSED);
+    await expect(p).resolves.toBe('earned');
+    expect(t.tracked.map((e) => e.name).filter((n) => n.startsWith('rewarded_'))).toEqual(['rewarded_shown', 'rewarded_earned']);
+    expect(t.tracked[0].params).toEqual({ source: 'campaign_2x' });
+    expect(t.Ads.isShowing()).toBe(false);
+    await t.flush();
+    expect(t.plugin.prepareRewardVideoAd).toHaveBeenCalledTimes(2); // the shown ad is spent: the next one is already loading
+    expect(t.Ads.isRewardedReady()).toBe(true);
+  });
+
+  it('dismissed: closed before the reward. Resolves dismissed after the 300 ms grace, no earned event', async () => {
+    const t = await up();
+    const p = t.Ads.showRewarded('endless_revive');
+    let done: string | undefined;
+    void p.then((o) => { done = o; });
+    t.emit(RW.SHOWED);
+    t.emit(RW.DISMISSED);
+    await vi.advanceTimersByTimeAsync(AD_LATE_REWARD_GRACE_MS - 1);
+    expect(done).toBeUndefined();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(done).toBe('dismissed');
+    expect(t.tracked.map((e) => e.name)).not.toContain('rewarded_earned');
+  });
+
+  it('a reward landing within 300 ms after Dismissed still counts, exactly once', async () => {
+    const t = await up();
+    const p = t.Ads.showRewarded('endless_2x');
+    t.emit(RW.SHOWED);
+    t.emit(RW.DISMISSED);
+    await vi.advanceTimersByTimeAsync(AD_LATE_REWARD_GRACE_MS - 50);
+    t.emit(RW.REWARDED, { type: 'coin', amount: 1 });
+    await expect(p).resolves.toBe('earned');
+    await vi.advanceTimersByTimeAsync(AD_LATE_REWARD_GRACE_MS * 3);
+    expect(t.tracked.filter((e) => e.name === 'rewarded_earned')).toHaveLength(1);
+  });
+
+  it('unavailable: FailedToShow resolves at once', async () => {
+    const t = await up();
+    const p = t.Ads.showRewarded('free_fragments');
+    t.emit(RW.FAILED_TO_SHOW, { code: 0, message: 'internal' });
+    await expect(p).resolves.toBe('unavailable');
+    expect(t.tracked.map((e) => e.name)).not.toContain('rewarded_shown'); // it never reached the screen
+  });
+
+  it('unavailable: a show call the plugin rejects (no ad prepared) resolves at once, not after the watchdog', async () => {
+    const t = await up({ show: 'reject' });
+    const p = t.Ads.showRewarded('campaign_2x');
+    await t.flush();
+    await expect(p).resolves.toBe('unavailable');
+    expect(Date.now()).toBe(START.getTime()); // no timer advanced
+  });
+
+  it('unavailable: no Showed within 5 s (the watchdog), and not before', async () => {
+    const t = await up();
+    const p = t.Ads.showRewarded('campaign_2x');
+    let done: string | undefined;
+    void p.then((o) => { done = o; });
+    await vi.advanceTimersByTimeAsync(AD_SHOW_WATCHDOG_MS - 1);
+    expect(done).toBeUndefined();
+    expect(t.Ads.isShowing()).toBe(true);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(done).toBe('unavailable');
+    expect(t.Ads.isShowing()).toBe(false);
+  });
+
+  it('once Showed arrived the watchdog is off: a long ad is not cut off at 5 s', async () => {
+    const t = await up();
+    const p = t.Ads.showRewarded('campaign_2x');
+    let done: string | undefined;
+    void p.then((o) => { done = o; });
+    t.emit(RW.SHOWED);
+    await vi.advanceTimersByTimeAsync(AD_SHOW_WATCHDOG_MS * 4);
+    expect(done).toBeUndefined();
+    t.emit(RW.REWARDED, { type: 'coin', amount: 1 });
+    t.emit(RW.DISMISSED);
+    await expect(p).resolves.toBe('earned');
+  });
+
+  it('busy guard: a second request while one is in flight shows nothing and resolves unavailable; the first is untouched', async () => {
+    const t = await up();
+    const first = t.Ads.showRewarded('endless_revive');
+    const second = await t.Ads.showRewarded('endless_2x');
+    expect(second).toBe('unavailable');
+    expect(t.plugin.showRewardVideoAd).toHaveBeenCalledTimes(1);
+    expect(t.tracked.filter((e) => e.name === 'rewarded_shown')).toHaveLength(0); // neither has reached the screen yet
+    t.emit(RW.SHOWED);
+    t.emit(RW.REWARDED, { type: 'coin', amount: 1 });
+    t.emit(RW.DISMISSED);
+    await expect(first).resolves.toBe('earned');
+    expect(t.tracked.filter((e) => e.name === 'rewarded_earned')).toHaveLength(1);
+  });
+
+  it('busy guard also holds against an interstitial while a rewarded ad is in flight (one full-screen ad at a time)', async () => {
+    const t = await up();
+    const rewarded = t.Ads.showRewarded('campaign_2x');
+    expect(await t.Ads.showInterstitialIfEligible({ flowProtected: false, now: Date.now() + 3_600_000 })).toBe('skipped');
+    expect(t.plugin.showInterstitial).not.toHaveBeenCalled();
+    t.emit(RW.FAILED_TO_SHOW, { code: 0, message: 'x' });
+    await rewarded;
+  });
+
+  it('a request while the ad is not loaded (still loading, or failed) is unavailable and calls nothing', async () => {
+    const t = await load({ load: { rewarded: 'hang' } });
+    await t.Ads.init(ALLOWED);
+    await t.flush();
+    expect(await t.Ads.showRewarded('campaign_2x')).toBe('unavailable');
+    expect(t.plugin.showRewardVideoAd).not.toHaveBeenCalled();
+    expect(t.tracked).toEqual([]);
+  });
+
+  it('never awaits the plugin call: the show promise is observed only for a rejection', async () => {
+    const t = await up();
+    const p = t.Ads.showRewarded('campaign_2x');
+    // The fake never settles showRewardVideoAd (like the real plugin when the ad is closed early). The offer must still settle.
+    t.emit(RW.SHOWED);
+    t.emit(RW.DISMISSED);
+    await vi.advanceTimersByTimeAsync(AD_LATE_REWARD_GRACE_MS);
+    await expect(p).resolves.toBe('dismissed');
+  });
+});
+
+describe('every show is wrapped in the external-flow flag and mutes game audio, whatever the outcome', () => {
+  type Outcome = 'earned' | 'dismissed' | 'unavailable';
+  const rewardedScenarios: Array<[string, Outcome, (t: T) => Promise<void>, LoadOptions?]> = [
+    ['earned', 'earned', async (t) => { t.emit(RW.SHOWED); t.emit(RW.REWARDED, {}); t.emit(RW.DISMISSED); }],
+    ['closed early', 'dismissed', async (t) => { t.emit(RW.SHOWED); t.emit(RW.DISMISSED); await vi.advanceTimersByTimeAsync(AD_LATE_REWARD_GRACE_MS); }],
+    ['failedToShow', 'unavailable', async (t) => { t.emit(RW.FAILED_TO_SHOW, { code: 1, message: 'x' }); }],
+    ['watchdog', 'unavailable', async () => { await vi.advanceTimersByTimeAsync(AD_SHOW_WATCHDOG_MS); }],
+    ['the plugin rejects the call', 'unavailable', async (t) => { await t.flush(); }, { show: 'reject' }],
+  ];
+
+  for (const [name, expected, drive, opts] of rewardedScenarios) {
+    it(`rewarded, ${name}: flag up before the ad is shown and down after; audio suspended, then restored`, async () => {
+      const t = await up(opts);
+      expect(t.flow.isExternalFlowActive()).toBe(false);
+      const p = t.Ads.showRewarded('campaign_2x');
+      expect(t.flow.isExternalFlowActive()).toBe(true);
+      expect(t.flowAtShow).toEqual([true]); // already up when the native show is called
+      expect(t.audio.suspend).toHaveBeenCalledTimes(1);
+      expect(t.audio.resume).not.toHaveBeenCalled();
+      await drive(t);
+      await expect(p).resolves.toBe(expected);
+      expect(t.flow.isExternalFlowActive()).toBe(false);
+      expect(t.audio.resume).toHaveBeenCalledTimes(1);
+      expect(t.audioWanted.value).toBe(true);
+    });
+  }
+
+  it('the flag uses the ads source constant, so it cannot clear (or be cleared by) another flow', async () => {
+    const t = await up();
+    t.flow.setExternalFlowActive(true, 'iap');
+    const p = t.Ads.showRewarded('campaign_2x');
+    t.emit(RW.FAILED_TO_SHOW, { code: 1, message: 'x' });
+    await p;
+    expect(t.flow.isExternalFlowActive()).toBe(true); // iap still holds it
+    t.flow.setExternalFlowActive(false, 'iap');
+    expect(t.flow.isExternalFlowActive()).toBe(false);
+    expect(AD_EXTERNAL_FLOW_SOURCE).toBe('ads');
+  });
+
+  it('audio the player did not want (already suspended) is not woken by the end of an ad', async () => {
+    const t = await up({ wantsAudio: false });
+    const p = t.Ads.showRewarded('campaign_2x');
+    t.emit(RW.FAILED_TO_SHOW, { code: 1, message: 'x' });
+    await p;
+    expect(t.audio.resume).not.toHaveBeenCalled();
+  });
+
+  it('Sound and Music both off: the end of an ad does not resume audio; either one on does', async () => {
+    const off = await up({ settings: { sound: false, music: false } });
+    const p1 = off.Ads.showRewarded('campaign_2x');
+    off.emit(RW.FAILED_TO_SHOW, { code: 1, message: 'x' });
+    await p1;
+    expect(off.audio.resume).not.toHaveBeenCalled();
+
+    const musicOnly = await up({ settings: { sound: false, music: true } });
+    const p2 = musicOnly.Ads.showRewarded('campaign_2x');
+    musicOnly.emit(RW.FAILED_TO_SHOW, { code: 1, message: 'x' });
+    await p2;
+    expect(musicOnly.audio.resume).toHaveBeenCalledTimes(1);
+  });
+
+  it('interstitial: flag and audio are wrapped around Showed/Dismissed too, and FailedToShow and the watchdog clear them', async () => {
+    const shown = await up();
+    const p = shown.Ads.showInterstitialIfEligible({ flowProtected: false, now: Date.now() + 3_600_000 });
+    expect(shown.flow.isExternalFlowActive()).toBe(true);
+    expect(shown.audio.suspend).toHaveBeenCalledTimes(1);
+    shown.emit(IN.SHOWED);
+    shown.emit(IN.DISMISSED);
+    await expect(p).resolves.toBe('shown');
+    expect(shown.flow.isExternalFlowActive()).toBe(false);
+    expect(shown.audio.resume).toHaveBeenCalledTimes(1);
+
+    const failed = await up();
+    const f = failed.Ads.showInterstitialIfEligible({ flowProtected: false, now: Date.now() + 3_600_000 });
+    failed.emit(IN.FAILED_TO_SHOW, { code: 1, message: 'x' });
+    await expect(f).resolves.toBe('skipped');
+    expect(failed.flow.isExternalFlowActive()).toBe(false);
+    expect(failed.audio.resume).toHaveBeenCalledTimes(1);
+
+    const dog = await up();
+    const d = dog.Ads.showInterstitialIfEligible({ flowProtected: false, now: Date.now() + 3_600_000 });
+    await vi.advanceTimersByTimeAsync(AD_SHOW_WATCHDOG_MS);
+    await expect(d).resolves.toBe('skipped');
+    expect(dog.flow.isExternalFlowActive()).toBe(false);
+    expect(dog.audio.resume).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('showInterstitialIfEligible: awaited before the scene moves on, never waits on a load', () => {
+  const eligible = () => ({ flowProtected: false, now: Date.now() + 3_600_000 });
+
+  it('shows the preloaded interstitial and resolves when it is dismissed; tracks interstitial_shown; reloads', async () => {
+    const t = await up();
+    const p = t.Ads.showInterstitialIfEligible(eligible());
+    let done: string | undefined;
+    void p.then((o) => { done = o; });
+    expect(t.plugin.showInterstitial).toHaveBeenCalledTimes(1);
+    expect(t.plugin.prepareInterstitial).toHaveBeenCalledTimes(1); // preloaded at init: no load at the moment of showing
+    t.emit(IN.SHOWED);
+    await t.flush();
+    expect(done).toBeUndefined(); // still on screen: the caller must wait
+    t.emit(IN.DISMISSED);
+    await expect(p).resolves.toBe('shown');
+    expect(t.tracked.map((e) => e.name)).toContain('interstitial_shown');
+    await t.flush();
+    expect(t.plugin.prepareInterstitial).toHaveBeenCalledTimes(2);
+  });
+
+  it('skips at once when no interstitial is preloaded: no show call, no wait, no load on demand', async () => {
+    const t = await load({ load: { interstitial: 'hang' } });
+    await t.Ads.init(ALLOWED);
+    await t.flush();
+    expect(await t.Ads.showInterstitialIfEligible(eligible())).toBe('skipped');
+    expect(t.plugin.showInterstitial).not.toHaveBeenCalled();
+    expect(t.plugin.prepareInterstitial).toHaveBeenCalledTimes(1); // only the preload
+    expect(Date.now()).toBe(START.getTime());
+  });
+
+  it('a failed preload is skipped too, and the failed attempt is not an interstitial_shown', async () => {
+    const t = await load({ load: { interstitial: 'fail' } });
+    await t.Ads.init(ALLOWED);
+    await t.flush();
+    expect(await t.Ads.showInterstitialIfEligible(eligible())).toBe('skipped');
+    expect(t.tracked.map((e) => e.name)).not.toContain('interstitial_shown');
+  });
+
+  it('the cooldown is stamped when the ad is actually shown, not when it was skipped', async () => {
+    const skipped = await load({ load: { interstitial: 'hang' } });
+    await skipped.Ads.init(ALLOWED);
+    await skipped.flush();
+    await skipped.Ads.showInterstitialIfEligible(eligible());
+    expect(skipped.writes.filter(([k]) => k === COOLDOWN_KEY)).toEqual([]);
+
+    const shown = await up();
+    const now = Date.now() + 3_600_000;
+    const p = shown.Ads.showInterstitialIfEligible({ flowProtected: false, now });
+    shown.emit(IN.SHOWED);
+    shown.emit(IN.DISMISSED);
+    await p;
+    expect(shown.writes.filter(([k]) => k === COOLDOWN_KEY)).toHaveLength(1);
+    expect(JSON.parse(shown.writes.find(([k]) => k === COOLDOWN_KEY)![1])).toEqual({ lastShownMs: Date.now() });
+  });
+
+  it('a "no" from the gate (premium / grace / cap / flow) shows nothing and is tracked as suppressed', async () => {
+    const t = await up({ decision: { show: false, reason: 'capped' } });
+    expect(await t.Ads.showInterstitialIfEligible(eligible())).toBe('skipped');
+    expect(t.plugin.showInterstitial).not.toHaveBeenCalled();
+    expect(t.tracked.find((e) => e.name === 'interstitial_suppressed')?.params).toEqual({ reason: 'capped' });
+  });
+
+  it('counts a completed campaign level on every call, shown or not (session grace input)', async () => {
+    const t = await up({ decision: { show: false, reason: 'grace' } });
+    await t.Ads.showInterstitialIfEligible(eligible());
+    await t.Ads.showInterstitialIfEligible(eligible());
+    expect(t.decisions.map((d) => d.sessionLevels)).toEqual([0, 1]);
+  });
+});
+
+describe('a rewarded view resets the interstitial clock (D-24)', () => {
+  it('the next interstitial decision sees lastShownMs = the moment the rewarded ad was viewed, and the stamp is persisted', async () => {
+    const t = await up({ decision: { show: false, reason: 'capped' } }); // the gate says no: only the clock it was given is of interest
+    const p = t.Ads.showRewarded('campaign_2x');
+    await vi.advanceTimersByTimeAsync(1_000);
+    const viewedAt = Date.now();
+    t.emit(RW.SHOWED);
+    t.emit(RW.REWARDED, {});
+    t.emit(RW.DISMISSED);
+    await p;
+    expect(t.writes.filter(([k]) => k === COOLDOWN_KEY).map(([, v]) => JSON.parse(v))).toEqual([{ lastShownMs: viewedAt }]);
+    await vi.advanceTimersByTimeAsync(60_000);
+    await t.Ads.showInterstitialIfEligible({ flowProtected: false, now: Date.now() });
+    expect(t.decisions[0].lastShownMs).toBe(viewedAt);
+  });
+
+  it('an offer that never reached the screen does not reset it', async () => {
+    const t = await up();
+    const p = t.Ads.showRewarded('campaign_2x');
+    t.emit(RW.FAILED_TO_SHOW, { code: 1, message: 'x' });
+    await p;
+    expect(t.writes.filter(([k]) => k === COOLDOWN_KEY)).toEqual([]);
   });
 });
 
 describe('Ads (web / non-native)', () => {
-  it('keeps the dev stub: no plugin is ever loaded, init is a no-op, the reward is granted so the flows stay testable', async () => {
-    const { Ads, plugin, adMobModuleLoads } = await load({ native: false });
+  it('DEV: keeps the stub so the flows stay testable. Ready, reward granted, shown and earned tracked, no plugin loaded', async () => {
+    vi.stubEnv('DEV', true);
+    const { Ads, plugin, adMobModuleLoads, tracked } = await load({ native: false });
     await Ads.init(ALLOWED);
     expect(Ads.isRewardedReady()).toBe(true);
-    expect(await Ads.showRewarded('campaign_2x')).toBe(true);
-    await Ads.maybeInterstitial({ flowProtected: false, now: Date.now() + 3_600_000 });
+    expect(await Ads.showRewarded('campaign_2x')).toBe('earned');
+    expect(tracked.map((e) => e.name)).toEqual(['rewarded_shown', 'rewarded_earned']);
+    expect(Ads.isShowing()).toBe(false);
+    expect(await Ads.showInterstitialIfEligible({ flowProtected: false, now: Date.now() + 3_600_000 })).toBe('skipped');
     expectNoConsentOrInitCalls(plugin);
     expect(adMobModuleLoads()).toBe(0);
+  });
+
+  it('production web build: rewarded is unavailable (offers hidden, no free reward), and the interstitial is a no-op', async () => {
+    vi.stubEnv('DEV', false);
+    const { Ads, plugin, adMobModuleLoads, tracked, flow, audio } = await load({ native: false });
+    await Ads.init(ALLOWED);
+    expect(Ads.isRewardedReady()).toBe(false);
+    expect(await Ads.showRewarded('campaign_2x')).toBe('unavailable');
+    expect(await Ads.showRewarded('free_fragments')).toBe('unavailable');
+    expect(tracked.map((e) => e.name)).toEqual([]); // no shown / earned for an ad that cannot exist
+    expect(await Ads.showInterstitialIfEligible({ flowProtected: false, now: Date.now() + 3_600_000 })).toBe('skipped');
+    expectNoConsentOrInitCalls(plugin);
+    expect(plugin.prepareRewardVideoAd).not.toHaveBeenCalled();
+    expect(plugin.showRewardVideoAd).not.toHaveBeenCalled();
+    expect(adMobModuleLoads()).toBe(0);
+    expect(flow.isExternalFlowActive()).toBe(false);
+    expect(audio.suspend).not.toHaveBeenCalled();
   });
 });

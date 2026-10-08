@@ -60,7 +60,8 @@ import { Leaderboard } from '../utils/Leaderboard';
 import { Ads } from '../services/Ads';
 import { nextUnlockHint } from '../utils/onboarding';
 import { RETENTION } from '../config/retention.config';
-import { STORE } from '../config/monetization.config';
+import { AD_UI, STORE } from '../config/monetization.config';
+import { runRewardedOffer } from '../ui/adOffer';
 import { StreakStore } from '../utils/StreakStore';
 import { streakTier } from '../utils/streak';
 import { nearMiss } from '../utils/nearMiss';
@@ -160,6 +161,8 @@ export class GameScene extends Phaser.Scene implements Pausable {
   private hadPriorProgress = false; // had campaign stars at level entry — suppresses the FTUE beat for returning players
   private advanceTimer?: Phaser.Time.TimerEvent; // post-win auto-advance (cancellable by the 2x offer)
   private advanceConsumed = false;
+  // A rewarded 2x view is this win's one full-screen ad: the interstitial is skipped for this advance (D-24 / V15).
+  private skipInterstitial = false;
   private isDaily = false; // launched from the Daily Challenge
   private dailyStreak = 0; // streak after winning today's daily
   private winStreakCount = 0; // consecutive-campaign-win streak after this win (0 = daily / no streak)
@@ -205,6 +208,7 @@ export class GameScene extends Phaser.Scene implements Pausable {
     this.isDying = false;
     this.leaving = false;
     this.advanceConsumed = false;
+    this.skipInterstitial = false;
     // PauseScene hands RESTART / HOME back here so this scene keeps owning its teardown.
     // off-before-on: this scene instance is reused across restarts, so never stack the listener.
     this.events.off(PLATFORM.PAUSE_ACTION_EVENT, this.onPauseAction);
@@ -1170,12 +1174,13 @@ export class GameScene extends Phaser.Scene implements Pausable {
 
     // Campaign wins linger a little so the optional 2x-Stardust offer is tappable;
     // the daily returns to the menu snappily.
-    this.advanceTimer = this.time.delayedCall(this.isDaily ? 1550 : 2800, () => this.advanceAfterWin());
+    this.advanceTimer = this.time.delayedCall(this.isDaily ? 1550 : 2800, () => void this.advanceAfterWin());
   }
 
   // Advance after a win (next level / end / menu). Extracted so the optional
   // "2x Stardust" offer can cancel the auto-advance, run the ad, then advance.
-  private advanceAfterWin(): void {
+  // Async (D-24): the campaign interstitial is awaited BEFORE scene.restart, with the win overlay held and input off.
+  private async advanceAfterWin(): Promise<void> {
     if (this.leaving || this.advanceConsumed) return;
     this.advanceConsumed = true;
     this.leaving = true;
@@ -1187,11 +1192,19 @@ export class GameScene extends Phaser.Scene implements Pausable {
       this.getAudio().stopWorldTheme();
       this.scene.start('EndScene');
     } else {
-      // Ads owns premium/grace/cap decisions; the scene only supplies whether
-      // THIS win is a satisfying moment worth protecting from interruption.
-      void Ads.maybeInterstitial({
-        flowProtected: this.isBoss || (this.winResult?.stars ?? 0) >= 3 || streakTier(this.winStreakCount).level >= 1,
-      });
+      if (!this.skipInterstitial) {
+        // Ads owns premium/grace/cap decisions; the scene only supplies whether THIS win is a satisfying moment worth
+        // protecting from interruption. Only an interstitial that is already preloaded is shown; the call never waits on a load.
+        this.input.enabled = false; // the overlay is held: no tap reaches it while the ad is up
+        try {
+          await Ads.showInterstitialIfEligible({
+            flowProtected: this.isBoss || (this.winResult?.stars ?? 0) >= 3 || streakTier(this.winStreakCount).level >= 1,
+          });
+        } catch {
+          // an ad problem must never block progress
+        }
+        if (!this.scene.isActive()) return; // the scene was left while the ad was up
+      }
       this.scene.restart({ level: nextLevel }); // startWorldTheme keeps same-world music continuous
     }
   }
@@ -1406,7 +1419,10 @@ export class GameScene extends Phaser.Scene implements Pausable {
     // "Stardust" explicitly so "2×" always reads as doubling the currency
     // (never ambiguous with stars/time); on a live win streak it honestly nods
     // to that already-banked momentum — the ad itself never affects the streak.
-    const showDouble = !showNudge && !this.isDaily && this.awardedStardust > 0;
+    // Rendered only when a rewarded ad is loaded and ready (D-24): never an offer that cannot be honoured, and none on a production
+    // web build. It sits below the panel, the tertiary slot (A-22): never above or before the primary action (P3 adds NEXT/RETRY
+    // above it).
+    const showDouble = !showNudge && !this.isDaily && this.awardedStardust > 0 && Ads.isRewardedReady();
     if (showDouble) {
       Analytics.track(rewardedOffered('campaign_2x')); // offer impression, fires once on render
       const onStreak = streakTier(this.winStreakCount).level >= 1;
@@ -1421,18 +1437,27 @@ export class GameScene extends Phaser.Scene implements Pausable {
       }).setOrigin(0.5);
       const btn = this.add.container(cx, cy + panelH / 2 + 34 + nudgeExtra, [bbg, btxt]).setDepth(51);
       setTapArea(btn, bw, bh);
-      btn.once('pointerup', async () => {
-        btn.disableInteractive();
+      btn.on('pointerup', () => {
+        if (this.advanceConsumed || Ads.isShowing()) return;
         this.advanceTimer?.remove();
-        const earned = await Ads.showRewarded('campaign_2x');
-        if (earned) {
-          CurrencyStore.add(this.awardedStardust);
-          Analytics.track(rewardDoubleStardust(this.awardedStardust));
-          btxt.setText(`+${this.awardedStardust} ✦  ×2!`);
-          this.time.delayedCall(900, () => this.advanceAfterWin());
-        } else {
-          this.advanceAfterWin();
-        }
+        this.skipInterstitial = true; // set before the ad: whatever happens, this win shows at most the one rewarded ad
+        // Disables the button before awaiting; nothing is granted if the scene was left while the ad ran.
+        void runRewardedOffer(this, btn, 'campaign_2x', {
+          onEarned: () => {
+            CurrencyStore.add(this.awardedStardust);
+            Analytics.track(rewardDoubleStardust(this.awardedStardust));
+            btxt.setText(`+${this.awardedStardust} ✦  ×2!`);
+            this.time.delayedCall(AD_UI.RESULT_HOLD_MS, () => void this.advanceAfterWin());
+          },
+          onNotEarned: (outcome) => {
+            if (outcome === 'unavailable') {
+              btxt.setText(AD_UI.UNAVAILABLE); // device row A3: the player sees why nothing happened, then the game moves on
+              this.time.delayedCall(AD_UI.RESULT_HOLD_MS, () => void this.advanceAfterWin());
+            } else {
+              void this.advanceAfterWin(); // closed early: no reward, straight on
+            }
+          },
+        });
       });
       if (!reduced) { btn.setScale(0.85).setAlpha(0); this.tweens.add({ targets: btn, scale: 1, alpha: 1, delay: 500, duration: 300, ease: THEME.EASE_POP }); }
     } else if (showNudge) {

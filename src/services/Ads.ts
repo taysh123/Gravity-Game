@@ -1,32 +1,43 @@
-// Ads provider seam. Web build = stubs (so the reward flow is testable); native
-// build = Capacitor AdMob, dynamically imported + guarded by isNativePlatform() so
-// the web bundle never loads the plugin. Rewarded ads are always opt-in and never
-// required to progress; interstitials are gated by interstitialDecision() (Wave 3
-// Task 1) — premium / first-session grace / flow-protected (boss, 3★, hot streak)
-// / frequency-capped, in that order — and the frequency cap PERSISTS across
-// reloads (localStorage) so a cold start never re-arms a fresh player's cooldown.
-// Analytics events are emitted on both the show and every suppression.
+// Ads provider seam. Web build = a DEV-only stub (so the reward flow is testable; a production web build has no rewarded ad and
+// shows no offer); native build = Capacitor AdMob, dynamically imported + guarded by isNativePlatform() so the web bundle never
+// loads the plugin. Rewarded ads are always opt-in and never required to progress; interstitials are gated by
+// interstitialDecision() (Wave 3 Task 1) — premium / first-session grace / flow-protected (boss, 3★, hot streak) /
+// frequency-capped, in that order — and the frequency cap PERSISTS across reloads (localStorage) so a cold start never
+// re-arms a fresh player's cooldown. Analytics events are emitted on both the show and every suppression.
 //
 // Consent-first (D-10, P00-T18): this module never asks for consent and never initialises the SDK on its own. bootServices runs
 // UMP (services/Consent.ts), applies the outcome to Analytics, and calls Ads.init(outcome) ONLY when UMP says canRequestAds.
-// Until that init has succeeded, every native ad request here is refused as not ready: no prepare, no show, no UMP, no
-// initialize. Ads.revoke() closes the gate again when the player withdraws consent in Settings > Privacy choices.
-// D-25 / A-07: initialize() gets maxAdContentRating ParentalGuidance and no child-directed or under-age tag at all.
-// (Preload, watchdog and readiness plumbing is P00-T19.)
+// Until that init has succeeded, every native ad request here is refused as not ready: no listener, no prepare, no show, no UMP,
+// no initialize. Ads.revoke() closes the gate again when the player withdraws consent in Settings > Privacy choices: it stops
+// preloading and cancels every pending retry. D-25 / A-07: initialize() gets maxAdContentRating ParentalGuidance and no
+// child-directed or under-age tag at all.
+//
+// Ad plumbing (D-24, P00-T19): after init the plugin's eleven events are listened to once and fed to the pure reducer in
+// adState.ts; both formats are preloaded and reloaded after every show, failure (with backoff) and expiry. A rewarded outcome
+// (earned | dismissed | unavailable) is read from those events and a 5 s watchdog, NEVER from the showRewardVideoAd() promise (the
+// plugin settles it only on a reward). Every show is busy-guarded, wrapped in setExternalFlowActive (so the pause overlay stays
+// shut while the ad covers the app) and mutes game audio, restoring it only if the player wants audio. Any rewarded view resets
+// the interstitial clock. The interstitial is awaited by the caller, is skipped when it is not already preloaded, and never waits
+// on a load.
 //
 // NOTE: a Capacitor registerPlugin() proxy is thenable, so the init promise must NOT
 // resolve to the proxy (that would invoke proxy.then -> "AdMob.then is not implemented").
 // It resolves to a boolean; callers use the module-scoped `admob`.
 import { Capacitor } from '@capacitor/core';
 import { IAP } from './IAP';
-import { ADMOB, ADMOB_TARGETING } from '../config/monetization.config';
+import { ADMOB, ADMOB_EVENTS, ADMOB_TARGETING, AD_EXTERNAL_FLOW_SOURCE } from '../config/monetization.config';
 import { UMP_DEBUG } from '../config/consent.config';
 import { Analytics } from './Analytics';
 import { rewardedShown, rewardedEarned, interstitialShown, interstitialSuppressed } from './analyticsEvents';
 import type { ConsentOutcome } from './consentState';
 import { interstitialDecision } from './interstitial';
-import type { AdMobInitializeOptions, AdMobPlugin } from './native/admob';
+import { initialAdState, isBusy, isReady, nextDeadline, reduceAd, type AdEffect, type AdEvent, type AdFormat, type AdState, type ShowOutcome } from './adState';
+import type { AdMobInitializeOptions, AdMobListenerHandle, AdMobPlugin } from './native/admob';
 import { Saves } from '../platform/saves';
+import { setExternalFlowActive } from '../platform/externalFlow';
+import { onAppForeground } from '../platform/foreground';
+import { sharedAudio } from '../utils/AudioSynth';
+import { SettingsStore } from '../utils/SettingsStore';
 
 // Persisted cooldown — survives a reload/cold start, unlike the old in-memory
 // `let` (which reset every launch, leaving a brand-new player's first win the
@@ -71,6 +82,140 @@ let initPromise: Promise<boolean> | null = null;
 // player withdraws consent the SDK stays up for the session, but no further ad is requested or shown.
 let consented = false;
 
+// ---- The reducer and its glue ----------------------------------------------------------------------------------------------
+
+let adState: AdState = initialAdState();
+let timer: ReturnType<typeof setTimeout> | null = null;
+let unsubscribeForeground: (() => void) | null = null;
+let listenersRegistered = false;
+
+// The one show a caller is waiting on (the reducer's busy guard guarantees at most one).
+interface Pending {
+  format: AdFormat;
+  source: string; // analytics attribution of a rewarded ad
+  resolve: (outcome: ShowOutcome) => void;
+}
+let pending: Pending | null = null;
+// Whether game audio was wanted when the current ad took over the screen (AudioSynth.wantsAudio, P00-T11); null = no ad showing.
+let audioWasWanted: boolean | null = null;
+
+function dispatch(event: AdEvent): AdEffect[] {
+  const reduction = reduceAd(adState, event);
+  adState = reduction.state;
+  for (const effect of reduction.effects) runEffect(effect);
+  rearm();
+  return reduction.effects;
+}
+
+// One timer, armed for the reducer's next deadline (watchdog, grace, retry, expiry). Re-armed after every event.
+function rearm(): void {
+  if (timer !== null) {
+    clearTimeout(timer);
+    timer = null;
+  }
+  const at = nextDeadline(adState);
+  if (at === null) return;
+  timer = setTimeout(() => {
+    timer = null;
+    dispatch({ type: 'tick', now: Date.now() });
+  }, Math.max(0, at - Date.now()));
+}
+
+function runEffect(effect: AdEffect): void {
+  switch (effect.type) {
+    case 'load':
+      startLoad(effect.format);
+      return;
+    case 'show':
+      startShow(effect.format);
+      return;
+    case 'shown':
+      if (effect.format === 'rewarded') {
+        if (pending?.format === 'rewarded') Analytics.track(rewardedShown(pending.source));
+      } else {
+        persistLastShownMs(Date.now()); // the cooldown starts when the ad is really on screen, not when it was merely eligible
+        Analytics.track(interstitialShown());
+      }
+      return;
+    case 'resetInterstitialClock':
+      persistLastShownMs(Date.now()); // D-24: a rewarded view counts as a full-screen ad for the interstitial cooldown
+      return;
+    case 'settle':
+      finishShow(effect.format, effect.outcome);
+      return;
+    case 'refuse':
+      return; // reported to the caller through the returned effects
+  }
+}
+
+function startLoad(format: AdFormat): void {
+  const ad = admob;
+  if (!ad) return;
+  // The outcome arrives as an event; a rejection is the fallback for a prepare the plugin failed before any event (a second
+  // failedToLoad for the same attempt is ignored by the reducer).
+  const failed = (): void => {
+    dispatch({ type: 'failedToLoad', format, now: Date.now() });
+  };
+  try {
+    if (format === 'rewarded') void ad.prepareRewardVideoAd({ adId: ADMOB.rewardedAdId }).catch(failed);
+    else void ad.prepareInterstitial({ adId: ADMOB.interstitialAdId }).catch(failed);
+  } catch {
+    failed();
+  }
+}
+
+// The native ad is about to cover the app: raise the external-flow flag (no pause overlay while we look hidden) and mute game audio.
+function startShow(format: AdFormat): void {
+  setExternalFlowActive(true, AD_EXTERNAL_FLOW_SOURCE);
+  try {
+    const audio = sharedAudio();
+    audioWasWanted = audio.wantsAudio;
+    audio.suspend();
+  } catch {
+    audioWasWanted = null; // audio unavailable: nothing to mute or restore
+  }
+  const ad = admob;
+  const failed = (): void => {
+    dispatch({ type: 'failedToShow', format, now: Date.now() });
+  };
+  if (!ad) {
+    failed();
+    return;
+  }
+  // NEVER awaited: the plugin resolves a rewarded show only on a reward and never when the ad is closed early. The outcome comes
+  // from the events; a rejection (no ad prepared) just means the show did not happen.
+  try {
+    if (format === 'rewarded') void ad.showRewardVideoAd().catch(failed);
+    else void ad.showInterstitial().catch(failed);
+  } catch {
+    failed();
+  }
+}
+
+// The show is over (dismissed, failed or abandoned by the watchdog): clear the flag, give the audio back, resolve the caller.
+function finishShow(format: AdFormat, outcome: ShowOutcome): void {
+  setExternalFlowActive(false, AD_EXTERNAL_FLOW_SOURCE);
+  const wanted = audioWasWanted;
+  audioWasWanted = null;
+  if (wanted) {
+    // Only if the player still has Sound or Music on (the same rule as the foreground path in platform/lifecycleDecision.ts).
+    try {
+      const settings = SettingsStore.get();
+      if (settings.sound || settings.music) sharedAudio().resume();
+    } catch {
+      // audio unavailable: ignore
+    }
+  }
+  const waiting = pending;
+  pending = null;
+  if (waiting && waiting.format === format) {
+    if (format === 'rewarded' && outcome === 'earned') Analytics.track(rewardedEarned(waiting.source));
+    waiting.resolve(outcome);
+  }
+}
+
+// ---- SDK init and plugin listeners -----------------------------------------------------------------------------------------
+
 // What AdMob.initialize() is told. D-25: no tagForChildDirectedTreatment / tagForUnderAgeOfConsent keys at all (13+ audience).
 // initializeForTesting only in a debug-geography build, with the test device ids that build was made with.
 function initializeOptions(): AdMobInitializeOptions {
@@ -82,14 +227,43 @@ function initializeOptions(): AdMobInitializeOptions {
   return options;
 }
 
-// Single-flight SDK init. Resolves true once initialize() answered. Does NOT return the proxy. A failure is not memoized, so a
-// later Ads.init (e.g. after Privacy choices) may try again; it never throws and never blocks gameplay.
+// Registers the eleven listeners the reducer needs, once for the life of the page (a revoke and a later init re-use them: events
+// after a revoke are ignored by the reducer). All-or-nothing: a failed registration removes the ones that did register, so the
+// next init cannot double up.
+async function registerListeners(ad: AdMobPlugin): Promise<void> {
+  if (listenersRegistered) return;
+  const handles: AdMobListenerHandle[] = [];
+  const at = (): number => Date.now();
+  const R = ADMOB_EVENTS.REWARDED;
+  const I = ADMOB_EVENTS.INTERSTITIAL;
+  try {
+    handles.push(await ad.addListener(R.LOADED, () => { dispatch({ type: 'loaded', format: 'rewarded', now: at() }); }));
+    handles.push(await ad.addListener(R.FAILED_TO_LOAD, () => { dispatch({ type: 'failedToLoad', format: 'rewarded', now: at() }); }));
+    handles.push(await ad.addListener(R.SHOWED, () => { dispatch({ type: 'showed', format: 'rewarded', now: at() }); }));
+    handles.push(await ad.addListener(R.FAILED_TO_SHOW, () => { dispatch({ type: 'failedToShow', format: 'rewarded', now: at() }); }));
+    handles.push(await ad.addListener(R.DISMISSED, () => { dispatch({ type: 'dismissed', format: 'rewarded', now: at() }); }));
+    handles.push(await ad.addListener(R.REWARDED, () => { dispatch({ type: 'reward', now: at() }); }));
+    handles.push(await ad.addListener(I.LOADED, () => { dispatch({ type: 'loaded', format: 'interstitial', now: at() }); }));
+    handles.push(await ad.addListener(I.FAILED_TO_LOAD, () => { dispatch({ type: 'failedToLoad', format: 'interstitial', now: at() }); }));
+    handles.push(await ad.addListener(I.SHOWED, () => { dispatch({ type: 'showed', format: 'interstitial', now: at() }); }));
+    handles.push(await ad.addListener(I.FAILED_TO_SHOW, () => { dispatch({ type: 'failedToShow', format: 'interstitial', now: at() }); }));
+    handles.push(await ad.addListener(I.DISMISSED, () => { dispatch({ type: 'dismissed', format: 'interstitial', now: at() }); }));
+    listenersRegistered = true;
+  } catch (err) {
+    await Promise.all(handles.map((h) => h.remove().catch(() => undefined)));
+    throw err;
+  }
+}
+
+// Single-flight SDK init. Resolves true once initialize() answered and the listeners are in. Does NOT return the proxy. A failure
+// is not memoized, so a later Ads.init (e.g. after Privacy choices) may try again; it never throws and never blocks gameplay.
 function initSdk(): Promise<boolean> {
   if (!initPromise) {
     initPromise = (async () => {
       try {
         const m = await import('./native/admob');
         await m.AdMob.initialize(initializeOptions()); // a method CALL is fine (real promise)
+        await registerListeners(m.AdMob); // before the first prepare, so no load event is missed
         admob = m.AdMob;
       } catch {
         admob = null; // plugin unavailable — never block gameplay
@@ -106,61 +280,87 @@ function adsReady(): boolean {
   return Capacitor.isNativePlatform() && consented && admob !== null;
 }
 
+// The consent gate closes: no more loading, no pending retry or expiry, nothing ready; a show in flight is settled unavailable.
+function closeGate(): void {
+  consented = false;
+  unsubscribeForeground?.();
+  unsubscribeForeground = null;
+  dispatch({ type: 'disable' });
+}
+
+export type RewardedOutcome = ShowOutcome; // earned | dismissed | unavailable
+
 export const Ads = {
   // Called by bootServices after consent resolved, and only when the outcome allows ads (also by "Privacy choices" if the player
-  // grants consent later). Idempotent. On the web there is nothing to initialise.
+  // grants consent later). Idempotent. On the web there is nothing to initialise. Preloads both formats once the SDK is up.
   async init(outcome: ConsentOutcome): Promise<void> {
     if (!outcome.canRequestAds) {
-      consented = false;
+      closeGate();
       return;
     }
     if (!Capacitor.isNativePlatform()) return;
     consented = true;
-    await initSdk();
+    if (!(await initSdk())) return;
+    if (!consented) return; // revoked while the SDK was coming up
+    unsubscribeForeground ??= onAppForeground(() => {
+      // A timer can be held back while the app is hidden: on return, re-check expiry and any due retry.
+      if (consented) dispatch({ type: 'tick', now: Date.now() });
+    });
+    dispatch({ type: 'enable', now: Date.now() });
   },
 
-  // The player withdrew consent (Settings > Privacy choices): stop requesting and showing ads for the rest of the session.
+  // The player withdrew consent (Settings > Privacy choices): stop preloading, cancel pending retries and refuse every ad for the
+  // rest of the session (until a later init).
   revoke(): void {
-    consented = false;
+    closeGate();
   },
 
+  // Is a rewarded ad loaded, fresh and not in use? The offers render only when this is true (D-24). Web: DEV stub only; a
+  // production web build has no rewarded ad.
   isRewardedReady(): boolean {
-    // Web stub: always. Native: only once consent allowed ads and the SDK is up (P00-T19 refines this to the real cache state).
-    return !Capacitor.isNativePlatform() || adsReady();
+    if (!Capacitor.isNativePlatform()) return import.meta.env.DEV;
+    return adsReady() && isReady(adState, 'rewarded', Date.now()) && !isBusy(adState);
   },
 
-  // Resolves true if the player earned the reward. Web stub grants it.
-  // `source` identifies the calling surface ('campaign_2x' | 'endless_2x' |
-  // 'endless_revive' | 'free_fragments') so shown/earned are attributable
-  // per-surface in analytics (Wave 3 Task 2). This is the ONLY call site for
-  // rewardedShown/rewardedEarned, so every caller gets the attribution for free.
-  async showRewarded(source: string): Promise<boolean> {
-    // Consent gate: before a successful Ads.init a native request is refused as not ready, with no event and no native call.
-    if (Capacitor.isNativePlatform() && !adsReady()) return false;
-    Analytics.track(rewardedShown(source));
+  // A native ad show is in flight (requested until it settles). Callers use it to ignore a second tap.
+  isShowing(): boolean {
+    return isBusy(adState);
+  },
+
+  // Resolves how the offer ended: 'earned' (grant the reward), 'dismissed' (the player closed the ad early: no reward) or
+  // 'unavailable' (nothing was shown: not ready, busy, failed, or the 5 s watchdog). It never awaits showRewardVideoAd(): the
+  // outcome comes from the plugin's events. `source` identifies the calling surface ('campaign_2x' | 'endless_2x' |
+  // 'endless_revive' | 'free_fragments') so shown/earned are attributable per-surface in analytics (Wave 3 Task 2). This is the ONLY
+  // call site for rewardedShown/rewardedEarned, so every caller gets the attribution for free.
+  async showRewarded(source: string): Promise<RewardedOutcome> {
     if (!Capacitor.isNativePlatform()) {
+      if (!import.meta.env.DEV) return 'unavailable'; // production web: no rewarded ad, no free reward
+      Analytics.track(rewardedShown(source));
       Analytics.track(rewardedEarned(source));
-      return true;
+      return 'earned';
     }
-    const ad = admob;
-    if (!ad) return false;
-    try {
-      await ad.prepareRewardVideoAd({ adId: ADMOB.rewardedAdId });
-      const reward = await ad.showRewardVideoAd();
-      const earned = reward != null;
-      if (earned) Analytics.track(rewardedEarned(source));
-      return earned;
-    } catch {
-      return false;
-    }
+    // Consent gate: before a successful Ads.init a native request is refused as not ready, with no event and no native call.
+    if (!adsReady()) return 'unavailable';
+    return new Promise<ShowOutcome>((resolve) => {
+      if (isBusy(adState)) {
+        resolve('unavailable'); // busy guard: one full-screen ad at a time; the one in flight is untouched
+        return;
+      }
+      pending = { format: 'rewarded', source, resolve };
+      const effects = dispatch({ type: 'requestShow', format: 'rewarded', now: Date.now() });
+      if (effects.some((e) => e.type === 'refuse')) {
+        pending = null;
+        resolve('unavailable'); // not loaded (or stale): nothing was shown
+      }
+    });
   },
 
-  // Show an interstitial if eligible. `ctx.flowProtected` is the ONLY thing the
-  // caller supplies (was the just-finished win a boss / 3★ / hot streak?) — every
-  // other signal (premium, session grace, the persisted frequency cap) is owned
-  // here. No-op on web; real ad on native. Suppressions are tracked too, so the
-  // cadence is measurable even where no ad can actually show (web/DEV).
-  async maybeInterstitial(ctx: { flowProtected: boolean; now?: number } = { flowProtected: false }): Promise<void> {
+  // Show an interstitial if eligible, and resolve when it is gone, so the caller can move on (GameScene awaits this BEFORE
+  // scene.restart). `ctx.flowProtected` is the ONLY thing the caller supplies (was the just-finished win a boss / 3★ / hot
+  // streak?) — every other signal (premium, session grace, the persisted frequency cap) is owned here. It shows only an
+  // interstitial that is already preloaded: never loads one on demand and never waits for a load. No-op on web. Suppressions
+  // are tracked too, so the cadence is measurable even where no ad can actually show (web/DEV).
+  async showInterstitialIfEligible(ctx: { flowProtected: boolean; now?: number } = { flowProtected: false }): Promise<'shown' | 'skipped'> {
     const now = ctx.now ?? Date.now();
     const decision = interstitialDecision({
       now,
@@ -174,20 +374,26 @@ export const Ads = {
 
     if (!decision.show) {
       Analytics.track(interstitialSuppressed(decision.reason));
-      return;
+      return 'skipped';
     }
 
-    persistLastShownMs(now); // pre-native-guard, matching the old pre-guard write — the
-    // cap must reflect an "eligible" moment even where no real ad can show (web).
-    if (!Capacitor.isNativePlatform()) return;
-    const ad = admob;
-    if (!adsReady() || !ad) return; // consent gate: no request before Ads.init succeeded
-    try {
-      await ad.prepareInterstitial({ adId: ADMOB.interstitialAdId });
-      await ad.showInterstitial();
-      Analytics.track(interstitialShown());
-    } catch {
-      // ad failed to load/show — silently skip; never block gameplay
+    if (!Capacitor.isNativePlatform()) {
+      // No ad on the web. In DEV the cap still reflects an "eligible" moment so the cadence can be exercised without a device.
+      if (import.meta.env.DEV) persistLastShownMs(now);
+      return 'skipped';
     }
+    if (!adsReady()) return 'skipped'; // consent gate: no request before Ads.init succeeded
+    if (isBusy(adState) || !isReady(adState, 'interstitial', Date.now())) {
+      Analytics.track(interstitialSuppressed('not_ready')); // not preloaded: skip rather than make the player wait for a load
+      return 'skipped';
+    }
+    return new Promise<'shown' | 'skipped'>((resolve) => {
+      pending = { format: 'interstitial', source: '', resolve: (outcome) => resolve(outcome === 'unavailable' ? 'skipped' : 'shown') };
+      const effects = dispatch({ type: 'requestShow', format: 'interstitial', now: Date.now() });
+      if (effects.some((e) => e.type === 'refuse')) {
+        pending = null;
+        resolve('skipped');
+      }
+    });
   },
 };
