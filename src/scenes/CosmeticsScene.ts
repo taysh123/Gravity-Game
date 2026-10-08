@@ -25,7 +25,7 @@ import {
 } from '../ui/purchaseUi';
 import { addTapSink, outsideBand, setTapArea } from '../ui/hitArea';
 import { showToast } from '../ui/toast';
-import { runRewardedOffer } from '../ui/adOffer';
+import { runRewardedOffer, unlessAdShowing } from '../ui/adOffer';
 import { fadeIn, fadeToScene } from '../utils/transitions';
 import { reducedMotionActive, safeAreaInsetsScaled } from '../utils/a11y';
 import { cosmeticsByCategory, cosmeticById, COSMETICS, type Cosmetic, type Category } from '../utils/cosmetics';
@@ -148,11 +148,11 @@ export class CosmeticsScene extends Phaser.Scene {
       const tab = this.add.container(tx, tabY, [g, txt]).setDepth(THEME.LIST_CHROME_DEPTH);
       setTapArea(tab, tabW, THEME.MIN_TAP);
       if (tab.input) tab.input.cursor = 'pointer';
-      tab.on('pointerup', () => {
+      tab.on('pointerup', unlessAdShowing(() => {
         if (this.dragging || t.key === this.tab) return;
         Analytics.track(storeTab(t.key)); // tab-switch intent (Bundles = strongest IAP signal)
         this.scene.restart({ tab: t.key, internal: true });
-      });
+      }));
     });
 
     // Scrollable content viewport.
@@ -224,7 +224,7 @@ export class CosmeticsScene extends Phaser.Scene {
       listC.y = Phaser.Math.Clamp(listC.y - dyy * 0.5, minY, maxY);
     });
 
-    new Button(this, cx, backY, '← Back', () => fadeToScene(this, 'MainMenuScene'), { width: 150, height: 46, fontSize: 18 })
+    new Button(this, cx, backY, '← Back', unlessAdShowing(() => fadeToScene(this, 'MainMenuScene')), { width: 150, height: 46, fontSize: 18 })
       .container.setDepth(THEME.LIST_CHROME_DEPTH);
 
     if (this.tab === 'bundle') {
@@ -354,9 +354,10 @@ export class CosmeticsScene extends Phaser.Scene {
       setTapArea(card, w, h);
       card.on('pointerup', () => {
         if (this.dragging || this.gate.purchasing) return;
-        this.gate.purchasing = true; // no purchase, restore or redraw while the ad runs (the same guard as a purchase)
-        // Disables the card before awaiting; nothing is granted if the shop was left (or redrawn) while the ad ran.
+        // Disables the card before awaiting; nothing is granted if the shop was left (or redrawn) while the ad ran. The offer holds
+        // the purchase gate (no purchase, restore or redraw while the ad runs) and releases it on every way out.
         void runRewardedOffer(this, card, 'free_fragments', {
+          gate: this.gate,
           onEarned: () => {
             if (RewardStore.claimedToday('free_fragments')) return; // never twice in a day
             FragmentStore.add(FREE_FRAGMENTS);
@@ -366,7 +367,6 @@ export class CosmeticsScene extends Phaser.Scene {
           },
           // Closed early or failed: redraw the list without the offer (the ad is spent) so no gap is left; say so when it failed.
           onNotEarned: (outcome) => {
-            this.gate.purchasing = false;
             this.quietRestart(outcome === 'unavailable' ? { message: AD_UI.UNAVAILABLE, tone: 'info' } : undefined);
           },
         });

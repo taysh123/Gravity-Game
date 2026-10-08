@@ -61,7 +61,7 @@ import { Ads } from '../services/Ads';
 import { nextUnlockHint } from '../utils/onboarding';
 import { RETENTION } from '../config/retention.config';
 import { AD_UI, STORE } from '../config/monetization.config';
-import { runRewardedOffer } from '../ui/adOffer';
+import { runRewardedOffer, unlessAdShowing } from '../ui/adOffer';
 import { StreakStore } from '../utils/StreakStore';
 import { streakTier } from '../utils/streak';
 import { nearMiss } from '../utils/nearMiss';
@@ -706,9 +706,10 @@ export class GameScene extends Phaser.Scene implements Pausable {
     const topPad = Math.max(SAFE_PAD, insets.top) + 8;
 
     const defs: Array<{ icon: 'home' | 'settings' | 'restart'; onClick: () => void }> = [
-      { icon: 'home', onClick: () => this.goHome() },
-      { icon: 'settings', onClick: () => this.openSettings() },
-      { icon: 'restart', onClick: () => { if (!this.isWon && !this.isDying) this.triggerRestart(); } },
+      // Live under the win overlay too: none of them may act while the 2x ad is requested or playing (the reward would be dropped).
+      { icon: 'home', onClick: unlessAdShowing(() => this.goHome()) },
+      { icon: 'settings', onClick: unlessAdShowing(() => this.openSettings()) },
+      { icon: 'restart', onClick: unlessAdShowing(() => { if (!this.isWon && !this.isDying) this.triggerRestart(); }) },
     ];
 
     const barW = navBarWidth();

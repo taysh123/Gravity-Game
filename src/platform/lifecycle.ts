@@ -21,6 +21,7 @@ import { fadeToScene } from '../utils/transitions';
 import { sharedAudio } from '../utils/AudioSynth';
 import { SettingsStore } from '../utils/SettingsStore';
 import { Crash } from '../services/Crash';
+import { Ads } from '../services/Ads';
 import type { AppBridge } from '../utils/native/app';
 import { routeBack, deriveBackState, type BackAction, type BackState, type SceneSnapshot } from './backRouter';
 import { lifecycleDecision, deriveLifecycleScenes, type LifecycleActions, type Visibility } from './lifecycleDecision';
@@ -104,7 +105,7 @@ function execute(g: Phaser.Game, action: BackAction, state: BackState): void {
 // Route one Back press. Returns the action taken (tests and the headless check read it).
 export function handleBack(): BackAction {
   if (!game) return { type: 'none' };
-  const state = deriveBackState(snapshotScenes(game), PLATFORM.PARENT_SCENE);
+  const state = deriveBackState(snapshotScenes(game), PLATFORM.PARENT_SCENE, Ads.isShowing());
   const action = routeBack(state);
   execute(game, action, state);
   return action;

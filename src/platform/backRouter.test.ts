@@ -11,8 +11,37 @@ import { routeBack, deriveBackState, type BackAction, type BackState, type Scene
 const PARENTS = PLATFORM.PARENT_SCENE;
 
 function state(over: Partial<BackState> & { active: string }): BackState {
-  return { overlay: null, gameplayEnded: false, parents: PARENTS, ...over };
+  return { overlay: null, gameplayEnded: false, adShowing: false, parents: PARENTS, ...over };
 }
+
+// P00-T19 fix pass 1 (m2): while a full-screen ad is requested or on screen (Ads.isShowing(), from the moment the show is asked for,
+// up to 5 s before the ad is actually visible) Back does nothing at all. Otherwise it would walk away from the screen that is waiting
+// on the ad (Endless run-over -> menu), and the reward would be dropped.
+describe('routeBack: an ad in flight swallows Back', () => {
+  const cases: Array<[string, Partial<BackState> & { active: string }]> = [
+    ['an ended Endless run (would go to the menu)', { active: 'EndlessScene', gameplayEnded: true }],
+    ['a running level (would pause)', { active: 'GameScene' }],
+    ['the shop (would go to the menu)', { active: 'CosmeticsScene' }],
+    ['the main menu (would background the app)', { active: 'MainMenuScene' }],
+    ['Settings open over a level', { active: 'GameScene', overlay: 'SettingsScene' }],
+    ['PauseScene open over a level', { active: 'GameScene', overlay: 'PauseScene' }],
+  ];
+
+  for (const [name, over] of cases) {
+    it(`${name}: none while an ad is in flight, the normal action once it is gone`, () => {
+      expect(routeBack(state({ ...over, adShowing: true }))).toEqual({ type: 'none' });
+      expect(routeBack(state({ ...over, adShowing: false })).type).not.toBe('none');
+    });
+  }
+
+  it('deriveBackState carries the flag through (default: no ad)', () => {
+    const scenes: SceneSnapshot[] = [{ key: 'EndlessScene', running: true, paused: false, gameplayEnded: true }];
+    expect(deriveBackState(scenes, PARENTS).adShowing).toBe(false);
+    expect(deriveBackState(scenes, PARENTS, true).adShowing).toBe(true);
+    expect(routeBack(deriveBackState(scenes, PARENTS, true))).toEqual({ type: 'none' });
+    expect(routeBack(deriveBackState(scenes, PARENTS, false))).toEqual({ type: 'toScene', key: 'MainMenuScene' });
+  });
+});
 
 describe('routeBack: open overlays win over everything beneath them', () => {
   it('closes Settings opened over a running level', () => {
@@ -187,7 +216,7 @@ describe('deriveBackState: scene snapshot -> router state', () => {
 
   it('a running level has no overlay', () => {
     const s = deriveBackState([snap('MainMenuScene', false), snap('GameScene', true)], PARENTS);
-    expect(s).toEqual({ overlay: null, active: 'GameScene', gameplayEnded: false, parents: PARENTS });
+    expect(s).toEqual({ overlay: null, active: 'GameScene', gameplayEnded: false, adShowing: false, parents: PARENTS });
   });
 
   it('Settings over a paused level reports Settings as the overlay and the level as active', () => {
@@ -223,7 +252,7 @@ describe('deriveBackState: scene snapshot -> router state', () => {
 
   it('Settings over a paused MainMenuScene', () => {
     const s = deriveBackState([snap('MainMenuScene', false, true), snap('SettingsScene', true)], PARENTS);
-    expect(s).toEqual({ overlay: 'SettingsScene', active: 'MainMenuScene', gameplayEnded: false, parents: PARENTS });
+    expect(s).toEqual({ overlay: 'SettingsScene', active: 'MainMenuScene', gameplayEnded: false, adShowing: false, parents: PARENTS });
   });
 
   it('carries gameplayEnded from the active scene only', () => {

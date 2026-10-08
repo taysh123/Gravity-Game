@@ -9,7 +9,7 @@ const { ads, showToast } = vi.hoisted(() => ({ ads: { isShowing: vi.fn(() => fal
 vi.mock('../services/Ads', () => ({ Ads: ads }));
 vi.mock('./toast', () => ({ showToast }));
 
-import { runRewardedOffer } from './adOffer';
+import { runRewardedOffer, unlessAdShowing } from './adOffer';
 
 interface FakeBtn {
   active: boolean;
@@ -142,5 +142,135 @@ describe('runRewardedOffer', () => {
     expect(ads.showRewarded).not.toHaveBeenCalled();
     expect(b.log).toEqual([]);
     expect(b.interactive).toBe(true);
+  });
+});
+
+// P00-T19 fix pass 1 (m3): the shop holds its purchase gate for the whole offer, and EVERY way out of the offer releases it. Before,
+// the helper's early returns (an ad already up, the scene gone) and the grant's own early return (already claimed today) left
+// gate.purchasing set, which froze the shop's purchases, restore and redraws until it was reopened.
+describe('runRewardedOffer with a purchase gate (Free Fragments)', () => {
+  const gated = (gate: { purchasing: boolean }, over: Partial<Parameters<typeof runRewardedOffer>[3]> = {}) => ({
+    onEarned: vi.fn(),
+    gate,
+    ...over,
+  });
+
+  it('holds the gate while the ad is awaited', async () => {
+    const gate = { purchasing: false };
+    let atShow: boolean | undefined;
+    ads.showRewarded.mockImplementation(async () => {
+      atShow = gate.purchasing;
+      return 'earned';
+    });
+    await run(scene(), btn(), 'free_fragments', gated(gate));
+    expect(atShow).toBe(true);
+  });
+
+  for (const outcome of ['earned', 'dismissed', 'unavailable'] as const) {
+    it(`releases it after ${outcome}`, async () => {
+      const gate = { purchasing: false };
+      ads.showRewarded.mockResolvedValue(outcome);
+      await run(scene(), btn(), 'free_fragments', gated(gate));
+      expect(gate.purchasing).toBe(false);
+    });
+  }
+
+  it('releases it when the grant returns early (already claimed today)', async () => {
+    const gate = { purchasing: false };
+    ads.showRewarded.mockResolvedValue('earned');
+    const onEarned = vi.fn(() => {
+      if (gate.purchasing) return; // the scene's `claimedToday` early return: nothing granted, nothing redrawn
+    });
+    await run(scene(), btn(), 'free_fragments', gated(gate, { onEarned }));
+    expect(onEarned).toHaveBeenCalledTimes(1);
+    expect(gate.purchasing).toBe(false);
+  });
+
+  it('releases it when the scene was left meanwhile, and when the button was destroyed', async () => {
+    const gate = { purchasing: false };
+    const left = scene();
+    ads.showRewarded.mockImplementation(async () => {
+      left.state.active = false;
+      return 'earned';
+    });
+    await run(left, btn(), 'free_fragments', gated(gate));
+    expect(gate.purchasing).toBe(false);
+
+    const b = btn();
+    ads.showRewarded.mockImplementation(async () => {
+      b.active = false;
+      return 'earned';
+    });
+    await run(scene(), b, 'free_fragments', gated(gate));
+    expect(gate.purchasing).toBe(false);
+  });
+
+  it('releases it when a handler throws or the ad call rejects, and the failure still reaches the caller', async () => {
+    const gate = { purchasing: false };
+    ads.showRewarded.mockResolvedValue('earned');
+    await expect(run(scene(), btn(), 'free_fragments', gated(gate, { onEarned: () => { throw new Error('boom'); } }))).rejects.toThrow('boom');
+    expect(gate.purchasing).toBe(false);
+    ads.showRewarded.mockRejectedValue(new Error('plugin'));
+    await expect(run(scene(), btn(), 'free_fragments', gated(gate))).rejects.toThrow('plugin');
+    expect(gate.purchasing).toBe(false);
+  });
+
+  it('another ad already up: the tap is ignored and the gate is neither taken nor, if someone else holds it, cleared', async () => {
+    ads.isShowing.mockReturnValue(true);
+    const free = { purchasing: false };
+    await run(scene(), btn(), 'free_fragments', gated(free));
+    expect(free.purchasing).toBe(false);
+    expect(ads.showRewarded).not.toHaveBeenCalled();
+    const held = { purchasing: true };
+    await run(scene(), btn(), 'free_fragments', gated(held));
+    expect(held.purchasing).toBe(true);
+  });
+
+  it('a purchase already running (the gate is up): the tap is ignored, the gate stays up and no ad is requested', async () => {
+    ads.isShowing.mockReturnValue(false);
+    const gate = { purchasing: true };
+    const b = btn();
+    await run(scene(), b, 'free_fragments', gated(gate));
+    expect(ads.showRewarded).not.toHaveBeenCalled();
+    expect(gate.purchasing).toBe(true);
+    expect(b.log).toEqual([]);
+  });
+
+  it('without a gate nothing changes (win overlay and Endless offers)', async () => {
+    ads.showRewarded.mockResolvedValue('earned');
+    const onEarned = vi.fn();
+    await run(scene(), btn(), 'campaign_2x', { onEarned });
+    expect(onEarned).toHaveBeenCalledTimes(1);
+  });
+});
+
+// P00-T19 fix pass 1 (m2): ONE check for every action that would leave, reset or redraw a screen while an ad is requested or playing.
+describe('unlessAdShowing', () => {
+  it('runs the action with its arguments when no ad is in flight', () => {
+    ads.isShowing.mockReturnValue(false);
+    const action = vi.fn();
+    unlessAdShowing(action)('a', 2);
+    expect(action).toHaveBeenCalledWith('a', 2);
+  });
+
+  it('swallows the action while an ad is in flight, and runs it again once the ad is gone', () => {
+    const action = vi.fn();
+    const guarded = unlessAdShowing(action);
+    ads.isShowing.mockReturnValue(true);
+    guarded();
+    guarded();
+    expect(action).not.toHaveBeenCalled();
+    ads.isShowing.mockReturnValue(false);
+    guarded();
+    expect(action).toHaveBeenCalledTimes(1);
+  });
+
+  it('asks Ads on every call (the answer changes during the life of a button)', () => {
+    ads.isShowing.mockClear();
+    ads.isShowing.mockReturnValue(false);
+    const guarded = unlessAdShowing(() => undefined);
+    guarded();
+    guarded();
+    expect(ads.isShowing).toHaveBeenCalledTimes(2);
   });
 });

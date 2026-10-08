@@ -25,7 +25,7 @@ import { sharedAudio } from '../utils/AudioSynth';
 import { CurrencyStore } from '../utils/CurrencyStore';
 import { Leaderboard } from '../utils/Leaderboard';
 import { Ads } from '../services/Ads';
-import { runRewardedOffer } from '../ui/adOffer';
+import { runRewardedOffer, unlessAdShowing } from '../ui/adOffer';
 import { Share } from '../utils/Share';
 import { dateKey } from '../utils/daily';
 import { Analytics } from '../services/Analytics';
@@ -450,7 +450,7 @@ export class EndlessScene extends Phaser.Scene implements Pausable {
     scrim.fillRect(0, 0, this.viewW, this.viewH);
     setScrimTapArea(scrim, this.viewW, this.viewH);
     // A tap that falls through a disabled offer while its ad is up must not walk away from the run (device row A5).
-    scrim.on('pointerup', () => { if (this.canReturn && !Ads.isShowing()) this.goHome(); });
+    scrim.on('pointerup', unlessAdShowing(() => { if (this.canReturn) this.goHome(); }));
 
     const panelW = Math.min(this.viewW * 0.8, 300);
     const panelH = 150;
@@ -519,7 +519,7 @@ export class EndlessScene extends Phaser.Scene implements Pausable {
     }).setOrigin(0.5);
     const c = this.add.container(x, y, [bg, txt]).setScrollFactor(0).setDepth(112);
     setTapArea(c, width, h, minTapPad(width, h, THEME.MIN_TAP)); // 42 px tall to the eye, 44 px to a finger: padded, not redrawn
-    c.on('pointerup', () => onTap(c));
+    c.on('pointerup', unlessAdShowing(() => onTap(c))); // RETRY and SHARE too: nothing leaves this screen while an ad is requested or up
     return c;
   }
 

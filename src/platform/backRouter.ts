@@ -3,6 +3,8 @@
 // no I/O, so every row of the table is unit-tested (backRouter.test.ts).
 //
 // Priority, top-down:
+//   0. a full-screen ad is requested or on screen (Ads.isShowing(), P00-T19): none. Back must not walk away from the screen that is
+//      waiting on the ad (the ad would play over the menu and its reward be dropped)
 //   1. open overlay: PauseScene -> resume the gameplay scene beneath; any other overlay (Settings) -> close it
 //   2. running GameScene / EndlessScene -> open PauseScene
 //   3. ended run: Endless run-over -> MainMenuScene; won / dying / leaving level -> none
@@ -24,6 +26,7 @@ export interface BackState {
   overlay: string | null; // topmost open overlay scene key (e.g. 'SettingsScene', 'PauseScene'), if any
   active: string; // the non-overlay scene the player is in (running, or paused beneath an overlay); '' if none
   gameplayEnded: boolean; // active gameplay scene has won / died / is leaving (Endless: run over)
+  adShowing: boolean; // a full-screen ad is requested or on screen (Ads.isShowing())
   parents: Readonly<Record<string, string>>; // sub-menu -> parent, PLATFORM.PARENT_SCENE
 }
 
@@ -36,6 +39,8 @@ function isIn(list: readonly string[], key: string): boolean {
 
 export function routeBack(s: BackState): BackAction {
   const B = PLATFORM.BACK;
+
+  if (s.adShowing) return NONE;
 
   if (s.overlay !== null) {
     if (s.overlay === B.PAUSE_SCENE) return { type: 'resume', key: s.active };
@@ -66,7 +71,7 @@ export interface SceneSnapshot {
 // Scenes are listed bottom-to-top (Phaser scene-list order). The overlay is the first PLATFORM.BACK.OVERLAY_SCENES
 // entry that is running (a paused overlay sits beneath a running one). The active scene is the topmost non-overlay
 // scene that is running or paused.
-export function deriveBackState(scenes: readonly SceneSnapshot[], parents: Readonly<Record<string, string>>): BackState {
+export function deriveBackState(scenes: readonly SceneSnapshot[], parents: Readonly<Record<string, string>>, adShowing = false): BackState {
   const running = new Set(scenes.filter((s) => s.running).map((s) => s.key));
   const overlay = PLATFORM.BACK.OVERLAY_SCENES.find((key) => running.has(key)) ?? null;
 
@@ -75,5 +80,5 @@ export function deriveBackState(scenes: readonly SceneSnapshot[], parents: Reado
     if ((s.running || s.paused) && !isIn(PLATFORM.BACK.OVERLAY_SCENES, s.key)) active = s;
   }
 
-  return { overlay, active: active?.key ?? '', gameplayEnded: active?.gameplayEnded ?? false, parents };
+  return { overlay, active: active?.key ?? '', gameplayEnded: active?.gameplayEnded ?? false, adShowing, parents };
 }

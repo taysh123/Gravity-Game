@@ -74,4 +74,37 @@ describe('ad call sites (P00-T19, D-24)', () => {
     const text = sources.find((s) => s.path === 'scenes/GameScene.ts')!.text;
     expect((text.match(/showInterstitialIfEligible\s*\(/g) ?? []).length).toBe(1);
   });
+
+  // P00-T19 fix pass 1 (m2/m3): while a show is requested (up to 5 s before the ad appears) or playing, nothing may leave, reset or
+  // redraw the screen that is waiting on it. unlessAdShowing() is the one check; these pin where it is applied.
+  it('Endless run-over: every pill (RETRY, SHARE, REVIVE, 2x) and the scrim go through unlessAdShowing', () => {
+    const text = sources.find((s) => s.path === 'scenes/EndlessScene.ts')!.text;
+    expect(/c\.on\('pointerup', unlessAdShowing\(/.test(text)).toBe(true);
+    expect(/scrim\.on\('pointerup', unlessAdShowing\(/.test(text)).toBe(true);
+    expect(/c\.on\('pointerup', \(\) => onTap/.test(text)).toBe(false);
+  });
+
+  it('the win overlay HUD toolbar (Home, Settings, Restart) goes through unlessAdShowing', () => {
+    const text = sources.find((s) => s.path === 'scenes/GameScene.ts')!.text;
+    const start = text.indexOf('private createNav(): void');
+    const body = text.slice(start, text.indexOf('const barW = navBarWidth()', start));
+    for (const icon of ['home', 'settings', 'restart']) {
+      expect(new RegExp(`icon: '${icon}', onClick: unlessAdShowing\\(`).test(body), `${icon} must be guarded`).toBe(true);
+    }
+  });
+
+  it('the shop: tabs and Back are guarded, and Free Fragments hands its purchase gate to the offer (no manual flag left to forget)', () => {
+    const text = sources.find((s) => s.path === 'scenes/CosmeticsScene.ts')!.text;
+    expect(/tab\.on\('pointerup', unlessAdShowing\(/.test(text)).toBe(true);
+    expect(/'← Back', unlessAdShowing\(/.test(text)).toBe(true);
+    const start = text.indexOf('private freeFragmentsCard');
+    const body = text.slice(start, text.indexOf('private removeAdsCard', start));
+    expect(/gate: this\.gate,/.test(body)).toBe(true);
+    expect(/this\.gate\.purchasing = /.test(body)).toBe(false);
+  });
+
+  it('Android Back asks Ads: handleBack passes Ads.isShowing() to the router state', () => {
+    const text = sources.find((s) => s.path === 'platform/lifecycle.ts')!.text;
+    expect(/deriveBackState\(snapshotScenes\(game\), PLATFORM\.PARENT_SCENE, Ads\.isShowing\(\)\)/.test(text)).toBe(true);
+  });
 });
