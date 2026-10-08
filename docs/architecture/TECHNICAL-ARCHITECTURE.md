@@ -199,10 +199,10 @@ export const Consent: { resolve(): Promise<ConsentOutcome>; showPrivacyOptions()
 export const Ads: {
   init(c: ConsentOutcome): Promise<void>;              // once, only when canRequestAds (bootServices); idempotent. Any ad request before a successful init is refused as not ready: it never runs UMP or initialize (P00-T18)
   revoke(): void;                                      // consent withdrawn in Settings > Privacy choices: no further ad is requested or shown this session (P00-T18)
-  isRewardedReady(): boolean;                          // real cache state
+  isRewardedReady(): boolean;                          // real cache state (services/adState.ts reducer: loaded, fresh <= 55 min, not busy); web: a DEV-only stub, false in a production web build (P00-T19)
   showRewarded(source: string): Promise<'earned' | 'dismissed' | 'unavailable'>;
-  showInterstitialIfEligible(ctx: { flowProtected: boolean }): Promise<'shown' | 'skipped'>;
-  isShowing(): boolean;                                // lifecycle exclusion
+  showInterstitialIfEligible(ctx: { flowProtected: boolean }): Promise<'shown' | 'skipped'>; // only a preloaded interstitial, never waits on a load; GameScene awaits it before scene.restart
+  isShowing(): boolean;                                // a show is in flight (busy guard); every show also raises setExternalFlowActive(true, 'ads') and mutes game audio
 };
 export type Entitlement = 'no_ads' | 'pack_starter' | 'pack_premium_collection' | 'pack_founders';
 export function deriveOwnership(active: readonly string[]): { noAds: boolean; bundleCosmetics: string[] };

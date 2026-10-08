@@ -180,6 +180,7 @@ src/
   ui/
     Button.ts · IconButton.ts · Toggle.ts · icons.ts   ← Theme-driven components and vector line icons.
     glass.ts                    ← drawGlass() frosted-panel helper (HUD chip, overlays, settings).
+    adOffer.ts                  ← runRewardedOffer(): the one tap flow of a rewarded offer (disable first, grant only if the scene lives).
   scenes/                       ← Boot/splash/menu/hub scenes, GameScene, EndlessScene, SettingsScene overlay,
                                   EndScene. Register every scene in the `scene` array in main.ts.
   styles/

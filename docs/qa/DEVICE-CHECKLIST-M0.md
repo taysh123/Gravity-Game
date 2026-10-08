@@ -61,13 +61,15 @@ What the process-start lines say depends on WHICH launch you are reading, becaus
 
 ## A: Ads (V15)
 
+Build with Google's test ad units (the defaults in `monetization.config.ts`) and accept consent first: an EEA debug APK after **Consent**, or a US debug APK (rows C1-C3 above). Ads start loading as soon as UMP allows ads; give a fresh launch about 10 s on Wi-Fi before the first offer. An offer is drawn only while a rewarded ad is loaded, so **no offer on screen means no ad was ready**, which is the correct behaviour (D-24). `adb logcat | grep -E "Ads|AdMob|onRewardedVideoAd|interstitialAd"` shows the plugin events (`...Loaded`, `...Showed`, `...Reward`, `...Dismissed`, `...FailedToShow`). The win overlay has no NEXT/RETRY row yet (D-08 is P3): it auto-advances about 2.8 s after the win, and the 2x offer is the only button, below the panel (A-22). The campaign interstitial additionally needs the session grace over (3 completed levels and 2 minutes) and 3 minutes since the last full-screen ad.
+
 | ID | Scenario | Expected | Ref | Result | Date | Notes |
 |---|---|---|---|---|---|---|
-| A1 | Campaign 2x with ad loaded | Offer visible; reward granted exactly once **after** dismissal; ad reloads | D-24 | | | |
-| A2 | Rewarded, close early | No reward. UI back to normal within 1 s. No hang. | A.9 | | | |
-| A3 | Rewarded with airplane mode / no fill | Offer hidden. If it was ready at render but fails at tap: "Ad unavailable" within 5 s (watchdog). | D-24 | | | |
-| A4 | Double-tap any rewarded button | One show, one grant | A.11 | | | |
-| A5 | Endless 2x and revive double-tap | One grant / one revive | A.11 | | | |
+| A1 | Campaign 2x with ad loaded: win a level, tap **2x Stardust** (below the panel), watch to the end, close the ad. Then keep playing until a normal (non-2x) win after the grace | The offer is visible below the panel. The button dims at once. Game audio is silent while the ad plays and comes back after (not if Sound and Music are off). The Stardust grant (+N, shown as "+N x2!") appears **after** the ad is dismissed, exactly once. **No interstitial** follows the 2x: the next level loads about 1 s later. The ad reloads (the next win offers 2x again). A later normal win past the grace shows **one** interstitial over the frozen win overlay and the next level starts only after it is dismissed, never at level start | D-24 | | | |
+| A2 | Rewarded, close early (tap X before the reward) | No reward. No hang: the game moves on within 1 s of closing (campaign: straight to the next level, with no interstitial). Audio is back. The offer is gone for now (the used ad is being replaced) | A.9 | | | |
+| A3 | Rewarded with airplane mode / no fill (set airplane mode before launch, and again after an ad was shown) | Offer hidden: the win overlay shows no 2x, the Endless run-over shows no REVIVE / 2x (SHARE is centred), the shop's Bundles tab has no Free Fragments card. If an offer was ready when drawn but the ad fails at the tap: "Ad unavailable" within 5 s (the watchdog), then the game moves on (win overlay: shown on the button for about 1 s; Endless and shop: a toast and the offer is removed) | D-24 | | | |
+| A4 | Double-tap any rewarded button (win overlay 2x, Endless revive / 2x, shop Free Fragments) | One ad shows, one grant; the Home / system overlay never opens behind the ad (no Pause overlay when the ad closes) | A.11 | | | |
+| A5 | Endless 2x and revive double-tap; also tap 2x immediately after REVIVE | One grant / one revive, one ad at a time. A stray tap while an ad is up never returns to the menu | A.11 | | | |
 
 ## P: Purchases (V14)
 

@@ -134,6 +134,7 @@ Exact pins (TECHNICAL-ARCHITECTURE §10): `@capacitor/core|android|cli` 8.5.2, `
 | `src/services/entitlements.ts` + `entitlements.test.ts` | D-09 mapping, package lookup, error codes | T15 |
 | `src/services/consentState.ts` + `.test.ts`, `src/services/Consent.ts`, `src/services/bootServices.ts` | consent-first boot | T18 |
 | `src/services/adState.ts` + `adState.test.ts` | ad cache/show state machine | T19 |
+| `src/ui/adOffer.ts` + `adOffer.test.ts` | the shared tap flow of a rewarded offer (disable before awaiting, scene-alive check before granting); used by the win 2x, Endless revive / 2x and shop Free Fragments | T19 |
 | `scripts/release-check.mjs`, `src/config/releaseConfig.test.ts` | refuse test ids / Test Store key / debug geography in release | T20 |
 | `src/platform/frameGuard.ts` + `.test.ts`, `src/platform/errorOverlay.ts`, `src/services/stackParse.ts` + `.test.ts` | error boundary | T21 |
 | `src/platform/storeCodec.ts` + `.test.ts`, `src/utils/storeSchemas.ts` + `.test.ts` | validation + backups | T22 |
