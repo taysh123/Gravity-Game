@@ -407,6 +407,13 @@ export const Ads = {
     });
   },
 
+  // A campaign level was completed but no interstitial is considered for its advance: the 2x was this win's one full-screen ad
+  // (GameScene sets skipInterstitial). The level still counts toward the session grace, exactly like one whose interstitial was
+  // suppressed; nothing is shown, asked or tracked.
+  noteLevelAdvance(): void {
+    sessionLevels += 1;
+  },
+
   // Show an interstitial if eligible, and resolve when it is gone, so the caller can move on (GameScene awaits this BEFORE
   // scene.restart). `ctx.flowProtected` is the ONLY thing the caller supplies (was the just-finished win a boss / 3★ / hot
   // streak?) — every other signal (premium, session grace, the persisted frequency cap) is owned here. It shows only an
@@ -422,7 +429,7 @@ export const Ads = {
       sessionElapsedMs: now - sessionStartMs,
       flowProtected: ctx.flowProtected,
     });
-    sessionLevels += 1; // this call = one more campaign level completed this session
+    sessionLevels += 1; // this call = one more campaign level completed this session (noteLevelAdvance() is the same count without an ad)
 
     if (!decision.show) {
       Analytics.track(interstitialSuppressed(decision.reason));

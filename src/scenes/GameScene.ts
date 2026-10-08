@@ -1205,6 +1205,8 @@ export class GameScene extends Phaser.Scene implements Pausable {
           // an ad problem must never block progress
         }
         if (!this.scene.isActive()) return; // the scene was left while the ad was up
+      } else {
+        Ads.noteLevelAdvance(); // the 2x was this win's one full-screen ad; the level still counts toward the interstitial grace
       }
       this.scene.restart({ level: nextLevel }); // startWorldTheme keeps same-world music continuous
     }

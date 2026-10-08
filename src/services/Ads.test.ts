@@ -1032,6 +1032,38 @@ describe('showInterstitialIfEligible: awaited before the scene moves on, never w
     await t.Ads.showInterstitialIfEligible(eligible());
     expect(t.decisions.map((d) => d.sessionLevels)).toEqual([0, 1]);
   });
+
+  // Fix pass 1 (m4): a win taken with the 2x skips the interstitial for its advance (one full-screen ad per win), but it is still a
+  // completed level: it counts toward the session grace like any other, without showing, tracking or asking anything.
+  it('noteLevelAdvance() counts a level whose interstitial was skipped (the 2x), without showing or tracking anything', async () => {
+    const t = await up({ decision: { show: false, reason: 'grace' } });
+    t.Ads.noteLevelAdvance();
+    t.Ads.noteLevelAdvance();
+    expect(t.plugin.showInterstitial).not.toHaveBeenCalled();
+    expect(t.decisions).toEqual([]); // the eligibility rules were not even consulted
+    expect(t.tracked).toEqual([]);
+    await t.Ads.showInterstitialIfEligible(eligible());
+    expect(t.decisions.map((d) => d.sessionLevels)).toEqual([2]);
+  });
+
+  it('a level won with the 2x counts toward the grace like any other: a player who always takes the 2x still leaves the grace', async () => {
+    const t = await up({ decision: { show: false, reason: 'grace' } });
+    await t.Ads.showInterstitialIfEligible(eligible()); // level 1: normal (decided with 0 levels behind it)
+    t.Ads.noteLevelAdvance(); // level 2: won with the 2x
+    await t.Ads.showInterstitialIfEligible(eligible()); // level 3: normal, decided with 2 levels behind it
+    expect(t.decisions.map((d) => d.sessionLevels)).toEqual([0, 2]);
+    for (let i = 0; i < 3; i++) t.Ads.noteLevelAdvance(); // five 2x wins in a row
+    await t.Ads.showInterstitialIfEligible(eligible());
+    expect(t.decisions[t.decisions.length - 1].sessionLevels).toBe(6);
+  });
+
+  it('works on the web and before init (it only counts)', async () => {
+    const web = await load({ native: false });
+    expect(() => web.Ads.noteLevelAdvance()).not.toThrow();
+    const cold = await load();
+    expect(() => cold.Ads.noteLevelAdvance()).not.toThrow();
+    expect(cold.plugin.prepareInterstitial).not.toHaveBeenCalled();
+  });
 });
 
 describe('a rewarded view resets the interstitial clock (D-24)', () => {

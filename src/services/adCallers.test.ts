@@ -69,6 +69,18 @@ describe('ad call sites (P00-T19, D-24)', () => {
     expect(/if \(!this\.skipInterstitial\)/.test(text)).toBe(true);
   });
 
+  it('a 2x win still counts as a completed level: the skip branch of advanceAfterWin calls Ads.noteLevelAdvance() before the restart (m4)', () => {
+    const text = sources.find((s) => s.path === 'scenes/GameScene.ts')!.text;
+    const start = text.indexOf('private async advanceAfterWin(): Promise<void>');
+    const body = text.slice(start, text.indexOf('private showWinOverlay', start));
+    const skip = body.indexOf('if (!this.skipInterstitial)');
+    const note = body.indexOf('Ads.noteLevelAdvance()');
+    const restart = body.indexOf('this.scene.restart({ level: nextLevel })');
+    expect(note).toBeGreaterThan(skip);
+    expect(note).toBeLessThan(restart);
+    expect(offenders(/\.noteLevelAdvance\s*\(/)).toEqual(['scenes/GameScene.ts']);
+  });
+
   it('no interstitial is requested at level start: showInterstitialIfEligible is called from the win advance only', () => {
     expect(offenders(/\.showInterstitialIfEligible\s*\(/)).toEqual(['scenes/GameScene.ts']);
     const text = sources.find((s) => s.path === 'scenes/GameScene.ts')!.text;
