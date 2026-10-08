@@ -98,11 +98,6 @@ export function isBusy(s: AdState): boolean {
   return s.show !== null;
 }
 
-// An ad is on screen (Showed received, not yet settled).
-export function isShowing(s: AdState): boolean {
-  return s.show !== null && s.show.phase !== 'requested';
-}
-
 // The next instant tick(now) has something to do: the soonest of the show timers, the expiry of a loaded ad and a due retry.
 // null when nothing is pending (the glue then arms no timer).
 export function nextDeadline(s: AdState): number | null {

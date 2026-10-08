@@ -192,6 +192,21 @@ function startShow(format: AdFormat): void {
   }
 }
 
+// Hand the reducer one show request on behalf of `next`, the caller waiting on it. A refusal (an ad already in flight: one full-screen
+// ad at a time, the one in flight is untouched; or not loaded / stale) resolves it 'unavailable' at once and shows nothing.
+function requestShow(next: Pending): void {
+  if (isBusy(adState)) {
+    next.resolve('unavailable');
+    return;
+  }
+  pending = next;
+  const effects = dispatch({ type: 'requestShow', format: next.format, now: Date.now() });
+  if (effects.some((e) => e.type === 'refuse')) {
+    pending = null;
+    next.resolve('unavailable');
+  }
+}
+
 // The show is over (dismissed, failed or abandoned by the watchdog): clear the flag, give the audio back, resolve the caller.
 function finishShow(format: AdFormat, outcome: ShowOutcome): void {
   setExternalFlowActive(false, AD_EXTERNAL_FLOW_SOURCE);
@@ -342,16 +357,7 @@ export const Ads = {
     // Consent gate: before a successful Ads.init a native request is refused as not ready, with no event and no native call.
     if (!adsReady()) return 'unavailable';
     return new Promise<ShowOutcome>((resolve) => {
-      if (isBusy(adState)) {
-        resolve('unavailable'); // busy guard: one full-screen ad at a time; the one in flight is untouched
-        return;
-      }
-      pending = { format: 'rewarded', source, resolve };
-      const effects = dispatch({ type: 'requestShow', format: 'rewarded', now: Date.now() });
-      if (effects.some((e) => e.type === 'refuse')) {
-        pending = null;
-        resolve('unavailable'); // not loaded (or stale): nothing was shown
-      }
+      requestShow({ format: 'rewarded', source, resolve });
     });
   },
 
@@ -388,12 +394,7 @@ export const Ads = {
       return 'skipped';
     }
     return new Promise<'shown' | 'skipped'>((resolve) => {
-      pending = { format: 'interstitial', source: '', resolve: (outcome) => resolve(outcome === 'unavailable' ? 'skipped' : 'shown') };
-      const effects = dispatch({ type: 'requestShow', format: 'interstitial', now: Date.now() });
-      if (effects.some((e) => e.type === 'refuse')) {
-        pending = null;
-        resolve('skipped');
-      }
+      requestShow({ format: 'interstitial', source: '', resolve: (outcome) => resolve(outcome === 'unavailable' ? 'skipped' : 'shown') });
     });
   },
 };

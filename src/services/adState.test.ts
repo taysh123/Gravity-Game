@@ -3,7 +3,6 @@ import {
   initialAdState,
   isBusy,
   isReady,
-  isShowing,
   nextDeadline,
   reduceAd,
   type AdEffect,
@@ -74,7 +73,6 @@ describe('load: enable preloads both formats', () => {
     expect(isReady(s, 'rewarded', T0)).toBe(false);
     expect(isReady(s, 'interstitial', T0)).toBe(false);
     expect(isBusy(s)).toBe(false);
-    expect(isShowing(s)).toBe(false);
     expect(nextDeadline(s)).toBeNull();
   });
 
@@ -205,7 +203,7 @@ describe('request: readiness and the busy guard', () => {
     const run = step(ready(), request('rewarded', T0 + 10));
     expect(run.effects).toEqual([{ type: 'show', format: 'rewarded' }]);
     expect(isBusy(run.state)).toBe(true);
-    expect(isShowing(run.state)).toBe(false); // requested, not yet on screen
+    expect(run.state.show?.phase).toBe('requested'); // not yet on screen
     expect(isReady(run.state, 'rewarded', T0 + 10)).toBe(false);
     expect(nextDeadline(run.state)).toBe(T0 + 10 + AD_SHOW_WATCHDOG_MS);
   });
@@ -235,7 +233,7 @@ describe('request: readiness and the busy guard', () => {
 describe('rewarded outcome: earned (reward, then dismiss)', () => {
   it('settles earned on Dismissed, reloads, and clears busy', () => {
     let run = steps(ready(), request('rewarded', T0 + 10), showed('rewarded', T0 + 200));
-    expect(isShowing(run.state)).toBe(true);
+    expect(run.state.show?.phase).toBe('showing');
     run = step(run, reward(T0 + 9000));
     expect(run.effects).toEqual([]); // the reward alone does not resolve the offer: the ad is still on screen
     expect(isBusy(run.state)).toBe(true);
