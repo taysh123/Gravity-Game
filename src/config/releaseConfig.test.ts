@@ -210,17 +210,21 @@ describe('scripts/release-check.mjs (the CLI behind npm run release:check)', () 
     if (!('VITE_UMP_TEST_DEVICE_IDS' in extraEnv)) delete env.VITE_UMP_TEST_DEVICE_IDS;
     return spawnSync(process.execPath, [script, ...args], { cwd: ROOT, encoding: 'utf8', env });
   };
-  it('names exactly the production values that are still unset in the real repo (exit 1 while any is)', () => {
+  it('names every production value that is still empty in the real repo (exit 1 while any value is refused)', () => {
     const r = run([]);
     expect([0, 1]).toContain(r.status);
-    const unset: Record<string, boolean> = {
+    // A SUBSET check, like the unit test above: an empty value must be named. A value that is present but invalid (malformed,
+    // Google's test id, a wrong key) is named too, and a pasted value that is fine is not, but this test does not decide which
+    // pasted values are valid, so pasting any value can never turn it red.
+    const empty: Record<string, boolean> = {
       'ADMOB_PROD.appId': ADMOB_PROD.appId.trim() === '',
       'ADMOB_PROD.rewardedAdId': ADMOB_PROD.rewardedAdId.trim() === '',
       'ADMOB_PROD.interstitialAdId': ADMOB_PROD.interstitialAdId.trim() === '',
-      REVENUECAT_API_KEY_PROD: !/^goog_\S+$/.test(REVENUECAT_API_KEY_PROD),
+      REVENUECAT_API_KEY_PROD: REVENUECAT_API_KEY_PROD.trim() === '',
     };
-    for (const [subject, isUnset] of Object.entries(unset)) expect(r.stderr.includes(subject), subject).toBe(isUnset);
-    if (Object.values(unset).some(Boolean)) {
+    const named = Object.keys(empty).filter((subject) => r.stderr.includes(subject));
+    for (const [subject, isEmpty] of Object.entries(empty)) if (isEmpty) expect(named, subject).toContain(subject);
+    if (named.length > 0) {
       expect(r.status).toBe(1);
       expect(r.stderr).toContain('src/config/monetization.config.ts');
       expect(r.stderr).toMatch(/REFUSED, \d+ problems?/);

@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -64,12 +64,13 @@ function runVite(args: string[], extraEnv: Record<string, string> = {}): Promise
 }
 
 /**
- * A generated Vite config: the repo's own vite.config.ts, with `.env*` files ignored (empty envDir) and, optionally,
+ * A generated Vite config: the repo's own vite.config.ts, with `.env*` files read only from `envDir` (default: an empty temp
+ * directory, so none are read) and, optionally,
  *  - fakeProdIds: the production ids and key of monetization.config.ts replaced by fake but valid ones as the module is bundled
  *    (matched by shape, so it keeps working after the owner pastes the real ids), and
  *  - noGuard: the release guard plugin removed (the guard would refuse the fake ids' build for reasons unrelated to what is tested).
  */
-function writeConfig(name: string, opts: { mode: string; fakeProdIds?: boolean; noGuard?: boolean }): string {
+function writeConfig(name: string, opts: { mode: string; fakeProdIds?: boolean; noGuard?: boolean; envDir?: string }): string {
   const file = join(tmp, `${name}.config.mjs`);
   const source = `
 import { loadConfigFromFile, mergeConfig } from ${JSON.stringify(VITE_API_URL)};
@@ -95,7 +96,7 @@ const fakeProdIds = {
 };
 export default mergeConfig(
   { ...base, plugins },
-  { root: ROOT, envDir: ${JSON.stringify(emptyEnvDir)}, plugins: ${opts.fakeProdIds ? '[fakeProdIds]' : '[]'} },
+  { root: ROOT, envDir: ${JSON.stringify(opts.envDir ?? emptyEnvDir)}, plugins: ${opts.fakeProdIds ? '[fakeProdIds]' : '[]'} },
 );
 `;
   writeFileSync(file, source);
@@ -123,15 +124,43 @@ describe('a default-mode build (debug ids) against the asset scan', () => {
     expect(scanAssets(files(outDir)).map((f) => f.id)).toEqual(['asset-google-test-id', 'asset-debug-geography', 'asset-test-devices']);
   }, 180_000);
 
-  it.concurrent('ignores a .env.local: the generated config reads no .env files (hermetic)', async () => {
-    const envDir = mkdtempSync(join(tmp, 'env-'));
-    writeFileSync(join(envDir, '.env.local'), 'VITE_UMP_DEBUG_GEOGRAPHY=EEA\n');
-    const outDir = join(tmp, 'hermetic');
-    const cfg = writeConfig('hermetic', { mode: 'production' });
+});
+
+// Why the builds above are hermetic, and proof that the mechanism works. The generated config sets `envDir` (default: an empty temp
+// directory), which is the only place Vite looks for `.env*` files. The contrast test shows Vite DOES read a `.env.local` from the
+// envDir it is given (the geography is baked in and flagged); the second shows the same file is not read when the envDir is the empty
+// directory. Dropping the `envDir:` line from the generated config makes the contrast test fail. Everything is written under `tmp`,
+// never into the repository.
+describe('the generated config\'s envDir decides which .env files a build reads', () => {
+  const dirWithEnvLocal = (name: string): string => {
+    const dir = mkdtempSync(join(tmp, `${name}-`));
+    writeFileSync(join(dir, '.env.local'), 'VITE_UMP_DEBUG_GEOGRAPHY=EEA\n');
+    return dir;
+  };
+
+  it.concurrent('contrast: a .env.local in the envDir IS read (the debug geography is baked in and flagged)', async () => {
+    const outDir = join(tmp, 'envfile');
+    const cfg = writeConfig('envfile', { mode: 'production', envDir: dirWithEnvLocal('env-with-file') });
+    const r = await runVite(['build', '--config', cfg, '--outDir', outDir, '--emptyOutDir']);
+    expect(r.status, r.stderr || r.stdout).toBe(0);
+    expect(scanAssets(files(outDir)).map((f) => f.id)).toEqual(['asset-google-test-id', 'asset-debug-geography']);
+  }, 180_000);
+
+  it.concurrent('the same .env.local in another directory is NOT read when the envDir is the empty temp dir (the override blocks it)', async () => {
+    dirWithEnvLocal('env-elsewhere'); // exists on disk, but is not the envDir
+    const outDir = join(tmp, 'envblocked');
+    const cfg = writeConfig('envblocked', { mode: 'production' });
     const r = await runVite(['build', '--config', cfg, '--outDir', outDir, '--emptyOutDir']);
     expect(r.status, r.stderr || r.stdout).toBe(0);
     expect(scanAssets(files(outDir)).map((f) => f.id)).toEqual(['asset-google-test-id']);
   }, 180_000);
+
+  it('the generated config names its envDir and lives in the temp directory, never in the repository', () => {
+    const cfg = writeConfig('envdir-pin', { mode: 'production', envDir: emptyEnvDir });
+    const text = readFileSync(cfg, 'utf8');
+    expect(text).toContain(`envDir: ${JSON.stringify(emptyEnvDir)}`);
+    expect(cfg.startsWith(tmp)).toBe(true);
+  });
 });
 
 describe('the release Vite build (vite build --mode release)', () => {

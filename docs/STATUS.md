@@ -18,7 +18,7 @@
 | Other content | 8 daily levels · 20 run chunks · 14 achievements · 28 cosmetics · 3 bundles |
 | Scenes registered | 14 |
 | Level files | 163 on disk · 13 retired (6, 22, 31, 35, 37, 39, 40, 45, 48, 55, 56, 63, 64) |
-| Tests | 64 files / 1372 tests |
+| Tests | 64 files / 1374 tests |
 | package.json version | 1.0.0 |
 | androidBuild | 1 |
 | Derived versionName / versionCode | 1.0.0 / 1000001 |
