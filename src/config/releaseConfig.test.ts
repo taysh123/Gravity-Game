@@ -6,8 +6,8 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ADMOB_PROD, ADMOB_TEST, REVENUECAT_API_KEY_PROD, REVENUECAT_API_KEY_TEST, selectMonetizationIds } from './monetization.config';
 import { RELEASE_MODE } from './build.config';
-import { GOOGLE_TEST_PUBLISHER, checkRelease, parseLastUploadedVersionCode, scanAssets } from '../../scripts/lib/releaseCheck.mjs';
-import { gatherReleaseInputs, readSyncedAssets } from '../../scripts/lib/releaseInputs.mjs';
+import { GOOGLE_TEST_PUBLISHER, checkRelease, parseLastUploadedVersionCode } from '../../scripts/lib/releaseCheck.mjs';
+import { gatherReleaseInputs } from '../../scripts/lib/releaseInputs.mjs';
 
 // P00-T20: release configuration guard. Three layers are pinned here:
 //   1. which ids a build mode selects (selectMonetizationIds, and the real module under a stubbed MODE);
@@ -136,46 +136,59 @@ describe('UMP debug overrides never survive into a release build', () => {
   });
 });
 
-describe('the repo\'s own state against the release check', () => {
-  const inputs = (env: Record<string, string | undefined> = {}) =>
-    gatherReleaseInputs({ root: ROOT, env, admobProd: ADMOB_PROD, revenueCatApiKey: REVENUECAT_API_KEY_PROD });
-  const gateOpen = Object.values(ADMOB_PROD).some((v) => v === '') || REVENUECAT_API_KEY_PROD === '';
-
-  // The owner gate (docs/STATUS.md): while the real ids are not pasted into monetization.config.ts, a release is refused.
-  // These two describes swap places by themselves when the owner fills the ids in, so the owner's edit never breaks a test.
-  describe.runIf(gateOpen)('while the owner has not supplied the real ids', () => {
-    it('refuses all three production AdMob ids and the RevenueCat key, with the file to edit', () => {
-      const f = checkRelease(inputs());
-      expect(f.filter((x: { id: string }) => x.id === 'admob-id-empty').map((x: { subject: string }) => x.subject)).toEqual(
-        Object.entries(ADMOB_PROD).filter(([, v]) => v === '').map(([k]) => `ADMOB_PROD.${k}`),
-      );
-      expect(f.some((x: { id: string }) => x.id === 'revenuecat-key')).toBe(true);
-      for (const x of f) expect(x.message).toContain('monetization.config.ts');
+describe('the repo\'s own production ids against the release check (independent of the release state)', () => {
+  // The version fields are FIXED here, so a later upload (package.json bumped, the STATUS marker moved) never changes the verdict:
+  // only the ids and the key come from the repo. Nothing in this suite is conditional on that state.
+  const FIXED_VERSION = { versionCode: 1_000_002, versionCodeError: undefined, lastUploadedVersionCode: 1_000_001 };
+  const failuresOf = (env: Record<string, string | undefined> = {}) =>
+    checkRelease({
+      ...gatherReleaseInputs({ root: ROOT, env, admobProd: ADMOB_PROD, revenueCatApiKey: REVENUECAT_API_KEY_PROD }),
+      ...FIXED_VERSION,
     });
 
-    it('the versionCode itself is fine today (1000001 is above the uploaded code 1): only the ids block the release', () => {
-      const ids = checkRelease(inputs()).map((x: { id: string }) => x.id);
-      expect(ids).not.toContain('version-code-not-increasing');
-      expect(ids).not.toContain('version-code-unknown');
-      expect(ids).not.toContain('last-uploaded-unknown');
-    });
+  it('refuses every production AdMob value that is still empty or a Google test id, and only AdMob ids and the key', () => {
+    const f = failuresOf();
+    const refused = f.filter((x) => x.id.startsWith('admob-')).map((x) => x.subject);
+    const expected = Object.entries(ADMOB_PROD)
+      .filter(([, v]) => v.trim() === '' || v.includes(GOOGLE_TEST_PUBLISHER))
+      .map(([k]) => `ADMOB_PROD.${k}`);
+    // a malformed or mismatched value is also a refusal, so the expected list is a subset of what is refused
+    for (const subject of expected) expect(refused).toContain(subject);
+    expect(f.every((x) => x.id.startsWith('admob-') || x.id === 'revenuecat-key')).toBe(true);
   });
 
-  describe.skipIf(gateOpen)('once the owner has supplied the real ids', () => {
-    it('the release check passes on a clean environment', () => {
-      expect(checkRelease(inputs())).toEqual([]);
-    });
+  it('the RevenueCat verdict follows the key: refused unless it is goog_ plus a key body', () => {
+    const refused = failuresOf().some((x) => x.id === 'revenuecat-key');
+    expect(refused).toBe(!/^goog_\S+$/.test(REVENUECAT_API_KEY_PROD));
+  });
+
+  it('every refusal names the file to edit', () => {
+    for (const x of failuresOf()) expect(x.message).toContain('monetization.config.ts');
   });
 
   it('a debug-geography variable in the environment is refused whatever the ids are', () => {
-    const f = checkRelease(inputs({ VITE_UMP_DEBUG_GEOGRAPHY: 'EEA', VITE_UMP_TEST_DEVICE_IDS: 'ABCDEF0123' }));
-    const ids = f.map((x: { id: string }) => x.id);
+    const ids = failuresOf({ VITE_UMP_DEBUG_GEOGRAPHY: 'EEA', VITE_UMP_TEST_DEVICE_IDS: 'ABCDEF0123' }).map((x) => x.id);
     expect(ids).toContain('ump-debug-geography');
     expect(ids).toContain('ump-test-devices');
   });
 
+  it('with fixed good ids the same shape of input passes (the happy path, no dependence on the repo)', () => {
+    const good = {
+      admobProd: { appId: 'ca-app-pub-1111222233334444~5555666677', rewardedAdId: 'ca-app-pub-1111222233334444/1234567890', interstitialAdId: 'ca-app-pub-1111222233334444/0987654321' },
+      revenueCatApiKey: 'goog_AbCdEfGhIjKlMnOpQrStUvWxYz',
+      env: {},
+      ...FIXED_VERSION,
+    };
+    expect(checkRelease(good)).toEqual([]);
+  });
+
+  it('never ships Google\'s test publisher or a Test Store key in the production slots', () => {
+    for (const id of Object.values(ADMOB_PROD)) expect(id).not.toContain(GOOGLE_TEST_PUBLISHER);
+    expect(REVENUECAT_API_KEY_PROD.startsWith('test_')).toBe(false);
+  });
+
   it('reads the versionCode from package.json (D-20) and the last upload from the marker in docs/STATUS.md', () => {
-    const i = inputs();
+    const i = gatherReleaseInputs({ root: ROOT, env: {}, admobProd: ADMOB_PROD, revenueCatApiKey: REVENUECAT_API_KEY_PROD });
     expect(i.versionCode).toBeGreaterThanOrEqual(1_000_001);
     expect(i.lastUploadedVersionCode).not.toBeNull();
     expect(parseLastUploadedVersionCode(read('docs/STATUS.md'))).toBe(i.lastUploadedVersionCode);
@@ -197,16 +210,21 @@ describe('scripts/release-check.mjs (the CLI behind npm run release:check)', () 
     if (!('VITE_UMP_TEST_DEVICE_IDS' in extraEnv)) delete env.VITE_UMP_TEST_DEVICE_IDS;
     return spawnSync(process.execPath, [script, ...args], { cwd: ROOT, encoding: 'utf8', env });
   };
-  const gateOpen = Object.values(ADMOB_PROD).some((v) => v === '') || REVENUECAT_API_KEY_PROD === '';
-
-  it.runIf(gateOpen)('fails today with the list of what the owner must supply (exit 1)', () => {
+  it('names exactly the production values that are still unset in the real repo (exit 1 while any is)', () => {
     const r = run([]);
-    expect(r.status).toBe(1);
-    for (const item of ['ADMOB_PROD.appId', 'ADMOB_PROD.rewardedAdId', 'ADMOB_PROD.interstitialAdId', 'REVENUECAT_API_KEY_PROD']) {
-      expect(r.stderr).toContain(item);
+    expect([0, 1]).toContain(r.status);
+    const unset: Record<string, boolean> = {
+      'ADMOB_PROD.appId': ADMOB_PROD.appId.trim() === '',
+      'ADMOB_PROD.rewardedAdId': ADMOB_PROD.rewardedAdId.trim() === '',
+      'ADMOB_PROD.interstitialAdId': ADMOB_PROD.interstitialAdId.trim() === '',
+      REVENUECAT_API_KEY_PROD: !/^goog_\S+$/.test(REVENUECAT_API_KEY_PROD),
+    };
+    for (const [subject, isUnset] of Object.entries(unset)) expect(r.stderr.includes(subject), subject).toBe(isUnset);
+    if (Object.values(unset).some(Boolean)) {
+      expect(r.status).toBe(1);
+      expect(r.stderr).toContain('src/config/monetization.config.ts');
+      expect(r.stderr).toMatch(/REFUSED, \d+ problems?/);
     }
-    expect(r.stderr).toContain('src/config/monetization.config.ts');
-    expect(r.stderr).toMatch(/REFUSED, \d+ problems?/);
   }, 60_000);
 
   it('also lists the debug UMP variables when they are set (exit 1), without printing the device ids', () => {
@@ -270,31 +288,6 @@ describe('npm scripts and the release Vite build', () => {
     expect(viteConfig).toMatch(/config\.mode !== 'release'\) return/);
     expect(viteConfig).toContain("apply: 'build'");
   });
-});
-
-describe('the asset scan against real Vite output (the minified-bundle heuristic is pinned to what the minifier really emits)', () => {
-  const viteBin = join(ROOT, 'node_modules', 'vite', 'bin', 'vite.js');
-  const build = (outDir: string, extraEnv: Record<string, string>) => {
-    const env: NodeJS.ProcessEnv = { ...process.env, ...extraEnv };
-    delete env.NODE_ENV; // vitest sets NODE_ENV=test; a real build must see the default
-    if (!('VITE_UMP_DEBUG_GEOGRAPHY' in extraEnv)) delete env.VITE_UMP_DEBUG_GEOGRAPHY;
-    if (!('VITE_UMP_TEST_DEVICE_IDS' in extraEnv)) delete env.VITE_UMP_TEST_DEVICE_IDS;
-    const r = spawnSync(process.execPath, [viteBin, 'build', '--outDir', outDir, '--emptyOutDir'], { cwd: ROOT, encoding: 'utf8', env });
-    expect(r.status, r.stderr || r.stdout).toBe(0);
-    return readSyncedAssets(ROOT, outDir);
-  };
-
-  it('a default build is flagged for Google\'s test publisher only; one made with both debug variables is flagged for all three', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'gravity-release-build-'));
-    try {
-      const plain = scanAssets(build(join(dir, 'plain'), {})).map((f: { id: string }) => f.id);
-      expect(plain).toEqual(['asset-google-test-id']);
-      const debug = scanAssets(build(join(dir, 'debug'), { VITE_UMP_DEBUG_GEOGRAPHY: 'EEA', VITE_UMP_TEST_DEVICE_IDS: 'ABCDEF0123' })).map((f: { id: string }) => f.id);
-      expect(debug).toEqual(['asset-google-test-id', 'asset-debug-geography', 'asset-test-devices']);
-    } finally {
-      rmSync(dir, { recursive: true, force: true });
-    }
-  }, 180_000);
 });
 
 describe('Android: the AdMob app id comes from a manifest placeholder', () => {

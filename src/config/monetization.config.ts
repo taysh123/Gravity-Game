@@ -36,8 +36,9 @@ export const ADMOB_PROD: AdmobIds = {
 // TEST: empty, so debug and default builds never hold any RevenueCat key (a Test Store key `test_...` simulates purchases, error
 // code 42 in services/IAP.ts, and must never reach a release). PROD: OWNER GATE, paste the public Google Play SDK key (starts with
 // goog_, RevenueCat > Project > API keys); anything else is refused by the release guard.
-export const REVENUECAT_API_KEY_TEST = '';
-export const REVENUECAT_API_KEY_PROD = '';
+// Typed string (not the literal ''), so that pasting the real key never turns a comparison in a test into a type error.
+export const REVENUECAT_API_KEY_TEST: string = '';
+export const REVENUECAT_API_KEY_PROD: string = '';
 
 export interface MonetizationIds {
   readonly admob: AdmobIds;

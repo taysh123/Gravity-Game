@@ -46,7 +46,7 @@ On a device the game would make $0 today. It also carries policy and trust risks
 |---|---|---|
 | 1 | Guard `isNativePlatform()`, then dynamic import | The web build never loads the plugin |
 | 2 | `setLogLevel({ level: LOG_LEVEL.DEBUG })` | `import.meta.env.DEV` only |
-| 3 | Choose the key | Release builds use the public `goog_…` key in `monetization.config.ts`. DEV builds use the Test Store key from `.env.development` only. If the key is empty, state is `unconfigured` and the shop shows "Purchases unavailable"; never a shake. |
+| 3 | Choose the key | Release builds (`--mode release`) use the public `goog_…` key in `REVENUECAT_API_KEY_PROD` (`monetization.config.ts`). Every other build, DEV included, uses `REVENUECAT_API_KEY_TEST`, which is empty: no Test Store key is read from `.env.development` or anywhere else (the release guard refuses anything that is not `goog_…`). If the key is empty, state is `unconfigured` and the shop shows "Purchases unavailable"; never a shake. |
 | 4 | `configure({ apiKey })` | No `appUserID` (anonymous). Default transfer behaviour. |
 | 5 | `addCustomerInfoUpdateListener(apply)` | Handles pending completion and refund revocation |
 | 6 | `apply(await getCustomerInfo())` | **Mandatory.** On Android the listener does not replay current info (`PurchasesPlugin.kt:83,190-195`, VERIFIED). |
@@ -311,7 +311,7 @@ The matrix runs on a release-signed internal-track build, with license testers a
 | P15 | Open the shop before offerings load | `…` and disabled buttons, then real prices | A.6 |
 | P16 | Own `remove_ads` or `founders_pack` | Starter hidden. Founder's reads "Remove Ads ✓ already yours". | D-09 |
 | P17 | Restore with no purchases | "No purchases found for this Google account" | A.5 |
-| P18 | DEV build with the Test Store key | Success, failure (42) and cancel paths all handled | A.4 |
+| P18 | DEV build with the Test Store key (a local, never committed edit of `REVENUECAT_API_KEY_TEST` in `monetization.config.ts`; only non-release modes read it, so it cannot reach a release bundle) | Success, failure (42) and cancel paths all handled | A.4 |
 | P19 | Release AAB inspection | `goog_` key, real ad ids; the release guard rejects test ids | A.13 |
 | P20 | Production web build | Purchase cards read "Available in the Android app"; nothing granted | A.13 |
 | P21 | AdMob app-ads.txt tab | Verified | W4 |
