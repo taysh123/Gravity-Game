@@ -66,7 +66,43 @@ tasks.register('verifyReleaseAdmobAppId') {
         }
     }
 }
-tasks.matching { it.name == 'preReleaseBuild' }.configureEach { dependsOn 'verifyReleaseAdmobAppId' }
+
+// The full release guard inside the release Gradle build (P00-T20 fix pass 1). Without it `npm run build` (debug ids), `cap sync`
+// and `./gradlew bundleRelease -PADMOB_APP_ID=<real>` would ship a debug bundle. This runs the same code as `npm run release:check`:
+//   node scripts/release-check.mjs --config --assets --admob-app-id <-PADMOB_APP_ID>
+// = the production ids and RevenueCat goog_ key, no VITE_UMP_* debug variables, versionCode above the last upload (docs/STATUS.md),
+// the SYNCED web assets (android/app/src/main/assets/public) free of Google's test publisher and baked-in debug overrides, and the
+// property equal to ADMOB_PROD.appId. A non-zero exit fails the build and the CLI's output is shown. It needs Node on PATH; when it
+// is missing the build fails with a message, the check is never skipped. Only release variants depend on it (debug builds and CI
+// run assembleDebug, which does not).
+tasks.register('verifyReleaseConfig') {
+    group = 'verification'
+    description = 'Runs scripts/release-check.mjs (config, versionCode, synced assets, app-id match); fails a release build that would ship test ids.'
+    dependsOn 'verifyReleaseAdmobAppId' // the clearer -PADMOB_APP_ID message comes first
+    def repoRoot = rootProject.projectDir.parentFile
+    def checkScript = new File(repoRoot, 'scripts/release-check.mjs')
+    doLast {
+        if (!checkScript.isFile()) {
+            throw new GradleException("Release build refused: ${checkScript} is missing, so the release guard cannot run.")
+        }
+        def command = ['node', checkScript.absolutePath, '--config', '--assets', '--admob-app-id', releaseAdmobAppId]
+        Process process
+        try {
+            process = new ProcessBuilder(command).directory(repoRoot).redirectErrorStream(true).start()
+        } catch (IOException e) {
+            throw new GradleException("Release build refused: Node.js was not found, so scripts/release-check.mjs (the release guard) cannot run. " +
+                "Install Node 22 and make `node` available on PATH, then run again. The check is never skipped. (${e.message})")
+        }
+        process.outputStream.close()
+        def output = process.inputStream.getText('UTF-8').trim()
+        def exitCode = process.waitFor()
+        if (exitCode != 0) {
+            throw new GradleException("Release build refused by the release guard (node scripts/release-check.mjs --config --assets --admob-app-id <id>, exit code ${exitCode}):\n${output}")
+        }
+        println output
+    }
+}
+tasks.matching { it.name == 'preReleaseBuild' }.configureEach { dependsOn 'verifyReleaseAdmobAppId', 'verifyReleaseConfig' }
 
 // Release signing — loaded from android/keystore.properties (gitignored; never committed).
 // If the file is absent (fresh clone, web/CI, anyone without the keystore) the release build

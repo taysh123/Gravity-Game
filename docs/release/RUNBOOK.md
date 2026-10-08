@@ -140,6 +140,15 @@ project is already committed.
   `NODE_ENV` other than `production`. After `cap sync`, `npm run release:check -- --assets` refuses a synced bundle that
   holds Google's test publisher or a baked-in debug override, which is what a debug bundle synced into a release AAB looks
   like. A release build also ignores the two UMP variables, so `initializeForTesting` cannot be on.
+- **The Gradle release build runs the whole guard itself.** Task `verifyReleaseConfig` (`android/app/build.gradle`, a
+  dependency of `preReleaseBuild`, so of `bundleRelease`, `assembleRelease` and `lintRelease`) runs
+  `node scripts/release-check.mjs --config --assets --admob-app-id <-PADMOB_APP_ID>`. It therefore checks everything above
+  in one go: the production ids and the `goog_` key, no `VITE_UMP_*` variable, the versionCode against the marker, the
+  **synced** web assets in `android/app/src/main/assets/public`, and that `-PADMOB_APP_ID` equals `ADMOB_PROD.appId`.
+  A non-zero exit fails the build and the check's list is printed in the Gradle error. This closes the path
+  `npm run build` (debug ids) -> `cap sync` -> `bundleRelease -PADMOB_APP_ID=<real>`. It needs `node` on `PATH`; when it
+  is missing the build fails with "Node.js was not found" (the check is never skipped). It runs only for release variants:
+  `assembleDebug` and CI do not run it.
 
 ### The release sequence (P00-T20)
 
@@ -159,8 +168,9 @@ cd android
 ```
 
 `npm run build` and `npm run cap:sync` make **debug-id** bundles. Never sync one before a release: step 4 refuses it, and
-step 3 must always follow step 2. Run `release:check` with no flags at any time to see what is still missing; it changes
-nothing.
+step 3 must always follow step 2. Step 5 runs the same check again inside Gradle (`verifyReleaseConfig`), so a skipped or
+stale step 1 to 4 still cannot produce an AAB with test ids; steps 1 to 4 are there to fail early and cheaply. Run
+`release:check` with no flags at any time to see what is still missing; it changes nothing.
 
 ## 7. Sign and build the AAB
 
@@ -182,7 +192,8 @@ configures and emits an **unsigned** bundle, so fresh clones and CI never break.
    ```
    cd android; ./gradlew bundleRelease -PADMOB_APP_ID=ca-app-pub-XXXXXXXXXXXXXXXX~NNNNNNNNNN     # JDK 21, see section 3
    ```
-   Without the property the build fails with "Release build refused" before anything is signed.
+   Without the property the build fails with "Release build refused" before anything is signed. With it, Gradle first runs
+   `verifyReleaseConfig` (the full release check, section 6), so debug-id assets or a missing real id stop the build here too.
    Output: `android/app/build/outputs/bundle/release/app-release.aab`. A debug APK is `./gradlew assembleDebug`.
    Android Studio's Generate Signed Bundle reuses the same keystore.
 6. **Verify:** `jarsigner -verify -verbose -certs android/app/build/outputs/bundle/release/app-release.aab` prints

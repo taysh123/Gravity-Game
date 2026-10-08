@@ -314,10 +314,28 @@ describe('Android: the AdMob app id comes from a manifest placeholder', () => {
     expect(gradle.split(`${GOOGLE_TEST_PUBLISHER}~3347511713`)).toHaveLength(2);
   });
 
-  it('every release variant task waits for verifyReleaseAdmobAppId (preReleaseBuild), and a debug build does not', () => {
+  it('every release variant task waits for both release gates (preReleaseBuild), and a debug build waits for neither', () => {
     expect(gradle).toContain("tasks.register('verifyReleaseAdmobAppId')");
-    expect(gradle).toContain("tasks.matching { it.name == 'preReleaseBuild' }.configureEach { dependsOn 'verifyReleaseAdmobAppId' }");
-    expect(gradle).not.toMatch(/preDebugBuild/);
+    expect(gradle).toContain("tasks.register('verifyReleaseConfig')");
+    expect(gradle).toContain(
+      "tasks.matching { it.name == 'preReleaseBuild' }.configureEach { dependsOn 'verifyReleaseAdmobAppId', 'verifyReleaseConfig' }",
+    );
+    expect(gradle).not.toMatch(/preDebugBuild|preBuild\b.*verifyRelease/);
+  });
+
+  it('verifyReleaseConfig runs the whole release check through node: config, versionCode marker, synced assets and the app-id match', () => {
+    const task = /tasks\.register\('verifyReleaseConfig'\)[\s\S]*?\r?\n\}\r?\n/.exec(gradle)?.[0] ?? '';
+    expect(task).not.toBe('');
+    expect(task).toContain("dependsOn 'verifyReleaseAdmobAppId'"); // the clearer app-id message comes first
+    expect(task).toContain('scripts/release-check.mjs');
+    for (const flag of ["'--config'", "'--assets'", "'--admob-app-id'", 'releaseAdmobAppId']) expect(task).toContain(flag);
+    expect(task).toContain('ProcessBuilder');
+    // a non-zero exit fails the build and shows the CLI's own output; a missing node is a clear failure, never a silent skip
+    expect(task).toContain('Release build refused by the release guard');
+    expect(task).toContain('${output}');
+    expect(task).toContain('Node.js was not found');
+    expect(task).toContain('never skipped');
+    expect(task).not.toMatch(/catch\s*\([^)]*\)\s*\{\s*\}/); // no swallowed exception
   });
 
   it('build.gradle fails the release build with an actionable message: missing, Google\'s test id, or malformed', () => {
