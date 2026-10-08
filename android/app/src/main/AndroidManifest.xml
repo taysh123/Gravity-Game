@@ -20,12 +20,15 @@
 
         <!-- AdMob App ID — REQUIRED by the Mobile Ads SDK's startup provider
              (MobileAdsInitProvider). Without it the app crashes on launch with
-             "Missing application ID". This is Google's official TEST app id (no
-             AdMob account needed; serves test ads). Replace with your real AdMob
-             app id before production, and update src/config/monetization.config.ts. -->
+             "Missing application ID". The value is the manifest placeholder
+             admobAppId, set per build type in app/build.gradle (P00-T20): Google's
+             TEST app id for debug builds (no AdMob account needed; serves test ads),
+             and the real id given as -PADMOB_APP_ID for release. A release build
+             fails with a clear message when it is missing or a Google test id.
+             See docs/release/RUNBOOK.md section 6. -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713" />
+            android:value="${admobAppId}" />
 
         <!-- Consent-first Firebase (D-10, P00-T18). These are the defaults of a FRESH install: Firebase starts with every Consent
              Mode default DENIED, with automatic screen reporting off and with Crashlytics collection off, so on the first launch

@@ -296,3 +296,43 @@ describe('the asset scan against real Vite output (the minified-bundle heuristic
     }
   }, 180_000);
 });
+
+describe('Android: the AdMob app id comes from a manifest placeholder', () => {
+  const manifest = read('android/app/src/main/AndroidManifest.xml').replace(/<!--[\s\S]*?-->/g, '');
+  const gradle = read('android/app/build.gradle');
+
+  it('AndroidManifest.xml carries ${admobAppId} and no AdMob id literal at all', () => {
+    expect(manifest).toMatch(/<meta-data\s+android:name="com\.google\.android\.gms\.ads\.APPLICATION_ID"\s+android:value="\$\{admobAppId\}"\s*\/>/);
+    expect(manifest).not.toContain('ca-app-pub-');
+  });
+
+  it('build.gradle sets the admobAppId placeholder for both build types', () => {
+    expect(gradle).toContain('manifestPlaceholders');
+    expect(gradle).toMatch(/buildTypes\s*\{[\s\S]*?\bdebug\s*\{[^}]*manifestPlaceholders[^}]*admobAppId\s*:/);
+    expect(gradle).toMatch(/buildTypes\s*\{[\s\S]*?\brelease\s*\{[^}]*manifestPlaceholders[^}]*admobAppId\s*:/);
+  });
+
+  it('build.gradle gives debug Google\'s test app id and release only the -PADMOB_APP_ID property', () => {
+    expect(gradle).toContain(`${GOOGLE_TEST_PUBLISHER}~3347511713`);
+    expect(gradle).toMatch(/\bdebug\s*\{[^}]*admobAppId\s*:\s*googleTestAdmobAppId/);
+    expect(gradle).toMatch(/\brelease\s*\{[^}]*admobAppId\s*:\s*releaseAdmobAppId/);
+    expect(gradle).toContain("project.findProperty('ADMOB_APP_ID')");
+    // the test id literal appears once, in the definition of the debug value
+    expect(gradle.split(`${GOOGLE_TEST_PUBLISHER}~3347511713`)).toHaveLength(2);
+  });
+
+  it('every release variant task waits for verifyReleaseAdmobAppId (preReleaseBuild), and a debug build does not', () => {
+    expect(gradle).toContain("tasks.register('verifyReleaseAdmobAppId')");
+    expect(gradle).toContain("tasks.matching { it.name == 'preReleaseBuild' }.configureEach { dependsOn 'verifyReleaseAdmobAppId' }");
+    expect(gradle).not.toMatch(/preDebugBuild/);
+  });
+
+  it('build.gradle fails the release build with an actionable message: missing, Google\'s test id, or malformed', () => {
+    expect(gradle).toContain('GradleException');
+    expect(gradle.match(/Release build refused: -PADMOB_APP_ID is /g)).toHaveLength(3);
+    expect(gradle).toContain('-PADMOB_APP_ID is missing');
+    expect(gradle).toContain("-PADMOB_APP_ID is Google's TEST app id");
+    expect(gradle).toContain('-PADMOB_APP_ID is not an AdMob app id');
+    expect(gradle).toContain('docs/release/RUNBOOK.md section 6');
+  });
+});

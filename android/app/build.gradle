@@ -39,6 +39,35 @@ tasks.register('printVersionCode') {
     }
 }
 
+// AdMob APP id (P00-T20). AndroidManifest.xml carries the ${admobAppId} placeholder; this decides its value per build type:
+//   debug   -> Google's public TEST app id (a debug build, CI and a fresh clone work with no property and no AdMob account)
+//   release -> the real id, given as -PADMOB_APP_ID=ca-app-pub-XXXXXXXXXXXXXXXX~NNNNNNNNNN (also accepted from ~/.gradle/gradle.properties)
+// verifyReleaseAdmobAppId runs before any release variant is built (preReleaseBuild: bundleRelease, assembleRelease, lintRelease)
+// and fails with a clear message when the property is missing, malformed, or Google's test id. A debug build never runs it.
+// The same id must be ADMOB_PROD.appId in src/config/monetization.config.ts; `npm run release:check -- --admob-app-id <id>` compares them.
+def googleTestAdmobPublisher = 'ca-app-pub-3940256099942544'
+def googleTestAdmobAppId = 'ca-app-pub-3940256099942544~3347511713'
+def releaseAdmobAppId = (project.findProperty('ADMOB_APP_ID') ?: '').toString().trim()
+
+tasks.register('verifyReleaseAdmobAppId') {
+    group = 'verification'
+    description = 'Fails a release build unless -PADMOB_APP_ID is a real AdMob app id (not empty, not malformed, not Google\'s test id).'
+    doLast {
+        def howTo = "Pass your real AdMob app id (AdMob console > Apps): ./gradlew bundleRelease -PADMOB_APP_ID=ca-app-pub-XXXXXXXXXXXXXXXX~NNNNNNNNNN. " +
+            "It must equal ADMOB_PROD.appId in src/config/monetization.config.ts. See docs/release/RUNBOOK.md section 6."
+        if (releaseAdmobAppId.isEmpty()) {
+            throw new GradleException("Release build refused: -PADMOB_APP_ID is missing, so the manifest would have no AdMob app id. " + howTo)
+        }
+        if (releaseAdmobAppId.contains(googleTestAdmobPublisher)) {
+            throw new GradleException("Release build refused: -PADMOB_APP_ID is Google's TEST app id (${googleTestAdmobPublisher}), which serves test ads and earns nothing. " + howTo)
+        }
+        if (!(releaseAdmobAppId ==~ /^ca-app-pub-\d{16}~\d{10}$/)) {
+            throw new GradleException("Release build refused: -PADMOB_APP_ID is not an AdMob app id (expected ca-app-pub-XXXXXXXXXXXXXXXX~NNNNNNNNNN, with a '~'). " + howTo)
+        }
+    }
+}
+tasks.matching { it.name == 'preReleaseBuild' }.configureEach { dependsOn 'verifyReleaseAdmobAppId' }
+
 // Release signing — loaded from android/keystore.properties (gitignored; never committed).
 // If the file is absent (fresh clone, web/CI, anyone without the keystore) the release build
 // still configures and simply produces an UNSIGNED bundle — no crash, no hard dependency.
@@ -77,7 +106,12 @@ android {
         }
     }
     buildTypes {
+        debug {
+            manifestPlaceholders = [admobAppId: googleTestAdmobAppId]
+        }
         release {
+            // Empty here when -PADMOB_APP_ID is missing; verifyReleaseAdmobAppId then stops the build before the manifest is merged.
+            manifestPlaceholders = [admobAppId: releaseAdmobAppId]
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             // Only attach the signing config when the keystore is present, so builds
