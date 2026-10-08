@@ -1,15 +1,57 @@
-// Monetization config — ad-unit / RevenueCat / product ids. NO SECRETS in source.
-// Defaults are Google's public AdMob TEST ids so a native build works before real
-// ids exist; replace with the real ids (and set the RevenueCat key) before a prod
-// release. Consumed by the guarded native branches in services/Ads.ts + services/IAP.ts (purchases: D-09).
+// Monetization config — ad-unit / RevenueCat / product ids. NO SECRETS in source: AdMob ids and the RevenueCat `goog_` SDK key
+// are public client ids (TECHNICAL-ARCHITECTURE section 13). Consumed by the guarded native branches in services/Ads.ts +
+// services/IAP.ts (purchases: D-09).
+//
+// Release guard (P00-T20). Two id sets, selected by the Vite mode (config/build.config.ts):
+//   release mode (`npm run build:release`)  -> ADMOB_PROD + REVENUECAT_API_KEY_PROD   (the OWNER fills these in, see below)
+//   every other mode (dev, `vite build`)    -> ADMOB_TEST + REVENUECAT_API_KEY_TEST   (Google's public test ids, empty key)
+// `npm run release:check` and the release Vite build refuse an empty or Google-test production id, a RevenueCat key that is not a
+// `goog_` key (this includes a Test Store key), a debug UMP override, and a versionCode that is not above the last upload.
+// The Android AdMob APP id is not read from here at runtime: it goes in the manifest through `-PADMOB_APP_ID` (android/app/build.gradle).
+import { IS_RELEASE_BUILD, RELEASE_MODE } from './build.config';
 
-export const ADMOB = {
-  // Google AdMob official TEST ad units (safe for dev + internal testing).
-  // Replace before production. The app id also goes in AndroidManifest.xml.
+export interface AdmobIds {
+  readonly appId: string;
+  readonly rewardedAdId: string;
+  readonly interstitialAdId: string;
+}
+
+// Google AdMob official TEST ids (safe for dev + internal testing). Debug and default builds only; the release bundle drops them.
+export const ADMOB_TEST: AdmobIds = {
   appId: 'ca-app-pub-3940256099942544~3347511713',
   rewardedAdId: 'ca-app-pub-3940256099942544/5224354917',
   interstitialAdId: 'ca-app-pub-3940256099942544/1033173712',
-} as const;
+};
+
+// OWNER GATE (docs/STATUS.md): paste the real AdMob ids here. App id: AdMob console > Apps (ca-app-pub-XXXXXXXXXXXXXXXX~NNNNNNNNNN);
+// ad unit ids: AdMob console > Ad units (ca-app-pub-XXXXXXXXXXXXXXXX/NNNNNNNNNN). Empty until then, so a release is refused.
+// Never copy ADMOB_TEST here. The same app id must be passed to Gradle as -PADMOB_APP_ID (docs/release/RUNBOOK.md section 6).
+export const ADMOB_PROD: AdmobIds = {
+  appId: '',
+  rewardedAdId: '',
+  interstitialAdId: '',
+};
+
+// RevenueCat public Android SDK key. Empty = IAP "unconfigured": every purchase/restore resolves 'unavailable' (never a crash).
+// TEST: empty, so debug and default builds never hold any RevenueCat key (a Test Store key `test_...` simulates purchases, error
+// code 42 in services/IAP.ts, and must never reach a release). PROD: OWNER GATE, paste the public Google Play SDK key (starts with
+// goog_, RevenueCat > Project > API keys); anything else is refused by the release guard.
+export const REVENUECAT_API_KEY_TEST = '';
+export const REVENUECAT_API_KEY_PROD = '';
+
+export interface MonetizationIds {
+  readonly admob: AdmobIds;
+  readonly revenueCatApiKey: string;
+}
+
+// Which ids a Vite mode selects. Pure and tested (releaseConfig.test.ts). Only the exact mode 'release' selects `prod`; every other
+// string, including 'production' (the default `vite build`) and 'Release', selects the Google test ids. The constants below apply the
+// same rule with the build constant directly, so Rollup can drop the branch a build does not take; a test pins the two together.
+export function selectMonetizationIds(mode: string, prod: MonetizationIds): MonetizationIds {
+  return mode === RELEASE_MODE ? prod : { admob: ADMOB_TEST, revenueCatApiKey: REVENUECAT_API_KEY_TEST };
+}
+
+export const ADMOB: AdmobIds = IS_RELEASE_BUILD ? ADMOB_PROD : ADMOB_TEST;
 
 // AdMob request configuration passed to AdMob.initialize() (services/Ads.ts). D-25: the audience is 13+ and the content rating stays
 // Everyone, so there is NO child-directed and NO under-age-of-consent tag anywhere (neither key is ever sent). A-07: the max ad content
@@ -80,10 +122,10 @@ export const AD_UI = {
 } as const;
 
 export const REVENUECAT = {
-  // Public Android SDK key from the RevenueCat dashboard — set before release. Empty = IAP "unconfigured": every
-  // purchase/restore resolves 'unavailable' (never a crash). The release guard that refuses an empty or Test Store key
-  // is P00-T20.
-  apiKey: '',
+  // The public Android SDK key for this build mode (REVENUECAT_API_KEY_PROD in a release build, else the empty test key). Empty =
+  // IAP "unconfigured": every purchase/restore resolves 'unavailable' (never a crash). The release guard refuses an empty or
+  // non-goog_ production key (P00-T20).
+  apiKey: IS_RELEASE_BUILD ? REVENUECAT_API_KEY_PROD : REVENUECAT_API_KEY_TEST,
   // Play Console product id of the standalone Remove-Ads purchase.
   removeAdsProductId: 'remove_ads',
 } as const;

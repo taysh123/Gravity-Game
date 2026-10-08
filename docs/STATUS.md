@@ -18,7 +18,7 @@
 | Other content | 8 daily levels · 20 run chunks · 14 achievements · 28 cosmetics · 3 bundles |
 | Scenes registered | 14 |
 | Level files | 163 on disk · 13 retired (6, 22, 31, 35, 37, 39, 40, 45, 48, 55, 56, 63, 64) |
-| Tests | 61 files / 1277 tests |
+| Tests | 63 files / 1350 tests |
 | package.json version | 1.0.0 |
 | androidBuild | 1 |
 | Derived versionName / versionCode | 1.0.0 / 1000001 |
@@ -61,6 +61,8 @@ Regenerate with `npm run facts`; verify with `npm run facts:check` (CI runs the 
 | Confirm dropping the stale git stash `stash@{0}` ("abandoned sprint4 wip", 2026-05-31) with `git stash drop stash@{0}` (P00-T04; not dropped, needs owner OK) | Owner | any time | PENDING |
 | Age Signals plugin scheduled (D-25; CA AB 1043 starts 2027-01-01) | Claude + Owner | 2026-12-15 | SCHEDULED |
 | Data Safety form + privacy policy sign-off (drafts land in P0 Step 5) | Owner | before M2 | PENDING |
+
+Last uploaded versionCode: **1** <!-- last-uploaded-version-code: 1 --> (machine-read by `npm run release:check`, which refuses a release whose versionCode is not above it. Update the number with every Play upload, [RUNBOOK section 8](release/RUNBOOK.md). Never edit the facts block above for this.)
 
 ## Next 5 actions
 Step 0 complete. Step 1 complete except P00-T08 (AdMob 8.2.1 soak, deferred to >= 2026-10-13); done so far: P00-T01…T07 (CI v2, Capacitor 8.5.2 family, exact pins), P00-T09 (manifest, theme, WebView floor, system bars), P00-T10 (Back router + `PauseScene`, Endless pause button), P00-T11 (background/foreground contract, `Haptics.pulse`), P00-T12 (renderer-crash recovery: `MainActivity` recreates the activity on a dead WebView renderer, at most twice per process, and leaves a `platform:rendererGone` marker that `Saves.hydrate()` reports once to Crashlytics; null-bridge guard; `Crash` queues early reports until the plugin is ready) and P00-T13 (`@capacitor/preferences` save mirror, hydrate before Boot, migration ladder, backup rules limited to the two save locations); device checks pending in the M0 session (V18 renderer kill, R1 in the device checklist). AdMob stays pinned at exactly 8.0.0 until the soak.

@@ -1,5 +1,7 @@
 // Consent and privacy constants (D-10, D-25; docs/roadmap/phases/P00-foundation.md Step 4). Read by services/Consent.ts,
 // services/Ads.ts and scenes/SettingsScene.ts; the pure UMP mapping is services/consentState.ts.
+import { IS_RELEASE_BUILD } from './build.config';
+
 // The setExternalFlowActive() source raised around the native consent form and the privacy options form
 // (src/platform/externalFlow.ts). While one of them is up Android pauses the Activity; this flag stops the pause overlay.
 // FORM_WATCHDOG_MS: if a native form has not settled after this long, the consent source is cleared anyway (the form promise keeps
@@ -46,11 +48,15 @@ export function parseTestDeviceIds(raw: string | undefined): string[] {
 }
 
 // Debug-only overrides, read once from the build environment (typed in src/vite-env.d.ts). Both are undefined / empty in a
-// normal build. T18 only reads them; the release guard that refuses a release build carrying either is P00-T20.
-export const UMP_DEBUG = {
-  geography: parseDebugGeography(import.meta.env.VITE_UMP_DEBUG_GEOGRAPHY),
-  testDeviceIds: parseTestDeviceIds(import.meta.env.VITE_UMP_TEST_DEVICE_IDS),
-} as const;
+// normal build. P00-T20: a release build (`vite build --mode release`) never reads them, even if the variables are set, so
+// Ads.init cannot call initializeForTesting there; `npm run release:check` and the release Vite build also REFUSE a release
+// while either variable is set, so the mistake is reported instead of silently ignored.
+export const UMP_DEBUG: { readonly geography: UmpDebugGeography | undefined; readonly testDeviceIds: readonly string[] } = IS_RELEASE_BUILD
+  ? { geography: undefined, testDeviceIds: [] }
+  : {
+      geography: parseDebugGeography(import.meta.env.VITE_UMP_DEBUG_GEOGRAPHY),
+      testDeviceIds: parseTestDeviceIds(import.meta.env.VITE_UMP_TEST_DEVICE_IDS),
+    };
 
 // Settings privacy rows (scenes/SettingsScene.ts). Taps stay >= THEME.MIN_TAP. The reset is a two-tap in-game confirm because
 // native dialogs are unreliable in the WebView: the first tap arms it for RESET_CONFIRM_MS, the second runs it.
