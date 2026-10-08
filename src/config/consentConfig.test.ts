@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { AdmobConsentDebugGeography, AdmobConsentStatus, MaxAdContentRating } from '@capacitor-community/admob';
+import { AdmobConsentDebugGeography, AdmobConsentStatus, InterstitialAdPluginEvents, MaxAdContentRating, RewardAdPluginEvents } from '@capacitor-community/admob';
 // Not re-exported by the package root (consent/index.d.ts omits it), so it is imported from its file; the package has no exports map.
 import { PrivacyOptionsRequirementStatus } from '@capacitor-community/admob/dist/esm/consent/privacy-options-requirement-status.enum';
 import { CONSENT, CRASH_REQUIRES_ANALYTICS_CONSENT, PRIVACY_UI, UMP_DEBUG_GEOGRAPHY, parseDebugGeography, parseTestDeviceIds } from './consent.config';
-import { ADMOB_TARGETING } from './monetization.config';
+import { ADMOB_EVENTS, ADMOB_TARGETING } from './monetization.config';
 import { PLATFORM } from './platform.config';
 import { PRIVACY_OPTIONS_REQUIRED, UMP_STATUS } from '../services/consentState';
 import { THEME } from './theme.config';
@@ -31,6 +31,32 @@ describe('mirrored plugin enums match @capacitor-community/admob', () => {
   it('A-07: the ad content rating is the plugin enum value ParentalGuidance, not the string "PG"', () => {
     expect(ADMOB_TARGETING.MAX_AD_CONTENT_RATING).toBe(MaxAdContentRating.ParentalGuidance);
     expect(ADMOB_TARGETING.MAX_AD_CONTENT_RATING).not.toBe('PG');
+  });
+});
+
+// P00-T19: the eleven listeners services/Ads.ts registers. Their names are mirrored in ADMOB_EVENTS (the web bundle never imports the
+// package); a plugin bump that renames one fails here instead of silently leaving an ad event unheard.
+describe('mirrored plugin event names match @capacitor-community/admob', () => {
+  it('rewarded: dist/esm/reward/reward-ad-plugin-events.enum.d.ts', () => {
+    expect(ADMOB_EVENTS.REWARDED.LOADED).toBe(RewardAdPluginEvents.Loaded);
+    expect(ADMOB_EVENTS.REWARDED.FAILED_TO_LOAD).toBe(RewardAdPluginEvents.FailedToLoad);
+    expect(ADMOB_EVENTS.REWARDED.SHOWED).toBe(RewardAdPluginEvents.Showed);
+    expect(ADMOB_EVENTS.REWARDED.FAILED_TO_SHOW).toBe(RewardAdPluginEvents.FailedToShow);
+    expect(ADMOB_EVENTS.REWARDED.DISMISSED).toBe(RewardAdPluginEvents.Dismissed);
+    expect(ADMOB_EVENTS.REWARDED.REWARDED).toBe(RewardAdPluginEvents.Rewarded);
+  });
+
+  it('interstitial: dist/esm/interstitial/interstitial-ad-plugin-events.enum.d.ts', () => {
+    expect(ADMOB_EVENTS.INTERSTITIAL.LOADED).toBe(InterstitialAdPluginEvents.Loaded);
+    expect(ADMOB_EVENTS.INTERSTITIAL.FAILED_TO_LOAD).toBe(InterstitialAdPluginEvents.FailedToLoad);
+    expect(ADMOB_EVENTS.INTERSTITIAL.SHOWED).toBe(InterstitialAdPluginEvents.Showed);
+    expect(ADMOB_EVENTS.INTERSTITIAL.FAILED_TO_SHOW).toBe(InterstitialAdPluginEvents.FailedToShow);
+    expect(ADMOB_EVENTS.INTERSTITIAL.DISMISSED).toBe(InterstitialAdPluginEvents.Dismissed);
+  });
+
+  it('the mirror has no stale extras: it holds exactly the enum members (6 + 5)', () => {
+    expect(Object.values(ADMOB_EVENTS.REWARDED).sort()).toEqual(Object.values(RewardAdPluginEvents).sort());
+    expect(Object.values(ADMOB_EVENTS.INTERSTITIAL).sort()).toEqual(Object.values(InterstitialAdPluginEvents).sort());
   });
 });
 

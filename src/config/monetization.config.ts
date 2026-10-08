@@ -29,6 +29,53 @@ export const INTERSTITIAL = {
   GRACE_MS: 120_000, // …or its first M ms, whichever protects longer
 } as const;
 
+// Ad plumbing (D-24, P00-T19), consumed by the pure reducer in services/adState.ts and the glue in services/Ads.ts.
+// A rewarded ad's outcome is read from the plugin's events, never from the showRewardVideoAd() promise (it only resolves on a
+// reward and never settles when the player closes the ad early).
+// If the ad has not reported `Showed` this long after the show call, the show is abandoned as unavailable.
+export const AD_SHOW_WATCHDOG_MS = 5000;
+// A rewarded ad's reward callback can land just after its Dismissed event: Dismissed without a reward waits this long.
+export const AD_LATE_REWARD_GRACE_MS = 300;
+// Reload delay after the 1st, 2nd, 3rd... failed load in a row; the last value repeats. A load success resets the sequence.
+export const AD_RETRY_BACKOFF_MS = [30_000, 60_000, 120_000, 300_000] as const;
+// A loaded ad expires on Google's side after about an hour; one older than this is reloaded rather than shown.
+export const AD_MAX_AGE_MS = 55 * 60 * 1000;
+// Safety ceiling: an ad on screen for longer than this (a lost Dismissed event) is treated as closed so nothing hangs. No real
+// rewarded or interstitial ad runs this long.
+export const AD_SHOWING_MAX_MS = 3 * 60 * 1000;
+// The setExternalFlowActive() source raised around a native ad (src/platform/externalFlow.ts), so the pause overlay does not
+// open while the ad covers the app.
+export const AD_EXTERNAL_FLOW_SOURCE = 'ads';
+
+// Plugin event names, mirrored from @capacitor-community/admob 8.0.0 because the web bundle never imports the package (same reason
+// as ADMOB_TARGETING); src/config/consentConfig.test.ts pins each value to the real enum, so a plugin bump that renames one fails
+// there. dist/esm/reward/reward-ad-plugin-events.enum.d.ts (RewardAdPluginEvents) and
+// dist/esm/interstitial/interstitial-ad-plugin-events.enum.d.ts (InterstitialAdPluginEvents).
+export const ADMOB_EVENTS = {
+  REWARDED: {
+    LOADED: 'onRewardedVideoAdLoaded',
+    FAILED_TO_LOAD: 'onRewardedVideoAdFailedToLoad',
+    SHOWED: 'onRewardedVideoAdShowed',
+    FAILED_TO_SHOW: 'onRewardedVideoAdFailedToShow',
+    DISMISSED: 'onRewardedVideoAdDismissed',
+    REWARDED: 'onRewardedVideoAdReward',
+  },
+  INTERSTITIAL: {
+    LOADED: 'interstitialAdLoaded',
+    FAILED_TO_LOAD: 'interstitialAdFailedToLoad',
+    SHOWED: 'interstitialAdShowed',
+    FAILED_TO_SHOW: 'interstitialAdFailedToShow',
+    DISMISSED: 'interstitialAdDismissed',
+  },
+} as const;
+
+// Rewarded-offer UI (win overlay 2x, Endless revive / 2x, shop Free Fragments; ui/adOffer.ts and the three scenes).
+export const AD_UI = {
+  UNAVAILABLE: 'Ad unavailable', // the offer was ready when drawn but the ad failed or timed out at the tap (device row A3)
+  BUSY_ALPHA: 0.55, // an offer whose ad is on screen / running (it is also disabled)
+  RESULT_HOLD_MS: 900, // how long the win overlay shows "x2!" / "Ad unavailable" on the 2x button before it advances
+} as const;
+
 export const REVENUECAT = {
   // Public Android SDK key from the RevenueCat dashboard — set before release. Empty = IAP "unconfigured": every
   // purchase/restore resolves 'unavailable' (never a crash). The release guard that refuses an empty or Test Store key
