@@ -7,6 +7,7 @@ import {
   AD_LATE_REWARD_GRACE_MS,
   AD_MAX_AGE_MS,
   AD_RETRY_BACKOFF_MS,
+  AD_SHOWING_MAX_MS,
   AD_SHOW_WATCHDOG_MS,
 } from '../config/monetization.config';
 
@@ -146,8 +147,12 @@ function expectNoConsentOrInitCalls(plugin: T['plugin']): void {
   expect(plugin.showPrivacyOptionsForm).not.toHaveBeenCalled();
 }
 
+// performance is faked too: Ads reads performance.now() for every show timer (a monotonic clock, fix pass 1 m5), and
+// vi.setSystemTime() moves the wall clock (Date) only, which is exactly what the clock tests below need to tell them apart.
+const FAKE_CLOCKS = ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'setImmediate', 'clearImmediate', 'Date', 'performance'] as const;
+
 beforeEach(() => {
-  vi.useFakeTimers();
+  vi.useFakeTimers({ toFake: [...FAKE_CLOCKS] });
   vi.setSystemTime(START);
 });
 
@@ -623,6 +628,339 @@ describe('every show is wrapped in the external-flow flag and mutes game audio, 
     await expect(d).resolves.toBe('skipped');
     expect(dog.flow.isExternalFlowActive()).toBe(false);
     expect(dog.audio.resume).toHaveBeenCalledTimes(1);
+  });
+});
+
+// ---- P00-T19 fix pass 1 -------------------------------------------------------------------------------------------------------
+// I1: JS timers keep running while the app is hidden (Capacitor KeepRunning), so an ad the player merely left (Home, a paused video,
+// an end card nobody looks at) must not be settled by wall time. The watchdog and the on-screen ceiling count FOREGROUND time only
+// (lifecycle.ts reports it through platform/foreground.ts: visibilitychange + native pause / resume), and the end of an ad gives
+// audio back only when the lifecycle's foreground path could.
+
+describe('I1: the on-screen ceiling counts foreground time only', () => {
+  // A rewarded ad on screen; `done` records the caller's outcome.
+  async function onScreen(opts: LoadOptions = {}) {
+    const t = await up(opts);
+    const p = t.Ads.showRewarded('campaign_2x');
+    const seen: { outcome?: string } = {};
+    void p.then((o) => { seen.outcome = o; });
+    t.emit(RW.SHOWED);
+    return { t, p, seen };
+  }
+
+  it('hidden for ten minutes does not trip it: still in flight, the flag still up, no audio under the hidden app; a later finish is rewarded', async () => {
+    const { t, p, seen } = await onScreen();
+    t.foreground.notifyBackground();
+    await vi.advanceTimersByTimeAsync(10 * 60_000);
+    expect(seen.outcome).toBeUndefined();
+    expect(t.Ads.isShowing()).toBe(true);
+    expect(t.flow.isExternalFlowActive()).toBe(true);
+    expect(t.audio.resume).not.toHaveBeenCalled();
+    t.foreground.notifyForeground();
+    t.emit(RW.REWARDED, { type: 'coin', amount: 1 });
+    t.emit(RW.DISMISSED);
+    await expect(p).resolves.toBe('earned');
+    expect(t.tracked.filter((e) => e.name === 'rewarded_earned')).toHaveLength(1);
+    expect(t.flow.isExternalFlowActive()).toBe(false);
+  });
+
+  it('visible for longer than AD_SHOWING_MAX_MS trips it (a lost Dismissed): the caller is released and the flag cleared', async () => {
+    const { t, seen } = await onScreen();
+    await vi.advanceTimersByTimeAsync(AD_SHOWING_MAX_MS - 1);
+    expect(seen.outcome).toBeUndefined();
+    expect(t.flow.isExternalFlowActive()).toBe(true);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(seen.outcome).toBe('dismissed');
+    expect(t.Ads.isShowing()).toBe(false);
+    expect(t.flow.isExternalFlowActive()).toBe(false);
+  });
+
+  it('a reward that came before the lost Dismissed makes the ceiling settle earned', async () => {
+    const { t, seen } = await onScreen();
+    t.emit(RW.REWARDED, { type: 'coin', amount: 1 });
+    await vi.advanceTimersByTimeAsync(AD_SHOWING_MAX_MS);
+    expect(seen.outcome).toBe('earned');
+  });
+
+  it('the count restarts on return: ten hidden minutes, then the full ceiling of foreground time, to the millisecond', async () => {
+    const { t, seen } = await onScreen();
+    t.foreground.notifyBackground();
+    await vi.advanceTimersByTimeAsync(10 * 60_000);
+    t.foreground.notifyForeground();
+    await vi.advanceTimersByTimeAsync(AD_SHOWING_MAX_MS - 1);
+    expect(seen.outcome).toBeUndefined();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(seen.outcome).toBe('dismissed');
+    expect(t.flow.isExternalFlowActive()).toBe(false);
+  });
+
+  it('foreground time spent before leaving counts: 100 s in front, ten minutes away, then 80 s trips it', async () => {
+    const { t, seen } = await onScreen();
+    await vi.advanceTimersByTimeAsync(100_000);
+    t.foreground.notifyBackground();
+    await vi.advanceTimersByTimeAsync(10 * 60_000);
+    t.foreground.notifyForeground();
+    await vi.advanceTimersByTimeAsync(AD_SHOWING_MAX_MS - 100_000 - 1);
+    expect(seen.outcome).toBeUndefined();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(seen.outcome).toBe('dismissed');
+  });
+
+  it('the usual native order (the ad pauses the app, Dismissed arrives while it is still hidden, the app resumes) settles once, earned', async () => {
+    const { t, p } = await onScreen();
+    t.foreground.notifyBackground();
+    t.emit(RW.REWARDED, { type: 'coin', amount: 1 });
+    t.emit(RW.DISMISSED);
+    await expect(p).resolves.toBe('earned');
+    expect(t.flow.isExternalFlowActive()).toBe(false);
+    t.foreground.notifyForeground();
+    await vi.advanceTimersByTimeAsync(AD_SHOWING_MAX_MS * 2);
+    expect(t.tracked.filter((e) => e.name === 'rewarded_earned')).toHaveLength(1);
+  });
+
+  it('an interstitial is held to the same rule', async () => {
+    const t = await up();
+    const p = t.Ads.showInterstitialIfEligible({ flowProtected: false, now: Date.now() + 3_600_000 });
+    t.emit(IN.SHOWED);
+    t.foreground.notifyBackground();
+    await vi.advanceTimersByTimeAsync(10 * 60_000);
+    expect(t.Ads.isShowing()).toBe(true);
+    t.foreground.notifyForeground();
+    await vi.advanceTimersByTimeAsync(AD_SHOWING_MAX_MS);
+    await expect(p).resolves.toBe('shown');
+    expect(t.flow.isExternalFlowActive()).toBe(false);
+  });
+
+  it('a reward that lands after the ceiling settled is dropped (one settle per show): no second outcome, no earned event, no flag', async () => {
+    const { t, seen } = await onScreen();
+    await vi.advanceTimersByTimeAsync(AD_SHOWING_MAX_MS);
+    expect(seen.outcome).toBe('dismissed');
+    t.emit(RW.REWARDED, { type: 'coin', amount: 1 });
+    t.emit(RW.DISMISSED);
+    await vi.advanceTimersByTimeAsync(AD_LATE_REWARD_GRACE_MS * 3);
+    expect(seen.outcome).toBe('dismissed');
+    expect(t.tracked.map((e) => e.name)).not.toContain('rewarded_earned');
+    expect(t.flow.isExternalFlowActive()).toBe(false);
+    expect(t.Ads.isShowing()).toBe(false);
+  });
+});
+
+describe('I1 (b): the end of an ad gives audio back only when the lifecycle could', () => {
+  async function ended(t: T, how: 'dismissed' | 'failed' = 'dismissed') {
+    const p = t.Ads.showRewarded('campaign_2x');
+    t.emit(RW.SHOWED);
+    if (how === 'dismissed') {
+      t.emit(RW.REWARDED, { type: 'coin', amount: 1 });
+      t.emit(RW.DISMISSED);
+    }
+    return p;
+  }
+
+  it('settled while visible: audio is resumed once', async () => {
+    const t = await up();
+    await expect(ended(t)).resolves.toBe('earned');
+    expect(t.audio.resume).toHaveBeenCalledTimes(1);
+  });
+
+  it('settled while HIDDEN: not resumed (the foreground path owns it), the flag is cleared and the caller released', async () => {
+    const t = await up();
+    t.foreground.notifyBackground();
+    await expect(ended(t)).resolves.toBe('earned');
+    expect(t.audio.resume).not.toHaveBeenCalled();
+    expect(t.flow.isExternalFlowActive()).toBe(false);
+    t.foreground.notifyForeground(); // the lifecycle's own foreground path would resume it here; Ads must not do it a second time
+    expect(t.audio.resume).not.toHaveBeenCalled();
+  });
+
+  it('a failed show that settles while hidden leaves the audio alone too', async () => {
+    const t = await up();
+    const p = t.Ads.showRewarded('campaign_2x');
+    t.foreground.notifyBackground();
+    t.emit(RW.FAILED_TO_SHOW, { code: 1, message: 'x' });
+    await expect(p).resolves.toBe('unavailable');
+    expect(t.audio.resume).not.toHaveBeenCalled();
+    expect(t.flow.isExternalFlowActive()).toBe(false);
+  });
+
+  it('settled under the pause overlay: not resumed (the overlay\'s CONTINUE does it)', async () => {
+    const t = await up();
+    t.foreground.setPauseOverlayReader(() => true);
+    await expect(ended(t)).resolves.toBe('earned');
+    expect(t.audio.resume).not.toHaveBeenCalled();
+    expect(t.flow.isExternalFlowActive()).toBe(false);
+  });
+
+  it('still respects Sound / Music: both off, nothing is resumed even in front', async () => {
+    const t = await up({ settings: { sound: false, music: false } });
+    await expect(ended(t)).resolves.toBe('earned');
+    expect(t.audio.resume).not.toHaveBeenCalled();
+  });
+
+  it('the ceiling settling while hidden is impossible; settling after the return resumes audio once, in front', async () => {
+    const t = await up();
+    const p = t.Ads.showRewarded('campaign_2x');
+    t.emit(RW.SHOWED);
+    t.foreground.notifyBackground();
+    await vi.advanceTimersByTimeAsync(10 * 60_000);
+    expect(t.audio.resume).not.toHaveBeenCalled();
+    t.foreground.notifyForeground();
+    await vi.advanceTimersByTimeAsync(AD_SHOWING_MAX_MS);
+    await expect(p).resolves.toBe('dismissed');
+    expect(t.audio.resume).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('I1: the external-flow flag is cleared on every path', () => {
+  type Drive = (t: T) => Promise<void>;
+  const rewardedPaths: Array<[string, Drive, LoadOptions?]> = [
+    ['earned', async (t) => { t.emit(RW.SHOWED); t.emit(RW.REWARDED, {}); t.emit(RW.DISMISSED); }],
+    ['closed early (after the grace)', async (t) => { t.emit(RW.SHOWED); t.emit(RW.DISMISSED); await vi.advanceTimersByTimeAsync(AD_LATE_REWARD_GRACE_MS); }],
+    ['failedToShow', async (t) => { t.emit(RW.FAILED_TO_SHOW, { code: 1, message: 'x' }); }],
+    ['the 5 s watchdog', async () => { await vi.advanceTimersByTimeAsync(AD_SHOW_WATCHDOG_MS); }],
+    ['the plugin rejects the call', async (t) => { await t.flush(); }, { show: 'reject' }],
+    ['the ceiling, in front', async (t) => { t.emit(RW.SHOWED); await vi.advanceTimersByTimeAsync(AD_SHOWING_MAX_MS); }],
+    ['the ceiling, after a trip to the background', async (t) => {
+      t.emit(RW.SHOWED);
+      t.foreground.notifyBackground();
+      await vi.advanceTimersByTimeAsync(10 * 60_000);
+      t.foreground.notifyForeground();
+      await vi.advanceTimersByTimeAsync(AD_SHOWING_MAX_MS);
+    }],
+    ['Dismissed while hidden', async (t) => { t.emit(RW.SHOWED); t.foreground.notifyBackground(); t.emit(RW.REWARDED, {}); t.emit(RW.DISMISSED); }],
+    ['FailedToShow while hidden', async (t) => { t.foreground.notifyBackground(); t.emit(RW.FAILED_TO_SHOW, { code: 1, message: 'x' }); }],
+    ['consent revoked mid-show', async (t) => { t.emit(RW.SHOWED); t.Ads.revoke(); }],
+    ['consent revoked before Showed', async (t) => { t.Ads.revoke(); }],
+  ];
+
+  for (const [name, drive, opts] of rewardedPaths) {
+    it(`rewarded, ${name}: up while the show is in flight, down once the caller has its outcome`, async () => {
+      const t = await up(opts);
+      const p = t.Ads.showRewarded('campaign_2x');
+      expect(t.flow.isExternalFlowActive()).toBe(true);
+      await drive(t);
+      await p;
+      expect(t.flow.isExternalFlowActive()).toBe(false);
+      expect(t.Ads.isShowing()).toBe(false);
+    });
+  }
+
+  it('interstitial: the same on the ceiling, Dismissed while hidden and a revoke', async () => {
+    const run = async (drive: Drive) => {
+      const t = await up();
+      const p = t.Ads.showInterstitialIfEligible({ flowProtected: false, now: Date.now() + 3_600_000 });
+      expect(t.flow.isExternalFlowActive()).toBe(true);
+      await drive(t);
+      await p;
+      expect(t.flow.isExternalFlowActive()).toBe(false);
+      expect(t.Ads.isShowing()).toBe(false);
+    };
+    await run(async (t) => { t.emit(IN.SHOWED); await vi.advanceTimersByTimeAsync(AD_SHOWING_MAX_MS); });
+    await run(async (t) => { t.emit(IN.SHOWED); t.foreground.notifyBackground(); t.emit(IN.DISMISSED); });
+    await run(async (t) => { t.emit(IN.SHOWED); t.Ads.revoke(); });
+  });
+});
+
+describe('m1: the 5 s watchdog counts foreground time only', () => {
+  it('an ad that is already covering the app (the app went to the background) is not given up on after 5 s of wall time', async () => {
+    const t = await up();
+    const p = t.Ads.showRewarded('campaign_2x');
+    let outcome: string | undefined;
+    void p.then((o) => { outcome = o; });
+    await vi.advanceTimersByTimeAsync(2000);
+    t.foreground.notifyBackground(); // the ad activity paused ours, a slow Showed is still on its way
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(outcome).toBeUndefined();
+    t.emit(RW.SHOWED);
+    t.emit(RW.REWARDED, { type: 'coin', amount: 1 });
+    t.emit(RW.DISMISSED);
+    await expect(p).resolves.toBe('earned');
+  });
+
+  it('the rest of the 5 s runs on return when no ad ever appeared', async () => {
+    const t = await up();
+    const p = t.Ads.showRewarded('campaign_2x');
+    let outcome: string | undefined;
+    void p.then((o) => { outcome = o; });
+    await vi.advanceTimersByTimeAsync(2000);
+    t.foreground.notifyBackground();
+    await vi.advanceTimersByTimeAsync(60_000);
+    t.foreground.notifyForeground();
+    await vi.advanceTimersByTimeAsync(AD_SHOW_WATCHDOG_MS - 2000 - 1);
+    expect(outcome).toBeUndefined();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(outcome).toBe('unavailable');
+  });
+});
+
+describe('m5: show timers use a monotonic clock, not the wall clock', () => {
+  it('a wall clock set BACK during the 5 s window does not stall the watchdog', async () => {
+    const t = await up();
+    const p = t.Ads.showRewarded('campaign_2x');
+    let outcome: string | undefined;
+    void p.then((o) => { outcome = o; });
+    vi.setSystemTime(Date.now() - 3_600_000);
+    await vi.advanceTimersByTimeAsync(AD_SHOW_WATCHDOG_MS);
+    expect(outcome).toBe('unavailable');
+    expect(t.flow.isExternalFlowActive()).toBe(false);
+  });
+
+  it('a wall clock set FORWARD (then a return to the app) does not trip the watchdog or the ceiling early', async () => {
+    const t = await up();
+    const p = t.Ads.showRewarded('campaign_2x');
+    let outcome: string | undefined;
+    void p.then((o) => { outcome = o; });
+    vi.setSystemTime(Date.now() + 3_600_000);
+    t.foreground.notifyForeground(); // a foreground re-check evaluates the timers against the clock
+    await t.flush();
+    expect(outcome).toBeUndefined();
+    t.emit(RW.SHOWED);
+    vi.setSystemTime(Date.now() + 3_600_000);
+    t.foreground.notifyForeground();
+    await t.flush();
+    expect(outcome).toBeUndefined();
+    expect(t.Ads.isShowing()).toBe(true);
+    t.emit(RW.REWARDED, {});
+    t.emit(RW.DISMISSED);
+    await expect(p).resolves.toBe('earned');
+  });
+
+  it('the late-reward grace is measured on the same clock: a wall clock jump neither cuts it short nor stretches it', async () => {
+    const t = await up();
+    const p = t.Ads.showRewarded('campaign_2x');
+    let outcome: string | undefined;
+    void p.then((o) => { outcome = o; });
+    t.emit(RW.SHOWED);
+    t.emit(RW.DISMISSED);
+    vi.setSystemTime(Date.now() - 3_600_000);
+    await vi.advanceTimersByTimeAsync(AD_LATE_REWARD_GRACE_MS - 1);
+    expect(outcome).toBeUndefined();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(outcome).toBe('dismissed');
+  });
+
+  it('but a loaded ad still ages through a device sleep (the wall clock moved, the monotonic one did not): not offered, reloaded', async () => {
+    const t = await up();
+    expect(t.Ads.isRewardedReady()).toBe(true);
+    vi.setSystemTime(Date.now() + AD_MAX_AGE_MS + 1000);
+    expect(t.Ads.isRewardedReady()).toBe(false); // honest before any timer or lifecycle event
+    await vi.advanceTimersByTimeAsync(0);
+    await t.flush();
+    expect(t.plugin.prepareRewardVideoAd).toHaveBeenCalledTimes(2);
+    expect(t.plugin.prepareInterstitial).toHaveBeenCalledTimes(2);
+    expect(t.Ads.isRewardedReady()).toBe(true);
+  });
+
+  it('the persisted interstitial cooldown stays on the wall clock (it must survive a restart)', async () => {
+    const t = await up();
+    const p = t.Ads.showRewarded('campaign_2x');
+    t.emit(RW.SHOWED);
+    t.emit(RW.REWARDED, {});
+    t.emit(RW.DISMISSED);
+    await p;
+    const stamps = t.writes.filter(([k]) => k === COOLDOWN_KEY);
+    const stamp = JSON.parse(stamps[stamps.length - 1][1]) as { lastShownMs: number };
+    expect(stamp.lastShownMs).toBe(Date.now());
+    expect(stamp.lastShownMs).toBeGreaterThan(1_700_000_000_000);
   });
 });
 

@@ -5,11 +5,20 @@ import { fileURLToPath } from 'node:url';
 import {
   lifecycleDecision,
   deriveLifecycleScenes,
+  resumeAudioAfterAd,
   type LifecycleInput,
   type LifecycleActions,
 } from './lifecycleDecision';
 import { setExternalFlowActive, isExternalFlowActive } from './externalFlow';
-import { notifyForeground, onAppForeground } from './foreground';
+import {
+  isAppForeground,
+  isPauseOverlayUp,
+  notifyBackground,
+  notifyForeground,
+  onAppBackground,
+  onAppForeground,
+  setPauseOverlayReader,
+} from './foreground';
 import type { SceneSnapshot } from './backRouter';
 
 // The pure half of the background/foreground contract (D-11, P00-T11). lifecycle.ts reads the live scenes and
@@ -280,6 +289,96 @@ describe('foreground subscribers', () => {
   it('lifecycle.onForeground notifies them after running the foreground actions', () => {
     const src = readFileSync(fileURLToPath(new URL('./lifecycle.ts', import.meta.url)), 'utf8');
     expect(src).toMatch(/export function onForeground\(\)[^{]*\{\s*const actions = runLifecycle\('visible'\);\s*notifyForeground\(\);/);
+  });
+
+  it('lifecycle.onBackground tells them after the hidden actions ran (audio is already suspended by then)', () => {
+    const src = readFileSync(fileURLToPath(new URL('./lifecycle.ts', import.meta.url)), 'utf8');
+    expect(src).toMatch(/export function onBackground\(\)[^{]*\{\s*const actions = runLifecycle\('hidden'\);\s*notifyBackground\(\);/);
+  });
+});
+
+// P00-T19 fix pass 1 (I1): services (Ads) need to know whether the app is in front. lifecycle.ts is the only owner of that fact (it is
+// fed by visibilitychange and the native pause / resume), so foreground.ts just keeps the latest answer.
+describe('app foreground state and background subscribers', () => {
+  afterEach(() => {
+    notifyForeground();
+    setPauseOverlayReader(() => false);
+  });
+
+  it('starts in the foreground and follows notifyBackground / notifyForeground', () => {
+    notifyForeground();
+    expect(isAppForeground()).toBe(true);
+    notifyBackground();
+    expect(isAppForeground()).toBe(false);
+    notifyBackground();
+    expect(isAppForeground()).toBe(false);
+    notifyForeground();
+    expect(isAppForeground()).toBe(true);
+  });
+
+  it('notifies background subscribers; one that throws does not stop the others; unsubscribe works', () => {
+    const calls: string[] = [];
+    const offA = onAppBackground(() => calls.push('a'));
+    const offB = onAppBackground(() => {
+      throw new Error('boom');
+    });
+    const offC = onAppBackground(() => calls.push('c'));
+    expect(() => notifyBackground()).not.toThrow();
+    expect(calls).toEqual(['a', 'c']);
+    expect(isAppForeground()).toBe(false); // the state is already updated when subscribers run
+    offA();
+    offB();
+    notifyBackground();
+    expect(calls).toEqual(['a', 'c', 'c']);
+    offC();
+  });
+
+  it('the state is already current when a foreground subscriber runs', () => {
+    notifyBackground();
+    let seen: boolean | null = null;
+    const off = onAppForeground(() => {
+      seen = isAppForeground();
+    });
+    notifyForeground();
+    off();
+    expect(seen).toBe(true);
+  });
+
+  it('the pause overlay reader defaults to "not up" and is replaced by the lifecycle once the game exists', () => {
+    expect(isPauseOverlayUp()).toBe(false);
+    setPauseOverlayReader(() => true);
+    expect(isPauseOverlayUp()).toBe(true);
+  });
+});
+
+// An ad ended: the audio Ads muted at its start goes back only when the foreground path could do the same (D-11): the app is in
+// front, no pause overlay is up and Sound or Music is on. In every other case the lifecycle's foreground path (or the overlay's own
+// CONTINUE) restores it, so a settled ad can never start sound behind a hidden app or under the pause overlay.
+describe('resumeAudioAfterAd', () => {
+  const ok = { wasWanted: true, foreground: true, pauseOverlayUp: false, sound: true, music: true };
+
+  it('resumes only when everything allows it', () => {
+    expect(resumeAudioAfterAd(ok)).toBe(true);
+    expect(resumeAudioAfterAd({ ...ok, sound: false })).toBe(true);
+    expect(resumeAudioAfterAd({ ...ok, music: false })).toBe(true);
+  });
+
+  it('never while the app is hidden, under the pause overlay, with both settings off, or when audio was not wanted to begin with', () => {
+    expect(resumeAudioAfterAd({ ...ok, foreground: false })).toBe(false);
+    expect(resumeAudioAfterAd({ ...ok, pauseOverlayUp: true })).toBe(false);
+    expect(resumeAudioAfterAd({ ...ok, sound: false, music: false })).toBe(false);
+    expect(resumeAudioAfterAd({ ...ok, wasWanted: false })).toBe(false);
+  });
+
+  it('agrees with the foreground path of lifecycleDecision whenever audio was wanted', () => {
+    for (const pauseOverlayUp of [true, false]) {
+      for (const sound of [true, false]) {
+        for (const music of [true, false]) {
+          const viaLifecycle = visible({ pauseOverlayUp, sound, music }).resumeAudio;
+          expect(resumeAudioAfterAd({ wasWanted: true, foreground: true, pauseOverlayUp, sound, music })).toBe(viaLifecycle);
+        }
+      }
+    }
   });
 });
 

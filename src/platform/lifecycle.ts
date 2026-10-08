@@ -25,7 +25,7 @@ import type { AppBridge } from '../utils/native/app';
 import { routeBack, deriveBackState, type BackAction, type BackState, type SceneSnapshot } from './backRouter';
 import { lifecycleDecision, deriveLifecycleScenes, type LifecycleActions, type Visibility } from './lifecycleDecision';
 import { isExternalFlowActive } from './externalFlow';
-import { notifyForeground } from './foreground';
+import { notifyBackground, notifyForeground, setPauseOverlayReader } from './foreground';
 import { isDismissable, isPausable } from './pausable';
 
 // Ads / purchase / consent flows raise this around the native sheet so the background pause ignores them
@@ -220,10 +220,13 @@ function runLifecycle(visibility: Visibility): LifecycleActions | null {
   return actions;
 }
 
-// The app went to the background (Home, app switcher, screen off, another app on top). Returns the actions taken
-// (tests and the headless check read them). Idempotent: a second trigger in the same background period is harmless.
+// The app went to the background (Home, app switcher, screen off, another app on top, or a native ad covering the activity). Returns
+// the actions taken (tests and the headless check read them). Idempotent: a second trigger in the same background period is harmless.
+// Background subscribers (src/platform/foreground.ts, e.g. Ads, whose show timers count foreground time only) are told afterwards.
 export function onBackground(): LifecycleActions | null {
-  return runLifecycle('hidden');
+  const actions = runLifecycle('hidden');
+  notifyBackground();
+  return actions;
 }
 
 // The app is visible again. Never resumes gameplay: the pause overlay stays until the player taps CONTINUE or Back.
@@ -253,6 +256,8 @@ export function installLifecycle(g: Phaser.Game): void {
   if (lifecycleInstalled) return;
   lifecycleInstalled = true;
   game = g;
+  // Lets services (Ads: give audio back after an ad?) ask what only the live scenes know.
+  setPauseOverlayReader(() => pausePending || deriveLifecycleScenes(snapshotScenes(g)).pauseOverlayUp);
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') onBackground();
     else onForeground();

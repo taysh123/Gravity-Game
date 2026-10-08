@@ -50,6 +50,21 @@ export function lifecycleDecision(i: LifecycleInput): LifecycleActions {
   };
 }
 
+export interface AdAudioInput {
+  wasWanted: boolean; // game audio was playing (wanted) when the ad took the screen
+  foreground: boolean; // the app is in front right now (isAppForeground)
+  pauseOverlayUp: boolean;
+  sound: boolean;
+  music: boolean;
+}
+
+// An ad just ended (P00-T19): may Ads give the game audio back itself? Only under the same conditions as the foreground path above:
+// the app is in front, no pause overlay is up, Sound or Music is on. Otherwise the audio stays off here and comes back through the
+// lifecycle's foreground path (hidden) or the overlay's CONTINUE (pause overlay), exactly as without an ad.
+export function resumeAudioAfterAd(i: AdAudioInput): boolean {
+  return i.wasWanted && i.foreground && !i.pauseOverlayUp && (i.sound || i.music);
+}
+
 export interface LifecycleScenes {
   // The gameplay scene to pause (running, run not ended), or null.
   gameplayKey: string | null;

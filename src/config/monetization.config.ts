@@ -43,6 +43,9 @@ export const AD_MAX_AGE_MS = 55 * 60 * 1000;
 // Safety ceiling: an ad on screen for longer than this (a lost Dismissed event) is treated as closed so nothing hangs. No real
 // rewarded or interstitial ad runs this long.
 export const AD_SHOWING_MAX_MS = 3 * 60 * 1000;
+// The monotonic clock the ad timers run on (performance.now()) stands still while the device sleeps; the wall clock does not. A gap
+// between the two of at least this much is a sleep during which every loaded ad aged (services/Ads.ts); less is clock noise.
+export const AD_SLEEP_MIN_MS = 1000;
 // The setExternalFlowActive() source raised around a native ad (src/platform/externalFlow.ts), so the pause overlay does not
 // open while the ad covers the app.
 export const AD_EXTERNAL_FLOW_SOURCE = 'ads';

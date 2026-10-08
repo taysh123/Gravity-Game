@@ -47,6 +47,9 @@ const failedToShow = (format: AdFormat, now: number): AdEvent => ({ type: 'faile
 const dismissed = (format: AdFormat, now: number): AdEvent => ({ type: 'dismissed', format, now });
 const reward = (now: number): AdEvent => ({ type: 'reward', now });
 const tick = (now: number): AdEvent => ({ type: 'tick', now });
+const hidden = (now: number): AdEvent => ({ type: 'hidden', now });
+const visible = (now: number): AdEvent => ({ type: 'visible', now });
+const aged = (ms: number): AdEvent => ({ type: 'aged', ms });
 
 // Enabled with both formats loaded at T0.
 function ready(): Run {
@@ -402,6 +405,157 @@ describe('interstitial show', () => {
   it('does not wait on a load: an interstitial still loading is refused', () => {
     const run = steps(start(), enable(), loaded('rewarded'));
     expect(step(run, request('interstitial', T0 + 1)).effects).toEqual([{ type: 'refuse', format: 'interstitial', reason: 'not_ready' }]);
+  });
+});
+
+// P00-T19 fix pass 1 (I1, m1): the on-screen ceiling and the 5 s watchdog count FOREGROUND time only. JS timers keep running while
+// the app is hidden (Capacitor KeepRunning), so wall time must not settle an ad the player has merely left (Home, the system
+// player paused, an end card nobody is looking at).
+const MIN = 60_000;
+
+describe('foreground time only: the on-screen ceiling (I1)', () => {
+  const onScreen = (at = T0 + 100): Run => steps(ready(), request('rewarded', T0), showed('rewarded', at));
+
+  it('hidden for ten minutes does not trip it, however late the tick', () => {
+    let run = onScreen();
+    run = step(run, hidden(T0 + 1000));
+    const out = step(run, tick(T0 + 10 * MIN));
+    expect(out.effects).toEqual([]);
+    expect(isBusy(out.state)).toBe(true);
+    expect(settles(step(run, tick(T0 + 10 * MIN + 24 * 60 * MIN)).effects)).toEqual([]); // not even a day
+  });
+
+  it('keeps no deadline for the show while hidden, and re-arms the remaining foreground time on return', () => {
+    let run = onScreen(); // showing since T0 + 100, foreground
+    expect(nextDeadline(run.state)).toBe(T0 + 100 + AD_SHOWING_MAX_MS);
+    run = step(run, hidden(T0 + 1100)); // 1000 ms of foreground used
+    expect(nextDeadline(run.state)).toBe(T0 + AD_MAX_AGE_MS + 1); // only the loaded ads' expiry: nothing show-related
+    run = step(run, visible(T0 + 10 * MIN));
+    expect(nextDeadline(run.state)).toBe(T0 + 10 * MIN + AD_SHOWING_MAX_MS - 1000);
+  });
+
+  it('restarts counting on foreground: the whole remaining foreground time, to the millisecond, and then it trips', () => {
+    let run = onScreen();
+    run = steps(run, hidden(T0 + 1100), visible(T0 + 10 * MIN));
+    const limit = T0 + 10 * MIN + AD_SHOWING_MAX_MS - 1000;
+    expect(step(run, tick(limit - 1)).effects).toEqual([]);
+    const out = step(run, tick(limit));
+    expect(settles(out.effects)).toEqual([{ type: 'settle', format: 'rewarded', outcome: 'dismissed' }]);
+    expect(loads(out.effects)).toEqual(['rewarded']);
+    expect(isBusy(out.state)).toBe(false);
+  });
+
+  it('visible for longer than the ceiling trips it (a lost Dismissed), earned if the reward had come', () => {
+    const run = onScreen();
+    expect(settles(step(run, tick(T0 + 100 + AD_SHOWING_MAX_MS)).effects)).toEqual([{ type: 'settle', format: 'rewarded', outcome: 'dismissed' }]);
+    const paid = steps(run, reward(T0 + 5000), hidden(T0 + 6000), visible(T0 + 7000), tick(T0 + 7000 + AD_SHOWING_MAX_MS));
+    expect(settles(paid.effects)).toEqual([{ type: 'settle', format: 'rewarded', outcome: 'earned' }]);
+  });
+
+  it('foreground stretches add up across several trips to the background', () => {
+    let run = onScreen(); // starts at T0 + 100
+    run = steps(run, hidden(T0 + 100 + 60_000), visible(T0 + 20 * MIN)); // 60 s used
+    run = steps(run, hidden(T0 + 20 * MIN + 100_000), visible(T0 + 40 * MIN)); // 160 s used
+    expect(nextDeadline(run.state)).toBe(T0 + 40 * MIN + (AD_SHOWING_MAX_MS - 160_000));
+    expect(step(run, tick(T0 + 40 * MIN + 19_999)).effects).toEqual([]);
+    expect(settles(step(run, tick(T0 + 40 * MIN + 20_000)).effects)).toHaveLength(1);
+  });
+
+  it('an ad that is shown while the app is hidden (the normal case: the ad activity pauses ours) starts its count at the first foreground', () => {
+    let run = steps(ready(), request('rewarded', T0), hidden(T0 + 50), showed('rewarded', T0 + 60));
+    expect(step(run, tick(T0 + 30 * MIN)).effects).toEqual([]);
+    run = step(run, visible(T0 + 30 * MIN));
+    expect(step(run, tick(T0 + 30 * MIN + AD_SHOWING_MAX_MS - 1)).effects).toEqual([]);
+    expect(settles(step(run, tick(T0 + 30 * MIN + AD_SHOWING_MAX_MS)).effects)).toHaveLength(1);
+  });
+
+  it('Dismissed and Reward still settle normally while hidden (the events are not time)', () => {
+    let run = steps(onScreen(), hidden(T0 + 500), reward(T0 + 2000));
+    run = step(run, dismissed('rewarded', T0 + 3000));
+    expect(settles(run.effects)).toEqual([{ type: 'settle', format: 'rewarded', outcome: 'earned' }]);
+    expect(isBusy(run.state)).toBe(false);
+  });
+
+  it('hidden and visible are idempotent (visibilitychange and the native pause/resume both report)', () => {
+    const base = onScreen();
+    const once = steps(base, hidden(T0 + 1100), visible(T0 + 5 * MIN));
+    const twice = steps(base, hidden(T0 + 1100), hidden(T0 + 2 * MIN), visible(T0 + 5 * MIN), visible(T0 + 5 * MIN + 10));
+    expect(twice.state).toEqual(once.state);
+    expect(twice.effects).toEqual([]);
+  });
+
+  it('the late-reward grace is wall time on purpose: a hidden app does not stretch the 300 ms', () => {
+    let run = steps(onScreen(), dismissed('rewarded', T0 + 4000));
+    run = step(run, hidden(T0 + 4001));
+    expect(settles(step(run, tick(T0 + 4000 + AD_LATE_REWARD_GRACE_MS)).effects)).toEqual([{ type: 'settle', format: 'rewarded', outcome: 'dismissed' }]);
+  });
+
+  it('a reward that lands after the ceiling settled is dropped: one settle per show, nothing is in flight to match it to', () => {
+    const run = steps(onScreen(), tick(T0 + 100 + AD_SHOWING_MAX_MS));
+    expect(isBusy(run.state)).toBe(false);
+    const late = steps(run, reward(T0 + 100 + AD_SHOWING_MAX_MS + 5), dismissed('rewarded', T0 + 100 + AD_SHOWING_MAX_MS + 10));
+    expect(late.effects).toEqual([]);
+    expect(late.state).toEqual(run.state);
+  });
+});
+
+describe('foreground time only: the 5 s show watchdog (m1)', () => {
+  it('counts only visible time before Showed: hidden pauses it, the rest of the 5 s runs on return', () => {
+    let run = steps(ready(), request('rewarded', T0), hidden(T0 + 2000));
+    expect(step(run, tick(T0 + 30 * MIN)).effects).toEqual([]); // an ad that is already covering the app is not given up on
+    run = step(run, visible(T0 + 30 * MIN));
+    expect(nextDeadline(run.state)).toBe(T0 + 30 * MIN + 3000);
+    expect(step(run, tick(T0 + 30 * MIN + 2999)).effects).toEqual([]);
+    expect(settles(step(run, tick(T0 + 30 * MIN + 3000)).effects)).toEqual([{ type: 'settle', format: 'rewarded', outcome: 'unavailable' }]);
+  });
+
+  it('an app that is already visible gives up 5 s after the request, exactly as before', () => {
+    const run = steps(ready(), request('rewarded', T0 + 10));
+    expect(step(run, tick(T0 + 10 + AD_SHOW_WATCHDOG_MS - 1)).effects).toEqual([]);
+    expect(settles(step(run, tick(T0 + 10 + AD_SHOW_WATCHDOG_MS)).effects)).toHaveLength(1);
+  });
+
+  it('the explicit watchdog event is a forced check and ignores visibility', () => {
+    const run = steps(ready(), request('rewarded', T0), hidden(T0 + 100));
+    expect(settles(step(run, { type: 'watchdog', now: T0 + 200 }).effects)).toEqual([{ type: 'settle', format: 'rewarded', outcome: 'unavailable' }]);
+  });
+
+  it('a show requested while hidden starts counting at the first foreground', () => {
+    const run = steps(ready(), hidden(T0 + 1), request('rewarded', T0 + 2));
+    expect(nextDeadline(run.state)).toBe(T0 + AD_MAX_AGE_MS + 1);
+    expect(step(run, tick(T0 + 10 * MIN)).effects).toEqual([]);
+    expect(nextDeadline(step(run, visible(T0 + 10 * MIN)).state)).toBe(T0 + 10 * MIN + AD_SHOW_WATCHDOG_MS);
+  });
+});
+
+describe('visibility bookkeeping', () => {
+  it('is tracked while disabled, survives disable and enable, and a fresh state is visible', () => {
+    expect(initialAdState().visible).toBe(true);
+    const off = steps(start(), hidden(T0));
+    expect(off.state.visible).toBe(false);
+    expect(off.effects).toEqual([]);
+    expect(step(off, { type: 'disable' }).state.visible).toBe(false);
+    const on = step(off, enable(T0 + 1));
+    expect(on.state.visible).toBe(false);
+    expect(loads(on.effects)).toEqual(['rewarded', 'interstitial']);
+    expect(step(on, visible(T0 + 2)).state.visible).toBe(true);
+  });
+});
+
+describe('aged: the device slept, a loaded ad is older than the monotonic clock says', () => {
+  it('moves the load stamp back, so a stale ad is not offered and the next tick reloads it', () => {
+    const run = ready();
+    expect(isReady(run.state, 'rewarded', T0 + 1000)).toBe(true);
+    const slept = step(run, aged(AD_MAX_AGE_MS));
+    expect(isReady(slept.state, 'rewarded', T0 + 1000)).toBe(false);
+    expect(slept.effects).toEqual([]);
+    expect(loads(step(slept, tick(T0 + 1000)).effects).sort()).toEqual(['interstitial', 'rewarded']);
+  });
+
+  it('does not touch an ad that is still loading, a failed one or a disabled state', () => {
+    const loading = step(start(), enable());
+    expect(step(loading, aged(AD_MAX_AGE_MS)).state).toEqual(loading.state);
+    expect(step(start(), aged(AD_MAX_AGE_MS)).state).toEqual(start().state);
   });
 });
 

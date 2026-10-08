@@ -25,7 +25,7 @@
 // It resolves to a boolean; callers use the module-scoped `admob`.
 import { Capacitor } from '@capacitor/core';
 import { IAP } from './IAP';
-import { ADMOB, ADMOB_EVENTS, ADMOB_TARGETING, AD_EXTERNAL_FLOW_SOURCE } from '../config/monetization.config';
+import { ADMOB, ADMOB_EVENTS, ADMOB_TARGETING, AD_EXTERNAL_FLOW_SOURCE, AD_SLEEP_MIN_MS } from '../config/monetization.config';
 import { UMP_DEBUG } from '../config/consent.config';
 import { Analytics } from './Analytics';
 import { rewardedShown, rewardedEarned, interstitialShown, interstitialSuppressed } from './analyticsEvents';
@@ -35,7 +35,8 @@ import { initialAdState, isBusy, isReady, nextDeadline, reduceAd, type AdEffect,
 import type { AdMobInitializeOptions, AdMobListenerHandle, AdMobPlugin } from './native/admob';
 import { Saves } from '../platform/saves';
 import { setExternalFlowActive } from '../platform/externalFlow';
-import { onAppForeground } from '../platform/foreground';
+import { isAppForeground, isPauseOverlayUp, onAppBackground, onAppForeground } from '../platform/foreground';
+import { resumeAudioAfterAd } from '../platform/lifecycleDecision';
 import { sharedAudio } from '../utils/AudioSynth';
 import { SettingsStore } from '../utils/SettingsStore';
 
@@ -86,7 +87,7 @@ let consented = false;
 
 let adState: AdState = initialAdState();
 let timer: ReturnType<typeof setTimeout> | null = null;
-let unsubscribeForeground: (() => void) | null = null;
+let visibilityTracked = false;
 let listenersRegistered = false;
 
 // The one show a caller is waiting on (the reducer's busy guard guarantees at most one).
@@ -99,7 +100,31 @@ let pending: Pending | null = null;
 // Whether game audio was wanted when the current ad took over the screen (AudioSynth.wantsAudio, P00-T11); null = no ad showing.
 let audioWasWanted: boolean | null = null;
 
+// Clocks. Every reducer event is stamped with a MONOTONIC reading, so a change of the wall clock can neither stall nor fire a show
+// timer (watchdog, grace, ceiling). Date.now() is kept only where a wall time is the point: the persisted interstitial cooldown and
+// the session start.
+function monoNow(): number {
+  return performance.now();
+}
+
+// The monotonic clock stands still while the device sleeps (Android), the wall clock does not. The gap between them is time a loaded
+// ad aged unseen: it is credited to the reducer (`aged`) whenever the reducer is about to be asked about an ad's age, so an ad that
+// outlived its hour in a drawer is never offered. A gap under AD_SLEEP_MIN_MS is clock noise, not a sleep.
+let clockMark = { wall: Date.now(), mono: monoNow() };
+function creditSleep(): void {
+  const wall = Date.now();
+  const mono = monoNow();
+  const slept = wall - clockMark.wall - (mono - clockMark.mono);
+  clockMark = { wall, mono };
+  if (slept >= AD_SLEEP_MIN_MS) apply({ type: 'aged', ms: slept });
+}
+
 function dispatch(event: AdEvent): AdEffect[] {
+  creditSleep();
+  return apply(event);
+}
+
+function apply(event: AdEvent): AdEffect[] {
   const reduction = reduceAd(adState, event);
   adState = reduction.state;
   for (const effect of reduction.effects) runEffect(effect);
@@ -117,8 +142,8 @@ function rearm(): void {
   if (at === null) return;
   timer = setTimeout(() => {
     timer = null;
-    dispatch({ type: 'tick', now: Date.now() });
-  }, Math.max(0, at - Date.now()));
+    dispatch({ type: 'tick', now: monoNow() });
+  }, Math.max(0, at - monoNow()));
 }
 
 function runEffect(effect: AdEffect): void {
@@ -154,7 +179,7 @@ function startLoad(format: AdFormat): void {
   // The outcome arrives as an event; a rejection is the fallback for a prepare the plugin failed before any event (a second
   // failedToLoad for the same attempt is ignored by the reducer).
   const failed = (): void => {
-    dispatch({ type: 'failedToLoad', format, now: Date.now() });
+    dispatch({ type: 'failedToLoad', format, now: monoNow() });
   };
   try {
     if (format === 'rewarded') void ad.prepareRewardVideoAd({ adId: ADMOB.rewardedAdId }).catch(failed);
@@ -176,7 +201,7 @@ function startShow(format: AdFormat): void {
   }
   const ad = admob;
   const failed = (): void => {
-    dispatch({ type: 'failedToShow', format, now: Date.now() });
+    dispatch({ type: 'failedToShow', format, now: monoNow() });
   };
   if (!ad) {
     failed();
@@ -200,7 +225,7 @@ function requestShow(next: Pending): void {
     return;
   }
   pending = next;
-  const effects = dispatch({ type: 'requestShow', format: next.format, now: Date.now() });
+  const effects = dispatch({ type: 'requestShow', format: next.format, now: monoNow() });
   if (effects.some((e) => e.type === 'refuse')) {
     pending = null;
     next.resolve('unavailable');
@@ -210,13 +235,22 @@ function requestShow(next: Pending): void {
 // The show is over (dismissed, failed or abandoned by the watchdog): clear the flag, give the audio back, resolve the caller.
 function finishShow(format: AdFormat, outcome: ShowOutcome): void {
   setExternalFlowActive(false, AD_EXTERNAL_FLOW_SOURCE);
-  const wanted = audioWasWanted;
+  const wanted = audioWasWanted === true;
   audioWasWanted = null;
   if (wanted) {
-    // Only if the player still has Sound or Music on (the same rule as the foreground path in platform/lifecycleDecision.ts).
+    // Only when the foreground path (platform/lifecycleDecision.ts) could do the same: the app is in front, no pause overlay is up and
+    // Sound or Music is on. A show that ends while the app is hidden, or under the overlay, leaves the audio to that path: it comes
+    // back when the player does, never as sound behind a hidden app.
     try {
       const settings = SettingsStore.get();
-      if (settings.sound || settings.music) sharedAudio().resume();
+      const give = resumeAudioAfterAd({
+        wasWanted: wanted,
+        foreground: isAppForeground(),
+        pauseOverlayUp: isPauseOverlayUp(),
+        sound: settings.sound,
+        music: settings.music,
+      });
+      if (give) sharedAudio().resume();
     } catch {
       // audio unavailable: ignore
     }
@@ -248,7 +282,7 @@ function initializeOptions(): AdMobInitializeOptions {
 async function registerListeners(ad: AdMobPlugin): Promise<void> {
   if (listenersRegistered) return;
   const handles: AdMobListenerHandle[] = [];
-  const at = (): number => Date.now();
+  const at = monoNow;
   const R = ADMOB_EVENTS.REWARDED;
   const I = ADMOB_EVENTS.INTERSTITIAL;
   try {
@@ -298,9 +332,21 @@ function adsReady(): boolean {
 // The consent gate closes: no more loading, no pending retry or expiry, nothing ready; a show in flight is settled unavailable.
 function closeGate(): void {
   consented = false;
-  unsubscribeForeground?.();
-  unsubscribeForeground = null;
   dispatch({ type: 'disable' });
+}
+
+// Follow the app to the background and back for good (the lifecycle reports both, platform/foreground.ts): the reducer's show timers
+// count foreground time only, and a return re-checks expiry and any due retry, which a hidden app's timers may have held back.
+function trackVisibility(): void {
+  if (visibilityTracked) return;
+  visibilityTracked = true;
+  onAppBackground(() => {
+    dispatch({ type: 'hidden', now: monoNow() });
+  });
+  onAppForeground(() => {
+    dispatch({ type: 'visible', now: monoNow() });
+    if (consented) dispatch({ type: 'tick', now: monoNow() });
+  });
 }
 
 export type RewardedOutcome = ShowOutcome; // earned | dismissed | unavailable
@@ -317,11 +363,9 @@ export const Ads = {
     consented = true;
     if (!(await initSdk())) return;
     if (!consented) return; // revoked while the SDK was coming up
-    unsubscribeForeground ??= onAppForeground(() => {
-      // A timer can be held back while the app is hidden: on return, re-check expiry and any due retry.
-      if (consented) dispatch({ type: 'tick', now: Date.now() });
-    });
-    dispatch({ type: 'enable', now: Date.now() });
+    trackVisibility();
+    dispatch({ type: isAppForeground() ? 'visible' : 'hidden', now: monoNow() }); // where the app is right now
+    dispatch({ type: 'enable', now: monoNow() });
   },
 
   // The player withdrew consent (Settings > Privacy choices): stop preloading, cancel pending retries and refuse every ad for the
@@ -334,7 +378,9 @@ export const Ads = {
   // production web build has no rewarded ad.
   isRewardedReady(): boolean {
     if (!Capacitor.isNativePlatform()) return import.meta.env.DEV;
-    return adsReady() && isReady(adState, 'rewarded', Date.now()) && !isBusy(adState);
+    if (!adsReady()) return false;
+    creditSleep();
+    return isReady(adState, 'rewarded', monoNow()) && !isBusy(adState);
   },
 
   // A native ad show is in flight (requested until it settles). Callers use it to ignore a second tap.
@@ -389,7 +435,8 @@ export const Ads = {
       return 'skipped';
     }
     if (!adsReady()) return 'skipped'; // consent gate: no request before Ads.init succeeded
-    if (isBusy(adState) || !isReady(adState, 'interstitial', Date.now())) {
+    creditSleep();
+    if (isBusy(adState) || !isReady(adState, 'interstitial', monoNow())) {
       Analytics.track(interstitialSuppressed('not_ready')); // not preloaded: skip rather than make the player wait for a load
       return 'skipped';
     }

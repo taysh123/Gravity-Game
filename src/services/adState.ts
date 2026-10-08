@@ -16,9 +16,20 @@
 //                                                                    the reward came, else wait AD_LATE_REWARD_GRACE_MS; reload
 //   reward            the player earned the reward                -> earned (settles at once if already inside the grace window)
 //   watchdog          the show timer fired                        -> no `showed` yet: settle unavailable, reload
+//   hidden / visible  the app left / came back to the foreground  -> the show watchdog and the on-screen ceiling count FOREGROUND time only
+//   aged              the device slept (the monotonic clock did not) -> every loaded ad is that much older
 //   tick(now)         time passed                                 -> watchdog / grace / on-screen ceiling, retry due, expired ad
 //
 // A show settles exactly once: outcome `earned | dismissed | unavailable` (an interstitial only ever dismissed | unavailable).
+// So a reward that arrives after its show was settled (by the ceiling, say) finds nothing in flight and is dropped: the caller was
+// already told, and there is nobody left to hand the reward to.
+//
+// Clocks. Every event's `now` is a MONOTONIC reading (performance.now() in the glue): a wall-clock change can neither stall nor fire a
+// show timer. It stands still while the device sleeps, so the glue sends `aged` for that time; a loaded ad grows older in real time.
+//
+// Foreground time. JS timers keep running while the app is hidden (Home, an ad covering the activity, screen off), so wall time must
+// not settle an ad the player merely left. The watchdog (before Showed) and the ceiling (after it) therefore accumulate time only
+// while the app is visible and restart their count on return. The late-reward grace is 300 ms and stays plain elapsed time.
 import { AD_LATE_REWARD_GRACE_MS, AD_MAX_AGE_MS, AD_RETRY_BACKOFF_MS, AD_SHOWING_MAX_MS, AD_SHOW_WATCHDOG_MS } from '../config/monetization.config';
 
 export type AdFormat = 'rewarded' | 'interstitial';
@@ -40,14 +51,17 @@ export type ShowPhase = 'requested' | 'showing' | 'closing';
 export interface ShowState {
   format: AdFormat;
   phase: ShowPhase;
-  requestedAt: number;
-  showedAt: number; // valid from phase `showing`
+  // Foreground time spent in the current phase (requested, then showing): fgMs closed stretches plus, while visible, the open one
+  // that began at fgSince (null while hidden).
+  fgMs: number;
+  fgSince: number | null;
   earned: boolean; // the reward event arrived (rewarded only)
   graceUntil: number; // valid in phase `closing`
 }
 
 export interface AdState {
   enabled: boolean;
+  visible: boolean; // the app is in the foreground (tracked even while disabled)
   rewarded: FormatState;
   interstitial: FormatState;
   show: ShowState | null; // the one show in flight (null = none): the busy guard
@@ -64,6 +78,9 @@ export type AdEvent =
   | { type: 'dismissed'; format: AdFormat; now: number }
   | { type: 'reward'; now: number }
   | { type: 'watchdog'; now: number }
+  | { type: 'hidden'; now: number }
+  | { type: 'visible'; now: number }
+  | { type: 'aged'; ms: number }
   | { type: 'tick'; now: number };
 
 export type AdEffect =
@@ -82,7 +99,7 @@ export interface AdReduction {
 const freshFormat = (): FormatState => ({ ready: false, loading: false, loadedAt: 0, retryIdx: 0, retryAt: null });
 
 export function initialAdState(): AdState {
-  return { enabled: false, rewarded: freshFormat(), interstitial: freshFormat(), show: null };
+  return { enabled: false, visible: true, rewarded: freshFormat(), interstitial: freshFormat(), show: null };
 }
 
 // ---- Selectors ------------------------------------------------------------------------------------------------------------
@@ -98,16 +115,30 @@ export function isBusy(s: AdState): boolean {
   return s.show !== null;
 }
 
+// When the show in flight needs a tick: the end of the late-reward grace, or the foreground time still left before the watchdog / the
+// ceiling. null while the app is hidden: that clock is stopped, and the `visible` event that restarts it re-arms the timer.
+function showDeadline(show: ShowState): number | null {
+  if (show.phase === 'closing') return show.graceUntil;
+  if (show.fgSince === null) return null;
+  return show.fgSince + (phaseLimit(show) - show.fgMs);
+}
+
+// How much foreground time a phase may take: the watchdog before Showed, the on-screen ceiling after it.
+function phaseLimit(show: ShowState): number {
+  return show.phase === 'requested' ? AD_SHOW_WATCHDOG_MS : AD_SHOWING_MAX_MS;
+}
+
+function foregroundElapsed(show: ShowState, now: number): number {
+  return show.fgMs + (show.fgSince === null ? 0 : now - show.fgSince);
+}
+
 // The next instant tick(now) has something to do: the soonest of the show timers, the expiry of a loaded ad and a due retry.
 // null when nothing is pending (the glue then arms no timer).
 export function nextDeadline(s: AdState): number | null {
   if (!s.enabled) return null;
   const due: number[] = [];
-  if (s.show) {
-    if (s.show.phase === 'requested') due.push(s.show.requestedAt + AD_SHOW_WATCHDOG_MS);
-    else if (s.show.phase === 'showing') due.push(s.show.showedAt + AD_SHOWING_MAX_MS);
-    else due.push(s.show.graceUntil);
-  }
+  const showDue = s.show ? showDeadline(s.show) : null;
+  if (showDue !== null) due.push(showDue);
   for (const format of FORMATS) {
     const f = s[format];
     if (f.ready) due.push(f.loadedAt + AD_MAX_AGE_MS + 1);
@@ -147,12 +178,12 @@ function onTick(s: AdState, now: number, forceWatchdog: boolean): AdReduction {
   let r: AdReduction = { state: s, effects: [] };
   const show = s.show;
   if (show) {
-    if (show.phase === 'requested' && (forceWatchdog || now - show.requestedAt >= AD_SHOW_WATCHDOG_MS)) {
+    if (show.phase === 'requested' && (forceWatchdog || foregroundElapsed(show, now) >= AD_SHOW_WATCHDOG_MS)) {
       // The ad never reported Showed: give up on it. Its loaded ad is spent either way, so fetch the next one.
       r = andThen(settle(s, 'unavailable'), (n) => reload(n, show.format));
     } else if (show.phase === 'closing' && now >= show.graceUntil) {
       r = settle(s, 'dismissed'); // the reload already went out at Dismissed
-    } else if (show.phase === 'showing' && now - show.showedAt >= AD_SHOWING_MAX_MS) {
+    } else if (show.phase === 'showing' && foregroundElapsed(show, now) >= AD_SHOWING_MAX_MS) {
       r = andThen(settle(s, show.earned ? 'earned' : 'dismissed'), (n) => reload(n, show.format)); // a lost Dismissed
     }
   }
@@ -165,15 +196,27 @@ function onTick(s: AdState, now: number, forceWatchdog: boolean): AdReduction {
   return r;
 }
 
+function onVisibility(s: AdState, e: { type: 'hidden' | 'visible'; now: number }): AdReduction {
+  if (e.type === 'hidden') {
+    if (!s.visible) return ignore(s);
+    const show = s.show && s.show.fgSince !== null ? { ...s.show, fgMs: s.show.fgMs + (e.now - s.show.fgSince), fgSince: null } : s.show;
+    return { state: { ...s, visible: false, show }, effects: [] };
+  }
+  if (s.visible) return ignore(s);
+  const show = s.show && s.show.fgSince === null ? { ...s.show, fgSince: e.now } : s.show;
+  return { state: { ...s, visible: true, show }, effects: [] };
+}
+
 export function reduceAd(s: AdState, e: AdEvent): AdReduction {
+  if (e.type === 'hidden' || e.type === 'visible') return onVisibility(s, e);
   if (e.type === 'enable') {
     if (s.enabled) return ignore(s);
-    const fresh: AdState = { ...initialAdState(), enabled: true };
+    const fresh: AdState = { ...initialAdState(), enabled: true, visible: s.visible };
     return andThen(reload(fresh, 'rewarded'), (n) => reload(n, 'interstitial'));
   }
   if (e.type === 'disable') {
     const open = s.show ? settle(s, 'unavailable').effects : [];
-    return { state: initialAdState(), effects: open };
+    return { state: { ...initialAdState(), visible: s.visible }, effects: open };
   }
   if (!s.enabled) {
     // Consent withdrawn (or never given): plugin events that are still in flight change nothing and a show is refused.
@@ -194,7 +237,7 @@ export function reduceAd(s: AdState, e: AdEvent): AdReduction {
     case 'requestShow': {
       if (s.show) return { state: s, effects: [{ type: 'refuse', format: e.format, reason: 'busy' }] };
       if (!isReady(s, e.format, e.now)) return { state: s, effects: [{ type: 'refuse', format: e.format, reason: 'not_ready' }] };
-      const show: ShowState = { format: e.format, phase: 'requested', requestedAt: e.now, showedAt: 0, earned: false, graceUntil: 0 };
+      const show: ShowState = { format: e.format, phase: 'requested', fgMs: 0, fgSince: s.visible ? e.now : null, earned: false, graceUntil: 0 };
       // The loaded ad is consumed by the show attempt, whatever happens: it is not ready and nothing is loading until it settles.
       return { state: { ...patch(s, e.format, { ready: false }), show }, effects: [{ type: 'show', format: e.format }] };
     }
@@ -206,7 +249,7 @@ export function reduceAd(s: AdState, e: AdEvent): AdReduction {
       }
       const effects: AdEffect[] = [{ type: 'shown', format: e.format }];
       if (e.format === 'rewarded') effects.push({ type: 'resetInterstitialClock' });
-      return { state: { ...s, show: { ...show, phase: 'showing', showedAt: e.now } }, effects };
+      return { state: { ...s, show: { ...show, phase: 'showing', fgMs: 0, fgSince: s.visible ? e.now : null } }, effects }; // the ceiling's count starts here
     }
     case 'failedToShow': {
       if (!s.show || s.show.format !== e.format || s.show.phase !== 'requested') return ignore(s);
@@ -226,6 +269,11 @@ export function reduceAd(s: AdState, e: AdEvent): AdReduction {
       if (!show || show.format !== 'rewarded') return ignore(s);
       if (show.phase === 'closing') return settle(s, 'earned'); // inside the grace window
       return { state: { ...s, show: { ...show, earned: true } }, effects: [] };
+    }
+    case 'aged': {
+      // The monotonic clock stood still while the device slept: a loaded ad is older than its stamp says.
+      const shift = (f: FormatState): FormatState => (f.ready ? { ...f, loadedAt: f.loadedAt - e.ms } : f);
+      return { state: { ...s, rewarded: shift(s.rewarded), interstitial: shift(s.interstitial) }, effects: [] };
     }
     case 'watchdog':
       return onTick(s, e.now, true);
