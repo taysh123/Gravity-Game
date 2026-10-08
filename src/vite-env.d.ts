@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 
-// Debug-only build overrides for the UMP consent flow (src/config/consent.config.ts). Unset in every normal build; the release
-// guard that refuses a release build carrying either is P00-T20.
+// Debug-only build overrides for the UMP consent flow (src/config/consent.config.ts). Unset in every normal build. A release build
+// (vite build --mode release) ignores them, and npm run release:check / the release Vite build refuse to run while either is set (P00-T20).
 interface ImportMetaEnv {
   // "EEA" | "US" | "OTHER" | "NOT_EEA": makes the UMP SDK behave as if the test device is in that region.
   readonly VITE_UMP_DEBUG_GEOGRAPHY?: string;

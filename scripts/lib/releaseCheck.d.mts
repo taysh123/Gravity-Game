@@ -24,6 +24,6 @@ export interface ReleaseInput {
 }
 
 export function checkRelease(input: ReleaseInput): ReleaseFailure[];
-export function scanAssets(files: ReadonlyArray<{ path: string; text: string }>): ReleaseFailure[];
+export function scanAssets(files: ReadonlyArray<{ path: string; text: string }>, where?: string): ReleaseFailure[];
 export function parseLastUploadedVersionCode(statusText: string): number | null;
 export function formatReport(failures: ReadonlyArray<ReleaseFailure>, title: string): string;

@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:release": "tsc && vite build --mode release",
     "preview": "vite preview",
     "test": "vitest run",
     "optimize:assets": "node scripts/optimize-logos.mjs",
@@ -14,7 +15,8 @@
     "cap:sync": "npm run build && cap sync",
     "cap:open:android": "cap open android",
     "facts": "node scripts/facts.mjs",
-    "facts:check": "node scripts/facts.mjs --check"
+    "facts:check": "node scripts/facts.mjs --check",
+    "release:check": "node scripts/release-check.mjs"
   },
   "dependencies": {
     "@capacitor-community/admob": "8.0.0",

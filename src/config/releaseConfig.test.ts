@@ -1,10 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ADMOB_PROD, ADMOB_TEST, REVENUECAT_API_KEY_PROD, REVENUECAT_API_KEY_TEST, selectMonetizationIds } from './monetization.config';
 import { RELEASE_MODE } from './build.config';
-import { GOOGLE_TEST_PUBLISHER, checkRelease, parseLastUploadedVersionCode } from '../../scripts/lib/releaseCheck.mjs';
-import { gatherReleaseInputs } from '../../scripts/lib/releaseInputs.mjs';
+import { GOOGLE_TEST_PUBLISHER, checkRelease, parseLastUploadedVersionCode, scanAssets } from '../../scripts/lib/releaseCheck.mjs';
+import { gatherReleaseInputs, readSyncedAssets } from '../../scripts/lib/releaseInputs.mjs';
 
 // P00-T20: release configuration guard. Three layers are pinned here:
 //   1. which ids a build mode selects (selectMonetizationIds, and the real module under a stubbed MODE);
@@ -184,4 +187,112 @@ describe('the repo\'s own state against the release check', () => {
     const facts = /<!-- facts:start -->[\s\S]*<!-- facts:end -->/.exec(status)?.[0] ?? '';
     expect(facts).not.toContain('last-uploaded-version-code');
   });
+});
+
+describe('scripts/release-check.mjs (the CLI behind npm run release:check)', () => {
+  const script = join(ROOT, 'scripts', 'release-check.mjs');
+  const run = (args: string[], extraEnv: Record<string, string> = {}) => {
+    const env: NodeJS.ProcessEnv = { ...process.env, ...extraEnv };
+    if (!('VITE_UMP_DEBUG_GEOGRAPHY' in extraEnv)) delete env.VITE_UMP_DEBUG_GEOGRAPHY;
+    if (!('VITE_UMP_TEST_DEVICE_IDS' in extraEnv)) delete env.VITE_UMP_TEST_DEVICE_IDS;
+    return spawnSync(process.execPath, [script, ...args], { cwd: ROOT, encoding: 'utf8', env });
+  };
+  const gateOpen = Object.values(ADMOB_PROD).some((v) => v === '') || REVENUECAT_API_KEY_PROD === '';
+
+  it.runIf(gateOpen)('fails today with the list of what the owner must supply (exit 1)', () => {
+    const r = run([]);
+    expect(r.status).toBe(1);
+    for (const item of ['ADMOB_PROD.appId', 'ADMOB_PROD.rewardedAdId', 'ADMOB_PROD.interstitialAdId', 'REVENUECAT_API_KEY_PROD']) {
+      expect(r.stderr).toContain(item);
+    }
+    expect(r.stderr).toContain('src/config/monetization.config.ts');
+    expect(r.stderr).toMatch(/REFUSED, \d+ problems?/);
+  }, 60_000);
+
+  it('also lists the debug UMP variables when they are set (exit 1), without printing the device ids', () => {
+    const r = run([], { VITE_UMP_DEBUG_GEOGRAPHY: 'EEA', VITE_UMP_TEST_DEVICE_IDS: 'ABCDEF0123' });
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain('VITE_UMP_DEBUG_GEOGRAPHY');
+    expect(r.stderr).toContain('VITE_UMP_TEST_DEVICE_IDS');
+    expect(r.stderr).not.toContain('ABCDEF0123');
+  }, 60_000);
+
+  it('--assets scans only the synced assets: a clean bundle passes, a debug bundle and an empty dir are refused', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'gravity-release-assets-'));
+    const empty = mkdtempSync(join(tmpdir(), 'gravity-release-empty-'));
+    try {
+      mkdirSync(join(dir, 'assets'));
+      writeFileSync(join(dir, 'assets', 'index-clean.js'), 'const a={appId:"ca-app-pub-1111222233334444~5555666677"};');
+      const clean = run(['--assets', '--assets-dir', dir]);
+      expect(clean.status).toBe(0);
+      expect(clean.stdout).toContain('OK');
+
+      writeFileSync(join(dir, 'assets', 'index-debug.js'), 'const a={appId:"ca-app-pub-3940256099942544~3347511713"};');
+      const dirty = run(['--assets', '--assets-dir', dir]);
+      expect(dirty.status).toBe(1);
+      expect(dirty.stderr).toContain('assets/index-debug.js');
+      expect(dirty.stderr).not.toContain('index-clean.js');
+
+      const none = run(['--assets', '--assets-dir', empty]);
+      expect(none.status).toBe(1);
+      expect(none.stderr).toContain('npx cap sync android');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+      rmSync(empty, { recursive: true, force: true });
+    }
+  }, 60_000);
+
+  it('an unknown argument is a usage error (exit 2)', () => {
+    const r = run(['--bogus']);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toContain('usage:');
+  }, 60_000);
+});
+
+describe('npm scripts and the release Vite build', () => {
+  const pkg = JSON.parse(read('package.json')) as { scripts: Record<string, string> };
+  const viteConfig = read('vite.config.ts');
+
+  it('release:check runs scripts/release-check.mjs', () => {
+    expect(pkg.scripts['release:check']).toBe('node scripts/release-check.mjs');
+  });
+
+  it('build:release is the type-checked Vite build in the release mode', () => {
+    expect(pkg.scripts['build:release']).toBe('tsc && vite build --mode release');
+  });
+
+  it('the default build is unchanged (debug ids)', () => {
+    expect(pkg.scripts.build).toBe('tsc && vite build');
+  });
+
+  it('vite.config.ts runs the release check inside a release build, and only there', () => {
+    expect(viteConfig).toContain('scripts/release-check.mjs');
+    expect(viteConfig).toMatch(/config\.mode !== 'release'\) return/);
+    expect(viteConfig).toContain("apply: 'build'");
+  });
+});
+
+describe('the asset scan against real Vite output (the minified-bundle heuristic is pinned to what the minifier really emits)', () => {
+  const viteBin = join(ROOT, 'node_modules', 'vite', 'bin', 'vite.js');
+  const build = (outDir: string, extraEnv: Record<string, string>) => {
+    const env: NodeJS.ProcessEnv = { ...process.env, ...extraEnv };
+    delete env.NODE_ENV; // vitest sets NODE_ENV=test; a real build must see the default
+    if (!('VITE_UMP_DEBUG_GEOGRAPHY' in extraEnv)) delete env.VITE_UMP_DEBUG_GEOGRAPHY;
+    if (!('VITE_UMP_TEST_DEVICE_IDS' in extraEnv)) delete env.VITE_UMP_TEST_DEVICE_IDS;
+    const r = spawnSync(process.execPath, [viteBin, 'build', '--outDir', outDir, '--emptyOutDir'], { cwd: ROOT, encoding: 'utf8', env });
+    expect(r.status, r.stderr || r.stdout).toBe(0);
+    return readSyncedAssets(ROOT, outDir);
+  };
+
+  it('a default build is flagged for Google\'s test publisher only; one made with both debug variables is flagged for all three', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'gravity-release-build-'));
+    try {
+      const plain = scanAssets(build(join(dir, 'plain'), {})).map((f: { id: string }) => f.id);
+      expect(plain).toEqual(['asset-google-test-id']);
+      const debug = scanAssets(build(join(dir, 'debug'), { VITE_UMP_DEBUG_GEOGRAPHY: 'EEA', VITE_UMP_TEST_DEVICE_IDS: 'ABCDEF0123' })).map((f: { id: string }) => f.id);
+      expect(debug).toEqual(['asset-google-test-id', 'asset-debug-geography', 'asset-test-devices']);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }, 180_000);
 });

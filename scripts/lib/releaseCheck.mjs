@@ -130,11 +130,11 @@ const countOf = (text, needle) => text.split(needle).length - 1;
 
 /**
  * Scan the synced web assets (android/app/src/main/assets/public/**\/*.js) for what must not be in a release AAB.
- * files: [{ path, text }]. A debug bundle synced by mistake carries Google's test publisher in its AdMob ids.
+ * files: [{ path, text }]; where: the directory they came from, for the message. A debug bundle synced by mistake carries Google's test publisher in its AdMob ids.
  */
-export function scanAssets(files) {
+export function scanAssets(files, where = 'android/app/src/main/assets/public') {
   if (files.length === 0) {
-    return [fail('asset-none', 'android/app/src/main/assets/public', 'holds no .js files, so nothing was checked. Build and sync first: npm run build:release, then npx cap sync android.')];
+    return [fail('asset-none', where, 'holds no .js files, so nothing was checked. Build and sync first: npm run build:release, then npx cap sync android.')];
   }
   const out = [];
   for (const { path, text } of files) {

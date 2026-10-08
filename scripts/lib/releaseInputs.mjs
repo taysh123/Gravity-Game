@@ -2,7 +2,7 @@
 // versionCode) and the synced web assets, and hands them to the pure checks in ./releaseCheck.mjs. Shared by
 // scripts/release-check.mjs and the release Vite build, so both see the same inputs.
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { parseLastUploadedVersionCode } from './releaseCheck.mjs';
 import { deriveVersionCode } from './versionCode.mjs';
 
@@ -36,16 +36,16 @@ export function gatherReleaseInputs({ root, env, admobProd, revenueCatApiKey, ad
   return { admobProd, revenueCatApiKey, env: debugEnv, versionCode, versionCodeError, lastUploadedVersionCode, admobAppIdArg };
 }
 
-/** Every .js file under the synced assets dir, as { path (relative to the dir, forward slashes), text }. Empty when not synced. */
-export function readSyncedAssets(root) {
-  const base = join(root, SYNCED_ASSETS_DIR);
+/** Every .js file under `dir` (default: the synced assets dir, relative to root), as { path (relative to dir, forward slashes), text }. Empty when absent. */
+export function readSyncedAssets(root, dir = SYNCED_ASSETS_DIR) {
+  const base = resolve(root, dir);
   if (!existsSync(base)) return [];
   const files = [];
-  const walk = (dir, rel) => {
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+  const walk = (current, rel) => {
+    for (const entry of readdirSync(current, { withFileTypes: true })) {
       const relPath = rel === '' ? entry.name : `${rel}/${entry.name}`;
-      if (entry.isDirectory()) walk(join(dir, entry.name), relPath);
-      else if (entry.isFile() && /\.(m?js)$/.test(entry.name)) files.push({ path: relPath, text: readFileSync(join(dir, entry.name), 'utf8') });
+      if (entry.isDirectory()) walk(join(current, entry.name), relPath);
+      else if (entry.isFile() && /\.(m?js)$/.test(entry.name)) files.push({ path: relPath, text: readFileSync(join(current, entry.name), 'utf8') });
     }
   };
   walk(base, '');

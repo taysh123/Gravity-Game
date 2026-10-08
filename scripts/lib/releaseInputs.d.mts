@@ -12,4 +12,4 @@ export function gatherReleaseInputs(args: {
   admobAppIdArg?: string;
 }): ReleaseInput;
 
-export function readSyncedAssets(root: string): Array<{ path: string; text: string }>;
+export function readSyncedAssets(root: string, dir?: string): Array<{ path: string; text: string }>;
