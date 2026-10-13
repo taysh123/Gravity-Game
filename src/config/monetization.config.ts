@@ -93,9 +93,10 @@ export const AD_SLEEP_MIN_MS = 1000;
 // open while the ad covers the app.
 export const AD_EXTERNAL_FLOW_SOURCE = 'ads';
 
-// Plugin event names, mirrored from @capacitor-community/admob 8.0.0 because the web bundle never imports the package (same reason
-// as ADMOB_TARGETING); src/config/consentConfig.test.ts pins each value to the real enum, so a plugin bump that renames one fails
-// there. dist/esm/reward/reward-ad-plugin-events.enum.d.ts (RewardAdPluginEvents) and
+// Plugin event names, mirrored from @capacitor-community/admob 8.0.0 (unchanged through 8.2.1) because the web bundle never imports the
+// package (same reason as ADMOB_TARGETING); src/config/consentConfig.test.ts pins each value to the real enum, so a plugin bump that
+// renames one fails there. Events 8.1.0 / 8.2.0 added (impression revenue, rewarded click) are deliberately not listened to; that
+// test names them. dist/esm/reward/reward-ad-plugin-events.enum.d.ts (RewardAdPluginEvents) and
 // dist/esm/interstitial/interstitial-ad-plugin-events.enum.d.ts (InterstitialAdPluginEvents).
 export const ADMOB_EVENTS = {
   REWARDED: {

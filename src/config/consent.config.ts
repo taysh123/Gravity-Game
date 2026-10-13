@@ -19,7 +19,7 @@ export const CONSENT = {
 // Flipping this is a legal decision, not a tuning knob; the default ships as D-10.5 says.
 export const CRASH_REQUIRES_ANALYTICS_CONSENT: boolean = false;
 
-// UMP debug geography numbers, mirrored from @capacitor-community/admob 8.0.0 AdmobConsentDebugGeography
+// UMP debug geography numbers, mirrored from @capacitor-community/admob 8.0.0 AdmobConsentDebugGeography (identical in 8.2.1)
 // (dist/esm/consent/consent-debug-geography.enum.d.ts). The web bundle never imports the plugin package, so the values live
 // here; src/config/consentConfig.test.ts pins every one of them to the real enum.
 export const UMP_DEBUG_GEOGRAPHY = {

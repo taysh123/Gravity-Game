@@ -3,7 +3,7 @@
 //
 // The rule is "deny unless the answer is clear": a missing, malformed, unresolved (REQUIRED / UNKNOWN) or failed answer is
 // ALL DENIED with canRequestAds=false, so nothing is requested or logged on a guess. UMP status strings come from the
-// plugin's AdmobConsentStatus / PrivacyOptionsRequirementStatus enums (@capacitor-community/admob 8.0.0,
+// plugin's AdmobConsentStatus / PrivacyOptionsRequirementStatus enums (@capacitor-community/admob 8.0.0, identical in 8.2.1,
 // dist/esm/consent/consent-status.enum.d.ts and privacy-options-requirement-status.enum.d.ts); the Android plugin returns
 // them as these exact strings (AdConsentExecutor.getConsentStatusString, and ConsentInformation.PrivacyOptionsRequirementStatus.name()).
 

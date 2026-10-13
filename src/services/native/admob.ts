@@ -12,6 +12,13 @@ import type { ADMOB_EVENTS } from '../../config/monetization.config';
 // plugin really returns (android/.../consent/AdConsentExecutor.java, AdMob.java setRequestConfiguration). The enum values the
 // app sends are mirrored in src/config (consent.config.ts, monetization.config.ts ADMOB_TARGETING) and pinned to the real
 // enums by src/config/consentConfig.test.ts.
+//
+// P00-T08: every shape below is unchanged in 8.2.1 (the consent directory of the package is byte-identical to 8.0.0). Two 8.2.x
+// behaviours the app tolerates by construction, so no code depends on the plugin version:
+//  - prepareRewardVideoAd / prepareInterstitial now reject with a STRING `code` (8.0.0: none). The events keep `AdMobError.code` as a
+//    number. Nothing here reads either `code`: Ads.ts uses the rejection (and the FailedToLoad event) only as "this load failed".
+//  - Android initialize() resolves only once the banner parent view exists and rejects if it is missing or does not appear within
+//    5 s. Ads.initSdk() already treats a rejection as "no ads this session", without caching the failure.
 export interface AdMobRewardItem {
   type?: string;
   amount?: number;

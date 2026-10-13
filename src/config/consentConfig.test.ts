@@ -54,9 +54,44 @@ describe('mirrored plugin event names match @capacitor-community/admob', () => {
     expect(ADMOB_EVENTS.INTERSTITIAL.DISMISSED).toBe(InterstitialAdPluginEvents.Dismissed);
   });
 
-  it('the mirror has no stale extras: it holds exactly the enum members (6 + 5)', () => {
-    expect(Object.values(ADMOB_EVENTS.REWARDED).sort()).toEqual(Object.values(RewardAdPluginEvents).sort());
-    expect(Object.values(ADMOB_EVENTS.INTERSTITIAL).sort()).toEqual(Object.values(InterstitialAdPluginEvents).sort());
+  // P00-T08: these checks hold on 8.0.0 and on 8.2.x, so the AdMob bump stays a pure package.json/lock commit. 8.1.0 added the
+  // paid-event (impression revenue) events and 8.2.0 the rewarded click event; the app listens to none of them (it records no ad
+  // revenue or clicks and grants a reward only from the Rewarded event), so they are named here instead of being silently ignored. A
+  // plugin release that adds any OTHER event fails the "unaccounted" check below, which forces a deliberate listen-or-skip decision.
+  // On 8.0.0 the real enums do not have these members at all, which is fine: the list only ever subtracts.
+  const KNOWN_UNLISTENED = {
+    REWARDED: ['onRewardedVideoAdClicked', 'onRewardedVideoAdImpression'],
+    INTERSTITIAL: ['interstitialAdImpression'],
+  } as const;
+
+  function unaccounted(real: readonly string[], mirrored: readonly string[], unlistened: readonly string[]): string[] {
+    return real.filter((name) => !mirrored.includes(name) && !unlistened.includes(name));
+  }
+
+  it('the mirror has no stale extras: every mirrored name is a real enum member (6 + 5)', () => {
+    const realRewarded: string[] = Object.values(RewardAdPluginEvents);
+    const realInterstitial: string[] = Object.values(InterstitialAdPluginEvents);
+    expect(Object.values(ADMOB_EVENTS.REWARDED).filter((name) => !realRewarded.includes(name))).toEqual([]);
+    expect(Object.values(ADMOB_EVENTS.INTERSTITIAL).filter((name) => !realInterstitial.includes(name))).toEqual([]);
+    expect(Object.values(ADMOB_EVENTS.REWARDED)).toHaveLength(6);
+    expect(Object.values(ADMOB_EVENTS.INTERSTITIAL)).toHaveLength(5);
+  });
+
+  it('every real plugin event is either mirrored (and listened to) or on the known-unlistened list', () => {
+    expect(unaccounted(Object.values(RewardAdPluginEvents), Object.values(ADMOB_EVENTS.REWARDED), KNOWN_UNLISTENED.REWARDED)).toEqual([]);
+    expect(unaccounted(Object.values(InterstitialAdPluginEvents), Object.values(ADMOB_EVENTS.INTERSTITIAL), KNOWN_UNLISTENED.INTERSTITIAL)).toEqual([]);
+  });
+
+  it('the accounting is not vacuous: an event that is neither mirrored nor on the list is reported', () => {
+    expect(unaccounted(['a', 'b', 'c'], ['a'], ['b'])).toEqual(['c']);
+    expect(unaccounted(['a'], ['a'], [])).toEqual([]);
+    // 8.2.1's real rewarded enum has two members beyond the mirror: with an empty list both would be reported.
+    expect(unaccounted(['onRewardedVideoAdLoaded', 'onRewardedVideoAdClicked'], ['onRewardedVideoAdLoaded'], [])).toEqual(['onRewardedVideoAdClicked']);
+  });
+
+  it('the known-unlistened list never overlaps the events the app listens to', () => {
+    for (const name of KNOWN_UNLISTENED.REWARDED) expect(Object.values(ADMOB_EVENTS.REWARDED)).not.toContain(name);
+    for (const name of KNOWN_UNLISTENED.INTERSTITIAL) expect(Object.values(ADMOB_EVENTS.INTERSTITIAL)).not.toContain(name);
   });
 });
 
