@@ -3,7 +3,7 @@
 > **What this document is for.** This document is the authority on **why** the game and the business exist and **what** they are.
 > - [MASTER-ROADMAP](roadmap/MASTER-ROADMAP.md) (with [EXECUTION-ORDER](roadmap/EXECUTION-ORDER.md)) says **when and in what order** things happen.
 > - [STATUS](STATUS.md) says **where the project is** (task state, gates, counts).
-> - [DECISIONS](roadmap/DECISIONS.md) wins any conflict, and its Amendments override entry bodies. If this document disagrees with it, fix this document.
+> - [DECISIONS](roadmap/DECISIONS.md) and the plan of record (MASTER-ROADMAP §1–§7) win any conflict, and DECISIONS' Amendments override entry bodies. If this document disagrees with it, fix this document.
 >
 > "Gravity Flow" is the working title by True Story Labs (D-19). The name is undecided: see [NAMING-STUDY](launch/NAMING-STUDY.md) and OA-07.
 
@@ -61,7 +61,7 @@ The source is the [research audit](research/2026-10-14-gravity-flow-research-aud
 | Tier (audit §4) | Who | What it means for Gravity Flow |
 |---|---|---|
 | **A**: same control idea | **Gravity Pull** (iOS only, 2026, unrated, "tap and hold to create a gravity well", endless runs, Remove Ads $3.99). **Gravity Well** (2009, criticized because "errors feel unfair"). **Orbit** (2015, a small premium-leaning success; iOS 4.8). **Glide** (2015, gravity toggles toward fixed orbs) | The mechanic sits where **nothing has broken out commercially**. Gravity Pull is the nearest rival. Gravity Flow differs through its campaign, bosses and stars |
-| **B**: 2025–26 physics one-gesture hits | **Royal Smash** (10M+ band, 4.65; an ad-ROAS business with heavy paid UA; itself a copy of Smash Fest, one of 38 Smash Fest-like games). **Marble Sort** (10M+, 4.70, IAP-leaning; about $10.8M IAP, an AppMagic estimate). Also Knock Out and All in Hole | The closest **structural** comparables: one gesture, many short levels, light ads. Two of them hold 4.65–4.70 ratings with the lowest one-star shares in the review sample. Their share of ad complaints (13–17%) is not clearly lower than that of the sort games (7–59%), so the sample does not show that light ads are the reason (audit §5, revision r4) |
+| **B**: 2025–26 physics one-gesture hits | **Royal Smash** (10M+ band, 4.65; an ad-ROAS business with heavy paid UA; itself a copy of Smash Fest, one of 38 Smash Fest-like games). **Marble Sort** (10M+, 4.70, IAP-leaning; about $10.8M IAP, an AppMagic estimate). Also Knock Out and All in Hole | The closest **structural** comparables: one gesture, many short levels, light ads. Royal Smash and Marble Sort hold 4.65–4.70 ratings, and Royal Smash and Knock Out have the lowest one-star shares in the review sample (1.1% and 1.8%). Their share of ad complaints (13–17%) is not clearly lower than that of the sort games (7–59%), so the sample does not show that light ads are the reason (audit §5, revision r4) |
 | **C**: flow, sort and traffic wave | Pixel Flow, Yarn Loop, Colony Flow, Magic Sort, Food Hunt, Loop Sort, Bus Traffic Fever | Useful only as **behaviour**: how they onboard, where they place ads, what players punish. Their revenue rests on paid UA and point-of-loss sales |
 | **D**: incumbents | Candy Crush, Royal Match, Toon Blast, Gossip Harbor | Context only. They are not targets for a no-UA, cosmetic-only, 13+ indie |
 
@@ -96,7 +96,7 @@ The source is the [research audit](research/2026-10-14-gravity-flow-research-aud
 
 **Decided direction**
 - **[Decided]** Quality before count. D-27 calls the existing levels raw material: copies are replaced or relabelled as remixes, and self-solving or bypassed levels are reworked. Worlds may hold 8–12 levels, and **the level count is an outcome, not a goal**. P4 must not grow the level count, add worlds or add Expert packs (MASTER-ROADMAP §4 P4).
-- **[Decided]** The engine behind the rework: stable level ids and v2 data (D-05, A-03), a headless QA bot with blocking CI gates (D-06, A-04, A-23), and a zone-strength rebalance (D-04, *PROPOSED*, confirmed by the bot fight-test).
+- **[Decided]** The engine behind the rework: stable level ids and v2 data (D-05, A-03), a headless QA bot with blocking CI gates (D-06, A-04, A-23), and a zone-strength rebalance (D-04, *PROPOSED*; to be confirmed by the bot fight-test in P2).
 - **[Decided]** An open frontier replaces strict sequential unlock: the next two levels are always open, and the next world opens at 80% of world size (D-07, A-23).
 - **The P4 rework (design intent):**
   - A 10-slot template, TEACH → EXPERIMENT → DEVELOP → TWIST → COMBINE → MASTER, with a sawtooth difficulty curve and bosses as climaxes (GAMEPLAY-DESIGN B.1–B.5).
@@ -141,19 +141,19 @@ The source is the [research audit](research/2026-10-14-gravity-flow-research-aud
 - **[Decided] The ads policy (D-24).**
   - Rewarded ads are opt-in and hidden when no ad is loaded.
   - The interstitial is gated: never after a death or a failure streak, and never at level start. P7 tunes the caps through Remote Config: none before lifetime level 12, at least 180 s **and** 3 completions apart, at most 4 a session and 10 a day.
-  - Once P3 lands, the interstitial shows only after NEXT (D-08, A-22).
+  - Once P3 lands, the interstitial shows only after NEXT (D-08, D-24).
 - **[Decided] Remove Ads and its bundles.** The `no_ads` entitlement is granted by `remove_ads`, `starter_pack` and `founders_pack`. Entitlements are the source of truth, and prices come only from the store (D-09). Cosmetic-only "twin" SKUs mean nobody pays twice for Remove Ads, and Supporter and seasonal packs come later (A-06, A-24).
 - **[Owner input needed]** "No-Ads+" stays USER-GATED and off by default (D-37).
 
 **Built**
 - **[Built]** Four store products and their entitlements (`src/services/entitlements.ts:25-42`). No product sells currency.
-- **[Built]** Earn-only Stardust and Fragments (`src/utils/CurrencyStore.ts:1-2`, `src/utils/FragmentStore.ts:1-3`). Cosmetics are free, Stardust, Fragments or bundle (`src/utils/cosmetics.ts:33-35`).
+- **[Built]** Earn-only Stardust and Fragments (`src/utils/CurrencyStore.ts:1-2`, `src/utils/FragmentStore.ts:1-3`). Cosmetics are acquired free, by Stardust, by Fragments, through an achievement or in a bundle (`src/utils/cosmetics.ts:10`, `:33-35`).
 - **[Built]** Rewarded placements through one flow: campaign 2×, Endless revive, Endless 2× and free Fragments. The flow disables the button before the await and grants nothing if the scene has gone (`src/ui/adOffer.ts:35-64`; call sites `GameScene.ts:1448`, `EndlessScene.ts:529,553`, `CosmeticsScene.ts:359`).
 - **[Built]** A conservative interstitial gate: `no_ads` owners skip it (`IAP.isPremium()`, `src/services/IAP.ts:133`), plus a session grace, a minimum gap and protection for boss, 3★ and streak wins (`src/services/interstitial.ts:27-35`, `monetization.config.ts:69-73`). It is shown only on the win-advance path (`GameScene.ts:1196-1203`). The lifetime-L12 grace and the daily caps are P7 tuning.
 
 **Research context** (audit §1, §5; MASTER-ROADMAP §14)
 - Revenue is modest by design (R-51). About **1.83%** of mobile users make any IAP, and Gravity Flow sells nothing at the point of loss.
-- The hits sell Remove Ads at $7.99–$10 *because* their interstitials are intrusive, and their "converts extremely well" comes from that irritation. Expect lower conversion here. No source measures conversion when ads are light (audit §11 Q7).
+- *Inference (audit §5; B12 is only "Partly" transferable):* the hits sell Remove Ads at $7.99–$10, likely helped by intrusive interstitials, and Pixel Flow's "converts extremely well" is reported where ads are aggressive. Expect lower conversion here. No source measures conversion when ads are light (audit §11 Q7).
 - Modeled ad ARPDAU runs from about $0.006 to $0.061 depending on geography. These are model outputs from third-party eCPMs, not forecasts.
 - The repo's payer-conversion target of ≥ 1.5% (MASTER-ROADMAP P7) is a heuristic (MONETIZATION B.10).
 
@@ -170,7 +170,7 @@ The source is the [research audit](research/2026-10-14-gravity-flow-research-aud
 - **[Decided] iOS** comes after a stable Android launch (D-29, DEFERRED; MASTER-ROADMAP P12 must-not).
 - **[Decided] Live ops by data, at a solo-developer cadence.**
   - Remote Config with dated, never-retroactive overrides (D-14).
-  - Battle pass, event currency and server events are deferred (D-30).
+  - Battle pass and event currency are deferred (D-30); server-run events are a P6/P10 "must not do yet" (MASTER-ROADMAP §4).
   - The design budget is one 2-hour sitting a month, about 10 dev-days a year ([LIVE-OPS](design/LIVE-OPS.md) §10).
   - The North Star metric, Weekly Returning Clearers, is not measurable before M3 ([SUCCESS-METRICS](roadmap/SUCCESS-METRICS.md) §3).
 - **Growth through ratings, retention and organic channels.**
@@ -244,6 +244,7 @@ The source is the [research audit](research/2026-10-14-gravity-flow-research-aud
 9. Will True Story Labs ship other games, and should Gravity Flow be built to cross-promote with them (audit §11 Q2)?
 10. Under what evidence and budget, if any, would paid UA be acceptable?
 11. Does the long-term vision include player-made levels or a sandbox (audit §7b B14, deferred)?
+12. Are the working assumptions in §2 right: 3–8 minute sessions, and casual puzzle players as the main audience?
 
 ## 13. Sources
 

@@ -133,6 +133,7 @@ P12 ships the game safely and then improves it with data. It has four parts:
   - **Levers:** (a) a Remote Config value (P6; no release); (b) a store listing experiment (P11-T15); (c) a data/content release; (d) a code release.
   - **Evaluate** after ≥7 days and a minimum sample (for example 1,000 sessions per arm), comparing cohorts by `app_version_code`.
   - **Rule:** one change per metric at a time.
+- **Release notes rule:** any change to `FORCE_SCALE`, zone strength or level physics is announced in the release notes; silent force tuning reads as an "invisible paywall" (MASTER-ROADMAP §9.3).
 - **Release train:** hotfixes any time. Minor releases every 2–4 weeks, each through internal (≥24 h, device smoke) → production staged 20 → 100%. The closed track is optional for minors and recommended for large changes.
 
 ### 3.8 iOS track (D-29)

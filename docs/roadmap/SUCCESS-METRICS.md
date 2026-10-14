@@ -134,6 +134,7 @@ These metrics must not get worse while we optimise anything else. A breach pause
 ### M1 — Closed Beta (12–20 testers × ≥ 14 continuous days)
 | Metric | Target | Gate | Method |
 |---|---|---|---|
+| Data safety + privacy policy | Form accepted before the first closed-track release (Play requires it for closed and open tracks; OA-12) | Blocking | Play Console |
 | Opted-in testers | ≥ 12 for 14 continuous days (recruit 18–20) | Blocking, if the account requires it | Play Console [DOC] launch E2 |
 | Feedback log | Every tester session triaged, and the log kept for the production-access form | Blocking | Owner (launch E2) |
 | Q-05 bot gate failures, W1–3 | 0 | Blocking | `level-quality-report.json` |
