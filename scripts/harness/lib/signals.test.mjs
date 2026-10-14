@@ -5,6 +5,7 @@ import {
   classifyRequestFailed,
   classifyResponse,
   classifySpaFallback,
+  compileMatcher,
   createSignalLog,
   isSameOrigin,
 } from './signals.mjs';
@@ -148,5 +149,116 @@ describe('createSignalLog', () => {
     const log = createSignalLog();
     log.add(null);
     expect(log.size()).toBe(0);
+  });
+});
+
+describe('compileMatcher: what ctx.expectSignal accepts (P00-T21)', () => {
+  it('a non-empty string matches as a substring of the signal text', () => {
+    const m = compileMatcher({ text: 'injected frame error' });
+    expect(m.matches({ kind: 'console.error', text: '[frameGuard] Error: injected frame error', where: '' })).toBe(true);
+    expect(m.matches({ kind: 'console.error', text: 'something else', where: '' })).toBe(false);
+  });
+
+  it('a RegExp is searched, and a /g flag does not make it stateful', () => {
+    const m = compileMatcher({ text: /frame error/g });
+    const s = { kind: 'pageerror', text: 'Error: frame error', where: '' };
+    expect(m.matches(s)).toBe(true);
+    expect(m.matches(s)).toBe(true);
+  });
+
+  it('kind, when given, must equal the signal kind', () => {
+    const m = compileMatcher({ kind: 'console.error', text: 'boom' });
+    expect(m.matches({ kind: 'console.error', text: 'boom', where: '' })).toBe(true);
+    expect(m.matches({ kind: 'pageerror', text: 'Error: boom', where: '' })).toBe(false);
+  });
+
+  it('refuses a catch-all: no text, a blank string, a RegExp that matches the empty string, a bad kind', () => {
+    const bad = [undefined, null, {}, { text: '' }, { text: '   ' }, { text: /.*/ }, { text: /x?/ }, { text: new RegExp('') }, { text: 42 }, { kind: '', text: 'x' }, { kind: 3, text: 'x' }];
+    for (const matcher of bad) expect(() => compileMatcher(matcher)).toThrow(/^expectSignal:/);
+  });
+
+  it('describes itself for the failure message', () => {
+    expect(compileMatcher({ kind: 'console.error', text: 'boom' }).describe).toBe('a console.error signal containing "boom"');
+    expect(compileMatcher({ text: /bo+m/ }).describe).toBe('a signal matching /bo+m/');
+  });
+});
+
+describe('createSignalLog: expected signals (ctx.expectSignal, P00-T21)', () => {
+  const sig = (kind, text) => ({ kind, text, where: '' });
+
+  it('a signal that matches an expectation is claimed: it is counted there and is not a failure', () => {
+    const log = createSignalLog();
+    const e = log.expect({ kind: 'console.error', text: 'injected' }, 'the injected error');
+    log.add(sig('console.error', 'injected error 1'));
+    log.add(sig('console.error', 'injected error 2'));
+    expect(e.count()).toBe(2);
+    expect(e.signals().map((s) => s.text)).toEqual(['injected error 1', 'injected error 2']);
+    expect(log.all()).toEqual([]);
+    expect(log.size()).toBe(0);
+    expect(log.claimed()).toHaveLength(2);
+  });
+
+  it('a signal that matches no expectation still fails the job', () => {
+    const log = createSignalLog();
+    log.expect({ text: 'injected' }, 'x');
+    log.add(sig('pageerror', 'TypeError: something real'));
+    expect(log.all().map((s) => s.text)).toEqual(['TypeError: something real']);
+  });
+
+  it('only signals that arrive after the expectation is declared are claimed', () => {
+    const log = createSignalLog();
+    log.add(sig('console.error', 'injected too early'));
+    const e = log.expect({ text: 'injected' }, 'x');
+    log.add(sig('console.error', 'injected on time'));
+    expect(e.count()).toBe(1);
+    expect(log.all().map((s) => s.text)).toEqual(['injected too early']);
+  });
+
+  it('ctx.step marks see only unclaimed signals', () => {
+    const log = createSignalLog();
+    log.expect({ text: 'injected' }, 'x');
+    const m = log.mark();
+    log.add(sig('console.error', 'injected'));
+    expect(log.since(m)).toEqual([]);
+    log.add(sig('console.error', 'real'));
+    expect(log.since(m).map((s) => s.text)).toEqual(['real']);
+  });
+
+  it('the first matching expectation claims a signal', () => {
+    const log = createSignalLog();
+    const a = log.expect({ text: 'frame' }, 'a');
+    const b = log.expect({ text: 'frame error' }, 'b');
+    log.add(sig('console.error', 'frame error'));
+    expect([a.count(), b.count()]).toEqual([1, 0]);
+  });
+
+  it('expectations() reports each one with its count, so the runner can fail one that never matched', () => {
+    const log = createSignalLog();
+    log.expect({ text: 'never' }, 'never arrives');
+    log.expect({ kind: 'console.error', text: 'arrives' }, 'arrives');
+    log.add(sig('console.error', 'it arrives'));
+    expect(log.expectations()).toEqual([
+      { label: 'never arrives', describe: 'a signal containing "never"', count: 0 },
+      { label: 'arrives', describe: 'a console.error signal containing "arrives"', count: 1 },
+    ]);
+  });
+
+  it('a closed log claims nothing either', () => {
+    const log = createSignalLog();
+    const e = log.expect({ text: 'injected' }, 'x');
+    log.close();
+    log.add(sig('console.error', 'injected'));
+    expect(e.count()).toBe(0);
+    expect(log.size()).toBe(0);
+  });
+
+  it('expect() without a label uses the matcher description', () => {
+    const log = createSignalLog();
+    log.expect({ text: 'boom' });
+    expect(log.expectations()[0].label).toBe('a signal containing "boom"');
+  });
+
+  it('refuses a catch-all matcher at declaration', () => {
+    expect(() => createSignalLog().expect({ text: '' }, 'x')).toThrow(/^expectSignal:/);
   });
 });

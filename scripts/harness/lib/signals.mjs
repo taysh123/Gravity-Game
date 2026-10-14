@@ -4,8 +4,11 @@
 // Playwright `pageerror`), and any failed or 4xx/5xx SAME-ORIGIN request fails the run. There is no allow-list here.
 // Something noisy gets fixed at its source (the favicon 404 was fixed with a <link rel="icon"> in index.html).
 // Third-party requests are the one scoping rule: the harness only owns what the app itself serves.
-// TODO(P00-T21): a check that deliberately provokes an error (a throw inside update) needs ctx.expectSignal(matcher): claim the
-// matching signal(s) so they do not fail the job, and fail if none arrives. Not built yet; no exclusion list until then.
+//
+// Expected signals (P00-T21) are not an allow-list. A check that provokes an error ON PURPOSE (window.__crashTest throws inside
+// update) declares it with ctx.expectSignal(matcher, label) right before the action. From then on, a signal matching that specific
+// matcher is claimed instead of failing the job, and the job FAILS if none arrives. A matcher must name the error (compileMatcher
+// refuses a catch-all), and it only ever applies to the one job that declared it.
 
 export function isSameOrigin(url, origin) {
   try {
@@ -64,13 +67,61 @@ export function classifySpaFallback(res, origin) {
   return { kind: 'missing file', text: `a ${res.resourceType} request got text/html (the SPA fallback, so the file does not exist)`, where: res.url };
 }
 
+/**
+ * Compile a ctx.expectSignal matcher: { kind?, text }. `text` is required. A non-empty string matches as a substring of the signal
+ * text; a RegExp is searched (String.prototype.search, so a /g flag is harmless). There is no catch-all: a blank string or a RegExp
+ * that matches the empty string is refused, so an expectation can only claim the specific error a check provokes on purpose.
+ * `kind` (optional) must equal the signal's kind exactly ('console.error', 'pageerror', 'request failed', 'http 404', ...).
+ */
+export function compileMatcher(matcher) {
+  const { kind, text } = matcher !== null && typeof matcher === 'object' ? matcher : {};
+  if (kind !== undefined && (typeof kind !== 'string' || kind.trim() === '')) {
+    throw new Error('expectSignal: kind, when given, must be a non-empty string such as "console.error" or "pageerror"');
+  }
+  let test;
+  let what;
+  if (typeof text === 'string' && text.trim() !== '') {
+    test = (s) => s.includes(text);
+    what = `containing ${JSON.stringify(text)}`;
+  } else if (text instanceof RegExp && ''.search(text) === -1) {
+    test = (s) => s.search(text) !== -1;
+    what = `matching ${String(text)}`;
+  } else {
+    throw new Error('expectSignal: text must be a non-empty string or a RegExp that cannot match the empty string (no catch-all)');
+  }
+  return {
+    describe: `a ${kind ? `${kind} ` : ''}signal ${what}`,
+    matches: (signal) => (kind === undefined || signal.kind === kind) && test(String(signal.text)),
+  };
+}
+
 export function createSignalLog() {
   const list = [];
+  const claimed = [];
+  const expectations = [];
   let closed = false;
   return {
+    /** Record a signal. One that an expectation matches is claimed (counted there, never a failure); a closed log records nothing. */
     add(signal) {
-      if (signal && !closed) list.push(signal);
+      if (!signal || closed) return;
+      const owner = expectations.find((e) => e.matcher.matches(signal));
+      if (owner) {
+        owner.matched.push(signal);
+        claimed.push(signal);
+        return;
+      }
+      list.push(signal);
     },
+    /** ctx.expectSignal: claim the signals matching `matcher` from now on. Returns { count(), signals() }. */
+    expect(matcher, label) {
+      const compiled = compileMatcher(matcher);
+      const entry = { label: label || compiled.describe, matcher: compiled, matched: [] };
+      expectations.push(entry);
+      return { count: () => entry.matched.length, signals: () => entry.matched.slice() };
+    },
+    /** Every expectation with its match count; the runner fails the job for each one still at 0. */
+    expectations: () => expectations.map((e) => ({ label: e.label, describe: e.matcher.describe, count: e.matched.length })),
+    claimed: () => claimed.slice(),
     mark: () => list.length,
     since: (mark) => list.slice(mark),
     all: () => list.slice(),

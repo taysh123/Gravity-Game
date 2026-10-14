@@ -13,6 +13,7 @@
 //   weight     optional rough cost (about seconds on a CI runner). Used to start heavy jobs first when jobs run in parallel and
 //              to balance --shard slices. Default 1.
 //   run        async (page, ctx). ctx.expect(ok, label, detail) records an assertion; a throw is a failure too.
+//              ctx.expectSignal(matcher, label) claims an error the check provokes on purpose (lib/runner.mjs, lib/signals.mjs).
 
 import { MODES } from './args.mjs';
 
