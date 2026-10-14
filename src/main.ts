@@ -15,6 +15,7 @@ import { EndlessScene } from './scenes/EndlessScene';
 import { RunSelectScene } from './scenes/RunSelectScene';
 import { EndScene } from './scenes/EndScene';
 import { Crash } from './services/Crash';
+import { BUILD_LABEL, sceneCrashKeys, webViewVersion } from './services/crashContext';
 import { IAP } from './services/IAP';
 import { sharedAudio } from './utils/AudioSynth';
 import { installBackNavigation, installLifecycle } from './platform/lifecycle';
@@ -90,7 +91,31 @@ function syncViewport(): void {
   game.scale.refresh();
 }
 
-game.events.once(Phaser.Core.Events.READY, syncViewport);
+// Crashlytics context (P00-T21): every report says which WebView, renderer and build it came from, and which scene, level and mode
+// were running; each scene start is also a breadcrumb (Crash.log). The mapping is pure (services/crashContext.ts). Installed from
+// READY: the scenes exist by then (the SceneManager boots its queue on READY, before this listener runs).
+function installCrashContext(g: Phaser.Game): void {
+  Crash.setKeys({
+    webview_ver: webViewVersion(navigator.userAgent),
+    renderer: g.config.renderType === Phaser.WEBGL ? 'WebGL' : 'Canvas',
+    build: BUILD_LABEL,
+  });
+  const describeScene = (scene: Phaser.Scene): void => {
+    const key = scene.scene.key;
+    Crash.setKeys(sceneCrashKeys(key, scene.sys.settings.data));
+    Crash.log(`scene ${key}`);
+  };
+  for (const scene of g.scene.getScenes(false)) {
+    scene.sys.events.on(Phaser.Scenes.Events.CREATE, () => describeScene(scene));
+  }
+  // A scene that already started inside READY (the first one) was created before these listeners existed.
+  for (const scene of g.scene.getScenes(true)) describeScene(scene);
+}
+
+game.events.once(Phaser.Core.Events.READY, () => {
+  installCrashContext(game);
+  syncViewport();
+});
 window.addEventListener('resize', syncViewport);
 window.addEventListener('orientationchange', syncViewport);
 window.visualViewport?.addEventListener('resize', syncViewport);

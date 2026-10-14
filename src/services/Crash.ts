@@ -12,24 +12,40 @@
 // Collection switch (D-10.5). The manifest sets firebase_crashlytics_collection_enabled=false, which is the default of a FRESH
 // install only: setCrashlyticsCollectionEnabled() is persisted by Crashlytics (DataCollectionArbiter, SharedPreferences) and takes
 // precedence over the manifest, so once enable() has run, collection is already on at process start from the next launch, before
-// UMP has answered. Loading the plugin (init, log, recordError) never changes collection. enable() / disable() are the only
+// UMP has answered. Loading the plugin (init, log, recordError, setKeys) never changes collection. enable() / disable() are the only
 // switches; bootServices calls enable() once consent has resolved, whatever the outcome, and disable() only when
 // CRASH_REQUIRES_ANALYTICS_CONSENT is on and analytics_storage is denied (the legal check on that default is a STATUS gate).
+//
+// Reports (P00-T21). recordError sends the message with its parsed V8 stack (stackParse.ts), so Crashlytics shows and groups the
+// JavaScript frames instead of the plugin's own Java frames. Each distinct message is sent once per session, and at most
+// PLATFORM.CRASH_MAX_PER_SESSION reports are sent per session, so an error that repeats every frame cannot flood the bridge or the
+// quota. The set of sent messages is also the counter and never holds more than the cap, so the message itself is the dedupe key.
+// setKeys sets Crashlytics custom keys (main.ts: scene, level, mode, webview_ver, renderer, build) and sends only values that
+// changed. log() leaves a breadcrumb on the next report through the plugin's `log` method.
 import { Capacitor } from '@capacitor/core';
+import { PLATFORM } from '../config/platform.config';
+import { parseStack, type StackFrame } from './stackParse';
+
+type KeyType = 'string' | 'long' | 'double';
 
 type Crashlytics = {
   setEnabled(o: { enabled: boolean }): Promise<void>;
-  addLogMessage(o: { message: string }): Promise<void>;
-  recordException(o: { message: string }): Promise<void>;
+  log(o: { message: string }): Promise<void>;
+  setCustomKey(o: { key: string; value: string | number; type: KeyType }): Promise<void>;
+  recordException(o: { message: string; stacktrace?: StackFrame[] }): Promise<void>;
 };
 
 let plugin: Crashlytics | null = null;
 let ready: Promise<boolean> | null = null;
 // The last collection state asked for in this session (null = nothing asked yet). A repeat of the same state is not sent again.
 let collection: boolean | null = null;
+// The messages reported this session (never more than CRASH_MAX_PER_SESSION).
+const reported = new Set<string>();
+// The last value sent for each custom key; a repeat is not sent again.
+const sentKeys = new Map<string, string | number>();
 
 // Resolves true once the native plugin is available. Does NOT return the proxy.
-// The in-flight promise is memoized, so every caller (init, log, recordError, enable) waits on the same load instead of
+// The in-flight promise is memoized, so every caller (init, log, recordError, setKeys, enable) waits on the same load instead of
 // seeing a half-initialised `plugin === null` and dropping its report. A failed load is not retried. It does NOT change
 // collection: that is enable() / disable()'s job, after consent.
 function ensure(): Promise<boolean> {
@@ -65,6 +81,9 @@ function setCollection(on: boolean): void {
   });
 }
 
+const keyType = (value: string | number): KeyType =>
+  typeof value === 'string' ? 'string' : Number.isInteger(value) ? 'long' : 'double';
+
 export const Crash = {
   init(): void {
     if (Capacitor.isNativePlatform()) void ensure();
@@ -95,18 +114,39 @@ export const Crash = {
   log(message: string): void {
     if (Capacitor.isNativePlatform()) {
       void ensure().then((ok) => {
-        if (ok) plugin?.addLogMessage({ message }).catch(() => {});
+        if (ok) plugin?.log({ message }).catch(() => {});
       });
     } else if (import.meta.env.DEV) console.debug('[crash:log]', message);
+  },
+
+  // Crashlytics custom keys, attached to every later report. Native only. A value equal to the last one sent is skipped, and a
+  // rejected native call is forgotten so the next setKeys with that value tries again. Never throws.
+  setKeys(keys: Readonly<Record<string, string | number>>): void {
+    if (!Capacitor.isNativePlatform()) return;
+    for (const [key, value] of Object.entries(keys)) {
+      if (sentKeys.get(key) === value) continue;
+      sentKeys.set(key, value);
+      void ensure().then((ok) => {
+        if (!ok) return;
+        plugin?.setCustomKey({ key, value, type: keyType(value) }).catch(() => {
+          if (sentKeys.get(key) === value) sentKeys.delete(key);
+        });
+      });
+    }
   },
 
   recordError(error: unknown, context?: string): void {
     const base = error instanceof Error ? error.message : String(error);
     const message = context ? `[${context}] ${base}` : base;
+    // Dedupe, then the per-session cap (P00-T21): a repeat of a reported message, or anything past the cap, stops here.
+    if (reported.has(message) || reported.size >= PLATFORM.CRASH_MAX_PER_SESSION) return;
+    reported.add(message);
     if (Capacitor.isNativePlatform()) {
+      const stacktrace = parseStack(error instanceof Error ? error.stack : undefined);
+      const report = stacktrace.length > 0 ? { message, stacktrace } : { message };
       // .catch swallows any native failure so the global error bridge can't recurse.
       void ensure().then((ok) => {
-        if (ok) plugin?.recordException({ message }).catch(() => {});
+        if (ok) plugin?.recordException(report).catch(() => {});
       });
     } else if (import.meta.env.DEV) console.error('[crash]', message, error);
   },

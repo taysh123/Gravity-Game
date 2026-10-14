@@ -96,8 +96,12 @@ export const PLATFORM = {
   FRAME_ERROR_BURST: 3,
   FRAME_ERROR_WINDOW_MS: 2000,
 
-  // Crashlytics: non-fatal reports sent per session (deduplicated by message hash).
+  // Crashlytics (src/services/Crash.ts): non-fatal reports sent per session; each distinct message is sent once (P00-T21 enforces both).
   CRASH_MAX_PER_SESSION: 5,
+  // At most this many V8 frames go with a report (src/services/stackParse.ts). V8 records 10 by default; this bounds the bridge payload.
+  CRASH_MAX_STACK_FRAMES: 32,
+  // The `level` custom key when a scene has no level (menus, Gravity Run, a GameScene start without one): src/services/crashContext.ts.
+  CRASH_NO_LEVEL: 0,
 
   // Pre-consent analytics queue length; the oldest event is dropped beyond this.
   ANALYTICS_QUEUE_MAX: 100,
