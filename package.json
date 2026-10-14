@@ -19,7 +19,7 @@
     "release:check": "node scripts/release-check.mjs"
   },
   "dependencies": {
-    "@capacitor-community/admob": "8.0.0",
+    "@capacitor-community/admob": "8.2.1",
     "@capacitor-firebase/analytics": "8.5.2",
     "@capacitor-firebase/crashlytics": "8.5.2",
     "@capacitor/android": "8.5.2",

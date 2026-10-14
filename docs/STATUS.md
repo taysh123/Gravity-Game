@@ -25,7 +25,7 @@
 | `phaser` | 3.90.0 |
 | `@capacitor/core` | 8.5.2 |
 | `@capacitor/android` | 8.5.2 |
-| `@capacitor-community/admob` | 8.0.0 |
+| `@capacitor-community/admob` | 8.2.1 |
 | `@revenuecat/purchases-capacitor` | 13.7.0 |
 | `@capacitor-firebase/analytics` | 8.5.2 |
 | `@capacitor-firebase/crashlytics` | 8.5.2 |
