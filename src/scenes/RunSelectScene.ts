@@ -28,6 +28,7 @@ export class RunSelectScene extends Phaser.Scene {
     const reduced = reducedMotionActive();
 
     this.cosmic = new CosmicBackground(this);
+    console.error('TEMPORARY P00-T24 injected error: the smoke job must go red on this commit');
     fadeIn(this);
 
     this.add
