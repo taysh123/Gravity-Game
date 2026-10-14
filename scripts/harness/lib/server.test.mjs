@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 import net from 'node:net';
-import { describe, expect, it } from 'vitest';
-import { findFreePort, killCommand, serverCommand, spawnManaged, viteBin } from './server.mjs';
+import { describe, expect, it, vi } from 'vitest';
+import { findFreePort, killCommand, killTree, serverCommand, spawnManaged, viteBin } from './server.mjs';
 
 const alive = (pid) => {
   try {
@@ -134,4 +134,47 @@ describe('spawnManaged: stop() ends the process it started, its children, and no
     expect(proc.output()).toContain('hello out');
     expect(proc.output()).toContain('hello err');
   }, 20000);
+});
+
+describe('killTree: taskkill on the own child PID first, the child handle as the fallback', () => {
+  const liveChild = () => ({ pid: 4321, exitCode: null, signalCode: null, kill: vi.fn() });
+
+  it('on Windows runs taskkill /PID <pid> /T /F and leaves the handle alone when it worked', () => {
+    const child = liveChild();
+    const run = vi.fn(() => ({ status: 0 }));
+    killTree(child, { platform: 'win32', run });
+    expect(run).toHaveBeenCalledTimes(1);
+    expect(run.mock.calls[0].slice(0, 2)).toEqual(['taskkill', ['/PID', '4321', '/T', '/F']]);
+    expect(child.kill).not.toHaveBeenCalled();
+  });
+
+  it('on Windows falls back to child.kill() when taskkill exits non-zero', () => {
+    const child = liveChild();
+    killTree(child, { platform: 'win32', run: () => ({ status: 128 }) });
+    expect(child.kill).toHaveBeenCalledWith('SIGKILL');
+  });
+
+  it('on Windows falls back to child.kill() when taskkill cannot even be started', () => {
+    const child = liveChild();
+    killTree(child, { platform: 'win32', run: () => ({ status: null, error: new Error('spawn taskkill ENOENT') }) });
+    expect(child.kill).toHaveBeenCalledWith('SIGKILL');
+  });
+
+  it('does not throw when the fallback finds the process already gone', () => {
+    const child = liveChild();
+    child.kill = () => {
+      throw new Error('ESRCH');
+    };
+    expect(() => killTree(child, { platform: 'win32', run: () => ({ status: 128 }) })).not.toThrow();
+  });
+
+  it('does nothing for a child that already exited: its PID may belong to someone else by now', () => {
+    const run = vi.fn();
+    const exited = { ...liveChild(), exitCode: 0 };
+    killTree(exited, { platform: 'win32', run });
+    const signalled = { ...liveChild(), signalCode: 'SIGTERM' };
+    killTree(signalled, { platform: 'win32', run });
+    expect(run).not.toHaveBeenCalled();
+    expect(exited.kill).not.toHaveBeenCalled();
+  });
 });

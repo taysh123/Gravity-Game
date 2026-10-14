@@ -57,11 +57,24 @@ export function findFreePort() {
 
 const live = new Set();
 
-function killTreeNow(child) {
-  if (child.exitCode !== null || child.signalCode !== null || child.pid === undefined) return; // gone: the PID may be reused
-  const cmd = killCommand(process.platform, child.pid);
+/**
+ * End a child the harness started, with its tree, by its own PID (never by name). Windows: `taskkill /PID <pid> /T /F`, and the
+ * child handle's own kill when taskkill fails or cannot run, so a missing or broken taskkill never leaves the server running.
+ * POSIX: the process group the child leads. A child that already exited is left alone: its PID may be someone else's by now.
+ * `platform` and `run` are injectable for the unit test.
+ */
+export function killTree(child, { platform = process.platform, run = spawnSync } = {}) {
+  if (child.exitCode !== null || child.signalCode !== null || child.pid === undefined) return;
+  const cmd = killCommand(platform, child.pid);
   if (cmd) {
-    spawnSync(cmd.command, cmd.args, { stdio: 'ignore', windowsHide: true });
+    const result = run(cmd.command, cmd.args, { stdio: 'ignore', windowsHide: true });
+    if (!result || result.error || result.status !== 0) {
+      try {
+        child.kill('SIGKILL');
+      } catch {
+        // already gone
+      }
+    }
     return;
   }
   try {
@@ -113,7 +126,7 @@ export function spawnManaged(command, args, { label = command, cwd = ROOT, env =
     async stop() {
       live.delete(handle);
       if (done) return;
-      killTreeNow(child);
+      killTree(child);
       await new Promise((resolve) => {
         exitWaiters.push(resolve);
         setTimeout(resolve, 10000).unref(); // a stuck exit must not hang the run
@@ -121,7 +134,7 @@ export function spawnManaged(command, args, { label = command, cwd = ROOT, env =
     },
     killNow() {
       live.delete(handle);
-      killTreeNow(child);
+      killTree(child);
     },
   };
   live.add(handle);

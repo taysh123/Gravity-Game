@@ -20,6 +20,9 @@ scripts/__pycache__/
 # Only the curated finals under docs/media/{store,github,portfolio,linkedin} are committed.
 docs/media/raw/
 
+# Failure screenshots of the boot smoke harness (npm run smoke -- --artifacts=smoke-artifacts; CI uploads them).
+smoke-artifacts/
+
 .vercel
 
 # Capacitor / Android (generated locally by `npx cap add android`). Build outputs

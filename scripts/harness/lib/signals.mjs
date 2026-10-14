@@ -4,6 +4,8 @@
 // Playwright `pageerror`), and any failed or 4xx/5xx SAME-ORIGIN request fails the run. There is no allow-list here.
 // Something noisy gets fixed at its source (the favicon 404 was fixed with a <link rel="icon"> in index.html).
 // Third-party requests are the one scoping rule: the harness only owns what the app itself serves.
+// TODO(P00-T21): a check that deliberately provokes an error (a throw inside update) needs ctx.expectSignal(matcher): claim the
+// matching signal(s) so they do not fail the job, and fail if none arrives. Not built yet; no exclusion list until then.
 
 export function isSameOrigin(url, origin) {
   try {
