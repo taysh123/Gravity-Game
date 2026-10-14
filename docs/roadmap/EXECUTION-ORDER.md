@@ -50,19 +50,17 @@ flowchart TD
   S19 --> S23[23 iOS track]
 ```
 
-## "What should Claude do first thing tomorrow morning?"
-**Step 0 → Step 1, in order:**
-1. Create `docs/STATUS.md`. It is the single source of truth: generated facts, gates, next actions, open bugs, decisions.
-2. Add `scripts/facts.mjs` and its CI check.
-3. Archive the stale state docs.
-4. Strip state out of `CLAUDE.md`.
-5. Hygiene:
-   - remove the machine JDK path from `android/gradle.properties`
-   - untrack the dead `.ai/*` symlinks
-   - switch to `proguard-android-optimize.txt`
-   - adopt the versionCode scheme (D-20)
-
-Then **Step 1**: bump Capacitor to 8.5.2 plus the plugins. The installed 8.4.0 has a CVSS 9.3 advisory, and this must land before any other native change so later work is tested on the final runtime.
+## How to resume work (any session)
+Steps 0 and 1 are done (STATUS). To resume, do these in order:
+1. Read [`../STATUS.md`](../STATUS.md): the Task board, Next actions, Gates and Open bugs.
+2. Read the tail of the local SDD ledger `.superpowers/sdd/progress.md`. It is gitignored and not evidence on its own: it says what the last session dispatched, reviewed and merged.
+3. Verify the claims:
+   - `git status` / `git log` against `origin/master`.
+   - `gh run list` for CI.
+   - The Vercel deployment list for the web build (gate G-WEB).
+   - `npx tsc --noEmit` and `npm test`.
+4. Take the first task in the sequence below whose Task-board status is `ready`. Never restart a task the ledger records as complete; never run two tasks on one branch at once.
+5. If a task is blocked by an owner action (OA-xx in [`MASTER-ROADMAP.md`](MASTER-ROADMAP.md) §10), record the blocker in STATUS and move to the next independent task.
 
 ## The sequence
 
@@ -73,7 +71,7 @@ Then **Step 1**: bump Capacitor to 8.5.2 plus the plugins. The installed 8.4.0 h
 | 2 | Platform contract (D-11):<br>• back router (incl. **Endless pause button + overlay**, A-08)<br>• pause/foreground contract with audio suspend<br>• portrait + `appCategory=game` + `VIBRATE` + backup rules + dark `windowBackground` + `singleTop`<br>• `minWebViewVersion` 87 + error page + vite target<br>• SystemBars config<br>• renderer-crash recovery<br>• Preferences save mirror + migration (D-12) | P0 | 1 | 5, 6 | Unit tests for router/pause/save mirror; `assembleDebug`; 👤 device checklist |
 | 3 | Purchases (D-09): entitlement-as-truth, non-consumable products, error codes, pending flow, restore, store prices, Starter hidden when `no_ads` | P0 | 1 | M0 | TDD `entitlements → grants` mapping; 👤 license-tester matrix |
 | 4 | Ads + consent (D-10, D-24 plumbing): consent-first boot, `canRequestAds`, privacy-options row, privacy link, Firebase Consent Mode defaults, preload, event-driven rewarded with watchdog, awaited interstitial before restart, busy guards | P0 | 1 | M0 | TDD consent/ad state machines; 👤 EEA/US debug-geography test |
-| 5 | Error boundary (frame-step guard + "tap to restart" overlay + Crashlytics stack traces + custom keys); store-shape validation + backup keys; analytics hygiene (remove reserved `session_start`, pre-consent queue, manual `screen_view`, name/param lint test, **`level_start`/`level_end{success,cause,attempt,duration_ms}` with `level_id` + `level`**, A-10); honest store copy (no "leaderboard"); Data-safety + privacy-policy drafts | P0 | 2 | M0 | Unit tests; boot smoke |
+| 5 | Error boundary (frame-step guard + "tap to restart" overlay + Crashlytics stack traces + custom keys); store-shape validation + backup keys; analytics hygiene (remove reserved `session_start`, pre-consent queue, manual `screen_view`, name/param lint test, **`level_start`/`level_end{success,cause,attempt,duration_ms}` with `level_id` + `level`**, A-10); honest store copy (no "leaderboard"); Data-safety + privacy-policy drafts.<br>**Task order (A-26):** P00-T24 boot smoke (done, first because T21/T22 verify inside it) → **P00-T29** planning sync → **P00-T27** research audit integrity → **P00-T28** Vercel web build repair (B-14) → P00-T21 → P00-T22 → P00-T23 → P00-T25 → P00-T26 phase close | P0 | 2 | M0 | Unit tests; boot smoke; G-WEB from P00-T28 on |
 | 6 | **FixedStepper** + `src/sim/forces.ts` + sim clock + kinematics as functions of `simMs` + per-step checks with win precedence + input latch + `FORCE_SCALE` (provisional 2.08) | P1 | 2 | 7 | TDD stepper/forces/kinematics |
 | 7 | Multi-rate harness (30/60/90/120/144 Hz + jitter, bit-identical after N steps) + replay determinism (input log) + wall-clock lint rule | P1 | 6 | **M0** | Harness in CI |
 | **M0** | **Truthful Build:** release AAB with versionCode ≥ 1000001 → 👤 internal track + device smoke + FORCE_SCALE feel A/B | | 3, 4, 5, 7 | 8, 12 | 👤 |
@@ -114,13 +112,15 @@ Then **Step 1**: bump Capacitor to 8.5.2 plus the plugins. The installed 8.4.0 h
 ## Per-step working agreement
 1. Verify the prerequisites (previous step's gates green).
 2. Restate the step goal.
-3. Load the relevant skills.
-4. Write the bite-sized plan in `docs/superpowers/plans/`.
+3. Load the relevant skills (read the installed `SKILL.md`; do not work from memory).
+4. Write the bite-sized plan in `docs/superpowers/plans/`. Under subagent-driven development, the controller also derives each task's brief into the local, gitignored `.superpowers/sdd/<phase>/` and folds in earlier review findings. Fold-ins that matter beyond one session are also written into the phase doc.
 5. Implement with TDD where the logic is pure.
 6. Run the gates (`MASTER-ROADMAP.md` §6).
-7. Code review.
-8. Update `STATUS.md`, `CHANGELOG.md` and the phase doc.
-9. Commit in small logical commits.
-10. Push `origin/master`.
+7. Code review (`superpowers:requesting-code-review`). Every Critical or Important finding goes to a fix pass and then a re-review, until Approved. Before closing a phase, run a final whole-phase review that triages the ledger's "minor for final review" items.
+8. Update `STATUS.md` (Task board, Next actions), `CHANGELOG.md` and the phase doc. Update `MASTER-ROADMAP.md` §15 only when the plan itself changed.
+9. Commit in small logical commits, staging named files only (never `git add -A` with untracked research or scratch files present).
+10. Push the working branch (for P0, `p0-foundation`), and confirm CI is green on it. Then fast-forward `master` to the reviewed, green commit and push `origin/master`.
+    - **Gate G-WEB:** a push to `master` deploys the web build to Vercel Production. From P00-T28 on, the branch's Vercel Preview for the same commit must be READY before `master` moves. After the push, confirm that the Production deployment is READY.
+    - Never promote a deployment by hand.
 
 Tag only at milestones (A-15): M0 = `v1.0.0-rc.2`, M1 = `v1.0.0-rc.3`, M2 = `v1.0.0-rc.4`, launch = `v1.0.0`.

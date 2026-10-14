@@ -5,6 +5,12 @@ Internal project changelog (newest first). Store-facing "What's new" copy lives 
 (D-20, `docs/release/RUNBOOK.md` section 4).
 
 ## [Unreleased]
+- **Planning sync (P00-T29, A-26/A-27, 2026-10-14):** MASTER-ROADMAP gains §8–§15:
+  - delivery stages A–H, an executable task inventory and owner actions OA-01–OA-16;
+  - the experiment backlog E1–E12, first-player milestones and a post-test 30/60/90 plan;
+  - risks R-48–R-51 and a change log.
+
+  STATUS gains a Task board, the only task-state dashboard, and open bug B-14 (Vercel web build failing since `95953fc`). P00-T29, T27 and T28 run before P00-T21, and the review fold-ins for T21–T26 are now recorded in the P00 phase doc. Entries for P00-T06–T24 are backfilled in P00-T26; until then see `git log`.
 - **Versioning (D-20, P00-T05):** `package.json` is the one version file: `version` is `1.0.0` (the rc label now lives only in git
   tags) and the new `androidBuild` is `1`. `versionCode = MAJOR*1_000_000 + MINOR*10_000 + PATCH*100 + BUILD`, so the next
   Play upload is **1000001** (an AAB with versionCode 1 is already on Play). `versionName` stays `1.0.0`.

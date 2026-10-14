@@ -1,4 +1,6 @@
-# Planning Deliverables Index (2026-10-07)
+# Planning Deliverables Index (2026-10-07, updated 2026-10-14)
+
+> Current state: [`../STATUS.md`](../STATUS.md) (Task board). Delivery stages, the task inventory and owner actions: [`MASTER-ROADMAP.md`](MASTER-ROADMAP.md) §8–§15 (A-26).
 
 | # | Deliverable | File |
 |---|---|---|
@@ -15,7 +17,7 @@
 | 11 | Live-ops plan | [`../design/LIVE-OPS.md`](../design/LIVE-OPS.md) |
 | 12 | Analytics plan | [`../analytics/ANALYTICS-PLAN.md`](../analytics/ANALYTICS-PLAN.md) |
 | 13 | Store / launch plan (+ external services audit, naming study) | [`../launch/STORE-LAUNCH-PLAN.md`](../launch/STORE-LAUNCH-PLAN.md) · [`../launch/EXTERNAL-SERVICES-AUDIT.md`](../launch/EXTERNAL-SERVICES-AUDIT.md) · [`../launch/NAMING-STUDY.md`](../launch/NAMING-STUDY.md) |
-| 14 | Research summary (+ 8 briefs) | [`../research/RESEARCH-SUMMARY.md`](../research/RESEARCH-SUMMARY.md) |
+| 14 | Research summary (+ 8 briefs) · market research audit 2026-10-14 (evidence input, A-27) | [`../research/RESEARCH-SUMMARY.md`](../research/RESEARCH-SUMMARY.md) · [`../research/2026-10-14-gravity-flow-research-audit.md`](../research/2026-10-14-gravity-flow-research-audit.md) |
 | 15 | Prioritized feature matrix | [`FEATURE-MATRIX.md`](FEATURE-MATRIX.md) |
 | 16 | Exact execution order | [`EXECUTION-ORDER.md`](EXECUTION-ORDER.md) |
 | 17 | Success metrics | [`SUCCESS-METRICS.md`](SUCCESS-METRICS.md) |

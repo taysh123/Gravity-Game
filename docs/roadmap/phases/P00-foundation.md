@@ -1,6 +1,6 @@
 # P00 — Foundation & Launch-Blocker Correctness
 
-Status: PLANNED · Milestone: M0 (Truthful Build, with P1) · Steps: 0–5 of [`../EXECUTION-ORDER.md`](../EXECUTION-ORDER.md) · Decisions: D-09, D-10, D-11, D-12 (mirror + validation), D-14 (P0 hygiene), D-20, D-24 (plumbing), D-25, D-28 · Baseline: `master @ d3c6aab` · Architecture: [`../../architecture/TECHNICAL-ARCHITECTURE.md`](../../architecture/TECHNICAL-ARCHITECTURE.md)
+Status: IN PROGRESS (live task state: [`../../STATUS.md`](../../STATUS.md) Task board) · Milestone: M0 (Truthful Build, with P1) · Steps: 0–5 of [`../EXECUTION-ORDER.md`](../EXECUTION-ORDER.md) · Decisions: D-09, D-10, D-11, D-12 (mirror + validation), D-14 (P0 hygiene), D-20, D-24 (plumbing), D-25, D-28 · Baseline: `master @ d3c6aab` · Architecture: [`../../architecture/TECHNICAL-ARCHITECTURE.md`](../../architecture/TECHNICAL-ARCHITECTURE.md)
 
 > Evidence labels used below: **[V]** verified on 2026-10-07 by reading the cited file/line or running the cited command · **[I]** inferred · **[D]** needs a physical device or an external console.
 
@@ -464,18 +464,30 @@ Each task: own branch or commit series, TDD where pure, gates V1–V3 before com
 - Files: `src/platform/frameGuard.ts`, `src/platform/errorOverlay.ts`, `src/services/stackParse.ts`, `src/services/Crash.ts` (stack traces, keys, dedupe, cap), `src/main.ts`.
 - Tests: `frameGuard.test.ts`, `stackParse.test.ts`; boot smoke with a DEV-only `window.__crashTest()` that throws inside `update` shows the overlay after 3 throws.
 - Done when: the injected failure path is covered by the smoke run; 👤 Crashlytics shows a stack-traced test non-fatal from the internal build.
+- Fold-ins from earlier reviews (SDD ledger, recorded here 2026-10-14):
+  - **Harness seam.** Add `ctx.expectSignal(matcher)` to the harness signals/runner (TODO at `scripts/harness/lib/signals.mjs:7`), so the smoke run can assert the overlay.
+  - **Lifecycle (P00-T19 review).** `src/platform/lifecycle.ts` runs `reportActivity` after `onBackground`/`onForeground`, so a throw in `runLifecycle` (unguarded `g.scale.refresh` / `snapshotScenes`) skips it. Use `try/finally`, or report first.
+  - **Crash cap (P00-T12 review).** `CRASH_MAX_PER_SESSION` exists but is not enforced in `Crash.ts`. Enforce it with the dedupe.
 
 **P00-T22 — Store validation + backups + cleanup**
 - Goal: corrupt or wrong-shaped data never freezes or wipes progress.
 - Files: `src/platform/storeCodec.ts`, `src/utils/storeSchemas.ts`, every store's `load()`, `src/platform/migrations.ts` (migration 3).
 - Tests: `storeCodec.test.ts`, `storeSchemas.test.ts`, `migrations.test.ts`.
 - Done when: writing `"null"` into `gravity-flow:progress:v9` in the browser restores from `:bak` (manual check in the boot-smoke harness: DEV hook writes the bad value then reloads).
+- Fold-ins (P00-T13/T16 reviews):
+  - **Re-runnable migrations.** Migration steps must be re-runnable and must re-check before deleting, because a kill after migration could otherwise resurrect a deleted key as unused data.
+  - **Removal API.** Delete with `ctx.remove` only. Never use `Saves.remove`: it self-awaits and stalls boot.
+  - **Writes.** Every new persisted key goes through `Saves.write`.
 
 **P00-T23 — Analytics hygiene (D-14 P0 part)**
 - Goal: lawful, valid, measurable events.
 - Files: `src/services/analyticsEvents.ts` (delete `sessionStart`, `bundle_id`, add `purchasePending`, `rewardedUnavailable`), `src/services/analyticsQueue.ts`, `src/services/Analytics.ts` (`screen()`), `src/main.ts` (screen-view hook), `src/scenes/BootScene.ts:4,19`.
 - Tests: extended `analyticsEvents.test.ts`, `analyticsQueue.test.ts`.
 - Done when: `git grep -n "session_start" src` matches only the reserved-name list in the test; 👤 DebugView shows one `screen_view` per scene and zero `firebase_error`.
+- Fold-ins:
+  - **A-10 events.** Add `level_start` and `level_end{success, cause, attempt, duration_ms}`, each with `level_id` and `level`.
+  - **Pre-consent queue.** Flush the queue inside `Analytics.applyConsent`. Nothing is sent before consent.
+  - **Research input (audit §8.3).** The `level_end` params must answer time-to-first-win and the World 1 funnel without new event families.
 
 **P00-T24 — Boot smoke harness**
 - Goal: every scene boots with zero console errors, in CI.
@@ -488,9 +500,59 @@ Each task: own branch or commit series, TDD where pure, gates V1–V3 before com
 - Files: `docs/store/listing.md` (lines 33, 37, 55-66), `docs/store/release-notes.md:11`, `docs/store/aso.md:14`, `README.md:45`, new `docs/store/data-safety.md`, `docs/store/privacy-policy.md`, `docs/index.html` (effective date, SDK table, GDPR/US-state/retention/deletion/Israel blocks, in-app link mention).
 - Tests: `src/config/storeCopy.test.ts`.
 - Done when: test green; drafts marked "DRAFT — owner review, not legal advice"; 👤 owner sign-off recorded in STATUS before the Play form is filled.
+- Fold-ins: use the corrected research audit (P00-T27) as the copy checklist (audit §8, recommendation 4).
+  - **Keep** "Hold to pull a lost star home". Keep "Same run for everyone" only if nothing around it implies online ranking: the weekly seed really is shared.
+  - **Remove** the "leaderboard" claims (B-07; the boards are local only).
+  - **Title:** no ALL CAPS, emoji or ranking claims (metadata policy).
+  - **Short description:** no CTA, emoji, or "Best/#1/Top/New" (Play store-listing guidance).
+  - **Offline:** "Play offline. No Wi-Fi needed to play."
+  - **Remove Ads:** one sentence stating exactly what it removes.
+  - **Data Safety:** draft it from one SDK inventory, including the GMA 25.x merged-manifest additions from P00-T08 (`com.android.vending` query, `HsdpShimActivity`).
 
 **P00-T26 — Device checklist + phase close**
 - Goal: M0-ready P0 with recorded evidence.
 - Files: `docs/qa/DEVICE-CHECKLIST-M0.md` (all rows from §8.3 with expected results), `docs/STATUS.md` (Gates, Open bugs), this file's status line.
 - Tests: V1–V12 re-run; code review (`superpowers:requesting-code-review`).
 - Done when: §15 checklist is complete except owner device rows, which are scheduled in the M0 device session.
+- Fold-ins:
+  - **Ad rows.** They must check four things explicitly: the reward is credited after close, the same state resumes (not a restart), nothing crashes after any ad, and `no_ads` is honoured (research audit §8.5, E4).
+  - **Devices.** Use at least one 120 Hz device, and record raw gameplay footage as a by-product.
+  - **CHANGELOG.** Backfill it for P00-T06–T24 (last updated at T05).
+  - **P0 final review.** Triage every "minor for final review" item in the SDD ledger (T01–T24); each one is fixed or recorded.
+  - **Stale docs.** Amend the phase-doc §8.2 hook text (`?harness=1`), which P00-T24's harness-side capture superseded.
+
+**P00-T27 — Research audit integrity** (added 2026-10-14, A-26/A-27; runs before T21)
+- Goal: the market research audit and its evidence are tracked, reproducible and correct, and the superseded preliminary report is archived, not cited.
+- Files:
+  - `docs/research/2026-10-14-gravity-flow-research-audit.md`
+  - `docs/research/research_notes/Gravity Flow market research audit/*.md` (verbatim)
+  - `docs/archive/2026-10-14/deep-research-report.md` (verbatim) + `docs/archive/2026-10-14/README.md`
+- Tests: none (docs). The verification is the 2026-10-14 citation spot-check of 16 sources (12 supported, 4 overstated) and a follow-up on the GameAnalytics percentiles.
+- Done when: a verbatim-snapshot commit and a separate correction commit exist. The corrections are:
+  - GameAnalytics figures re-cited to the sources that state them, with the P78–80 / P83–84 placements labelled as interpolation.
+  - The short-description rules re-cited to Play's store-listing guidance.
+  - Candy Crush stated as "just over $1B".
+  - "of DAU" removed from the Unity rewarded figures.
+  - The video limitation recorded, and a revision log added.
+
+  The notes stay verbatim as captured evidence.
+
+**P00-T28 — Vercel web build repair** (added 2026-10-14, A-26; STATUS B-14)
+- Goal: the public web build deploys again without changing local or CI behaviour.
+- Root cause (Vercel build log, first failure at `95953fc`): `.vercelignore` excludes `scripts/`, but `src/config/releaseConfig.test.ts` and `releaseBuild.test.ts` import `../../scripts/lib/*.mjs`, and `npm run build` runs `tsc` over `src/`, which fails with TS2307.
+- Files: `.vercelignore` (remove the `scripts` line).
+- Tests: `npx tsc --noEmit`, `npm test` and `npm run build` locally; the Vercel Preview build log for the commit.
+- Done when, under gate G-WEB:
+  - The Preview is READY and serves the game.
+  - After the normal `master` fast-forward, Production is READY for the same commit.
+  - B-14 is closed with the deployment IDs.
+  - Nothing is promoted by hand.
+
+**P00-T29 — Roadmap and planning-system sync** (added 2026-10-14, A-26; runs first in this block)
+- Goal: one planning system that every later session can resume from.
+- Files:
+  - `docs/roadmap/MASTER-ROADMAP.md` (§8–§15), `DECISIONS.md` (A-26, A-27), `EXECUTION-ORDER.md`, this file
+  - `docs/STATUS.md` (Task board, OA IDs, B-14), `RISK-REGISTER.md` (R-48–R-51)
+  - `docs/architecture/TECHNICAL-ARCHITECTURE.md` (stale `.ai` line), `docs/roadmap/README.md`, `CHANGELOG.md`
+- Tests: `npm run facts:check`, `npx tsc --noEmit`, `npm test`.
+- Done when: the documents agree with each other and the repo; one docs commit; CI green.

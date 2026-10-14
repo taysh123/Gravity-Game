@@ -54,6 +54,8 @@
 - Persistence is **localStorage only**: 19 literal `gravity-flow:*` keys written by 16 modules (11 `*Store.ts`, `Leaderboard.ts`, `IAP.ts`, `Ads.ts`, and scene-local keys in `GameScene.ts:90-106` and `EndlessScene.ts:146-160`). Each store parses inside `try/catch` and resets to defaults on failure (`ProgressStore.ts:26-35`), with no shape validation and no backup key. Versioning is "version in the key" (`progress:v9`, `cosmetics:v2` with a v1 migration in `CosmeticStore.ts`).
 
 ### 2.5 Build and CI as-is [V]
+> Baseline snapshot (2026-10-07, `master @ d3c6aab`). All four items were fixed in P0. The JDK path, `proguard-android-optimize.txt` and the `.ai/*` links (untracked; `.ai/` is gitignored, and its `C:/AI-SKILLS` targets no longer exist) were fixed in `76b6a59` (P00-T04). CI v2 with Node 22 and the Android debug job came in `d18a0be` (P00-T06). The installed skills now come from user-scope Claude Code plugins, not from repo links.
+
 - `android/gradle.properties:19` sets a machine JDK path (the working tree points at Temurin 21; the committed value is the Android Studio JBR, now JDK 25).
 - `android/app/build.gradle:43` uses `proguard-android.txt`, which AGP 9 rejects. Minify is off (`:42`).
 - `.github/workflows/ci.yml` runs Node 20, `npm install`, tsc/test/build only; the Android job is commented out (`:31-51`).

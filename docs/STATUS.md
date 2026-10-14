@@ -2,8 +2,14 @@
 
 > **The single source of truth for project state.** The Facts block is machine-generated; every other section is
 > edited by hand at the end of each task. Anything that contradicts this file is stale.
-> Last hand-edited **2026-10-14** · Position: **Step 1 complete (P00-T08: AdMob 8.2.1 landed 2026-10-14; device rows A1-A6 and C1-C5 must be re-run on it)** of the [execution order](roadmap/EXECUTION-ORDER.md); Step 2 is complete (P00-T09 to P00-T13 done; P00-T01 to P00-T07 done earlier). Step 3 (purchases, D-09) is complete in code: P00-T14 to P00-T17 (device rows P1-P20 pending). Step 4 is complete in code: P00-T18 (consent-first boot, privacy entry points; device rows C1-C5 pending), P00-T19 (ad plumbing, D-24; device rows A1-A5 pending) and P00-T20 (release configuration guard: the build mode picks the ids, `npm run release:check`, the release Vite build, the `${admobAppId}` manifest placeholder; a release stays refused until the owner pastes the real ids, gate below). Step 5 has started with P00-T24 (boot smoke harness, run first so T21 and T22 can use it). Next: P00-T21, P00-T22, P00-T23, P00-T25, P00-T26.
-> Plan of record: [MASTER-ROADMAP](roadmap/MASTER-ROADMAP.md) · [EXECUTION-ORDER](roadmap/EXECUTION-ORDER.md) · [DECISIONS](roadmap/DECISIONS.md) (amendments override entry bodies).
+> Last hand-edited **2026-10-14** · Position: Steps 0–4 of the [execution order](roadmap/EXECUTION-ORDER.md) are complete in code (device rows pending, see Gates). That covers P00-T01–T20, P00-T08 (AdMob 8.2.1, device rows A1-A6 and C1-C5 to re-run on it) and P00-T17b. **Step 5** is in progress:
+> - P00-T24 (boot smoke harness) is merged.
+> - Per A-26, P00-T29 (planning sync), P00-T27 (research audit integrity) and P00-T28 (Vercel web build repair, B-14) run before P00-T21.
+> - Then P00-T21, P00-T22, P00-T23, P00-T25 and P00-T26 close P0.
+> - Then P1 (Steps 6–7) and M0.
+>
+> The live per-task state is the **Task board** below.
+> Plan of record: [MASTER-ROADMAP](roadmap/MASTER-ROADMAP.md) (§8 delivery stages, §9 task inventory, §10 owner actions) · [EXECUTION-ORDER](roadmap/EXECUTION-ORDER.md) · [DECISIONS](roadmap/DECISIONS.md) (amendments override entry bodies).
 > Working title: **Gravity Flow** by True Story Labs. Package id `com.truestorylabs.gravityflow` is permanent.
 
 ## Facts
@@ -35,6 +41,27 @@
 
 Regenerate with `npm run facts`; verify with `npm run facts:check` (CI runs the check; a stale block fails the build).
 
+## Task board
+The current-state dashboard. The IDs, specs and acceptance criteria live in [MASTER-ROADMAP](roadmap/MASTER-ROADMAP.md) §9 and the [phase plans](roadmap/phases/); only this table says where each one stands. Status words: `complete` · `ready` · `in progress` · `blocked` · `owner action required` · `deferred`.
+
+| ID | Task | Stage | Status | Evidence / blocker |
+|---|---|---|---|---|
+| P00-T01–T20, T17b | Steps 0–4 (docs SSOT, deps, platform contract, purchases, ads + consent, release guard) | — | complete | Merged to `master` (Step 4 at `491de63`). Device rows remain under Gates OA-13 |
+| P00-T08 | AdMob 8.2.1 soak bump + exact GMA/UMP pins | — | complete | `ce5a7b4`; device rows A1-A6, C1-C5 to re-run (OA-13) |
+| P00-T24 | Boot smoke harness (`npm run smoke`, CI job `smoke`) | C | complete | `356e5e2`. CI `38517499863` 7/7 green; `38511510173` failed on the injected error as intended |
+| P00-T29 | Roadmap and planning-system sync | A | complete | The docs commit that adds this board |
+| P00-T27 | Research audit integrity (track, correct, archive) | A | ready | Next |
+| P00-T28 | Vercel web build repair (B-14) | B | blocked | Waits for P00-T27 (one change in flight) |
+| P00-T21 | Frame guard + error overlay + Crashlytics | C | blocked | Waits for P00-T28. Owner part: M0-G09 |
+| P00-T22 | Store validation + backups + migration 3 | C | blocked | Waits for P00-T21 |
+| P00-T23 | Analytics hygiene (A-10) | C | blocked | Waits for P00-T22. Owner part: DebugView (M0-G09) |
+| P00-T25 | Honest store copy + Data Safety + privacy drafts | C | blocked | Waits for P00-T27 and P00-T23. Owner sign-off: OA-12 |
+| P00-T26 | Device checklist + phase close + P0 final review | C | blocked | Waits for P00-T21, T22, T23, T25 |
+| P01-T01–T14 | Fixed-step physics, multi-rate harness, replay determinism | D | blocked | Waits for P00-T26 (sequencing, A-26). Owner: OA-08 |
+| M0-G01–G11 | M0 Truthful Build gates | E | blocked | P0 + P1, and owner actions OA-02, OA-03, OA-05, OA-06, OA-08, OA-09, OA-13 |
+| CT-01–CT-08 | Closed test and first players | F | owner action required | OA-01 (account type and creation date) decides the timing; then M0 |
+| P02–P12 | Later phases (246 phase task IDs in total) | G–H | deferred | Start conditions: MASTER-ROADMAP §9.6 |
+
 ## Gates
 
 ### Milestones ([definitions](roadmap/MASTER-ROADMAP.md))
@@ -46,22 +73,26 @@ Regenerate with `npm run facts`; verify with `npm run facts:check` (CI runs the 
 | **M3 Live 1.x** | P8, P9, P10, P12 optimisation, iOS track | Growth and live ops by data | `v1.0.0` at launch (Step 19) | Not started |
 
 ### Owner gates (opened 2026-10-07 unless noted)
-| Gate | Owner | Date / due | State |
-|---|---|---|---|
-| Play Console app exists; AAB with **versionCode 1** uploaded (last uploaded versionCode = **1**; next upload >= **1000001**, D-20; `package.json` now derives 1000001) | Owner | reported 2026-10-07 | DONE (owner-reported) |
-| Google Play and Apple developer accounts exist (Apple used only for the iOS track, D-29) | Owner | reported 2026-10-07 | DONE (owner-reported) |
-| **Android developer verification**: check the status on Play Console Home | Owner | URGENT, before the next upload | UNKNOWN |
-| **Upload keystore backup** (`gravityflow-upload`, one copy on disk): password manager + one offline copy (R-21) | Owner | URGENT | OPEN |
-| **Public payments address / EU DSA trader status** (address becomes public once monetised, R-12) | Owner | before enabling payments | UNKNOWN |
-| Account type and creation date; whether the 12x14 closed-test requirement applies (sets the calendar) | Owner | before M1 | UNKNOWN |
-| AdMob and RevenueCat dashboards ([MONETIZATION A.14](design/MONETIZATION.md), [audit](launch/EXTERNAL-SERVICES-AUDIT.md)). RevenueCat, needed before any purchase can work: the 4 Play products imported and each set to **Non-consumable**; entitlements `no_ads`, `pack_starter`, `pack_premium_collection`, `pack_founders` attached exactly per A.2; offering `default` set as **Current** with packages `remove_ads`, `starter`, `premium_collection`, `founders`; service credentials + RTDN; license testers; the **public `goog_` SDK key** in `REVENUECAT_API_KEY_PROD` (empty today, so IAP stays "unconfigured" on device; row below) | Owner | before M0 device purchase/ad tests | UNKNOWN |
-| **Real AdMob + RevenueCat ids for the release build** (P00-T20 refuses a release without them). In `src/config/monetization.config.ts` paste `ADMOB_PROD.appId`, `ADMOB_PROD.rewardedAdId`, `ADMOB_PROD.interstitialAdId` (AdMob console: Apps, Ad units) and `REVENUECAT_API_KEY_PROD` (the public `goog_` Google Play SDK key, RevenueCat: API keys; never a Test Store `test_` key). Pass the same app id to Gradle as `-PADMOB_APP_ID`. Both are public client ids, safe to commit. `npm run release:check` lists what is still missing; the sequence is [RUNBOOK section 6](release/RUNBOOK.md) | Owner | before the M0 release AAB | OPEN |
-| **Naming decision** (D-19, USER-GATED): pick from [NAMING-STUDY](launch/NAMING-STUDY.md) + trademark knockout; gates production, not the closed test (A-14) | Owner | before M2 | PENDING |
-| `FORCE_SCALE` on-device A/B (1.0 / 1.5 / 2.08 / 2.2; provisional 2.08, A-19) | Owner | before M0 | PENDING |
-| **Crashlytics collection without consent** (D-10.5) — owner legal check. Today collection is enabled in every consent outcome; the enable is persisted by Crashlytics, so from the second launch collection is on at process start. If the check requires consent, set `CRASH_REQUIRES_ANALYTICS_CONSENT = true` in `src/config/consent.config.ts`: a denied outcome then calls `Crash.disable()` and collection follows the player's last choice from the next launch. | Owner | before M0 upload | PENDING |
-| Confirm dropping the stale git stash `stash@{0}` ("abandoned sprint4 wip", 2026-05-31) with `git stash drop stash@{0}` (P00-T04; not dropped, needs owner OK) | Owner | any time | PENDING |
-| Age Signals plugin scheduled (D-25; CA AB 1043 starts 2027-01-01) | Claude + Owner | 2026-12-15 | SCHEDULED |
-| Data Safety form + privacy policy sign-off (drafts land in P0 Step 5) | Owner | before M2 | PENDING |
+| ID | Gate | Owner | Date / due | State |
+|---|---|---|---|---|
+| — | Play Console app exists; AAB with **versionCode 1** uploaded (last uploaded versionCode = **1**; next upload >= **1000001**, D-20; `package.json` now derives 1000001) | Owner | reported 2026-10-07 | DONE (owner-reported) |
+| — | Google Play and Apple developer accounts exist (Apple used only for the iOS track, D-29) | Owner | reported 2026-10-07 | DONE (owner-reported) |
+| OA-02 | **Android developer verification**: check the status on Play Console Home | Owner | URGENT, before the next upload | UNKNOWN |
+| OA-03 | **Upload keystore backup** (`gravityflow-upload`, one copy on disk): password manager + one offline copy (R-21) | Owner | URGENT | OPEN |
+| OA-04 | **Public payments address / EU DSA trader status** (address becomes public once monetised, R-12) | Owner | before enabling payments | UNKNOWN |
+| OA-01 | Account type and creation date; whether the 12x14 closed-test requirement applies (sets the calendar) | Owner | before M1 | UNKNOWN |
+| OA-05 | AdMob and RevenueCat dashboards ([MONETIZATION A.14](design/MONETIZATION.md), [audit](launch/EXTERNAL-SERVICES-AUDIT.md)). RevenueCat, needed before any purchase can work: the 4 Play products imported and each set to **Non-consumable**; entitlements `no_ads`, `pack_starter`, `pack_premium_collection`, `pack_founders` attached exactly per A.2; offering `default` set as **Current** with packages `remove_ads`, `starter`, `premium_collection`, `founders`; service credentials + RTDN; license testers; the **public `goog_` SDK key** in `REVENUECAT_API_KEY_PROD` (empty today, so IAP stays "unconfigured" on device; row below) | Owner | before M0 device purchase/ad tests | UNKNOWN |
+| OA-06 | **Real AdMob + RevenueCat ids for the release build** (P00-T20 refuses a release without them). In `src/config/monetization.config.ts` paste `ADMOB_PROD.appId`, `ADMOB_PROD.rewardedAdId`, `ADMOB_PROD.interstitialAdId` (AdMob console: Apps, Ad units) and `REVENUECAT_API_KEY_PROD` (the public `goog_` Google Play SDK key, RevenueCat: API keys; never a Test Store `test_` key). Pass the same app id to Gradle as `-PADMOB_APP_ID`. Both are public client ids, safe to commit. `npm run release:check` lists what is still missing; the sequence is [RUNBOOK section 6](release/RUNBOOK.md) | Owner | before the M0 release AAB | OPEN |
+| OA-07 | **Naming decision** (D-19, USER-GATED): pick from [NAMING-STUDY](launch/NAMING-STUDY.md) + trademark knockout; gates production, not the closed test (A-14) | Owner | before M2 | PENDING |
+| OA-08 | `FORCE_SCALE` on-device A/B (1.0 / 1.5 / 2.08 / 2.2; provisional 2.08, A-19) | Owner | before M0 | PENDING |
+| OA-09 | **Crashlytics collection without consent** (D-10.5) — owner legal check. Today collection is enabled in every consent outcome; the enable is persisted by Crashlytics, so from the second launch collection is on at process start. If the check requires consent, set `CRASH_REQUIRES_ANALYTICS_CONSENT = true` in `src/config/consent.config.ts`: a denied outcome then calls `Crash.disable()` and collection follows the player's last choice from the next launch. | Owner | before M0 upload | PENDING |
+| OA-10 | Confirm dropping the stale git stash `stash@{0}` ("abandoned sprint4 wip", 2026-05-31) with `git stash drop stash@{0}` (P00-T04; not dropped, needs owner OK) | Owner | any time | PENDING |
+| OA-11 | Age Signals plugin scheduled (D-25; CA AB 1043 starts 2027-01-01) | Claude + Owner | 2026-12-15 | SCHEDULED |
+| OA-12 | Data Safety form + privacy policy sign-off (drafts land in P0 Step 5) | Owner | before M2 | PENDING |
+| OA-13 | **M0 device session**: rows C1-C5, A1-A6 (on AdMob 8.2.1; the ad rows check reward credited, same state resumed, no crash, `no_ads` honoured), P1-P20, and the V rows in [DEVICE-CHECKLIST-M0](qa/DEVICE-CHECKLIST-M0.md), on at least one 120 Hz device | Owner | M0 | PENDING |
+| OA-14 | **Research proposals** ([audit](research/2026-10-14-gravity-flow-research-audit.md) §8, A-27): (a) keep the A-18 retention targets (30/8/3) as stretch goals, add a median reading floor (~22/4/1%), and judge no cohort under ~1,000 installs; (b) start the closed test at M0 if OA-01 says the 12-tester rule applies; (c) use the constellation reveal (B11) and an optional pull-preview assist (B13) as P4–P6 design inputs only | Owner | before CT-01 / P4 | PENDING |
+| OA-15 | Source screen recording (`ScreenRecording_10-14-2026 05-43-17_1.mp4`, uploaded to a ChatGPT session; never accessible to Claude). Provide the file or a transcript, but only if video-specific analysis is wanted | Owner | optional | OPEN |
+| OA-16 | AdMob age treatment (TFAT TEEN vs unspecified) for a 13+ general-audience app, confirmed with counsel ([audit](research/2026-10-14-gravity-flow-research-audit.md) §11 Q10) | Owner | before M2 | PENDING |
 
 Last uploaded versionCode: **1** <!-- last-uploaded-version-code: 1 --> (machine-read by `npm run release:check`, which refuses a release whose versionCode is not above it. Update the number with every Play upload, [RUNBOOK section 8](release/RUNBOOK.md). Never edit the facts block above for this.)
 
@@ -69,9 +100,15 @@ Last uploaded versionCode: **1** <!-- last-uploaded-version-code: 1 --> (machine
 Step 0 complete. Step 1 complete; done so far: P00-T01…T07 (CI v2, Capacitor 8.5.2 family, exact pins), P00-T08 (AdMob 8.2.1 soak commit, below), P00-T09 (manifest, theme, WebView floor, system bars), P00-T10 (Back router + `PauseScene`, Endless pause button), P00-T11 (background/foreground contract, `Haptics.pulse`), P00-T12 (renderer-crash recovery: `MainActivity` recreates the activity on a dead WebView renderer, at most twice per process, and leaves a `platform:rendererGone` marker that `Saves.hydrate()` reports once to Crashlytics; null-bridge guard; `Crash` queues early reports until the plugin is ready) and P00-T13 (`@capacitor/preferences` save mirror, hydrate before Boot, migration ladder, backup rules limited to the two save locations); device checks pending in the M0 session (V18 renderer kill, R1 in the device checklist). AdMob is pinned at exactly 8.2.1 (P00-T08, landed 2026-10-14, just over 7 days after its 2026-10-06 22:26 UTC release; the plugin tracker had no open Android regression and no issue filed since the release). It was added in its own commit after a compat commit that makes the only affected check (the event-mirror test) hold on 8.0.0 and 8.2.1, so a rollback is `git revert` of the bump commit (`d729325`) **plus** setting `playServicesAdsVersion = '24.9.0'` in `android/variables.gradle` (8.0.0's tested SDK; the exact pin from `9a3e965` would otherwise keep 25.4.0, a combination never built), with no app code change. The facts row of this file reverts with it; the hand-edited lines about it do not, so edit them too. The Google Mobile Ads Android SDK moved from 24.9.x to 25.4.x with it (the plugin's floating `25.4.+` is pinned to exactly 25.4.0, and UMP to 4.0.0, in `android/variables.gradle`), which adds a `com.android.vending` package query and a Play `HsdpShimActivity` to the merged manifest; the Data Safety matrix re-check that every SDK bump owes is the owner's (Step 5).
 1. **Re-run device rows A1-A6 and C1-C5 on AdMob 8.2.1** (P00-T08 landed 2026-10-14; [DEVICE-CHECKLIST-M0](qa/DEVICE-CHECKLIST-M0.md)). The code was exercised on an Android 16 emulator with Google test ads (listeners, rewarded and interstitial load and show, UMP form on an EEA debug build); the early-close row A2, airplane mode A3, Endless A5, Home during an ad A6 and everything on a real phone are still the owner's. Watch for an `AdMob.initialize` rejection in logcat (8.2.x rejects after 5 s if the banner parent view never appears; the app then runs without ads that session). Re-check upstream before M0: plugin issue 438 (Android `showRewardVideoAd()` never settles when the ad is closed early; present in 8.0.0 too and harmless here because the app never awaits it).
 2. **Step 4 is done in code** — P00-T20 (release configuration guard, D-11: `npm run release:check` refuses empty or Google-test production AdMob ids, a RevenueCat key that is not `goog_`, `VITE_UMP_DEBUG_GEOGRAPHY` / `VITE_UMP_TEST_DEVICE_IDS`, and a versionCode not above the last upload; `npm run build:release` runs it; `-PADMOB_APP_ID` for Gradle; a release build still fails until the owner supplies the ids, gate above); P00-T18 (consent-first boot: UMP before analytics before ads, Crashlytics enabled after consent, Settings privacy rows) is done in code and awaits device rows C1-C5, and P00-T19 (ad plumbing: preload, event-driven rewarded outcome, awaited interstitial, ready-gated offers) is done in code and awaits device rows A1-A5. P00-T23 adds the pre-consent analytics queue and its flush inside `Analytics.applyConsent`. Standing rules from Step 3: P00-T22 appends migration 3 (delete with **`ctx.remove` only**, never `Saves.remove`); every new persisted key goes through `Saves.write`; P00-T19 raised `setExternalFlowActive(true|false, 'ads')` around ads (done); surfaces that sell something call `IAP.refresh()` on open and read `IAP.storeStatus/owns/isPending/price` through `src/services/purchaseView.ts` (prices only from the store).
-3. **Step 5: P00-T21…T26** — P00-T24 (the boot smoke harness, `npm run smoke`, CI job `smoke`) is done and went first because the T21 and T22 done-when checks run inside it; its `--mode=dev` run is where their DEV-only hooks (`window.__crashTest`, a corrupt-save hook) get driven. Still to do in Step 5: error boundary (T21), store validation (T22), analytics hygiene (A-10 level_end attempts), and the rest up to T26.
-4. **Steps 6-7** — Physics (P01): fixed-timestep, frame-rate-independent forces and level clock (B-03, B-09).
-5. **M0 Truthful Build** — release AAB (versionCode >= 1000001), internal track and the device smoke: purchase rows P1-P20 (real localized prices P1/P13/P15, pending P4/P5, restore P17), then FORCE_SCALE feel A/B.
+3. **Step 5, in the A-26 order.**
+   - **P00-T27 (next):** track the research audit and its notes verbatim, correct the four overstated citations in a separate commit, and archive the superseded `deep-research-report.md`.
+   - **P00-T28:** remove `scripts` from `.vercelignore` (B-14). The gate G-WEB needs a READY Preview before `master` moves and a READY Production after it.
+   - **Then** P00-T21 → T22 → T23 → T25 → T26. Fold-ins are recorded in the P00 phase doc. P00-T24 (the boot smoke harness, `npm run smoke`, CI job `smoke`) is done and went first because the T21 and T22 done-when checks run inside it; its `--mode=dev` run drives their DEV-only hooks (`window.__crashTest`, a corrupt-save hook).
+4. **Steps 6-7: Physics (P01-T01–T14).** Fixed timestep, frame-rate-independent forces and a sim-time level clock (B-03, B-09). The owner A/B (OA-08) follows P01-T14.
+5. **M0 Truthful Build (gates M0-G01–G11, MASTER-ROADMAP §9.4).**
+   - Release AAB (versionCode >= 1000001) and the internal track.
+   - The device session OA-13: purchase rows P1-P20 (real localized prices P1/P13/P15, pending P4/P5, restore P17), then the FORCE_SCALE feel A/B.
+   - Owner actions that block it now: OA-02 (developer verification), OA-03 (keystore backup), OA-05 (dashboards) and OA-06 (real ids).
 
 ## Open bugs
 Top blockers from the [state audit](audit/2026-10-07/STATE-AUDIT.md) (section B.6/O). Target: 0 open P0 defects at M0.
@@ -90,6 +127,7 @@ Top blockers from the [state audit](audit/2026-10-07/STATE-AUDIT.md) (section B.
 | B-11 | P1 | Web build on Vercel grants paid items for free (IAP stub) | FIXED in P00-T16 (production web: buy/restore resolve `unavailable`, nothing granted; headless-verified on the production bundle). The copy "Available in the Android app" shipped in P00-T17 (shop and Settings, headless-verified on dev and the production preview) |
 | B-12 | P1 | The 44 px touch floor holds in game px, but the fixed 390x844 canvas is FIT-scaled into the window (`main.ts` `Scale.FIT`), so 44 game px renders as about 40.6 CSS px on a 360x800 phone and about 33 CSS px at 360x640: every Button, level cell, shop card and toggle shrinks by the same factor, the layout does not change. Found in P00-T17b fix pass 2 (the headless run counts 146 zones under 44 CSS px at 360x640, 0 at 390x844). [UX-UI-MOTION](design/UX-UI-MOTION.md) states touch targets in logical px on the 390-wide canvas (1 logical px = 1 dp, section 1.3; section 7 "Touch targets" row: 48x48 logical) and covers a render scale k for text sharpness (section 6.4), but not this display scale-down, and the P5 audit `touch_targets.py` also measures logical px only: the scale-mode decision is unplanned | Owner: P5 (responsive layout / scale-mode decision, [P05](roadmap/phases/P05-ux-visual.md)); not scheduled, needs an owner decision |
 | B-13 | P1 | A US-state "Privacy choices" opt-out (UMP writes the GPP string, not TCF) is not mapped to Firebase: in a `NOT_REQUIRED` region all four analytics types stay `granted`, so `ad_user_data` / `ad_personalization` are not denied after an opt-out. The ad SDK reads the GPP string itself, and Firebase Analytics is not linked to Google Ads in this app, so the effect is limited today | Before Firebase is linked to Google Ads or a US launch (read `IABGPP_*` in `ConsentSignalsPlugin`, map the opt-out in `consentState.ts`) |
+| B-14 | P1 | The Vercel web build has failed on every push since `95953fc` (2026-10-08, P00-T20). `.vercelignore` excludes `scripts/`, but `src/config/releaseConfig.test.ts` and `releaseBuild.test.ts` import `../../scripts/lib/*.mjs`, and `npm run build` runs `tsc` over `src/`, so the build fails with TS2307 (build log of `dpl_Bbptbe6pKGSa7dTHfDdNvB2x1vEV`). The public web build is still the last READY production deploy, `7d39c12` (2026-10-08). GitHub CI is unaffected (full checkout) | P00-T28 (gate G-WEB) |
 
 ### Known dev-only advisories
 Full `npm audit` (dev dependencies included), 2026-10-07, after the lockfile-only `npm audit fix` in P00-T07: **9 vulnerabilities (2 critical, 2 high, 5 moderate)**, down from 15 (3 critical, 7 high, 5 moderate). None is in the APK or the web bundle: `npm audit --omit=dev --audit-level=critical` reports 0 and is the CI gate (D-11). This list is maintained by hand; CI does not check it.
@@ -113,6 +151,8 @@ Full register: [DECISIONS.md](roadmap/DECISIONS.md). Entries here are one-liners
 - 2026-10-07: **`FORCE_SCALE` provisional 2.08** (D-01/A-19), pending the owner's on-device A/B before M0.
 - 2026-10-07: **STATUS.md is the only state document**; `scripts/facts.mjs --check` guards its facts block.
 - 2026-10-08: **Release guard (P00-T20)**: only the exact Vite mode `release` selects production ids; every other mode, CI included, keeps Google test ids and an empty RevenueCat key. The last uploaded versionCode is the `last-uploaded-version-code` marker in this file.
+- 2026-10-14: **Planning governance (A-26)**: MASTER-ROADMAP §8–§15 (delivery stages, task inventory, owner actions OA-01–OA-16, experiments, first-player milestones, post-test 30/60/90); this Task board is the dashboard; P00-T29, T27 and T28 run before P00-T21; the P0 → P1 → M0 order is unchanged.
+- 2026-10-14: **Research inputs (A-27)**: the 2026-10-14 market research audit is an evidence input, not approval to build; the preliminary `deep-research-report.md` is superseded; the source video was never analyzed (OA-15).
 
 ## Planning documents
 - Roadmap: [master](roadmap/MASTER-ROADMAP.md) · [execution order](roadmap/EXECUTION-ORDER.md) · [decisions](roadmap/DECISIONS.md) · [risks](roadmap/RISK-REGISTER.md) · [metrics](roadmap/SUCCESS-METRICS.md) · [feature matrix](roadmap/FEATURE-MATRIX.md) · [phase plans](roadmap/phases/)
