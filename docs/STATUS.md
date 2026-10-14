@@ -48,8 +48,8 @@ The current-state dashboard. The IDs, specs and acceptance criteria live in [MAS
 |---|---|---|---|---|
 | P00-T01–T20, T17b | Steps 0–4 (docs SSOT, deps, platform contract, purchases, ads + consent, release guard) | — | complete | Merged to `master` (Step 4 at `491de63`). Device rows remain under Gates OA-13 |
 | P00-T08 | AdMob 8.2.1 soak bump + exact GMA/UMP pins | — | complete | `ce5a7b4`; device rows A1-A6, C1-C5 to re-run (OA-13) |
-| P00-T24 | Boot smoke harness (`npm run smoke`, CI job `smoke`) | C | complete | `356e5e2`. CI `38517499863` 7/7 green; `38511510173` failed on the injected error as intended |
-| P00-T29 | Roadmap and planning-system sync | A | complete | `9370172` |
+| P00-T24 | Boot smoke harness (`npm run smoke`, CI job `smoke`) | — | complete | `356e5e2`. CI `38517499863` 7/7 green; `38511510173` failed on the injected error as intended |
+| P00-T29 | Roadmap and planning-system sync | A | complete | `9370172`; CI `38619358085` (pushed head `c794914`) green |
 | P00-T27 | Research audit integrity (track, correct, archive) | A | complete | `45b8077` verbatim snapshot (audit, 6 notes, preliminary report archived to `docs/archive/2026-10-14/`); `a436f3a` r2 corrections (4 citations, percentile wording, video limitation, revision log) |
 | P00-T28 | Vercel web build repair (B-14) | B | in progress | `.vercelignore` fix; gate G-WEB (Preview READY, then Production READY after the `master` fast-forward) |
 | P00-T21 | Frame guard + error overlay + Crashlytics | C | blocked | Waits for P00-T28. Owner part: M0-G09 |
@@ -60,7 +60,7 @@ The current-state dashboard. The IDs, specs and acceptance criteria live in [MAS
 | P01-T01–T14 | Fixed-step physics, multi-rate harness, replay determinism | D | blocked | Waits for P00-T26 (sequencing, A-26). Owner: OA-08 |
 | M0-G01–G11 | M0 Truthful Build gates | E | blocked | P0 + P1, and owner actions OA-02, OA-03, OA-05, OA-06, OA-08, OA-09, OA-13 |
 | CT-01–CT-08 | Closed test and first players | F | owner action required | OA-01 (account type and creation date) decides the timing; then M0 |
-| P02–P12 | Later phases (246 phase task IDs in total) | G–H | deferred | Start conditions: MASTER-ROADMAP §9.6 |
+| P02–P12 | Later phases (206 phase task IDs; 249 in all phases) | G–H | deferred | Start conditions: MASTER-ROADMAP §9.6 |
 
 ## Gates
 
@@ -69,7 +69,7 @@ The current-state dashboard. The IDs, specs and acceptance criteria live in [MAS
 |---|---|---|---|---|
 | **M0 Truthful Build** | P0 + P1 | Internal-track upload (versionCode >= 1000001); owner device validation | `v1.0.0-rc.2` | Not reached. Step 1 complete (AdMob 8.2.1 landed 2026-10-14, its device rows pending in the M0 session); Step 2 platform contract complete in code (P00-T09 to P00-T13; device checks pending in the M0 session) |
 | **M1 Closed Beta** | M0 + P2 + P3 + P4-alpha + P5-A | Closed test (12 testers x 14 days if required), working title | `v1.0.0-rc.3` | Not started |
-| **M2 Launch Candidate** | M1 + P4 + P5 + P6/P7 core + P11 (rename applied) | Production staged rollout | `v1.0.0-rc.4` | Not started |
+| **M2 Launch Candidate** | M1 + P4 + P5 + P6/P7 core + P11 (rename applied) | First production release (A-28: no staged rollout on a first release) | `v1.0.0-rc.4` | Not started |
 | **M3 Live 1.x** | P8, P9, P10, P12 optimisation, iOS track | Growth and live ops by data | `v1.0.0` at launch (Step 19) | Not started |
 
 ### Owner gates (opened 2026-10-07 unless noted)
@@ -80,7 +80,7 @@ The current-state dashboard. The IDs, specs and acceptance criteria live in [MAS
 | OA-02 | **Android developer verification**: check the status on Play Console Home | Owner | URGENT, before the next upload | UNKNOWN |
 | OA-03 | **Upload keystore backup** (`gravityflow-upload`, one copy on disk): password manager + one offline copy (R-21) | Owner | URGENT | OPEN |
 | OA-04 | **Public payments address / EU DSA trader status** (address becomes public once monetised, R-12) | Owner | before enabling payments | UNKNOWN |
-| OA-01 | Account type and creation date; whether the 12x14 closed-test requirement applies (sets the calendar) | Owner | before M1 | UNKNOWN |
+| OA-01 | Account type and creation date; whether the 12x14 closed-test requirement applies (sets the calendar) | Owner | before M0 (decides CT-01) | UNKNOWN |
 | OA-05 | AdMob and RevenueCat dashboards ([MONETIZATION A.14](design/MONETIZATION.md), [audit](launch/EXTERNAL-SERVICES-AUDIT.md)). RevenueCat, needed before any purchase can work: the 4 Play products imported and each set to **Non-consumable**; entitlements `no_ads`, `pack_starter`, `pack_premium_collection`, `pack_founders` attached exactly per A.2; offering `default` set as **Current** with packages `remove_ads`, `starter`, `premium_collection`, `founders`; service credentials + RTDN; license testers; the **public `goog_` SDK key** in `REVENUECAT_API_KEY_PROD` (empty today, so IAP stays "unconfigured" on device; row below) | Owner | before M0 device purchase/ad tests | UNKNOWN |
 | OA-06 | **Real AdMob + RevenueCat ids for the release build** (P00-T20 refuses a release without them). In `src/config/monetization.config.ts` paste `ADMOB_PROD.appId`, `ADMOB_PROD.rewardedAdId`, `ADMOB_PROD.interstitialAdId` (AdMob console: Apps, Ad units) and `REVENUECAT_API_KEY_PROD` (the public `goog_` Google Play SDK key, RevenueCat: API keys; never a Test Store `test_` key). Pass the same app id to Gradle as `-PADMOB_APP_ID`. Both are public client ids, safe to commit. `npm run release:check` lists what is still missing; the sequence is [RUNBOOK section 6](release/RUNBOOK.md) | Owner | before the M0 release AAB | OPEN |
 | OA-07 | **Naming decision** (D-19, USER-GATED): pick from [NAMING-STUDY](launch/NAMING-STUDY.md) + trademark knockout; gates production, not the closed test (A-14) | Owner | before M2 | PENDING |
@@ -89,7 +89,7 @@ The current-state dashboard. The IDs, specs and acceptance criteria live in [MAS
 | OA-10 | Confirm dropping the stale git stash `stash@{0}` ("abandoned sprint4 wip", 2026-05-31) with `git stash drop stash@{0}` (P00-T04; not dropped, needs owner OK) | Owner | any time | PENDING |
 | OA-11 | Age Signals plugin scheduled (D-25; CA AB 1043 starts 2027-01-01) | Claude + Owner | 2026-12-15 | SCHEDULED |
 | OA-12 | Data Safety form + privacy policy sign-off (drafts land in P0 Step 5) | Owner | before M2 | PENDING |
-| OA-13 | **M0 device session**: rows C1-C5, A1-A6 (on AdMob 8.2.1; the ad rows check reward credited, same state resumed, no crash, `no_ads` honoured), P1-P20, and the V rows in [DEVICE-CHECKLIST-M0](qa/DEVICE-CHECKLIST-M0.md), on at least one 120 Hz device | Owner | M0 | PENDING |
+| OA-13 | **M0 device session**: rows C1-C5, A1-A6 (on AdMob 8.2.1; the ad rows check reward credited, same state resumed, no crash, `no_ads` honoured), P1-P15 (P16-P21 are out of M0 scope), and the B, G, H, S, R, U and T rows in [DEVICE-CHECKLIST-M0](qa/DEVICE-CHECKLIST-M0.md), on at least one 120 Hz device | Owner | M0 | PENDING |
 | OA-14 | **Research proposals** ([audit](research/2026-10-14-gravity-flow-research-audit.md) §8, A-27): (a) keep the A-18 retention targets (30/8/3) as stretch goals, add a median reading floor (~22/4/1%), and judge no cohort under ~1,000 installs; (b) start the closed test at M0 if OA-01 says the 12-tester rule applies; (c) use the constellation reveal (B11) and an optional pull-preview assist (B13) as P4–P6 design inputs only | Owner | before CT-01 / P4 | PENDING |
 | OA-15 | Source screen recording (`ScreenRecording_10-14-2026 05-43-17_1.mp4`, uploaded to a ChatGPT session; never accessible to Claude). Provide the file or a transcript, but only if video-specific analysis is wanted | Owner | optional | OPEN |
 | OA-16 | AdMob age treatment (TFAT TEEN vs unspecified) for a 13+ general-audience app, confirmed with counsel ([audit](research/2026-10-14-gravity-flow-research-audit.md) §11 Q10) | Owner | before M2 | PENDING |
@@ -106,7 +106,7 @@ Step 0 complete. Step 1 complete; done so far: P00-T01…T07 (CI v2, Capacitor 8
 4. **Steps 6-7: Physics (P01-T01–T14).** Fixed timestep, frame-rate-independent forces and a sim-time level clock (B-03, B-09). The owner A/B (OA-08) follows P01-T14.
 5. **M0 Truthful Build (gates M0-G01–G11, MASTER-ROADMAP §9.4).**
    - Release AAB (versionCode >= 1000001) and the internal track.
-   - The device session OA-13: purchase rows P1-P20 (real localized prices P1/P13/P15, pending P4/P5, restore P17), then the FORCE_SCALE feel A/B.
+   - The device session OA-13: purchase rows P1-P15 (real localized prices P1/P13/P15, pending P4/P5, restore P10), then the FORCE_SCALE feel A/B.
    - Owner actions that block it now: OA-02 (developer verification), OA-03 (keystore backup), OA-05 (dashboards) and OA-06 (real ids).
 
 ## Open bugs

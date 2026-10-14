@@ -377,12 +377,12 @@ The phases in §4 group work by domain. The stages below group it by **delivery 
 |---|---|---|---|---|
 | **A. Baseline, audit integrity, planning** | The recorded state matches the repo; the research evidence is tracked, corrected and traceable | P0 Step 5: P00-T29, P00-T27 | Recovery report of 2026-10-14 | Planning docs agree with each other and with the repo; the STATUS task board exists; the research audit and notes are tracked, with corrections in a separate, logged revision; the preliminary report is archived as superseded; CI green |
 | **B. Web build reliability** | The public web build deploys again | P00-T28 | Stage A committed (separate commit, no shared files) | The Vercel Preview for the fix commit is READY, with a build log showing `tsc` and `vite build` passing; the Preview serves the game; the Production deployment created by the normal `master` fast-forward is READY (gate G-WEB, §9.2); STATUS B-14 closed with this evidence |
-| **C. P0 completion** | No permanent freeze, no data loss, lawful and measurable telemetry, honest listing; P0 closed | P00-T21, T22, T23, T25, T26 | Stage B exit | Each task's definition of done (§9.2); P0 final review done; 0 open P0 bugs except the owner-blocked B-01 and B-05; device rows scheduled for the M0 session |
+| **C. P0 completion** | No permanent freeze, no data loss, lawful and measurable telemetry, honest listing; P0 closed | P00-T21, T22, T23, T25, T26 | Stage B exit | Each task's definition of done (§9.2); P0 final review done; 0 open P0 bugs except the owner-blocked B-01 and B-05 and B-03 (fixed by Stage D); device rows scheduled for the M0 session |
 | **D. Physics determinism** | The pull feels identical at 30–144 Hz; replays are deterministic | P1: P01-T01–T14 (Steps 6–7) | Stage C exit. Step 6 technically needs only Step 2; it is sequenced after C to keep one change in flight on one branch | P1 success metrics (§4); multi-rate harness green in CI; replay fixtures match in Node and the browser; `compare-p1.md` reviewed; A/B builds ready for the owner |
-| **E. M0 release readiness** | A truthful build on the Play internal track | M0 gates M0-G01–G11 (§9.4) | Stage D exit; OA-03, OA-05, OA-06 done | Every M0 gate verified and labelled automated, emulator, real device or owner sign-off; tag `v1.0.0-rc.2` |
-| **F. Closed testing and first players** | Real people understand "hold to pull" and come back | CT-01–CT-08 (§9.5), P12-T09, M1 | Stage E exit; OA-01 decides when the closed test starts | The milestone gates in §12 |
-| **G. Product improvement, acquisition, monetization** | Investment follows evidence, not feature envy | P2–P11 (Steps 8–18), experiments E1–E12 (§11) | Stage F data | The decision rules in §11 and §12; each phase's own success metrics (§4) |
-| **H. Post-test 30/60/90** | A staged plan once real players exist | P12 + §13 | Stage F exit (production access granted, or closed test complete if exempt) | The continue / pivot / stop criteria in §13 |
+| **E. M0 release readiness** | A truthful build on the Play internal track | M0 gates M0-G01–G11 (§9.4) | Stage D exit; OA-03, OA-05, OA-06 done | Every M0 gate verified and labelled with its verification type from §9.4 (automated, local build, real device, owner sign-off); tag `v1.0.0-rc.2` |
+| **F. Closed test to production access** | Real people understand "hold to pull"; Play grants production access | CT-01–CT-07 (§9.5), P12-T09 | M0. The closed test starts at M0 if OA-01 shows the 12-tester rule applies and OA-14b is approved; otherwise at M1 (EXECUTION-ORDER) | "First 20" gate passed (§12) and production access granted (CT-06). If M1 comes first, "First 100" is evaluated too (CT-07) |
+| **G. Product improvement toward the launch candidate** | Investment follows evidence, not feature envy | P2–P11 (EXECUTION-ORDER Steps 8–18), experiments EXP-01–EXP-12 (§11) | M0. It runs **alongside** Stage F: Steps 8–13 lead to M1; Steps 15–18 use the closed-test data | M2 Launch Candidate (EXECUTION-ORDER); each phase's own success metrics (§4) |
+| **H. Launch and post-launch 30/60/90** | A stable first public release, then improvement by data | CT-08, P12 (Step 19 on, A-28), §13 | M2 and production access (Stages F and G both done) | The "First 1,000" and "First 10,000" gates (§12) and the continue / pivot / stop criteria in §13 |
 
 ```mermaid
 flowchart LR
@@ -391,11 +391,12 @@ flowchart LR
   C --> D[D Physics P1<br>P01-T01..T14]
   D --> E{{E M0 gates<br>M0-G01..G11}}
   OA[(Owner actions<br>OA-03 OA-05 OA-06)] --> E
-  E --> F[F Closed test + first players<br>CT-01..CT-08]
-  OA1[(OA-01 account type)] --> F
-  F --> G[G Evidence-driven product,<br>growth, monetization P2-P11]
-  F --> H[H Post-test 30/60/90]
-  G --> H
+  E --> F[F Closed test to production access<br>CT-01..CT-07]
+  OA1[(OA-01 account type<br>OA-14b timing)] --> F
+  E --> G[G Steps 8-18 toward M1 and M2<br>P2-P11, EXP-01..EXP-12]
+  F -- closed-test data --> G
+  F --> H[H Launch + 30/60/90<br>CT-08, P12]
+  G -- M2 --> H
 ```
 
 ## 9. Task inventory
@@ -459,13 +460,13 @@ flowchart LR
   - No other files are in either commit.
 - **Evidence to close:** both commit hashes; `git show --stat` for each.
 
-**P00-T28 — Vercel web build repair (B-14)** · Priority P0 (the public web build has been stuck on 2026-10-08 code `7d39c12` since P00-T20; every push creates a failed deployment) · Effort XS
+**P00-T28 — Vercel web build repair (B-14)** · Priority P0 (found 2026-10-14: the public web build had been stuck on the 2026-10-08 code `7d39c12` since P00-T20, and every push created a failed deployment) · Effort XS
 - **Root cause (VERIFIED, Vercel build log, deployment `dpl_Bbptbe6pKGSa7dTHfDdNvB2x1vEV`):**
   - The deploy fails with `TS2307: Cannot find module '../../scripts/lib/releaseCheck.mjs'` in `src/config/releaseConfig.test.ts` and `releaseBuild.test.ts`.
   - `.vercelignore` excludes `scripts/`, while `npm run build` runs `tsc` over all of `src/`, tests included.
   - GitHub CI is unaffected because it has the full checkout.
 - **Depends on:** P00-T27 committed (separate commit; no shared files). **Blocks:** Stage C on the same branch (one change in flight).
-- **Scope:** remove `scripts` from `.vercelignore`. This is the smallest robust change: `scripts/` is about 0.8 MB, and future `src` tests may import other tooling modules.
+- **Scope:** remove `scripts` from `.vercelignore`. This is the smallest robust change: tracked `scripts/` is about 0.34 MB, and future `src` tests may import other tooling modules. The regression guard `src/config/deployIgnore.test.ts` fails if any file `tsc` reads sits under a path the upload excludes.
 - **Non-goals:**
   - Changing `tsconfig` or `npm run build` (local and CI behaviour must stay identical).
   - Changing any Vercel project setting.
@@ -476,14 +477,14 @@ flowchart LR
   3. The Preview URL serves `index.html` and the hashed JS bundle (read through the Vercel tools, since Previews are protected).
   4. After the normal fast-forward of `master`, the Production deployment for the same commit is READY, and the production alias serves the new build.
   5. STATUS B-14 is closed with the deployment IDs.
-- **Rollback:** Vercel instant rollback to `7d39c12` stays available, and the commit is a one-line revert.
+- **Rollback:** Vercel instant rollback to `7d39c12` stays available, and `git revert` of the fix commit restores the old upload. The guard test would then fail, as intended.
 
 **P00-T21 — Frame guard + error overlay + Crashlytics** · Priority P0 (B-10: an uncaught frame error freezes the game permanently) · Effort M
 - **Spec:** [`phases/P00-foundation.md`](phases/P00-foundation.md) Step 5, plus these fold-ins:
   - `ctx.expectSignal(matcher)` seam in the harness (TODO `scripts/harness/lib/signals.mjs:7`).
   - `lifecycle.ts` must report the activity state even when `runLifecycle` throws: use `try/finally`, or report first.
   - Enforce `CRASH_MAX_PER_SESSION`.
-- **Depends on:** T24 (done), T28.
+- **Depends on:** T24, T28.
 - **Acceptance:**
   - DEV `window.__crashTest()` makes three throws inside `update`; the overlay appears and the smoke run asserts it.
   - Unit tests for `frameGuard` and `stackParse`.
@@ -504,7 +505,7 @@ flowchart LR
   - Remove the reserved `session_start` (still at `src/services/analyticsEvents.ts:39`).
   - A manual `screen_view`.
   - `level_start` / `level_end{success, cause, attempt, duration_ms}` with `level_id` and `level`.
-  - Research input (audit §8.3): `level_end` must answer time-to-first-win and the World 1 funnel without new event families.
+  - Research input (audit §8, recommendation 3): `level_end` must answer time-to-first-win and the World 1 funnel without new event families.
 - **Depends on:** T22.
 - **Acceptance:**
   - `git grep -n "session_start" src` matches only the reserved-name list in the test.
@@ -515,7 +516,7 @@ flowchart LR
 - **Spec:** the P00 phase doc, plus the corrected audit as the copy checklist (audit §8 recommendation 4). The checklist:
   - Keep "Hold to pull a lost star home".
   - Remove the "leaderboard" claims (the boards are local only).
-  - Review "Same run for everyone": it is true of the shared seed, so keep it only if the copy does not imply online ranking.
+  - Remove "Same run for everyone" from store copy, as the audit recommends: next to a local-only board it reads as online ranking. The same words on the in-game Weekly card (`src/scenes/RunSelectScene.ts:54`) are outside T25's file list, so T25 records them in STATUS for an owner/UX decision instead of editing them silently.
   - No ALL CAPS, emoji or ranking claims in the title; no CTA, emoji or "Best/#1/Top/New" in the short description.
   - "Play offline. No Wi-Fi needed to play."
   - One sentence on exactly what Remove Ads removes.
@@ -532,6 +533,7 @@ flowchart LR
   - Backfill CHANGELOG for P00-T06–T24.
   - Set the phase-doc status line.
   - **P0 final review**: triage every "minor for final review" item in the SDD ledger (T01–T24), then fix or record each.
+  - Correct the phase doc §8.2 boot-smoke text. It says the harness reads `window.__game` from `main.ts:117-120`, but P00-T24 captures the Phaser game harness-side, with no app hook.
 - **Depends on:** T21, T22, T23, T25.
 - **Acceptance:** §15 of the phase doc is complete except the owner device rows, which are scheduled in the M0 device session; code review Approved.
 
@@ -561,7 +563,7 @@ All are **priority P0**: they fix the P0 defect B-03, and M0 requires them. The 
 - Before and after trajectory snapshots, with a reviewed `compare-p1.md`.
 - Any level whose outcome changes between the 60 Hz baseline and the fixed-step build is listed with a STATUS bug. It is never retuned inside P1 (par and zone retuning wait for P2/P4, see "What must wait" in EXECUTION-ORDER).
 
-**The `FORCE_SCALE` A/B (E2, OA-08):**
+**The `FORCE_SCALE` A/B (EXP-02, OA-08):**
 - **Hypothesis:** one uniform value reproduces the authored feel on both 60 Hz and 120 Hz devices.
 - **Controlled:** the same build per value, the same levels (W1–3 plus one boss), the same two devices, and reduced motion off.
 - **Measured:** the owner's feel notes, plus par-time clears per value (from the A/B labels in P01-T14).
@@ -572,36 +574,36 @@ All are **priority P0**: they fix the P0 defect B-03, and M0 requires them. The 
 
 | ID | Gate | Verification type | Depends on | Evidence to close |
 |---|---|---|---|---|
-| M0-G01 | P0 closed: 0 open P0 bugs except owner-blocked B-01/B-05 | Automated + review | P00-T26 | STATUS open-bug table |
+| M0-G01 | P0 closed: 0 open P0 bugs except owner-blocked B-01/B-05 (B-03 closes with M0-G02) | Automated + review | P00-T26 | STATUS open-bug table |
 | M0-G02 | P1 closed; multi-rate harness and replay jobs green in CI | Automated | P01-T14 | CI run id |
-| M0-G03 | `npm run release:check` passes with real ids (it refuses today: 4 problems) | Automated, after owner input | OA-06 | Command output |
-| M0-G04 | Signed release AAB, versionCode ≥ 1000001, built by `npm run build:release` + `bundleRelease -PADMOB_APP_ID=…` | Local build | M0-G03, OA-03 | Build log + SHA-256 (RUNBOOK §6) |
+| M0-G03 | `npm run release:check` passes with real ids | Automated, after owner input | OA-06 | Command output |
+| M0-G04 | Signed release AAB, versionCode ≥ 1000001, built by `npm run build:release` + `bundleRelease -PADMOB_APP_ID=…` | Local build | M0-G03, OA-03 | Build log (RUNBOOK §6) |
 | M0-G05 | Upload keystore backed up and a restore rehearsed (password manager + offline copy) | Owner sign-off | OA-03 | STATUS gate row |
 | M0-G06 | Internal track upload; install from Play on a real phone | Owner, real device | M0-G04, OA-02 | Play Console + device |
-| M0-G07 | Device session: rows C1–C5 (consent), A1–A6 (ads, on AdMob 8.2.1), P1–P20 (purchases and restore, license testers), V-rows (back, pause, renderer kill, saves) per [`../qa/DEVICE-CHECKLIST-M0.md`](../qa/DEVICE-CHECKLIST-M0.md) | Real device | M0-G06, OA-05 | Checklist results recorded |
-| M0-G08 | `FORCE_SCALE` chosen from the A/B (E2) | Owner, real devices (60 + 120 Hz) | P01-T14 | DECISIONS amendment |
+| M0-G07 | Device session per [`../qa/DEVICE-CHECKLIST-M0.md`](../qa/DEVICE-CHECKLIST-M0.md): C1–C5 consent (V13), A1–A6 ads on AdMob 8.2.1 (V15), P1–P15 purchases with license testers (V14; restore is P10), B back and pause, G lifecycle and audio, H haptics (V16), S saves and backup (V17), R renderer and WebView, U system bars, T touch targets. P16–P21 are out of M0 scope | Real device | M0-G06, OA-05 | Checklist results recorded |
+| M0-G08 | `FORCE_SCALE` chosen from the A/B (EXP-02) | Owner, real devices (60 + 120 Hz) | P01-T14 | DECISIONS amendment |
 | M0-G09 | Crashlytics shows a stack-traced test non-fatal; DebugView shows `screen_view` per scene and zero `firebase_error` | Owner, real device | T21, T23, M0-G06 | Screenshots / console notes in STATUS |
 | M0-G10 | Crashlytics-without-consent legal decision recorded (`CRASH_REQUIRES_ANALYTICS_CONSENT`) | Owner sign-off | OA-09 | STATUS gate row |
 | M0-G11 | Tag `v1.0.0-rc.2` + GitHub Release (no binaries); STATUS updated | Automated | G01–G10 | Tag + release URL |
 
 Release guards are never weakened to pass a gate, and no placeholder or fabricated id is ever entered.
 
-### 9.5 Stage F: closed test and first players
+### 9.5 Stages F and H: closed test, production access and first public availability
 
 | ID | Task | Priority | Depends on | Effort | Definition of done | Owner? |
 |---|---|---|---|---|---|---|
-| CT-01 | Decide closed-test timing: at M0 if the 12-tester rule applies to this account (proposal 9 of the audit), else at M1 | P0 | OA-01 | XS | Decision recorded in DECISIONS + STATUS | Yes |
-| CT-02 | Tester kit: install steps (Play closed track, opt-in link), what to try, privacy note, feedback channel, debrief questions (E1, E5, E6, E7) | P1 | CT-01 | S | `docs/qa/CLOSED-TEST-KIT.md` reviewed | No (drafted by Claude) |
+| CT-01 | Decide closed-test timing: at M0 if the 12-tester rule applies to this account and OA-14b is approved (audit proposal 9), else at M1 | P0 | OA-01 | XS | Decision recorded in DECISIONS + STATUS | Yes |
+| CT-02 | Tester kit: install steps (Play closed track, opt-in link), what to try, privacy note, feedback channel, debrief questions (EXP-01, EXP-05, EXP-06, EXP-07) | P1 | CT-01 | S | `docs/qa/CLOSED-TEST-KIT.md` reviewed | No (drafted by Claude) |
 | CT-03 | Recruit ~20 real testers so ≥ 12 stay opted in for 14 continuous days; never paid "tester" gigs (Play policy) | P0 | CT-01, CT-02 | M | ≥ 12 opted in on day 14 | Yes |
 | CT-04 | Telemetry readiness: the T23 events validated in DebugView; a saved funnel for L1 → L3 and W1 | P1 | T23, M0-G09 | S | Funnel shows test traffic | Partly |
 | CT-05 | Feedback log + day-14 checkpoint against the §12 "First 20" gate | P1 | CT-03 | S | Checkpoint note in STATUS | Partly |
 | CT-06 | Production-access application pack (= P12-T09) | P0 | CT-05 | S | Submitted with ≥ 12 opted-in testers | Yes |
 | CT-07 | Widen the test to ~100 at M1 (Worlds 1–3 reworked) | P1 | M1 | S | §12 "First 100" gate evaluated | Partly |
-| CT-08 | First public availability: country availability choice (staged rollout is not available for a first release) | P1 | M2, production access | S | §12 "First 1,000" gate evaluated | Yes |
+| CT-08 | Stage H. First public availability: choose the countries. A first release cannot use a staged rollout (A-28), so country availability is the only soft-launch lever | P1 | M2, production access | S | §12 "First 1,000" gate evaluated | Yes |
 
 ### 9.6 Stages G–H: later phases (specs in each phase doc, §16)
 
-There are 246 phase task IDs in total. Status is tracked at phase level in STATUS until a phase starts, and then per task.
+There are 249 phase task IDs: 246 at adoption plus P00-T27–T29. Status is tracked at phase level in STATUS until a phase starts, and then per task.
 
 | Phase | Task IDs | Count | Starts after | Priority class | Plan |
 |---|---|---|---|---|---|
@@ -621,7 +623,7 @@ There are 246 phase task IDs in total. Status is tracked at phase level in STATU
 
 ## 10. Owner-action register
 
-Claude cannot do these: they need the owner's accounts, devices, money or legal judgement. Their **state** is in STATUS → Gates (same OA IDs). Engineering continues on independent work while any of them is open.
+These need the owner's accounts, devices, money or legal judgement (OA-11 is shared with Claude). Their **state** is in STATUS → Gates (same OA IDs). Engineering continues on independent work while any of them is open.
 
 | ID | Action | Blocks | Where / how | Evidence of completion |
 |---|---|---|---|---|
@@ -644,22 +646,22 @@ Claude cannot do these: they need the owner's accounts, devices, money or legal 
 
 ## 11. Experiment backlog (research-informed)
 
-Source: the research audit §10. Thresholds marked *internal* are proposed decision rules, not industry benchmarks. Every experiment respects the release guards, consent, the 13+ audience and D-23/D-24.
+Source: the research audit §10, where they are numbered E1–E12. They are renumbered EXP-01–EXP-12 here so they never clash with the SUCCESS-METRICS metric IDs E-01–E-15. Thresholds marked *internal* are proposed decision rules, not industry benchmarks. Every experiment respects the release guards, consent, the 13+ audience and D-23/D-24.
 
 | ID | When | Hypothesis | Measurement | Sample | Decision rule |
 |---|---|---|---|---|---|
-| E1 | First 20 | ≥ 80% of new testers win L1 unaided in their first session, most within 30 s (*internal*) | `level_end` attempt and duration for L1; debrief "What does holding do?" | 12–20 testers (qualitative) | ≥ 16/20 win L1 unaided and say "hold to pull" → continue; ≥ 4/20 stall or describe tilt/tap/swipe → revisit the CoachMark and sonar ping before P4 |
-| E2 | Before M0 | One uniform `FORCE_SCALE` reproduces the authored feel at 60 and 120 Hz | Owner play of W1–3 per value; par clears | 4 values × 2 devices | §9.3 |
-| E3 | P01-T12 | Ball state is identical across 30–144 Hz with jitter | CI harness; replay hashes | All levels × 5 rates | Any divergence blocks M0 |
-| E4 | T26 / M0 | Every rewarded completion credits; every ad close resumes the same state | Rows A1–A6 + 50 rewarded views per placement on 2 devices (test ids) | ~200 views | 200/200 credited, 0 restarts, 0 crashes, `no_ads` honoured; anything else is an M0 blocker |
-| E5 | Closed test, then M1 | No World 1 level stalls players | Attempts and session-ending quits per level | 20 (directional), 100 at M1 | No W1 level where ≥ 25% of starters stop that session (*internal*); else onto the P4-α fix list |
-| E6 | Closed test | Human difficulty ranks track the bot's | Attempt index per level vs bot | 20–100 | Mismatch → recalibrate the noisy-expert model (A-23) before P4 |
-| E7 | Pre-launch | A 5 s real-gameplay opening that shows the hold beats a logo/menu opening | Testers and community rank 3 clips | 20+ responses | Clear majority → use it; none → defer to E8 |
-| E8 | Post-launch | A gesture-first first screenshot lifts install conversion ≥ 20% relative | Play store listing experiment | ~1,200 visitors per arm at 25% baseline | Winner at the chosen confidence; else keep control at the 6-month auto-stop |
-| E9 | P7 | A Remove Ads price above the $1.99–$2.99 heuristic changes revenue per payer | `purchase_completed` by price | ~7,700 installs per arm | Not testable before ~10,000 installs; owner heuristic until then |
-| E10 | P7 (Remote Config) | Moving the first interstitial to lifetime L12 raises D1 without cutting ad ARPDAU > 10% | D1, ad ARPDAU by arm | ~1,250 installs per arm | D1 up/flat and ARPDAU within 10% → adopt |
-| E11 | After production access (owner budget ~US$300) | Stability holds on devices the developer does not own | Crash-free, ANR, D1 | 500–2,000 installs | Crash-free ≥ 99.5% and D1 ≥ ~22% (GameAnalytics median) → continue; crash/ANR above 1.09% / 0.47% or D1 < ~19% → stop and fix before any growth spend |
-| E12 | First 100 | 26–28 s real-gameplay clips earn closed-test sign-ups | Views, link clicks, sign-ups | 3–5 clips | Any clip ≥ 5 sign-ups → continue; none → rely on network channels |
+| EXP-01 | First 20 | ≥ 80% of new testers win L1 unaided in their first session, most within 30 s (*internal*) | `level_end` attempt and duration for L1; debrief "What does holding do?" | 12–20 testers (qualitative) | ≥ 16/20 win L1 unaided and say "hold to pull" → continue; otherwise (fewer than 16, or any tester describing tilt, tap or swipe) → revisit the CoachMark and sonar ping before P4 |
+| EXP-02 | Before M0 | One uniform `FORCE_SCALE` reproduces the authored feel at 60 and 120 Hz | Owner play of W1–3 per value; par clears | 4 values × 2 devices | §9.3 |
+| EXP-03 | P01-T12 | Ball state is identical across 30–144 Hz with jitter | CI harness; replay hashes | All levels × 5 rates | Any divergence blocks M0 |
+| EXP-04 | T26 / M0 | Every rewarded completion credits; every ad close resumes the same state | Rows A1–A6 + 50 rewarded views per placement on 2 devices (test ids) | ~200 views | 200/200 credited, 0 restarts, 0 crashes, `no_ads` honoured; anything else is an M0 blocker |
+| EXP-05 | Closed test, then M1 | No World 1 level stalls players | Attempts and session-ending quits per level | 20 (directional), 100 at M1 | No W1 level where ≥ 25% of starters stop that session (*internal*); else onto the P4-α fix list |
+| EXP-06 | Closed test | Human difficulty ranks track the bot's | Attempt index per level vs bot | 20–100 | Mismatch → recalibrate the noisy-expert model (A-23) before P4 |
+| EXP-07 | Pre-launch | A 5 s real-gameplay opening that shows the hold beats a logo/menu opening | Testers and community rank 3 clips | 20+ responses | Clear majority → use it; none → defer to EXP-08 |
+| EXP-08 | Post-launch | A gesture-first first screenshot lifts install conversion ≥ 20% relative | Play store listing experiment | ~1,200 visitors per arm at 25% baseline | Winner at the chosen confidence; else keep control at the 6-month auto-stop |
+| EXP-09 | P7 | A Remove Ads price above the $1.99–$2.99 heuristic changes revenue per payer | `purchase_completed` by price | ~7,700 installs per arm | Not testable before ~10,000 installs; owner heuristic until then |
+| EXP-10 | P7 (Remote Config) | Moving the first interstitial to lifetime L12 raises D1 without cutting ad ARPDAU > 10% | D1, ad ARPDAU by arm | ~1,250 installs per arm | D1 up/flat and ARPDAU within 10% → adopt |
+| EXP-11 | After production access (owner budget ~US$300) | Stability holds on devices the developer does not own | Crash-free, ANR, D1 | 500–2,000 installs | Crash-free ≥ 99.5% and D1 ≥ ~22% (GameAnalytics median; proposed floor, OA-14a) → continue; crash/ANR above 1.09% / 0.47% or D1 < ~19% → stop and fix before any growth spend; anything in between (e.g. a crash rate of 0.5–1.09%) → hold growth, fix the top crash cluster, re-test |
+| EXP-12 | First 100 | 26–28 s real-gameplay clips earn closed-test sign-ups | Views, link clicks, sign-ups | 3–5 clips | Any clip ≥ 5 sign-ups → continue; none → rely on network channels |
 
 ## 12. First-player milestones (planning scenarios, not forecasts)
 
@@ -667,22 +669,22 @@ Assumptions: no paid UA budget, Android only, the 13+ audience, the existing mon
 
 | Milestone | Product questions | Metrics collected | Minimum evidence to move on | Pause / fix / continue |
 |---|---|---|---|---|
-| **First 20** (closed test, CT-01–CT-06) | Do strangers understand "hold to pull" in the first minute? Does the build stay up on phones the developer does not own? Do the ads and purchases behave? | Crash-free sessions; time to first L1 win (E1); unprompted description of the verb; W1 quits (E5); ≥ 12 continuously opted in; qualitative feedback | ≥ 12 testers opted in for 14 days; crash-free ≥ 99.5% on internal; E1 passes; no ad or purchase row failing | **Pause** on any crash cluster or ad/purchase failure (fix first). **Fix** onboarding if E1 fails. **Continue** to production access (CT-06) when all pass |
-| **First 100** (M1 widening, CT-07) | Is World 1 fair and engaging? Where do players stop? Does the Daily get used? | D1 direction (±9 pts); W1 funnel; fail streaks; Daily participation; rewarded opt-in | W1 funnel with no level ≥ 25% session-stop (*internal*); human-vs-bot ranks consistent (E6) | **Fix** flagged W1 levels on the P4-α list; **continue** to M2 work when the funnel is clean |
-| **First 1,000** (first public availability, CT-08) | Does retention reach the median band? Do Android vitals hold? Does the listing convert? | D1 (±2.8), D7 (±1.7); vitals vs 1.09% crash / 0.47% ANR; listing conversion vs the Play Console peer median; rewarded opt-in vs ≥ 20% | D1 and D7 read against GameAnalytics percentiles; vitals under Play's thresholds | **Pause** growth work on any vitals breach. **Fix** the funnel if D1 is below ~19% (≈ 0.85 × median, *internal*). **Continue** to experiments (E8, E10) when D1 ≥ ~22% |
-| **First 10,000** (organic, a store feature, or owner-approved paid tests) | Is there a sustainable loop, and does monetization cover its costs? | D30 (±1.1 per 1,000-install cohort); payer conversion (repo target ≥ 1.5%); ad ARPDAU by country; store-experiment results | Two consecutive cohorts of ≥ 1,000 installs with stable D1/D7 | **Continue** investing per §13 if D7 ≥ the median (~4%) and vitals hold. **Pivot** content or onboarding if D7 is below the median after two iterations. Paid UA stays "must not do yet" (P11) unless the owner lifts it with this evidence |
+| **First 20** (Stage F: closed test, CT-01–CT-06) | Do strangers understand "hold to pull" in the first minute? Does the build stay up on phones the developer does not own? Do the ads and purchases behave? | Crash-free sessions; time to first L1 win (EXP-01); unprompted description of the verb; W1 quits (EXP-05); ≥ 12 continuously opted in; qualitative feedback | ≥ 12 testers opted in for 14 days; crash-free ≥ 99.5% on internal; EXP-01 passes; no ad or purchase row failing | **Pause** on any crash cluster or ad/purchase failure (fix first). **Fix** onboarding if EXP-01 fails. **Continue** to production access (CT-06) when all pass |
+| **First 100** (Stage F at M1: widening, CT-07) | Is World 1 fair and engaging? Where do players stop? Does the Daily get used? | D1 direction (±9 pts); W1 funnel; fail streaks; Daily participation; rewarded opt-in | W1 funnel with no level ≥ 25% session-stop (*internal*); human-vs-bot ranks consistent (EXP-06) | **Fix** flagged W1 levels on the P4-α list; **continue** to M2 work when the funnel is clean |
+| **First 1,000** (Stage H: first public availability, CT-08) | Does retention reach the median band? Do Android vitals hold? Does the listing convert? | D1 (±2.8), D7 (±1.7); vitals vs 1.09% crash / 0.47% ANR; listing conversion vs the Play Console peer median; rewarded opt-in vs ≥ 20% | D1 and D7 read against GameAnalytics percentiles; vitals under Play's thresholds | **Pause** growth work on any vitals breach. **Fix** the funnel if D1 is below ~19% (≈ 0.85 × median, *internal*). **Continue** to experiments (EXP-08, EXP-10) when D1 ≥ ~22% (proposed floor, OA-14a; A-18's 30% stays the target) |
+| **First 10,000** (Stage H: organic, a store feature, or owner-approved paid tests) | Is there a sustainable loop, and does monetization cover its costs? | D30 (±1.1 per 1,000-install cohort); payer conversion (repo target ≥ 1.5%); ad ARPDAU by country; store-experiment results | Two consecutive cohorts of ≥ 1,000 installs with stable D1/D7 | **Continue** investing per §13 if D7 ≥ the median (~4%) and vitals hold. **Pivot** content or onboarding if D7 is below the median after two iterations. These rules are proposed, pending the owner with OA-14a. Paid UA stays "must not do yet" (P11) unless the owner lifts it with this evidence |
 
 ## 13. Post-test 30/60/90 plan
 
-**Day 1** is the first day after Stage F's exit: production access granted, or the closed test complete if the account is exempt. Targets marked **stretch** are A-18 values that the research places at roughly top-quartile level (proposal OA-14a). **Evidence-based** floors are the GameAnalytics 2026 medians.
+**Day 1** is the first day of public availability (CT-08), after M2 and production access (Stage H). The targets in force are A-18 (D1 ≥ 30%, D7 ≥ 8%, D30 ≥ 3%). The **proposed floors** (~22% / 4% / 1%, about the GameAnalytics 2026 medians) are OA-14a, pending the owner's decision; until then they are context, not gates.
 
-| Window | Priorities | Gates | Metrics (evidence-based floor · stretch) | Experiments | Budget assumption |
+| Window | Priorities | Gates | Metrics (proposed floor, OA-14a · A-18 target) | Experiments | Budget assumption |
 |---|---|---|---|---|---|
-| Days 1–30 | First public availability in chosen countries (country availability, not a staged percentage); vitals watch; fix the top 3 friction points from the closed test; weekly metrics review (P12-T16) | M2 met; OA-07 naming applied before public creative (A-14) | Crash-free ≥ 99.5%; ANR < 0.47%; D1 ≥ ~22% · 30% | E7 result applied to the listing; E11 only if the owner funds it | $0 by default; optional ~US$300 technical test (E11) |
-| Days 31–60 | Data-driven fixes (P3 loop and P4 waves by funnel); first store-listing experiment (E8) once traffic allows; Remote Config ad caps (P7) | 1,000-install cohort available | D7 ≥ ~4% · 8%; rewarded opt-in ≥ 20%; interstitials ≤ 1.5/DAU | E8, E10 | $0 |
-| Days 61–90 | Decide what to invest in next (P6 retention, P8 Run 2.0, localization per P11) from two cohorts of evidence | Two cohorts ≥ 1,000 installs | D30 ≥ ~0.7% · 3%; payer conversion vs 1.5% | E9 only if ≥ ~10,000 installs | Paid UA only on explicit owner approval |
+| Days 1–30 | First public availability in chosen countries (country availability, not a staged percentage, A-28); vitals watch; fix the top 3 friction points from the closed test; weekly metrics review (P12-T16) | M2 met; OA-07 naming applied before public creative (A-14) | Crash-free ≥ 99.5%; ANR < 0.47%; D1 ≥ ~22% · 30% | EXP-07 result applied to the listing; EXP-11 only if the owner funds it | $0 by default; optional ~US$300 technical test (EXP-11) |
+| Days 31–60 | Data-driven fixes (P3 loop and P4 waves by funnel); first store-listing experiment (EXP-08) once traffic allows; Remote Config ad caps (P7) | 1,000-install cohort available | D7 ≥ ~4% · 8%; rewarded opt-in ≥ 20%; interstitials ≤ 1.5/DAU | EXP-08, EXP-10 | $0 |
+| Days 61–90 | Decide what to invest in next (P6 retention, P8 Run 2.0, localization per P11) from two cohorts of evidence | Two cohorts ≥ 1,000 installs | D30 ≥ ~1% · 3%; payer conversion vs 1.5% | EXP-09 only if ≥ ~10,000 installs | Paid UA only on explicit owner approval |
 
-**Continue / pivot / stop (proposed internal rules, to confirm with the owner):**
+**Continue / pivot / stop (proposed internal rules, pending the owner together with OA-14a):**
 - **Continue** when vitals are under Play's thresholds and D1/D7 are at or above the median band.
 - **Pivot** (onboarding, difficulty, listing) when D1 or D7 sits below ~0.85 × the median for two consecutive cohorts after a fix.
 - **Stop growth spend** (not the game) when vitals breach or monetization cannot cover running costs at the observed retention.
@@ -711,7 +713,7 @@ Assumptions: no paid UA budget, Android only, the 13+ audience, the existing mon
 
 **Assumptions:**
 - The owner can supply real ids, dashboards and device time before M0.
-- At least one 120 Hz Android device is available for E2/E4. Unverified.
+- At least one 120 Hz Android device is available for EXP-02/EXP-04. Unverified.
 - There is no paid UA budget.
 - Google Play rules are as fetched on 2026-10-14.
 
@@ -730,3 +732,4 @@ Assumptions: no paid UA budget, Android only, the 13+ audience, the existing mon
 | 2026-10-07 | Plan of record adopted (§1–§7) | Baseline audit | D-01–D-30, A-01–A-25 |
 | 2026-10-14 | Delivery stages, task inventory, owner-action register, experiment backlog, first-player milestones, post-test 30/60/90, risks and change log added (§8–§15). New tasks: P00-T29 (planning sync), P00-T27 (research audit integrity) and P00-T28 (Vercel repair), all before P00-T21. **The P0 → P1 → M0 order is unchanged.** | Recovery report: Vercel deployments in ERROR since `95953fc` (2026-10-08); the research audit and notes untracked; review fold-ins only in the local ledger | A-26 |
 | 2026-10-14 | The research audit is adopted as an evidence input (not as approval to build); the preliminary report is superseded; the source video is recorded as unanalyzed | Audit §2–§3; citation spot-check (16 sources) | A-27 |
+| 2026-10-14 | Planning-docs review fix pass. Stage G now runs alongside F from M0, and the launch and the First 1,000/10,000 gates move to Stage H. Device-row names follow the M0 checklist. The task count is 249. Proposed KPIs are labelled pending (OA-14a). The experiments are renamed EXP-01–EXP-12. A first production release cannot use a staged rollout | Planning-docs review of 2026-10-14; [Play staged rollouts](https://support.google.com/googleplay/android-developer/answer/6346149?hl=en) | A-28 |

@@ -325,6 +325,7 @@ Consent C1–C3 (EEA/US debug geography), ads A1–A5, license-tester purchases 
 - [ ] D-09 complete in code (plugin import, entitlements, exact packages, error codes, pending listener, explicit `getCustomerInfo`, store prices, Starter hidden, `singleTop`); dashboard items (non-consumable flags, entitlements, current offering, license testers) recorded as 👤 gates.
 - [ ] D-10 + D-24 plumbing complete; Settings privacy rows live; release guard refuses test ids.
 - [ ] Frame guard + overlay + Crashlytics stacks and keys; analytics hygiene complete; store copy honest; Data Safety + privacy drafts committed.
+- [ ] P00-T27–T29 done (planning sync, research audit tracked and corrected, Vercel web build repaired with gate G-WEB passed: Preview and Production READY).
 - [ ] V1–V12 VERIFIED; V13–V18 have owner results recorded in `docs/qa/DEVICE-CHECKLIST-M0.md` (may complete during the M0 device session); STATUS Gates updated.
 
 ---
@@ -476,7 +477,7 @@ Each task: own branch or commit series, TDD where pure, gates V1–V3 before com
 - Done when: writing `"null"` into `gravity-flow:progress:v9` in the browser restores from `:bak` (manual check in the boot-smoke harness: DEV hook writes the bad value then reloads).
 - Fold-ins (P00-T13/T16 reviews):
   - **Re-runnable migrations.** Migration steps must be re-runnable and must re-check before deleting, because a kill after migration could otherwise resurrect a deleted key as unused data.
-  - **Removal API.** Delete with `ctx.remove` only. Never use `Saves.remove`: it self-awaits and stalls boot.
+  - **Removal API.** Delete with `ctx.remove` only. `Saves.remove` is refused while migrations run: it resolves false and reports `saves.removeInMigration` (see the header of `src/platform/saves.ts`).
   - **Writes.** Every new persisted key goes through `Saves.write`.
 
 **P00-T23 — Analytics hygiene (D-14 P0 part)**
@@ -487,7 +488,7 @@ Each task: own branch or commit series, TDD where pure, gates V1–V3 before com
 - Fold-ins:
   - **A-10 events.** Add `level_start` and `level_end{success, cause, attempt, duration_ms}`, each with `level_id` and `level`.
   - **Pre-consent queue.** Flush the queue inside `Analytics.applyConsent`. Nothing is sent before consent.
-  - **Research input (audit §8.3).** The `level_end` params must answer time-to-first-win and the World 1 funnel without new event families.
+  - **Research input (audit §8, recommendation 3).** The `level_end` params must answer time-to-first-win and the World 1 funnel without new event families.
 
 **P00-T24 — Boot smoke harness**
 - Goal: every scene boots with zero console errors, in CI.
@@ -501,7 +502,8 @@ Each task: own branch or commit series, TDD where pure, gates V1–V3 before com
 - Tests: `src/config/storeCopy.test.ts`.
 - Done when: test green; drafts marked "DRAFT — owner review, not legal advice"; 👤 owner sign-off recorded in STATUS before the Play form is filled.
 - Fold-ins: use the corrected research audit (P00-T27) as the copy checklist (audit §8, recommendation 4).
-  - **Keep** "Hold to pull a lost star home". Keep "Same run for everyone" only if nothing around it implies online ranking: the weekly seed really is shared.
+  - **Keep** "Hold to pull a lost star home".
+  - **Remove "Same run for everyone"** from store copy, as the audit recommends: next to a local-only board it reads as online ranking. The same words on the in-game Weekly card (`src/scenes/RunSelectScene.ts:54`) are outside this task's files, so record them in STATUS for an owner/UX decision instead of editing them silently.
   - **Remove** the "leaderboard" claims (B-07; the boards are local only).
   - **Title:** no ALL CAPS, emoji or ranking claims (metadata policy).
   - **Short description:** no CTA, emoji, or "Best/#1/Top/New" (Play store-listing guidance).
@@ -515,11 +517,11 @@ Each task: own branch or commit series, TDD where pure, gates V1–V3 before com
 - Tests: V1–V12 re-run; code review (`superpowers:requesting-code-review`).
 - Done when: §15 checklist is complete except owner device rows, which are scheduled in the M0 device session.
 - Fold-ins:
-  - **Ad rows.** They must check four things explicitly: the reward is credited after close, the same state resumes (not a restart), nothing crashes after any ad, and `no_ads` is honoured (research audit §8.5, E4).
+  - **Ad rows.** They must check four things explicitly: the reward is credited after close, the same state resumes (not a restart), nothing crashes after any ad, and `no_ads` is honoured (research audit §8, recommendation 5; EXP-04).
   - **Devices.** Use at least one 120 Hz device, and record raw gameplay footage as a by-product.
   - **CHANGELOG.** Backfill it for P00-T06–T24 (last updated at T05).
   - **P0 final review.** Triage every "minor for final review" item in the SDD ledger (T01–T24); each one is fixed or recorded.
-  - **Stale docs.** Amend the phase-doc §8.2 hook text (`?harness=1`), which P00-T24's harness-side capture superseded.
+  - **Stale docs.** Correct §8.2 of this file. Its boot-smoke bullet says the harness reads `window.__game` from `main.ts:117-120`, but P00-T24 captures the Phaser game harness-side, with no app hook.
 
 **P00-T27 — Research audit integrity** (added 2026-10-14, A-26/A-27; runs before T21)
 - Goal: the market research audit and its evidence are tracked, reproducible and correct, and the superseded preliminary report is archived, not cited.

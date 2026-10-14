@@ -319,7 +319,7 @@ New effective date. Publish at the website's `/privacy/` (§9). Brand and contro
 | **Internal** (M0) | AAB with versionCode **≥ 1000001**, real AdMob/RC IDs (or a deliberate test-ID internal build), consent-first boot | Device smoke: consent with EEA and US debug geography; rewarded and interstitial ads (never at level start or mid-play, D-24); purchase/restore/pending with license testers; Crashlytics test crash; DebugView; Back/pause; 30/60/120 Hz parity | Owner (device) | OPEN |
 | **Closed** (M1) | App content (§2) complete and a store listing draft. The working title is acceptable; the name can change later. | **Recruit 18–20 testers** (Google Group or email list) so the count never drops below 12. **≥14 continuous days.** Give testers instructions and a feedback form, and keep a **feedback log**. Builds can be updated during the test. | Owner | OPEN. The clock hasn't started; it is calendar-critical [AUD§K #8]. |
 | **Apply for production** | Day 14+ with ≥12 opted in | Dashboard → Apply for production. Questions cover the test, its engagement and feedback, the audience, value and readiness. Answer from the feedback log. Review takes **≤7 days**. | Owner (Claude drafts the answers, P12-T09) | OPEN |
-| **Production** (launch) | M2 sign-off; same AAB promoted from closed (D-20) | Staged rollout **20% → 50% → 100%** (§16) | Owner | OPEN |
+| **Production** (launch) | M2 sign-off; same AAB promoted from closed (D-20) | First release: full release to the chosen countries. Updates: staged rollout **20% → 50% → 100%** (§16; A-28: Play allows staged rollouts for updates only) | Owner | OPEN |
 
 **Note for the owner (roadmap tension):** EXECUTION-ORDER makes M1 depend on step 14 (brand apply), which depends on the 👤 naming decision. If that decision slips, the 14-day clock slips with it. Play allows the closed track to run under the working title, so this plan recommends starting the closed test without waiting for the name, as long as the rename switch (P11-T14) still lands before production.
 
@@ -375,7 +375,7 @@ Breaching a threshold can reduce visibility or add a listing warning. WebView re
 **Day 0:**
 | Time | Step |
 |---|---|
-| 09:00 | Closed release → **Promote to Production**. Release notes from `release-notes.md`. Rollout **20%**. Send for review, or Publish if it was already approved under Managed publishing. |
+| 09:00 | Closed release → **Promote to Production**. Release notes from `release-notes.md`. First release: no rollout percentage is available (A-28); limit reach by country availability. Send for review, or Publish if it was already approved under Managed publishing. |
 | +live | Install from Play on 2 devices. Smoke: boot, consent, level 1–3, a rewarded ad, the Remove Ads purchase screen (don't buy), Settings privacy link. |
 | +1 h, +4 h, +8 h | Crashlytics: crash-free sessions, new issues. AdMob: impressions and policy center. RevenueCat: transactions. |
 | EOD | Tag `v1.0.0` and create the GitHub Release (no AAB attached), update `STATUS.md`, reply to reviews |

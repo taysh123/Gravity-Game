@@ -43,7 +43,7 @@ flowchart TD
   S16 --> M2
   S17 --> M2
   S18 --> M2
-  M2 --> S19[19 P12 launch: production, staged rollout]
+  M2 --> S19[19 P12 launch: first production release, staged rollouts from the first update]
   S19 --> S20[20 P8 Gravity Run 2.0 + PGS plugin]
   S20 --> S21[21 P9 social: share cards, links, review]
   S21 --> S22[22 P10 live-ops seams]
@@ -51,7 +51,7 @@ flowchart TD
 ```
 
 ## How to resume work (any session)
-Steps 0 and 1 are done (STATUS). To resume, do these in order:
+To resume, do these in order:
 1. Read [`../STATUS.md`](../STATUS.md): the Task board, Next actions, Gates and Open bugs.
 2. Read the tail of the local SDD ledger `.superpowers/sdd/progress.md`. It is gitignored and not evidence on its own: it says what the last session dispatched, reviewed and merged.
 3. Verify the claims:
@@ -59,7 +59,7 @@ Steps 0 and 1 are done (STATUS). To resume, do these in order:
    - `gh run list` for CI.
    - The Vercel deployment list for the web build (gate G-WEB).
    - `npx tsc --noEmit` and `npm test`.
-4. Take the first task in the sequence below whose Task-board status is `ready`. Never restart a task the ledger records as complete; never run two tasks on one branch at once.
+4. Finish any task whose Task-board status is `in progress` first. Otherwise take the first task in the sequence below whose status is `ready`. Never restart a task the ledger records as complete; never run two tasks on one branch at once.
 5. If a task is blocked by an owner action (OA-xx in [`MASTER-ROADMAP.md`](MASTER-ROADMAP.md) §10), record the blocker in STATUS and move to the next independent task.
 
 ## The sequence
@@ -71,7 +71,7 @@ Steps 0 and 1 are done (STATUS). To resume, do these in order:
 | 2 | Platform contract (D-11):<br>• back router (incl. **Endless pause button + overlay**, A-08)<br>• pause/foreground contract with audio suspend<br>• portrait + `appCategory=game` + `VIBRATE` + backup rules + dark `windowBackground` + `singleTop`<br>• `minWebViewVersion` 87 + error page + vite target<br>• SystemBars config<br>• renderer-crash recovery<br>• Preferences save mirror + migration (D-12) | P0 | 1 | 5, 6 | Unit tests for router/pause/save mirror; `assembleDebug`; 👤 device checklist |
 | 3 | Purchases (D-09): entitlement-as-truth, non-consumable products, error codes, pending flow, restore, store prices, Starter hidden when `no_ads` | P0 | 1 | M0 | TDD `entitlements → grants` mapping; 👤 license-tester matrix |
 | 4 | Ads + consent (D-10, D-24 plumbing): consent-first boot, `canRequestAds`, privacy-options row, privacy link, Firebase Consent Mode defaults, preload, event-driven rewarded with watchdog, awaited interstitial before restart, busy guards | P0 | 1 | M0 | TDD consent/ad state machines; 👤 EEA/US debug-geography test |
-| 5 | Error boundary (frame-step guard + "tap to restart" overlay + Crashlytics stack traces + custom keys); store-shape validation + backup keys; analytics hygiene (remove reserved `session_start`, pre-consent queue, manual `screen_view`, name/param lint test, **`level_start`/`level_end{success,cause,attempt,duration_ms}` with `level_id` + `level`**, A-10); honest store copy (no "leaderboard"); Data-safety + privacy-policy drafts.<br>**Task order (A-26):** P00-T24 boot smoke (done, first because T21/T22 verify inside it) → **P00-T29** planning sync → **P00-T27** research audit integrity → **P00-T28** Vercel web build repair (B-14) → P00-T21 → P00-T22 → P00-T23 → P00-T25 → P00-T26 phase close | P0 | 2 | M0 | Unit tests; boot smoke; G-WEB from P00-T28 on |
+| 5 | Error boundary (frame-step guard + "tap to restart" overlay + Crashlytics stack traces + custom keys); store-shape validation + backup keys; analytics hygiene (remove reserved `session_start`, pre-consent queue, manual `screen_view`, name/param lint test, **`level_start`/`level_end{success,cause,attempt,duration_ms}` with `level_id` + `level`**, A-10); honest store copy (no "leaderboard"); Data-safety + privacy-policy drafts.<br>**Task order (A-26):** P00-T24 boot smoke (first, because T21/T22 verify inside it) → **P00-T29** planning sync → **P00-T27** research audit integrity → **P00-T28** Vercel web build repair (B-14) → P00-T21 → P00-T22 → P00-T23 → P00-T25 → P00-T26 phase close | P0 | 2 | M0 | Unit tests; boot smoke; G-WEB from P00-T28 on |
 | 6 | **FixedStepper** + `src/sim/forces.ts` + sim clock + kinematics as functions of `simMs` + per-step checks with win precedence + input latch + `FORCE_SCALE` (provisional 2.08) | P1 | 2 | 7 | TDD stepper/forces/kinematics |
 | 7 | Multi-rate harness (30/60/90/120/144 Hz + jitter, bit-identical after N steps) + replay determinism (input log) + wall-clock lint rule | P1 | 6 | **M0** | Harness in CI |
 | **M0** | **Truthful Build:** release AAB with versionCode ≥ 1000001 → 👤 internal track + device smoke + FORCE_SCALE feel A/B | | 3, 4, 5, 7 | 8, 12 | 👤 |
@@ -88,8 +88,8 @@ Steps 0 and 1 are done (STATUS). To resume, do these in order:
 | 16 | P5 system: tokens v2, Button variants, Modal, Toast, ScrollView, LevelNode map, shop components, Settings v2, motion and shake helpers, accessibility options, splash fast path, EndScene finale | P5 | M1 | 18, M2 | Contrast and touch-target audit; reduced-motion audit |
 | 17 | P6: analytics taxonomy v2 + user properties + Remote Config; Daily rework (3 tiers/date, full share card); **`weekKey` → Sunday 07:00 UTC**; login calendar pause; missions; achievements v2; local notifications; comeback gift; **In-App Review**; post-game modes; pure `mergeSave()` | P6 | M1 | 18, M2 | TDD; DebugView 👤 |
 | 18 | P7: currency merge + migration; shop v2 (Spotlight, try-on); offers (Starter after W1 boss, No-Ads+, Supporter); ad caps via Remote Config | P7 | 16, 17 | M2 | TDD economy; license testers 👤 |
-| **M2** | **Launch Candidate:** 👤 production access → staged rollout | | 15–18 | 19 | 👤 |
-| 19 | P12: production rollout 20→50→100%; vitals; weekly metrics review; `v1.0.0` tag + GitHub Release | P12 | M2 | 20, 23 | vitals thresholds |
+| **M2** | **Launch Candidate:** 👤 production access → first production release (A-28: country availability; no staged rollout on a first release) | | 15–18 | 19 | 👤 |
+| 19 | P12: first production release to the chosen countries (A-28), then staged rollouts 20→50→100% for every update; vitals; weekly metrics review; `v1.0.0` tag + GitHub Release | P12 | M2 | 20, 23 | vitals thresholds |
 | 20 | P8: Gravity Run 2.0 (chunks ×3, biomes, escalation, pause, ghost) + local PGS plugin + boards + `weekKey` alignment | P8 | 19 | 21 | Bot pair-check; 👤 PGS setup |
 | 21 | P9: share cards, challenge links (user site/domain `assetlinks.json`), in-app review | P9 | 20 | 22 | 👤 link verification |
 | 22 | P10: `event_calendar` schema, weekly modifier rotation, seasonal palettes, earned cosmetic drops | P10 | 21 | — | Unknown-kind safety tests |
@@ -113,7 +113,7 @@ Steps 0 and 1 are done (STATUS). To resume, do these in order:
 1. Verify the prerequisites (previous step's gates green).
 2. Restate the step goal.
 3. Load the relevant skills (read the installed `SKILL.md`; do not work from memory).
-4. Write the bite-sized plan in `docs/superpowers/plans/`. Under subagent-driven development, the controller also derives each task's brief into the local, gitignored `.superpowers/sdd/<phase>/` and folds in earlier review findings. Fold-ins that matter beyond one session are also written into the phase doc.
+4. Write the bite-sized plan in `docs/superpowers/plans/`. Under subagent-driven development, the controller also derives each task's brief into the local, gitignored `.superpowers/sdd/<phase>/` and folds in earlier review findings. Fold-ins that matter beyond one session are also written into the phase doc. XS/S documentation or configuration tasks may use their MASTER-ROADMAP §9 spec as the plan.
 5. Implement with TDD where the logic is pure.
 6. Run the gates (`MASTER-ROADMAP.md` §6).
 7. Code review (`superpowers:requesting-code-review`). Every Critical or Important finding goes to a fix pass and then a re-review, until Approved. Before closing a phase, run a final whole-phase review that triages the ledger's "minor for final review" items.

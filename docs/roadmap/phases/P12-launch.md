@@ -21,7 +21,7 @@ Baseline `master @ d3c6aab` · 2026-10-07.
 ## 1. Summary
 P12 ships the game safely and then improves it with data. It has four parts:
 1. **Release engineering.** One version file, with versionCode derived by the D-20 formula. A preflight script blocks bad uploads: test ad IDs, an empty RevenueCat key, a working-title brand on production, unexpected merged permissions, critical advisories, or a versionCode that doesn't increase. There is a CI Android build, an append-only release ledger with AAB SHA-256s, and milestone tags with GitHub Releases. The **same AAB** is promoted Internal → Closed → Production.
-2. **Launch.** The production-access application, then a staged rollout of 20 → 50 → 100% with explicit gates and halt criteria, plus vitals and Crashlytics alerting.
+2. **Launch.** The production-access application, then the first production release, plus vitals and Crashlytics alerting. **A-28:** Google Play allows staged rollouts only for updates, so the first release goes to the chosen countries in full, and 20 → 50 → 100% with gates and halt criteria applies from the first update on.
 3. **Optimisation loop.** A weekly 30-minute metrics review with a written log, a measure → hypothesise → ship → evaluate loop that uses Remote Config, listing experiments or releases, and a predictable release train.
 4. **iOS track.** About 6–10 developer days plus 1–2 review cycles, started only after Android meets the stability criteria in §3.8.
 
@@ -100,7 +100,7 @@ P12 ships the game safely and then improves it with data. It has four parts:
 - During the 14-day closed test, builds may iterate (new BUILD numbers through internal → closed). Production takes the closed build with ≥72 h of soak. D-20's "same AAB" applies **per release**.
 
 ### 3.6 Staged rollout, vitals and alerting
-- **Rollout:** 20% → (≥48–72 h) → 50% → (≥72 h) → 100%. The gates and halt criteria are in STORE-LAUNCH-PLAN §16.
+- **Rollout (updates, A-28):** 20% → (≥48–72 h) → 50% → (≥72 h) → 100%. The gates and halt criteria are in STORE-LAUNCH-PLAN §16. The first production release cannot be staged: limit its reach by country availability instead (CT-08).
   - **Halt** = Console *Halt rollout*. There is no binary rollback: ship BUILD+1 or PATCH+1 → internal smoke (≥2 h) → production at the halted percentage.
   - After P6 ships, ads and offers have Remote Config kill switches.
 - **Monitoring sources:**
@@ -297,8 +297,8 @@ None. P12 changes no gameplay. Post-launch tuning goes through the owning phase 
 | **P12-T09** | 👤 Production-access application pack | `docs/release/RUNBOOK.md` (answers draft from the closed-test feedback log) | — | Submitted on day ≥14 with ≥12 opted-in testers |
 | **P12-T10** | Launch rehearsal on internal: promote flow, Managed publishing, halt/resume drill | Runbook | Drill log | Owner has done promote and halt once on internal |
 | **P12-T11** | 👤 Alerting setup | Console notifications, Crashlytics alerts, AdMob/RevenueCat emails (documented in the runbook) | Test alert (Crashlytics test crash) | Alerts arrive at the owner's email |
-| **P12-T12** | 👤 Production 20% (launch day, STORE-LAUNCH-PLAN §16) | Ledger, STATUS | Day-0 smoke on 2 Play-installed devices | 20% live; ledger appended |
-| **P12-T13** | 👤 50% → 100% with gates | Ledger, weekly log | Gate checks | V8 |
+| **P12-T12** | 👤 First production release (launch day; A-28: full release to the chosen countries, no staged percentage) | Ledger, STATUS | Day-0 smoke on 2 Play-installed devices | 20% live; ledger appended |
+| **P12-T13** | 👤 Country expansion, then 20% → 50% → 100% gates for each update (A-28) | Ledger, weekly log | Gate checks | V8 |
 | **P12-T14** | `v1.0.0` tag + GitHub Release + STATUS | `CHANGELOG.md`, ledger | V6 | Release published |
 | **P12-T15** | Hotfix procedure validated | Runbook | First real or rehearsed hotfix (BUILD+1) | Hotfix path takes under 24 h end to end |
 | **P12-T16** | Weekly review cadence | `docs/release/WEEKLY-REVIEW-LOG.md` | — | V9 after 12 weeks |

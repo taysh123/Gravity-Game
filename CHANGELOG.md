@@ -5,6 +5,12 @@ Internal project changelog (newest first). Store-facing "What's new" copy lives 
 (D-20, `docs/release/RUNBOOK.md` section 4).
 
 ## [Unreleased]
+- **Vercel web build repaired (P00-T28, B-14, 2026-10-14):** `.vercelignore` no longer excludes `scripts/`. Since `95953fc` the `src` release-guard tests had imported `scripts/lib/*.d.mts`, so `tsc` failed on Vercel's upload (TS2307) while local runs and CI passed. The new guard `src/config/deployIgnore.test.ts` checks every file the compiler reads against `.vercelignore`, using gitignore matching.
+- **Research audit tracked and corrected (P00-T27, A-27, 2026-10-14):** the market research audit and its six notes are tracked verbatim, and the preliminary report is archived to `docs/archive/2026-10-14/`. Two revisions (r2, r3) correct four overstated citations and the percentile wording, record that the source video was never analyzed, and add a revision log.
+- **Planning review fix pass (A-28, 2026-10-14):**
+  - The delivery stages now match EXECUTION-ORDER: Stage G runs alongside F from M0, and the launch moves to Stage H.
+  - The experiments are renamed EXP-01–EXP-12.
+  - A-28 records that a first Play release cannot use a staged rollout; the rollout plans now say so.
 - **Planning sync (P00-T29, A-26/A-27, 2026-10-14):** MASTER-ROADMAP gains §8–§15:
   - delivery stages A–H, an executable task inventory and owner actions OA-01–OA-16;
   - the experiment backlog E1–E12, first-player milestones and a post-test 30/60/90 plan;

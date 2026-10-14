@@ -169,7 +169,7 @@ These metrics must not get worse while we optimise anything else. A breach pause
 | Production access | Granted | Blocking (owner) | Play Console |
 
 **Staged rollout gates (step 19):**
-- Stages are 20% → 50% → 100%, over about a week in total (launch F1).
+- Stages are 20% → 50% → 100%, over about a week in total (launch F1). **A-28:** Google Play allows a staged rollout only for updates, so these gates apply from the first update on. The first production release is a full release to the countries chosen in CT-08.
 - Advance a stage only if all of these hold:
   - Q-13 and Q-14 are under threshold for the stage cohort;
   - no new top crash cluster has appeared;
@@ -210,7 +210,7 @@ Metric IDs are defined in §7. Every phase also passes the MASTER §6 quality ga
 | **P9** Social | S-01 ≥ 3% DAU · S-02 share → install measured · S-05 ≥ 4.5 with volume · App Links verified (`pm get-app-links` shows verified; android Q8) | Directional; blocking for link verification | BigQuery + Play Console + adb |
 | **P10** Live ops | E-14 event participation ≥ 20% of WAU · D7 of participants vs non-participants (correlational) · 0 crashes on unknown `kind` values (unit test) | Directional; blocking (unit test) | BigQuery + TDD |
 | **P11** Brand/ASO | S-04 ≥ 30% organic · first-two-screenshots experiment run to a winner (≥ 7 days; launch §5) · C-03 verified · S-07 keyword ranks tracked | Directional; blocking (C-03) | Play Console + AdMob |
-| **P12** Launch & post-launch | Q-13 < 1.09%, Q-14 < 0.47% · staged rollout 20 → 50 → 100% without regressions · weekly review held (cadence log in `STATUS.md`) · iOS crash-free ≥ 99.5% once the iOS track ships | Blocking (vitals); directional otherwise | Play Console + Crashlytics |
+| **P12** Launch & post-launch | Q-13 < 1.09%, Q-14 < 0.47% · staged rollout 20 → 50 → 100% without regressions (from the first update on, A-28) · weekly review held (cadence log in `STATUS.md`) · iOS crash-free ≥ 99.5% once the iOS track ships | Blocking (vitals); directional otherwise | Play Console + Crashlytics |
 
 ## 7. Metric dictionary (exact definitions)
 
