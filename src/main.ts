@@ -15,7 +15,7 @@ import { EndlessScene } from './scenes/EndlessScene';
 import { RunSelectScene } from './scenes/RunSelectScene';
 import { EndScene } from './scenes/EndScene';
 import { Crash } from './services/Crash';
-import { BUILD_LABEL, sceneCrashKeys, webViewVersion } from './services/crashContext';
+import { BUILD_LABEL, sceneCrashKeys, watchSceneCrashKeys, webViewVersion } from './services/crashContext';
 import { IAP } from './services/IAP';
 import { sharedAudio } from './utils/AudioSynth';
 import { installBackNavigation, installLifecycle } from './platform/lifecycle';
@@ -26,6 +26,12 @@ import { Saves } from './platform/saves';
 const hydrated = Saves.hydrate();
 // Crash reporting (Crashlytics on native; global error bridge everywhere).
 Crash.init();
+// Crashlytics custom keys that need no game (P00-T21): set now, so an early report (the renderer-gone non-fatal that hydrate raises)
+// carries them too. The renderer and the scene keys follow at READY (installCrashContext).
+Crash.setKeys({
+  webview_ver: webViewVersion(navigator.userAgent),
+  build: BUILD_LABEL,
+});
 // Purchases (D-09, native only): configure RevenueCat and reconcile the entitlement snapshot. After hydrate, so the
 // snapshot it writes lands on hydrated data, after migration 2 has seeded it from the legacy premium flag. Never awaited:
 // boot does not wait on the store.
@@ -91,25 +97,23 @@ function syncViewport(): void {
   game.scale.refresh();
 }
 
-// Crashlytics context (P00-T21): every report says which WebView, renderer and build it came from, and which scene, level and mode
-// were running; each scene start is also a breadcrumb (Crash.log). The mapping is pure (services/crashContext.ts). Installed from
-// READY: the scenes exist by then (the SceneManager boots its queue on READY, before this listener runs).
+// Crashlytics context (P00-T21): every report says which renderer it came from (webview_ver and build are set earlier, right after
+// Crash.init) and which scene, level and mode were running; each scene start is also a breadcrumb (Crash.log). The mapping is pure
+// (services/crashContext.ts). Installed from READY: the scenes exist by then (the SceneManager boots its queue on READY, before this
+// listener runs). The keys follow START, not CREATE: Phaser emits CREATE only after create() returns, so a throw inside create()
+// would be reported under the previous scene. RESUME and WAKE bring the keys back when an overlay closes over a scene.
 function installCrashContext(g: Phaser.Game): void {
   Crash.setKeys({
-    webview_ver: webViewVersion(navigator.userAgent),
     renderer: g.config.renderType === Phaser.WEBGL ? 'WebGL' : 'Canvas',
-    build: BUILD_LABEL,
   });
-  const describeScene = (scene: Phaser.Scene): void => {
-    const key = scene.scene.key;
-    Crash.setKeys(sceneCrashKeys(key, scene.sys.settings.data));
-    Crash.log(`scene ${key}`);
-  };
-  for (const scene of g.scene.getScenes(false)) {
-    scene.sys.events.on(Phaser.Scenes.Events.CREATE, () => describeScene(scene));
-  }
-  // A scene that already started inside READY (the first one) was created before these listeners existed.
-  for (const scene of g.scene.getScenes(true)) describeScene(scene);
+  watchSceneCrashKeys(
+    g.scene.getScenes(false),
+    [Phaser.Scenes.Events.START, Phaser.Scenes.Events.RESUME, Phaser.Scenes.Events.WAKE],
+    (key, data) => {
+      Crash.setKeys(sceneCrashKeys(key, data));
+      Crash.log(`scene ${key}`);
+    },
+  );
 }
 
 game.events.once(Phaser.Core.Events.READY, () => {

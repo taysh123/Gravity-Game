@@ -100,8 +100,11 @@ export const PLATFORM = {
   CRASH_MAX_PER_SESSION: 5,
   // At most this many V8 frames go with a report (src/services/stackParse.ts). V8 records 10 by default; this bounds the bridge payload.
   CRASH_MAX_STACK_FRAMES: 32,
-  // The `level` custom key when a scene has no level (menus, Gravity Run, a GameScene start without one): src/services/crashContext.ts.
+  // The `level` custom key of a scene that is not a level scene (menus, Gravity Run): src/services/crashContext.ts. Never a real level.
   CRASH_NO_LEVEL: 0,
+  // The first level number: GameScene plays level 1 when a start names none, and the daily's index is 0-based, so the `level` key of a
+  // daily is its index + this (src/services/crashContext.ts).
+  CRASH_FIRST_LEVEL: 1,
 
   // Pre-consent analytics queue length; the oldest event is dropped beyond this.
   ANALYTICS_QUEUE_MAX: 100,

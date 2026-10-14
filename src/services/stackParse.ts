@@ -5,7 +5,9 @@
 // Lines without a position (the "Error: message" header, `at Array.forEach (<anonymous>)`, native frames) are skipped. A location
 // that is a URL is reduced to its path (`assets/index-abc.js`, `src/scenes/GameScene.ts`): the origin and the dev server's ?t= stamp
 // carry nothing and would split one crash into many issues. The shape is @capacitor-firebase/crashlytics's StackFrame
-// (functionName, fileName, lineNumber). The plugin has no column field, so the column is dropped.
+// (functionName, fileName, lineNumber). The plugin has no column field, so the column rides in fileName (`assets/index-abc.js:1:2345`,
+// lineNumber stays the line): the production app chunk is only a few lines long, so the line alone cannot be mapped back through a
+// source map.
 import { PLATFORM } from '../config/platform.config';
 
 export interface StackFrame {
@@ -32,17 +34,19 @@ function shortFile(location: string): string {
 
 /** The frames of a V8 `error.stack`, in V8's order (the throwing frame first), at most PLATFORM.CRASH_MAX_STACK_FRAMES. */
 export function parseStack(stack: string | null | undefined): StackFrame[] {
-  if (!stack) return [];
+  if (typeof stack !== 'string') return []; // error.stack is writable: anything can be there, and this runs inside recordError
   const frames: StackFrame[] = [];
   for (const line of stack.split('\n')) {
     if (frames.length >= PLATFORM.CRASH_MAX_STACK_FRAMES) break;
     const named = NAMED.exec(line);
     if (named) {
-      frames.push({ functionName: named[1], fileName: shortFile(named[2]), lineNumber: Number(named[3]) });
+      frames.push({ functionName: named[1], fileName: `${shortFile(named[2])}:${named[3]}:${named[4]}`, lineNumber: Number(named[3]) });
       continue;
     }
     const unnamed = UNNAMED.exec(line);
-    if (unnamed) frames.push({ functionName: ANONYMOUS_FUNCTION, fileName: shortFile(unnamed[1]), lineNumber: Number(unnamed[2]) });
+    if (unnamed) {
+      frames.push({ functionName: ANONYMOUS_FUNCTION, fileName: `${shortFile(unnamed[1])}:${unnamed[2]}:${unnamed[3]}`, lineNumber: Number(unnamed[2]) });
+    }
   }
   return frames;
 }

@@ -421,8 +421,8 @@ describe('Crash reports: stack traces, dedupe, per-session cap, custom keys, bre
     expect(plugin.recordException).toHaveBeenCalledWith({
       message: '[frame] boom',
       stacktrace: [
-        { functionName: 'update', fileName: 'assets/index-abc.js', lineNumber: 1 },
-        { functionName: '(anonymous)', fileName: 'assets/index-abc.js', lineNumber: 1 },
+        { functionName: 'update', fileName: 'assets/index-abc.js:1:2345', lineNumber: 1 },
+        { functionName: '(anonymous)', fileName: 'assets/index-abc.js:1:99', lineNumber: 1 },
       ],
     });
   });
@@ -435,6 +435,15 @@ describe('Crash reports: stack traces, dedupe, per-session cap, custom keys, bre
     Crash.recordError(bare);
     await flush();
     expect(plugin.recordException.mock.calls.map((c) => c[0])).toEqual([{ message: 'a string' }, { message: 'no stack' }]);
+  });
+
+  it('an Error whose stack is not a string still reports its message (it must not throw and lose the report)', async () => {
+    const { Crash, plugin } = await load(true);
+    const odd = new Error('odd stack');
+    (odd as unknown as { stack: unknown }).stack = { not: 'a string' };
+    expect(() => Crash.recordError(odd, 'frame')).not.toThrow();
+    await flush();
+    expect(plugin.recordException.mock.calls.map((c) => c[0])).toEqual([{ message: '[frame] odd stack' }]);
   });
 
   it('sends each distinct message once per session; the same text under another context is another message', async () => {

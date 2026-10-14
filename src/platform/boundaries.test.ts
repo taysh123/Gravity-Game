@@ -63,8 +63,9 @@ describe('src/platform does not depend on the services layer', () => {
   });
 
   // Pre-existing and left alone on purpose (not trivial to move; behaviour-identical to keep). Both targets are LEAF modules: Crash
-  // imports only @capacitor/core, and the pure entitlements mapping imports only src/config. Neither imports src/platform, so they
-  // form no cycle. A NEW platform -> services import fails here and needs an explicit decision.
+  // imports only @capacitor/core, src/config and ./stackParse (itself config-only), and the pure entitlements mapping imports only
+  // src/config. Neither imports src/platform, so they form no cycle. A NEW platform -> services import fails here and needs an
+  // explicit decision.
   it('the only platform -> services imports are the three known ones, all on leaf modules', () => {
     expect([...platformToServices].sort()).toEqual([
       'platform/lifecycle.ts -> services/Crash',

@@ -7,13 +7,19 @@ const BUNDLE = 'https://localhost/assets/index-DuH7r3JV.js';
 describe('parseStack: V8 frames (the Android System WebView is Chromium) -> Crashlytics StackFrame', () => {
   it('a frame with a function name', () => {
     expect(parseStack(`Error: boom\n    at GameScene.update (${BUNDLE}:1:2345)`)).toEqual([
-      { functionName: 'GameScene.update', fileName: 'assets/index-DuH7r3JV.js', lineNumber: 1 },
+      { functionName: 'GameScene.update', fileName: 'assets/index-DuH7r3JV.js:1:2345', lineNumber: 1 },
     ]);
+  });
+
+  it('keeps the column in the fileName (the plugin has no column field; a minified chunk has 2-4 lines, so the line alone is useless)', () => {
+    const [frame] = parseStack(`Error: boom\n    at a (${BUNDLE}:2:48113)`);
+    expect(frame.lineNumber).toBe(2);
+    expect(frame.fileName).toBe('assets/index-DuH7r3JV.js:2:48113');
   });
 
   it('a frame without a function name', () => {
     expect(parseStack(`Error: boom\n    at ${BUNDLE}:3:99`)).toEqual([
-      { functionName: ANONYMOUS_FUNCTION, fileName: 'assets/index-DuH7r3JV.js', lineNumber: 3 },
+      { functionName: ANONYMOUS_FUNCTION, fileName: 'assets/index-DuH7r3JV.js:3:99', lineNumber: 3 },
     ]);
   });
 
@@ -41,20 +47,24 @@ describe('parseStack: V8 frames (the Android System WebView is Chromium) -> Cras
       '    at capacitor://localhost/assets/index-abc.js:1:6',
     ].join('\n');
     expect(parseStack(stack)).toEqual([
-      { functionName: 'create', fileName: 'src/scenes/GameScene.ts', lineNumber: 212 },
-      { functionName: ANONYMOUS_FUNCTION, fileName: 'assets/index-abc.js', lineNumber: 1 },
-      { functionName: ANONYMOUS_FUNCTION, fileName: 'assets/index-abc.js', lineNumber: 1 },
+      { functionName: 'create', fileName: 'src/scenes/GameScene.ts:212:9', lineNumber: 212 },
+      { functionName: ANONYMOUS_FUNCTION, fileName: 'assets/index-abc.js:1:5', lineNumber: 1 },
+      { functionName: ANONYMOUS_FUNCTION, fileName: 'assets/index-abc.js:1:6', lineNumber: 1 },
     ]);
   });
 
   it('keeps a location that is not a URL as it is (an eval frame)', () => {
     expect(parseStack(`Error: boom\n    at eval (eval at run (${BUNDLE}:1:5), <anonymous>:4:7)`)).toEqual([
-      { functionName: 'eval', fileName: `eval at run (${BUNDLE}:1:5), <anonymous>`, lineNumber: 4 },
+      { functionName: 'eval', fileName: `eval at run (${BUNDLE}:1:5), <anonymous>:4:7`, lineNumber: 4 },
     ]);
   });
 
   it('no stack, no frames', () => {
     for (const s of [undefined, null, '', 'Error: no frames here']) expect(parseStack(s)).toEqual([]);
+  });
+
+  it('a stack that is not a string (error.stack is writable) is no frames, never a throw', () => {
+    for (const s of [123, {}, [], () => 'x', true]) expect(parseStack(s as unknown as string)).toEqual([]);
   });
 
   it('stops at PLATFORM.CRASH_MAX_STACK_FRAMES frames', () => {
@@ -72,6 +82,6 @@ describe('parseStack: V8 frames (the Android System WebView is Chromium) -> Cras
   it('parses a real V8 stack from this runtime', () => {
     const frames = parseStack(new Error('real').stack);
     expect(frames.length).toBeGreaterThan(0);
-    expect(frames.some((f) => /stackParse\.test\.ts$/.test(f.fileName) && f.lineNumber > 0)).toBe(true);
+    expect(frames.some((f) => /stackParse\.test\.ts:\d+:\d+$/.test(f.fileName) && f.lineNumber > 0)).toBe(true);
   });
 });

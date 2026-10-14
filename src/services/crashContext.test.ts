@@ -1,9 +1,19 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { PLATFORM } from '../config/platform.config';
-import { BUILD_LABEL, CAMPAIGN_SCENE, RUN_SCENE, UNKNOWN_WEBVIEW, sceneCrashKeys, webViewVersion } from './crashContext';
+import {
+  BUILD_LABEL,
+  CAMPAIGN_SCENE,
+  RUN_SCENE,
+  UNKNOWN_WEBVIEW,
+  sceneCrashKeys,
+  watchSceneCrashKeys,
+  webViewVersion,
+  type CrashScene,
+} from './crashContext';
 
 const NO_LEVEL = PLATFORM.CRASH_NO_LEVEL;
+const FIRST_LEVEL = PLATFORM.CRASH_FIRST_LEVEL;
 
 describe('sceneCrashKeys: the scene / level / mode custom keys (P00-T21)', () => {
   it('the two gameplay keys are registered gameplay scenes (platformConfig.test.ts pins those against main.ts)', () => {
@@ -14,13 +24,28 @@ describe('sceneCrashKeys: the scene / level / mode custom keys (P00-T21)', () =>
     expect(sceneCrashKeys('GameScene', { level: 12 })).toEqual({ scene: 'GameScene', mode: 'campaign', level: 12 });
   });
 
-  it('the daily: mode daily, level = the daily index', () => {
-    expect(sceneCrashKeys('GameScene', { level: 1, daily: true, dailyIndex: 3, dailyModifier: 'timed' })).toEqual({ scene: 'GameScene', mode: 'daily', level: 3 });
+  it('the daily: mode daily, level = the daily number (its 0-based index + 1, like a campaign level)', () => {
+    expect(sceneCrashKeys('GameScene', { level: 1, daily: true, dailyIndex: 3, dailyModifier: 'timed' })).toEqual({ scene: 'GameScene', mode: 'daily', level: 4 });
+    expect(sceneCrashKeys('GameScene', { daily: true, dailyIndex: 0 })).toEqual({ scene: 'GameScene', mode: 'daily', level: FIRST_LEVEL });
   });
 
-  it('a GameScene start without a usable level says "no level" instead of inventing one', () => {
-    expect(sceneCrashKeys('GameScene', undefined)).toEqual({ scene: 'GameScene', mode: 'campaign', level: NO_LEVEL });
-    expect(sceneCrashKeys('GameScene', { level: 'x' })).toEqual({ scene: 'GameScene', mode: 'campaign', level: NO_LEVEL });
+  it('a daily start without a usable index plays the first daily, as GameScene does', () => {
+    expect(sceneCrashKeys('GameScene', { daily: true })).toEqual({ scene: 'GameScene', mode: 'daily', level: FIRST_LEVEL });
+    expect(sceneCrashKeys('GameScene', { daily: true, dailyIndex: 'x' })).toEqual({ scene: 'GameScene', mode: 'daily', level: FIRST_LEVEL });
+  });
+
+  it('a GameScene start without a usable level plays level 1, as GameScene does', () => {
+    expect(sceneCrashKeys('GameScene', undefined)).toEqual({ scene: 'GameScene', mode: 'campaign', level: FIRST_LEVEL });
+    expect(sceneCrashKeys('GameScene', {})).toEqual({ scene: 'GameScene', mode: 'campaign', level: FIRST_LEVEL });
+    expect(sceneCrashKeys('GameScene', { level: 'x' })).toEqual({ scene: 'GameScene', mode: 'campaign', level: FIRST_LEVEL });
+    expect(sceneCrashKeys('GameScene', { level: Number.NaN })).toEqual({ scene: 'GameScene', mode: 'campaign', level: FIRST_LEVEL });
+  });
+
+  it('level 0 (CRASH_NO_LEVEL) means only "not a level scene": no GameScene start ever reports it', () => {
+    expect(FIRST_LEVEL).toBeGreaterThan(NO_LEVEL);
+    for (const data of [undefined, {}, { level: 1 }, { daily: true }, { daily: true, dailyIndex: 0 }]) {
+      expect(sceneCrashKeys('GameScene', data).level).toBeGreaterThanOrEqual(FIRST_LEVEL);
+    }
   });
 
   it('Gravity Run: endless or weekly, no level', () => {
@@ -62,11 +87,104 @@ describe('BUILD_LABEL (the build key)', () => {
   });
 });
 
+// A fake Phaser scene: the slice crashContext reads, plus emit() to fire an event on its emitter.
+function fakeScene(key: string, active: boolean, data: unknown = {}) {
+  const listeners = new Map<string, Array<() => void>>();
+  return {
+    scene: { key },
+    sys: {
+      settings: { active, data },
+      events: {
+        on(event: string, listener: () => void) {
+          listeners.set(event, [...(listeners.get(event) ?? []), listener]);
+          return this;
+        },
+      },
+    },
+    emit(event: string): void {
+      for (const listener of listeners.get(event) ?? []) listener();
+    },
+  } satisfies CrashScene & { emit(event: string): void };
+}
+
+describe('watchSceneCrashKeys: the keys follow a scene START / RESUME / WAKE, not its CREATE (P00-T21 review)', () => {
+  const EVENTS = ['start', 'resume', 'wake'];
+  const seen = (calls: Array<[string, unknown]>): string[] => calls.map(([key]) => key);
+
+  it('describes a scene that is already active at install, once, with the data it started with', () => {
+    const calls: Array<[string, unknown]> = [];
+    const game = fakeScene('GameScene', true, { level: 7 });
+    watchSceneCrashKeys([game], EVENTS, (key, data) => calls.push([key, data]));
+    expect(calls).toEqual([['GameScene', { level: 7 }]]);
+  });
+
+  it('does not describe a scene that has not started; its START does', () => {
+    const calls: Array<[string, unknown]> = [];
+    const menu = fakeScene('MainMenuScene', false);
+    watchSceneCrashKeys([menu], EVENTS, (key, data) => calls.push([key, data]));
+    expect(calls).toEqual([]);
+    menu.sys.settings.data = { fresh: true }; // Systems.start sets the data before it emits START
+    menu.sys.settings.active = true;
+    menu.emit('start');
+    expect(calls).toEqual([['MainMenuScene', { fresh: true }]]);
+  });
+
+  it('describes again on START, RESUME and WAKE, reading the data of that moment (pause menu closed: the level is back)', () => {
+    const calls: Array<[string, unknown]> = [];
+    const game = fakeScene('GameScene', false, { level: 1 });
+    watchSceneCrashKeys([game], EVENTS, (key, data) => calls.push([key, data]));
+    game.sys.settings.data = { level: 2 };
+    game.emit('start');
+    game.emit('resume');
+    game.sys.settings.data = { level: 3 };
+    game.emit('wake');
+    expect(calls).toEqual([
+      ['GameScene', { level: 2 }],
+      ['GameScene', { level: 2 }],
+      ['GameScene', { level: 3 }],
+    ]);
+  });
+
+  it('CREATE is not an event it listens to: create() can throw before CREATE fires, and the report must already name the scene', () => {
+    const calls: Array<[string, unknown]> = [];
+    const game = fakeScene('GameScene', false);
+    watchSceneCrashKeys([game], EVENTS, (key, data) => calls.push([key, data]));
+    game.emit('create');
+    expect(calls).toEqual([]);
+  });
+
+  it('watches every scene it is given, and one event describes one scene once', () => {
+    const calls: Array<[string, unknown]> = [];
+    const a = fakeScene('GameScene', true);
+    const b = fakeScene('PauseScene', false);
+    watchSceneCrashKeys([a, b], EVENTS, (key, data) => calls.push([key, data]));
+    expect(seen(calls)).toEqual(['GameScene']);
+    b.emit('start');
+    expect(seen(calls)).toEqual(['GameScene', 'PauseScene']);
+    a.emit('resume');
+    expect(seen(calls)).toEqual(['GameScene', 'PauseScene', 'GameScene']);
+  });
+});
+
 describe('main.ts wiring', () => {
-  it('sets the context keys from READY and again on every scene CREATE, with a breadcrumb per scene start', () => {
-    const main = readFileSync(new URL('../main.ts', import.meta.url), 'utf8');
+  const main = readFileSync(new URL('../main.ts', import.meta.url), 'utf8');
+
+  it('sets the keys that need no game (webview_ver, build) right after Crash.init(), before READY', () => {
+    expect(main).toMatch(
+      /Crash\.init\(\);\s*(?:\/\/[^\n]*\n\s*)*Crash\.setKeys\(\{\s*webview_ver: webViewVersion\(navigator\.userAgent\),\s*build: BUILD_LABEL,?\s*\}\);/,
+    );
+  });
+
+  it('installs the crash context from READY, where the renderer is known', () => {
     expect(main).toMatch(/game\.events\.once\(Phaser\.Core\.Events\.READY, \(\) => \{[\s\S]*?installCrashContext\(game\);/);
-    expect(main).toMatch(/scene\.sys\.events\.on\(Phaser\.Scenes\.Events\.CREATE, \(\) => describeScene\(scene\)\)/);
-    expect(main).toMatch(/Crash\.setKeys\(sceneCrashKeys\(key, scene\.sys\.settings\.data\)\);\s*Crash\.log\(`scene \$\{key\}`\);/);
+    expect(main).toMatch(/Crash\.setKeys\(\{\s*renderer: g\.config\.renderType === Phaser\.WEBGL \? 'WebGL' : 'Canvas',?\s*\}\);/);
+  });
+
+  it('follows every scene (also one still loading at READY) on START, RESUME and WAKE, never CREATE, with a breadcrumb per start', () => {
+    expect(main).toMatch(
+      /watchSceneCrashKeys\(\s*g\.scene\.getScenes\(false\),\s*\[Phaser\.Scenes\.Events\.START, Phaser\.Scenes\.Events\.RESUME, Phaser\.Scenes\.Events\.WAKE\],/,
+    );
+    expect(main).toMatch(/Crash\.setKeys\(sceneCrashKeys\(key, data\)\);\s*Crash\.log\(`scene \$\{key\}`\);/);
+    expect(main).not.toMatch(/Scenes\.Events\.CREATE/);
   });
 });
