@@ -36,6 +36,11 @@ describe('expandJobs: one job per check and viewport, filtered by the run mode',
     expect(expandJobs([a, b, c], { mode: 'dev', only: ['b', 'a'] }).map((j) => j.check.name)).toEqual(['a', 'a', 'b']);
   });
 
+  it('with exclusive, keeps only the checks whose ONLY mode is the chosen one (the ones that need a DEV-only hook)', () => {
+    expect(expandJobs([a, b, c], { mode: 'dev', exclusive: true }).map((j) => j.check.name)).toEqual(['b']);
+    expect(expandJobs([a, b, c], { mode: 'preview', exclusive: true }).map((j) => j.check.name)).toEqual(['c']);
+  });
+
   it('refuses an unknown name instead of running nothing and passing', () => {
     expect(() => expandJobs([a], { mode: 'dev', only: ['zzz'] })).toThrow(/Unknown check "zzz".*a/);
   });

@@ -6,6 +6,8 @@
 //              DEV-only hook (window.__crashTest, a dynamic import of a src module) declares only 'dev'.
 //   viewports  BOTH_VIEWPORTS (390x844 and 360x640) or DEFAULT_VIEWPORTS (390x844); default DEFAULT_VIEWPORTS.
 //   seed       optional localStorage entries written before the app boots ({ key: stringValue }).
+//   boot       'menu' (default: tap through the splashes, wait for the main menu), 'natural' (no taps) or 'none' (the check boots).
+//   weight     optional rough cost; with parallel jobs the heavier ones start first. Default 1.
 //   run        async (page, ctx). ctx.expect(ok, label, detail) records an assertion; a throw is a failure too.
 
 import { MODES } from './args.mjs';
@@ -28,7 +30,7 @@ export function validateChecks(checks) {
 }
 
 /** @returns {{check: object, viewport: {width: number, height: number, label: string}}[]} */
-export function expandJobs(checks, { mode, only = [] }) {
+export function expandJobs(checks, { mode, only = [], exclusive = false }) {
   validateChecks(checks);
   const names = checks.map((c) => c.name);
   for (const name of only) {
@@ -39,6 +41,7 @@ export function expandJobs(checks, { mode, only = [] }) {
   const jobs = [];
   for (const check of checks) {
     if (!check.modes.includes(mode)) continue;
+    if (exclusive && check.modes.length > 1) continue; // runs in every mode: not specific to this one
     if (only.length > 0 && !only.includes(check.name)) continue;
     for (const viewport of check.viewports ?? DEFAULT_VIEWPORTS) jobs.push({ check, viewport });
   }

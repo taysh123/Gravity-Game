@@ -4,6 +4,7 @@ import {
   classifyPageError,
   classifyRequestFailed,
   classifyResponse,
+  classifySpaFallback,
   createSignalLog,
   isSameOrigin,
 } from './signals.mjs';
@@ -88,6 +89,38 @@ describe('classifyRequestFailed / classifyResponse: same-origin only', () => {
 
   it('does not flag a third-party error response', () => {
     expect(classifyResponse({ url: 'https://example.com/x', status: 503 }, ORIGIN)).toBeNull();
+  });
+});
+
+describe('classifySpaFallback: vite preview answers a missing file with index.html and status 200', () => {
+  const res = (over) => ({ url: `${ORIGIN}/assets/missing.png`, status: 200, resourceType: 'image', contentType: 'text/html', ...over });
+
+  it('flags an image, script, stylesheet, font or media request that came back as HTML', () => {
+    for (const resourceType of ['image', 'script', 'stylesheet', 'font', 'media']) {
+      expect(classifySpaFallback(res({ resourceType }), ORIGIN)).toEqual({
+        kind: 'missing file',
+        text: `a ${resourceType} request got text/html (the SPA fallback, so the file does not exist)`,
+        where: `${ORIGIN}/assets/missing.png`,
+      });
+    }
+  });
+
+  it('flags a fetch or xhr for a file with a non-html extension that came back as HTML', () => {
+    expect(classifySpaFallback(res({ resourceType: 'fetch', url: `${ORIGIN}/data/levels.json` }), ORIGIN)?.kind).toBe('missing file');
+    expect(classifySpaFallback(res({ resourceType: 'xhr', url: `${ORIGIN}/a.bin` }), ORIGIN)?.kind).toBe('missing file');
+  });
+
+  it('does not flag the page itself, a fetch without an extension, a real asset or a third party', () => {
+    expect(classifySpaFallback(res({ resourceType: 'document', url: `${ORIGIN}/` }), ORIGIN)).toBeNull();
+    expect(classifySpaFallback(res({ resourceType: 'fetch', url: `${ORIGIN}/api/thing` }), ORIGIN)).toBeNull();
+    expect(classifySpaFallback(res({ contentType: 'image/png' }), ORIGIN)).toBeNull();
+    expect(classifySpaFallback(res({ resourceType: 'script', contentType: 'text/javascript; charset=utf-8' }), ORIGIN)).toBeNull();
+    expect(classifySpaFallback(res({ url: 'https://example.com/x.png' }), ORIGIN)).toBeNull();
+    expect(classifySpaFallback(res({ contentType: undefined }), ORIGIN)).toBeNull();
+  });
+
+  it('leaves error statuses to classifyResponse', () => {
+    expect(classifySpaFallback(res({ status: 404 }), ORIGIN)).toBeNull();
   });
 });
 

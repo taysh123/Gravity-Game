@@ -21,6 +21,7 @@ export function createRecorder() {
       const text = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
       rows.push({ ok: false, label, detail: text });
     },
+    all: () => rows.map((r) => ({ ...r })),
     passed: () => rows.filter((r) => r.ok).length,
     total: () => rows.length,
     failures: () => rows.filter((r) => !r.ok).map((r) => ({ label: r.label, detail: r.detail })),
@@ -61,4 +62,14 @@ export function formatFailures(results) {
     blocks.push(lines.join('\n'));
   }
   return blocks.join('\n\n');
+}
+
+/** --verbose: every assertion of every job, so the counts in the labels show how much was really exercised. */
+export function formatAssertions(results) {
+  return results
+    .map((r) => {
+      const rows = (r.assertions ?? []).map((a) => `  ${a.ok ? 'ok  ' : 'FAIL'}  ${clip(a.label, 200)}`);
+      return [`${r.check} @ ${r.viewport} (${r.mode})`, ...rows].join('\n');
+    })
+    .join('\n\n');
 }

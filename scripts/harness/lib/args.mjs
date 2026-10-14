@@ -2,7 +2,7 @@
 //
 //   npm run smoke                      preview mode (production build + vite preview), the default and what CI runs
 //   npm run smoke -- --mode=dev        the Vite dev server (DEV-only hooks exist there)
-//   npm run smoke -- --only=scene-boot,hit-areas
+//   npm run smoke -- --only=screens,first-run
 //   npm run smoke -- --list
 //
 // Anything unknown is an error: a mistyped flag must not turn into a green run that checked something else.
@@ -19,6 +19,10 @@ Usage: node scripts/harness/boot-smoke.mjs [options]   (npm run smoke -- [option
   --list                print the checks for the chosen mode and exit.
   --no-build            preview mode: reuse the existing dist/ instead of running npm run build first.
   --headed              show the browser window (debugging; CI is always headless).
+  --exclusive           run only the checks that need the chosen mode and no other (the ones that use a DEV-only hook).
+  --jobs=<n>            run n jobs (a check at a viewport) at once, 1 to 8. Default 1: parallel pages compete for the CPU.
+  --artifacts=<dir>     write a screenshot of every failed job into <dir> (CI uploads it).
+  --verbose             after the table, list every assertion of every job (the counts show what was actually tested).
   --help, -h            this text.
 
 Exit code 0 when every check passes with zero console errors, page errors, unhandled rejections and failed same-origin
@@ -26,7 +30,7 @@ requests; 1 otherwise; 2 for a harness error (bad arguments, server did not star
 `;
 
 export function parseArgs(argv) {
-  const out = { mode: 'preview', only: [], list: false, build: true, headed: false, help: false };
+  const out = { mode: 'preview', only: [], list: false, build: true, headed: false, verbose: false, jobs: 1, exclusive: false, artifacts: null, help: false };
   const args = [...argv];
   const takeValue = (flag, inline) => {
     if (inline !== undefined) return inline;
@@ -62,6 +66,22 @@ export function parseArgs(argv) {
       case '--headed':
         out.headed = true;
         break;
+      case '--verbose':
+        out.verbose = true;
+        break;
+      case '--exclusive':
+        out.exclusive = true;
+        break;
+      case '--artifacts':
+        out.artifacts = takeValue('--artifacts', inline);
+        break;
+      case '--jobs': {
+        const value = takeValue('--jobs', inline);
+        const n = Number(value);
+        if (value === '' || !Number.isInteger(n) || n < 1 || n > 8) throw new Error(`--jobs must be a whole number from 1 to 8 (got "${value}")`);
+        out.jobs = n;
+        break;
+      }
       case '--help':
       case '-h':
         out.help = true;

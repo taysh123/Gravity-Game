@@ -41,6 +41,27 @@ export function classifyResponse(res, origin) {
   return { kind: `http ${res.status}`, text: `HTTP ${res.status}`, where: res.url };
 }
 
+const ASSET_TYPES = new Set(['image', 'script', 'stylesheet', 'font', 'media']);
+const DATA_TYPES = new Set(['fetch', 'xhr']);
+
+/**
+ * `vite preview` (like most SPA hosts) answers a request for a file that does not exist with index.html and status 200,
+ * so a missing asset never shows up as a 404. An asset request that comes back as HTML is exactly that: flag it.
+ * @param {{url: string, status: number, resourceType: string, contentType?: string}} res
+ */
+export function classifySpaFallback(res, origin) {
+  if (res.status >= 400 || !isSameOrigin(res.url, origin)) return null;
+  if (!res.contentType || !res.contentType.toLowerCase().includes('text/html')) return null;
+  const isAsset = ASSET_TYPES.has(res.resourceType);
+  let isDataFile = false;
+  if (DATA_TYPES.has(res.resourceType)) {
+    const ext = /\.([a-z0-9]+)$/i.exec(new URL(res.url).pathname)?.[1]?.toLowerCase();
+    isDataFile = ext !== undefined && ext !== 'html' && ext !== 'htm';
+  }
+  if (!isAsset && !isDataFile) return null;
+  return { kind: 'missing file', text: `a ${res.resourceType} request got text/html (the SPA fallback, so the file does not exist)`, where: res.url };
+}
+
 export function createSignalLog() {
   const list = [];
   let closed = false;

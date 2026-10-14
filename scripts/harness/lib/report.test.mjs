@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createRecorder, formatFailures, formatTable, summarise } from './report.mjs';
+import { createRecorder, formatAssertions, formatFailures, formatTable, summarise } from './report.mjs';
 
 const pass = { check: 'scene-boot', viewport: '390x844', mode: 'preview', status: 'PASS', passed: 14, total: 14, signals: [], failures: [], ms: 12345 };
 const fail = {
@@ -33,6 +33,16 @@ describe('createRecorder', () => {
     r.fail('check threw', new Error('x is not a function'));
     expect(r.total()).toBe(1);
     expect(r.failures()[0]).toEqual({ label: 'check threw', detail: 'Error: x is not a function' });
+  });
+
+  it('keeps every assertion, passed or failed, in order, for the verbose listing', () => {
+    const r = createRecorder();
+    r.expect(true, 'a');
+    r.expect(false, 'b', 'why');
+    expect(r.all()).toEqual([
+      { ok: true, label: 'a', detail: '' },
+      { ok: false, label: 'b', detail: 'why' },
+    ]);
   });
 
   it('an empty recorder has no assertions (a check that asserts nothing must not pass silently)', () => {
@@ -94,5 +104,18 @@ describe('formatFailures', () => {
   it('truncates a very long page error so one stack does not flood the log', () => {
     const long = { ...fail, signals: [{ kind: 'pageerror', text: 'x'.repeat(5000), where: '' }], failures: [] };
     expect(formatFailures([long]).length).toBeLessThan(1500);
+  });
+});
+
+describe('formatAssertions (--verbose)', () => {
+  it('lists every assertion of every job with its result', () => {
+    const jobs = [
+      { ...pass, assertions: [{ ok: true, label: 'MainMenu: 6 tappable objects', detail: '' }] },
+      { ...fail, assertions: [{ ok: false, label: 'Settings: close', detail: 'MISS' }] },
+    ];
+    const text = formatAssertions(jobs);
+    expect(text).toContain('scene-boot @ 390x844 (preview)');
+    expect(text).toContain('  ok    MainMenu: 6 tappable objects');
+    expect(text).toContain('  FAIL  Settings: close');
   });
 });
