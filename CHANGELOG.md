@@ -5,6 +5,7 @@ Internal project changelog (newest first). Store-facing "What's new" copy lives 
 (D-20, `docs/release/RUNBOOK.md` section 4).
 
 ## [Unreleased]
+- **Product vision and research traceability (2026-10-14):** `docs/PRODUCT-VISION.md` is the authority on why and what. Every claim is labelled Decided, Built, Proposed or Owner input needed, and it lists the open owner questions without answering them. MASTER-ROADMAP §16 maps all 34 competitor lessons in the research audit to a task, an experiment, a deferral or a rejection. P00-T26 gains a docs consistency sweep for older texts that amendments overrode.
 - **Vercel web build repaired (P00-T28, B-14, 2026-10-14):** `.vercelignore` no longer excludes `scripts/`. Since `95953fc` the `src` release-guard tests had imported `scripts/lib/*.d.mts`, so `tsc` failed on Vercel's upload (TS2307) while local runs and CI passed. The new guard `src/config/deployIgnore.test.ts` checks every file the compiler reads against `.vercelignore`, using gitignore matching.
 - **Research audit tracked and corrected (P00-T27, A-27, 2026-10-14):** the market research audit and its six notes are tracked verbatim, and the preliminary report is archived to `docs/archive/2026-10-14/`. Two revisions (r2, r3) correct four overstated citations and the percentile wording, record that the source video was never analyzed, and add a revision log.
 - **Planning review fix pass (A-28, 2026-10-14):**

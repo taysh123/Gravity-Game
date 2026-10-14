@@ -4,7 +4,8 @@
 
 | # | Deliverable | File |
 |---|---|---|
-| 1 | Master product roadmap | [`MASTER-ROADMAP.md`](MASTER-ROADMAP.md) |
+| 0 | Product vision (why and what) | [`../PRODUCT-VISION.md`](../PRODUCT-VISION.md) |
+| 1 | Master product roadmap (incl. §16 research-to-decision traceability) | [`MASTER-ROADMAP.md`](MASTER-ROADMAP.md) |
 | 2 | Master technical architecture plan | [`../architecture/TECHNICAL-ARCHITECTURE.md`](../architecture/TECHNICAL-ARCHITECTURE.md) |
 | 3 | Level engine architecture plan | [`../architecture/LEVEL-ENGINE.md`](../architecture/LEVEL-ENGINE.md) |
 | 4 | Level QA / simulation plan | [`../architecture/LEVEL-QA-SIMULATION.md`](../architecture/LEVEL-QA-SIMULATION.md) |

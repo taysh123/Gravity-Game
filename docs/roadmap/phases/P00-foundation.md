@@ -521,6 +521,15 @@ Each task: own branch or commit series, TDD where pure, gates V1–V3 before com
   - **Devices.** Use at least one 120 Hz device, and record raw gameplay footage as a by-product.
   - **CHANGELOG.** Backfill it for P00-T06–T24 (last updated at T05).
   - **P0 final review.** Triage every "minor for final review" item in the SDD ledger (T01–T24); each one is fixed or recorded.
+  - **Docs consistency sweep.** These are older design or code texts that later amendments overrode (found 2026-10-14 while writing PRODUCT-VISION and in the planning reviews). Align the text, or mark it superseded. Never change a decision this way.
+    - Retention targets: `RETENTION.md` (~711, 30/10/4) and `MONETIZATION.md` (~667, 30/10) vs A-18 (30/8/3).
+    - The game-speed assist: `GAMEPLAY-DESIGN.md` (~223) treats it as an open question; A-05 settled it.
+    - Rename scope: `GAMEPLAY-DESIGN.md` (~716) treats it as pending; A-21 settled it.
+    - Gravity Run arming: `GRAVITY-RUN.md` (~4) and the D-02 body describe a countdown; A-01 has Gravity Run arm at scene start.
+    - Trademark regions: `NAMING-STUDY.md` (~3) and the D-19 body disagree; A-14 (US, EU, UK, IL) wins.
+    - Week boundary: `RETENTION.md` (~723) lists it as open; A-13 decided it.
+    - Device-row names: C1–C3 / A1–A5 in `SUCCESS-METRICS.md` and in this phase doc vs the checklist's C1–C5 / A1–A6.
+    - Code comments: `src/config/worlds.ts` (~15-17) and `src/config/levels/index.ts` (~157) say Worlds 9–15 come "later", but all 15 exist; `src/utils/FragmentStore.ts:1` says "premium currency" for an earn-only currency.
   - **Stale docs.** Correct §8.2 of this file. Its boot-smoke bullet says the harness reads `window.__game` from `main.ts:117-120`, but P00-T24 captures the Phaser game harness-side, with no app hook.
 
 **P00-T27 — Research audit integrity** (added 2026-10-14, A-26/A-27; runs before T21)

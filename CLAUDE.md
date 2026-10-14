@@ -9,6 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 > facts block between `facts:readme` markers, and stale numbers there are caught by `npm run facts:check`.
 >
 > - **Layering and module contracts:** [`docs/architecture/TECHNICAL-ARCHITECTURE.md`](docs/architecture/TECHNICAL-ARCHITECTURE.md)
+> - **Product vision (why and what; decided vs proposed vs owner input):** [`docs/PRODUCT-VISION.md`](docs/PRODUCT-VISION.md)
 > - **Plans and decisions:** [`docs/roadmap/`](docs/roadmap/): [`MASTER-ROADMAP.md`](docs/roadmap/MASTER-ROADMAP.md),
 >   [`EXECUTION-ORDER.md`](docs/roadmap/EXECUTION-ORDER.md), [`DECISIONS.md`](docs/roadmap/DECISIONS.md) (its Amendments
 >   table overrides entry bodies), and one plan per phase in `docs/roadmap/phases/`.

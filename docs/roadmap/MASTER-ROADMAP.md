@@ -1,6 +1,6 @@
 # Master Product Roadmap
 
-> **Status:** plan of record from 2026-10-07 (baseline `master @ d3c6aab`). Revised 2026-10-14 ([A-26](DECISIONS.md)): §8–§15 add the delivery stages, the near-term task inventory, the owner-action register, the experiment backlog, the first-player milestones, the post-test 30/60/90 plan, risks and a change log. §1–§7 are unchanged.
+> **Status:** plan of record from 2026-10-07 (baseline `master @ d3c6aab`). Revised 2026-10-14 ([A-26](DECISIONS.md)): §8–§16 add the delivery stages, the near-term task inventory, the owner-action register, the experiment backlog, the first-player milestones, the post-test 30/60/90 plan, risks, a change log and research-to-decision traceability. §1–§7 are unchanged; the full product vision (mission, players, differentiation, monetization philosophy, open owner questions) is [`../PRODUCT-VISION.md`](../PRODUCT-VISION.md).
 >
 > **One source of truth per question (never duplicated):**
 > - **State** (task status, dashboard, gates, open bugs): [`../STATUS.md`](../STATUS.md) only, including its task board. This roadmap defines tasks and gates; it never records whether they are done (CLAUDE.md rule).
@@ -15,6 +15,8 @@
 > The game's working title stays "Gravity Flow" until the naming decision (D-19).
 
 ## 1. North star
+
+> Summary only. The authoritative product vision is [`../PRODUCT-VISION.md`](../PRODUCT-VISION.md): why and what. This roadmap says when and in what order; [`../STATUS.md`](../STATUS.md) says where we are.
 
 We optimise for:
 - more players **understanding the game instantly**
@@ -533,6 +535,7 @@ flowchart LR
   - Backfill CHANGELOG for P00-T06–T24.
   - Set the phase-doc status line.
   - **P0 final review**: triage every "minor for final review" item in the SDD ledger (T01–T24), then fix or record each.
+  - The docs consistency sweep listed in the P00 phase doc (older design and code texts that amendments overrode; text only, never a decision).
   - Correct the phase doc §8.2 boot-smoke text. It says the harness reads `window.__game` from `main.ts:117-120`, but P00-T24 captures the Phaser game harness-side, with no app hook.
 - **Depends on:** T21, T22, T23, T25.
 - **Acceptance:** §15 of the phase doc is complete except the owner device rows, which are scheduled in the M0 device session; code review Approved.
@@ -733,3 +736,73 @@ Assumptions: no paid UA budget, Android only, the 13+ audience, the existing mon
 | 2026-10-14 | Delivery stages, task inventory, owner-action register, experiment backlog, first-player milestones, post-test 30/60/90, risks and change log added (§8–§15). New tasks: P00-T29 (planning sync), P00-T27 (research audit integrity) and P00-T28 (Vercel repair), all before P00-T21. **The P0 → P1 → M0 order is unchanged.** | Recovery report: Vercel deployments in ERROR since `95953fc` (2026-10-08); the research audit and notes untracked; review fold-ins only in the local ledger | A-26 |
 | 2026-10-14 | The research audit is adopted as an evidence input (not as approval to build); the preliminary report is superseded; the source video is recorded as unanalyzed | Audit §2–§3; citation spot-check (16 sources) | A-27 |
 | 2026-10-14 | Planning-docs review fix pass. Stage G now runs alongside F from M0, and the launch and the First 1,000/10,000 gates move to Stage H. Device-row names follow the M0 checklist. The task count is 249. Proposed KPIs are labelled pending (OA-14a). The experiments are renamed EXP-01–EXP-12. A first production release cannot use a staged rollout | Planning-docs review of 2026-10-14; [Play staged rollouts](https://support.google.com/googleplay/android-developer/answer/6346149?hl=en) | A-28 |
+
+## 16. Research-to-decision traceability
+
+Every competitor lesson in the research audit ([§7](../research/2026-10-14-gravity-flow-research-audit.md)) has exactly one home: an existing or planned task, an experiment, a documented deferral, or a reasoned rejection.
+- **Sources and confidence.** The audit row (A1–C5) carries the source links, confidence and cost/risk notes; this table carries the decision and where it lands.
+- **Rule for new research.** A new finding gets a row here before it becomes work, and no row may move ahead of an open P0 or the M0 gates.
+- **Product vision.** The vision each row serves is stated in [`../PRODUCT-VISION.md`](../PRODUCT-VISION.md).
+
+Evidence strength (coarse, from the audit's sources):
+- **policy:** Google's own help or policy text.
+- **reviews:** the review pulls of 2026-10-14; directional only.
+- **analyst:** third-party teardowns or estimates.
+- **store pages:** live listings.
+- **repo:** this codebase or an earlier measurement.
+
+| Audit row | Lesson | Evidence | Already in Gravity Flow? | Decision | Roadmap home | Why it matters (vision) | Success measure |
+|---|---|---|---|---|---|---|---|
+| A1 | Show the real hold-drag-release in the first seconds of every store asset | policy + analyst | Hook "Hold to pull a lost star home" (`docs/store/listing.md`); creative not shot yet | Adopt | P00-T25 (copy); P11 Step 14 (screenshots, video); EXP-07, EXP-08 | One verb is the identity; it sells by being seen | Listing conversion vs the Play Console peer median |
+| A2 | Keep the listing policy-clean and literally true | policy + reviews | B-07 "leaderboard" claim open | Adopt | P00-T25 (`storeCopy.test.ts`) | A new account cannot absorb a policy strike; honesty is a pillar | First submission approved; 0 metadata warnings |
+| A3 | Make every rewarded and interstitial flow flawless | reviews (6 of 12 games) | Event-driven rewarded + watchdog built (T19) | Adopt | P00-T26 ad rows (4 checks); M0-G07; EXP-04 | With no UA, ratings are the discovery channel | 200/200 credited, 0 restarts, 0 crashes |
+| A4 | State exactly what Remove Ads removes | reviews | `no_ads` suppresses interstitials; rewarded stays opt-in | Adopt | P00-T25 (copy + shop label) | Purchases must feel like support, not a trick | No "ads after purchase" reviews; refund rate |
+| A5 | Keep interstitials light and never after failure | analyst + reviews | Built: 180 s gap, grace, never after a death (D-24) | Already implemented | P7 caps via Remote Config; EXP-10 | Protects the rating that discovery depends on | Interstitials ≤ 1.5 per DAU |
+| A6 | Prove the first-minute payoff with real players | analyst | Built: L1 within one reach, CoachMark, sonar ping, hints | Already implemented; validate | EXP-01 (CT-02, CT-05) | "Understand instantly" is north-star item 1 | Median time to first L1 win; L1→L3 completion |
+| A7 | Indirect control must feel fair: visible reach, the same force at every refresh rate | analyst + repo (B-03 measured spread) | Sonar ping built; B-03 open | Adopt | P1 (P01-T01–T14); EXP-02, EXP-03 | Fairness is the core risk of an indirect-control game | Bit-identical states at 30–144 Hz |
+| A8 | Instrument just enough to read the funnel | repo + analyst | 36 events; no `level_end`, no pre-consent queue | Adopt | P00-T23 (A-10) | Every later decision needs consent-safe data | `level_end` on 100% of attempts; 0 events before consent |
+| A9 | Localize the listing (es-419, pt-BR) | policy (free machine translation) | English only for 1.0 | Defer | P11, after D-19 (OA-07) | Cheap reach, but wasted if the name changes | Localized vs English conversion |
+| B1 | Let measured difficulty, not level count, drive the campaign | analyst + repo (flat ~2/10 difficulty) | 150 levels, flat early difficulty, duplicates | Defer (scheduled) | P2 bot (Steps 9, 11) → P4 (Steps 13, 15); EXP-05, EXP-06; D-27 | Mastery needs a real curve, not more levels | 3★ earned by 25–40% of clearers |
+| B2 | NEXT/RETRY result screen, instant retry | analyst | Auto-advance after 2,800 ms | Defer (scheduled) | P3 Step 10 (D-08) | The "one more try" loop | Attempts per session |
+| B3 | Help at the moment of need without selling progress | analyst (Unity rewarded engagement) | Designed, not built (relief ladder, D-07) | Defer (scheduled) | P3/P7 (D-07, A-05) | Keeps players moving without pay-to-win | Rewarded opt-in ≥ 20%; churn after fail streaks |
+| B4 | Opt-in local notifications as the first re-engagement channel | repo (no return channel) | Not built | Defer (scheduled) | P6 Step 17 (D-15, A-11) | Returning tomorrow is north-star item 3 | Opt-in ≥ 35%; disable < 3%/week |
+| B5 | Real online Weekly leaderboards | reviews + store pages | Local-only board; copy over-claims (B-07) | Defer to P8 (D-17); fix the copy now | P00-T25 (copy); P8 Step 20 | A weekly hook only works if it is real | Weekly participation ≥ 15% of WAU |
+| B6 | Live-ops events, seasons, passes | analyst | Designed as data (LIVE-OPS) | Defer the seams; reject a battle pass for 1.0 (D-30) | P10 Step 22 | Solo cadence (LIVE-OPS §10) | Event participation ≥ 20% of WAU |
+| B7 | Teams, lives gifting, PvP | store pages | None | Reject | — | Needs a backend and a live population; no lives exist | — |
+| B8 | Lives, energy, wait timers | reviews | None, by design | Reject | §4 P7 "must not" | Gating a skill game punishes practice | — |
+| B9 | Paid or ad-gated continue in the campaign | analyst | Instant restart, no ad (240 ms) | Reject | D-24; MONETIZATION B.1 | Contradicts the failure protections | — |
+| B10 | Sell boosters, currency or "star packs" | store pages | Earn-only Stardust | Reject | D-23, D-07 | Would sell the skill the game teaches | — |
+| B11 | A world-completion reveal from the game's own fiction (a constellation fills in) | analyst | Constellation orbs in 2 levels; Star Map | Test (proposal) | OA-14c → P4 world ceremony / P6 collections | A payoff beat and a strong screenshot | Tester preference; world completion rate |
+| B12 | Remove Ads price point | reviews ($7.99–$10 where ads are intrusive) | Heuristic $1.99–$2.99 (MONETIZATION) | Test | P7; EXP-09 (not testable before ~10,000 installs) | Light ads mean less pull to buy | Payer conversion ≥ 1.5% |
+| B13 | Optional pull or trajectory preview as an assist | analyst (Orbit, Gravity Well) | Sonar ping only | Test (proposal) | OA-14c → P5 assist slot (A-05: withholds only the par star) | Fewer "unfair" moments without trivializing skill | Fail streaks before the first W1 boss clear |
+| B14 | Community levels or a sandbox | store pages (Orbit) | None | Defer (post-launch) | After P2 data model v2 (D-05) | Replay for a core audience; moderation cost | — |
+| B15 | A story or decoration meta | analyst | Star Map, cosmetics, light "lost star" spine | Reject | — | Costly; a thin meta is enough | — |
+| B16 | Paid UA and playable ads | analyst | None | Defer | P11 "must not do yet" | Negative ROI on average without proven retention | — |
+| B17 | A small cheap-geo technical paid test (~US$300) | analyst (vendor bands) | None | Test (owner budget) | EXP-11 after production access | A real-device stability and D1 signal | Crash-free ≥ 99.5%; D1 vs the median |
+| B18 | Tilt, swipe or draw-line modes; hole or sort reskins | analyst (215 hole launches, 38 cannon clones) | Pointer-only attractor | Reject | D-26 (formula unchanged); CLAUDE.md core principles | Erases the one-verb identity; saturated fields | — |
+| B19 | A new level pack every 1–2 weeks | store pages | Monthly live-ops sitting | Reject at that cadence | D-27; LIVE-OPS §10 | Quality before count; solo capacity | — |
+| B20 | Remove-ads subscription or "No-Ads+" (rewards without watching) | analyst (one studio) | Not built | Reject for 1.0 | Subscriptions rejected (§4 P7); No-Ads+ is D-37, USER-GATED and off by default (P07-T18) | Money must never buy currency | — |
+| C1 | Daily login reward | store pages | Built: 7-day ladder (`DailyStore.ts`) | Already implemented | P6 pause rule (D-18) | Habit without punishment | `login_bonus` claims per DAU |
+| C2 | Daily and weekly challenges | store pages | Built: Daily + Weekly seed | Already implemented | Daily v2 in P6 (D-21) | The return loop | Daily participation ≥ 25% of DAU |
+| C3 | Rewarded 2× / second chance, Remove Ads, cosmetic bundles | analyst | Built: 4 rewarded placements, 4 non-consumables | Already implemented | Owner dashboards OA-05, ids OA-06 | The revenue line, kept ethical | Rewarded opt-in ≥ 20% |
+| C4 | Progression with a visible map | store pages | Built: 15 worlds, Star Map, sequential unlock | Already implemented | P4 rework | Mastery visible at a glance | Share of players finishing W1 |
+| C5 | Offline play as a selling point | store pages | Built: fully offline on Android (ads and IAP need a network) | Already implemented | P00-T25 wording | Low-friction play | Accurate copy shipped |
+
+**Structural findings outside the 34 lessons:**
+- **Google Play testing gate:**
+  - **Finding:** Google requires 12 testers × 14 days for personal accounts created after 2023-11-13 (policy).
+  - **Home:** OA-01 → CT-01 (Stage F).
+  - **Measure:** ≥ 12 testers opted in on day 14.
+- **Where the market money is:**
+  - **Finding:** money and growth sit in IAP-heavy sort, block and match games fed by paid UA (analyst estimates, audit §6).
+  - **Home:** R-51 (revenue modest by design) and the positioning in [`../PRODUCT-VISION.md`](../PRODUCT-VISION.md).
+  - **Measure:** none. It shapes expectations, not tasks.
+- **Mechanics are cloned within weeks:**
+  - **Finding:** the Royal Smash clones and the Colony Flow lawsuit show how fast mechanics are copied (analyst).
+  - **Home:** the PRODUCT-VISION differentiation section. Feel, level design and identity are the defensible assets, so P1 and P4 quality come first.
+- **Retention benchmarks:**
+  - **Finding:** GameAnalytics 2026 medians and quartiles (analyst, audit §1 and §9).
+  - **Home:** A-18 stays in force; the proposed median floors are OA-14a; the cohort-size rules are in §12.
+- **Staged rollout:**
+  - **Finding:** Google Play does not allow a staged rollout on a first release (policy).
+  - **Home:** A-28, CT-08, P12-T12.
