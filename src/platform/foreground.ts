@@ -60,8 +60,9 @@ export function onActivityChange(listener: (resumed: boolean) => void): () => vo
   };
 }
 
-// Is the pause overlay (PauseScene) open, or about to open? Only the lifecycle can see the scenes, so it installs the reader once the
-// game exists (installLifecycle); until then nothing is up. Lets a service decide whether giving audio back is allowed right now.
+// Is the pause overlay (PauseScene) open, or about to open, or is the game halted behind the frame guard's error overlay (P00-T21)? Only
+// the lifecycle can see the scenes, so it installs the reader once the game exists (installLifecycle); until then nothing is up. Lets a
+// service decide whether giving audio back is allowed right now.
 let pauseOverlayReader: () => boolean = () => false;
 
 export function setPauseOverlayReader(read: () => boolean): void {

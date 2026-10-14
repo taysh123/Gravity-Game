@@ -198,6 +198,23 @@ describe('main.ts wiring (P00-T21)', () => {
     expect(main).toMatch(/showErrorOverlay\(\);/);
   });
 
+  // The showOverlay callback main.ts hands the guard, up to the `},` that closes it.
+  function showOverlayBody(): string {
+    const m = /showOverlay: \(\) => \{([\s\S]*?)\}\s*,\s*\}\);/.exec(main);
+    if (!m) throw new Error('main.ts: the showOverlay callback of installFrameGuard was not found');
+    return m[1];
+  }
+
+  it('the overlay silences the game before it shows: the showOverlay body calls sharedAudio().suspend() (design decision 10)', () => {
+    const body = showOverlayBody();
+    expect(body).toMatch(/sharedAudio\(\)\.suspend\(\)/);
+    expect(body.indexOf('sharedAudio().suspend()')).toBeLessThan(body.indexOf('showErrorOverlay()'));
+  });
+
+  it('Back reaches JS while the overlay is up: the showOverlay body turns the native back handler on (MainMenuScene hands Back to the system)', () => {
+    expect(showOverlayBody()).toMatch(/setBackHandlerEnabled\(true\)/);
+  });
+
   it('mentions __crashTest only inside the import.meta.env.DEV block', () => {
     const dev = main.indexOf('if (import.meta.env.DEV) {');
     expect(dev).toBeGreaterThan(-1);

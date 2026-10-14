@@ -39,7 +39,8 @@ export const DEV_HANDLES = { game: '__game', phaser: '__Phaser', crashTest: '__c
 /**
  * window.__crashTest (P00-T21). `message`: the Error main.ts throws inside update. `burst`: PLATFORM.FRAME_ERROR_BURST, the frame
  * errors within FRAME_ERROR_WINDOW_MS after which the guard stops the loop. `guardLog`: the console.error line the frame guard writes
- * for each one. `crashLog`: the dev console.error line Crash writes for the first report (later identical ones are deduplicated).
+ * for each one. `crashLog`: the dev console.error line Crash writes for the first report of a page load (later identical ones are
+ * deduplicated).
  */
 export const CRASH_TEST = {
   message: '__crashTest: injected frame error',

@@ -12,6 +12,10 @@
 //    auto-resume gameplay. Triggers: `visibilitychange` on every platform, plus the @capacitor/app `pause` / `resume`
 //    events on native (Activity onPause / onResume, which also covers split-screen focus loss).
 //
+// A third state sits over both halves (P00-T21): the frame guard has stopped the game and its DOM overlay is up (errorOverlay.ts).
+// Nothing in the game runs any more, so Back restarts the page (the same as a tap on the overlay) instead of being routed into a
+// scene manager that sleeps with the loop, and a foreground return gives no audio back.
+//
 // The native plugin is dynamically imported behind Capacitor.isNativePlatform() (same pattern as Ads.ts), so the
 // web bundle never loads it.
 import Phaser from 'phaser';
@@ -25,6 +29,7 @@ import type { AppBridge } from '../utils/native/app';
 import { routeBack, deriveBackState, type BackAction, type BackState, type SceneSnapshot } from './backRouter';
 import { lifecycleDecision, deriveLifecycleScenes, type LifecycleActions, type Visibility } from './lifecycleDecision';
 import { isExternalFlowActive } from './externalFlow';
+import { isErrorOverlayUp, restartFromErrorOverlay } from './errorOverlay';
 import { notifyForeground, reportActivity, setPauseOverlayReader } from './foreground';
 import { AD_EXTERNAL_FLOW_SOURCE } from '../config/monetization.config';
 import { isDismissable, isPausable } from './pausable';
@@ -104,6 +109,14 @@ function execute(g: Phaser.Game, action: BackAction, state: BackState): void {
 
 // Route one Back press. Returns the action taken (tests and the headless check read it).
 export function handleBack(): BackAction {
+  // The frame guard has stopped the game and its overlay is up: the scene manager sleeps with the loop, so whatever the router chose would
+  // never run (a pause queued on a dead scene) or would background the app. Back means what a tap on the overlay means: restart. Asked
+  // first, and of the DOM alone: the game is in an error state, so Back must not depend on its scenes. (On Android the main menu turns the
+  // native handler off; main.ts turns it back on when it shows the overlay, otherwise this is never reached from there.)
+  if (isErrorOverlayUp()) {
+    restartFromErrorOverlay();
+    return { type: 'none' };
+  }
   if (!game) return { type: 'none' };
   // A full-screen ad is requested or on screen: Back does nothing. The ADS source of the external flow only (it is up exactly while
   // Ads.isShowing(); platform may not import services/Ads), so a stuck IAP or consent flag cannot swallow Back for good.
@@ -183,6 +196,7 @@ function runLifecycle(visibility: Visibility): LifecycleActions | null {
     pauseOverlayUp: scenes.pauseOverlayUp || pausePending,
     externalFlowActive: isExternalFlowActive(),
     adFlowActive: isExternalFlowActive(AD_EXTERNAL_FLOW_SOURCE),
+    haltedByError: isErrorOverlayUp(),
     sound: settings.sound,
     music: settings.music,
   });
@@ -271,8 +285,9 @@ export function installLifecycle(g: Phaser.Game): void {
   if (lifecycleInstalled) return;
   lifecycleInstalled = true;
   game = g;
-  // Lets services (Ads: give audio back after an ad?) ask what only the live scenes know.
-  setPauseOverlayReader(() => pausePending || deriveLifecycleScenes(snapshotScenes(g)).pauseOverlayUp);
+  // Lets services (Ads: give audio back after an ad?) ask what only the live scenes know. A game halted behind the error overlay counts
+  // as an overlay too: an ad that ends under it must not start the audio either.
+  setPauseOverlayReader(() => pausePending || isErrorOverlayUp() || deriveLifecycleScenes(snapshotScenes(g)).pauseOverlayUp);
   document.addEventListener('visibilitychange', () => {
     const hidden = document.visibilityState === 'hidden';
     try {

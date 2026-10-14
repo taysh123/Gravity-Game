@@ -23,6 +23,7 @@ const base: LifecycleInput = {
   pauseOverlayUp: false,
   externalFlowActive: false,
   adFlowActive: false,
+  haltedByError: false,
   sound: true,
   music: true,
 };
@@ -62,6 +63,14 @@ describe('lifecycleDecision: hidden (background)', () => {
     });
   });
 
+  // P00-T21 Task 5 review: the frame guard stopped the game and its DOM overlay is up. Hidden is unchanged by it: the audio is suspended
+  // and the pause rules are what they were (a queued pause on a stopped game is inert, so there is nothing to guard).
+  it('the game is halted behind the error overlay: the hidden path is what it always was', () => {
+    expect(hidden({ haltedByError: true })).toEqual(hidden());
+    expect(hidden({ haltedByError: true, gameplayActive: false })).toEqual(hidden({ gameplayActive: false }));
+    expect(hidden({ haltedByError: true }).suspendAudio).toBe(true);
+  });
+
   it('menus (no gameplay): only audio is suspended', () => {
     expect(hidden({ gameplayActive: false, pauseOverlayUp: false })).toMatchObject({
       requestPause: false,
@@ -95,6 +104,22 @@ describe('lifecycleDecision: visible (foreground)', () => {
       refreshScale: true,
       resumeAudio: false,
     });
+  });
+
+  // P00-T21 Task 5 review: the frame guard stopped the game (its DOM overlay "Tap to restart" is up). A foreground return used to
+  // give the audio back, and the ambient pad played under "Something went wrong". Like the pause overlay, it keeps the return silent.
+  it('the game is halted behind the error overlay: refit, but no audio under it', () => {
+    expect(visible({ haltedByError: true, gameplayActive: false })).toEqual({
+      requestPause: false,
+      suspendAudio: false,
+      refreshScale: true,
+      resumeAudio: false,
+    });
+    expect(visible({ haltedByError: true, gameplayActive: true, sound: true, music: true }).resumeAudio).toBe(false);
+  });
+
+  it('the same return without the error overlay does resume (the control for the row above)', () => {
+    expect(visible({ haltedByError: false, gameplayActive: false }).resumeAudio).toBe(true);
   });
 
   it('Sound off, Music on: audio resumes (the ambient pad still plays)', () => {
@@ -152,7 +177,7 @@ describe('lifecycleDecision: invariants over the whole input space', () => {
           for (const adFlowActive of bools) {
             for (const sound of bools) {
               for (const music of bools) {
-                all.push({ visibility, gameplayActive, pauseOverlayUp, externalFlowActive, adFlowActive, sound, music });
+                all.push({ visibility, gameplayActive, pauseOverlayUp, externalFlowActive, adFlowActive, haltedByError: false, sound, music });
               }
             }
           }
@@ -161,8 +186,11 @@ describe('lifecycleDecision: invariants over the whole input space', () => {
     }
   }
 
-  it('covers 128 combinations', () => {
-    expect(all).toHaveLength(128);
+  // The error-overlay dimension: every row above again, with the game halted.
+  for (const i of [...all]) all.push({ ...i, haltedByError: true });
+
+  it('covers 256 combinations', () => {
+    expect(all).toHaveLength(256);
   });
 
   it('never auto-resumes gameplay: there is no resume-gameplay action at all', () => {
@@ -195,13 +223,20 @@ describe('lifecycleDecision: invariants over the whole input space', () => {
     }
   });
 
-  it('audio never resumes under the pause overlay, under an ad, nor with both audio settings off', () => {
+  it('audio never resumes under the pause overlay, under an ad, under the error overlay, nor with both audio settings off', () => {
     for (const i of all) {
       const a = lifecycleDecision(i);
       if (i.pauseOverlayUp) expect(a.resumeAudio).toBe(false);
       if (i.adFlowActive) expect(a.resumeAudio).toBe(false);
+      if (i.haltedByError) expect(a.resumeAudio).toBe(false);
       if (!i.sound && !i.music) expect(a.resumeAudio).toBe(false);
-      if (i.visibility === 'visible') expect(a.resumeAudio).toBe(!i.pauseOverlayUp && !i.adFlowActive && (i.sound || i.music));
+      if (i.visibility === 'visible') expect(a.resumeAudio).toBe(!i.pauseOverlayUp && !i.adFlowActive && !i.haltedByError && (i.sound || i.music));
+    }
+  });
+
+  it('a halted game changes nothing but the audio resume: every other action is what it would be without the flag', () => {
+    for (const i of all) {
+      expect(lifecycleDecision({ ...i, haltedByError: true })).toEqual({ ...lifecycleDecision({ ...i, haltedByError: false }), resumeAudio: false });
     }
   });
 });

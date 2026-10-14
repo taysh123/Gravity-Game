@@ -7,7 +7,8 @@
 //              overlay is already up; always suspend audio (AudioSynth.suspend: ctx.suspend() + hum off).
 //   visible -> refit the canvas; resume audio only if Sound or Music is on AND the pause overlay is not up AND no ad is on screen
 //              (AdMob's AdActivity is translucent: after Home -> return the WebView can report visible while the ad is still on top;
-//              Ads gives the audio back itself when the ad ends).
+//              Ads gives the audio back itself when the ad ends) AND the game has not been halted by the frame guard (its DOM
+//              "Tap to restart" overlay is up: nothing runs any more, so nothing may sound under it).
 //   Gameplay is NEVER resumed here: only an explicit CONTINUE / Back on the overlay does that. There is no
 //   "resume gameplay" action in the result type, so no input can produce one.
 import { PLATFORM } from '../config/platform.config';
@@ -27,6 +28,10 @@ export interface LifecycleInput {
   // An ad is on screen or being shown (the ads source of the external flow alone, not IAP or consent): the foreground path must not
   // start the game audio under it. Ads.finishShow resumes it when the ad ends.
   adFlowActive: boolean;
+  // The frame guard has stopped the game loop and its DOM overlay (platform/errorOverlay.ts) is up. Nothing in the game runs any more, so
+  // like the pause overlay it keeps the foreground path silent. It changes nothing else: the canvas is still refitted (the resize
+  // listeners in main.ts do that regardless) and hidden still suspends the audio.
+  haltedByError: boolean;
   sound: boolean;
   music: boolean;
 }
@@ -51,7 +56,7 @@ export function lifecycleDecision(i: LifecycleInput): LifecycleActions {
     requestPause: false,
     suspendAudio: false,
     refreshScale: true,
-    resumeAudio: !i.pauseOverlayUp && !i.adFlowActive && (i.sound || i.music),
+    resumeAudio: !i.pauseOverlayUp && !i.adFlowActive && !i.haltedByError && (i.sound || i.music),
   };
 }
 

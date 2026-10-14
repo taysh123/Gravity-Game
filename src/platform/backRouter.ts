@@ -11,6 +11,8 @@
 //   4. MainMenuScene -> system (the handler is disabled there, so Android does its own warm background exit)
 //   5. sub-menu -> its parent from PLATFORM.PARENT_SCENE
 //   6. splash or unknown scene -> none
+// Not a row of this table: while the frame guard's error overlay is up (P00-T21), lifecycle.ts handleBack restarts the page and never asks
+// the router, because the scenes it would act on sleep with the stopped loop.
 // The router never exits the app: there is no exit action, and exitApp() is never called anywhere.
 import { PLATFORM } from '../config/platform.config';
 

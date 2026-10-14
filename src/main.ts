@@ -18,7 +18,7 @@ import { Crash } from './services/Crash';
 import { BUILD_LABEL, sceneCrashKeys, watchSceneCrashKeys, webViewVersion } from './services/crashContext';
 import { IAP } from './services/IAP';
 import { sharedAudio } from './utils/AudioSynth';
-import { installBackNavigation, installLifecycle } from './platform/lifecycle';
+import { installBackNavigation, installLifecycle, setBackHandlerEnabled } from './platform/lifecycle';
 import { installFrameGuard } from './platform/frameGuard';
 import { showErrorOverlay } from './platform/errorOverlay';
 import { Saves } from './platform/saves';
@@ -131,6 +131,10 @@ game.events.once(Phaser.Core.Events.READY, () => {
         // audio unavailable: nothing to silence
       }
       showErrorOverlay();
+      // MainMenuScene hands Back to the system (setBackHandlerEnabled(false)) and the stopped game will never turn it back on: do it here, so
+      // that Back reaches handleBack, which restarts from the overlay (lifecycle.ts). A no-op on the web, where Escape is always routed.
+      // After the overlay, so nothing here can keep it from showing.
+      setBackHandlerEnabled(true);
     },
   });
   installCrashContext(game);
