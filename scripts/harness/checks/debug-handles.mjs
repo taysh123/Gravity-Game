@@ -8,6 +8,7 @@ const harnessOwned = (key) => key.startsWith('__harness');
 export const debugHandles = {
   name: 'debug-handles',
   modes: ['preview', 'dev'],
+  weight: 6, // about seconds on a CI runner: balances --shard slices
   async run(page, ctx) {
     const globals = await page.evaluate(() => Object.getOwnPropertyNames(window).filter((k) => k.startsWith('__')));
     const app = globals.filter((k) => !harnessOwned(k));

@@ -19,6 +19,7 @@ Usage: node scripts/harness/boot-smoke.mjs [options]   (npm run smoke -- [option
   --list                print the checks for the chosen mode and exit.
   --no-build            preview mode: reuse the existing dist/ instead of running npm run build first.
   --headed              show the browser window (debugging; CI is always headless).
+  --shard=<i>/<n>       run only the i-th of n balanced slices of the jobs (CI runs the slices on separate runners).
   --exclusive           run only the checks that need the chosen mode and no other (the ones that use a DEV-only hook).
   --jobs=<n>            run n jobs (a check at a viewport) at once, 1 to 8. Default 1: parallel pages compete for the CPU.
   --artifacts=<dir>     write a screenshot of every failed job into <dir> (CI uploads it).
@@ -30,7 +31,7 @@ requests; 1 otherwise; 2 for a harness error (bad arguments, server did not star
 `;
 
 export function parseArgs(argv) {
-  const out = { mode: 'preview', only: [], list: false, build: true, headed: false, verbose: false, jobs: 1, exclusive: false, artifacts: null, help: false };
+  const out = { mode: 'preview', only: [], list: false, build: true, headed: false, verbose: false, jobs: 1, shard: null, exclusive: false, artifacts: null, help: false };
   const args = [...argv];
   const takeValue = (flag, inline) => {
     if (inline !== undefined) return inline;
@@ -69,6 +70,15 @@ export function parseArgs(argv) {
       case '--verbose':
         out.verbose = true;
         break;
+      case '--shard': {
+        const value = takeValue('--shard', inline);
+        const m = /^(\d+)\/(\d+)$/.exec(value);
+        const index = m ? Number(m[1]) : 0;
+        const total = m ? Number(m[2]) : 0;
+        if (!m || index < 1 || total > 16 || index > total) throw new Error(`--shard must be i/n with 1 <= i <= n <= 16 (got "${value}")`);
+        out.shard = { index, total };
+        break;
+      }
       case '--exclusive':
         out.exclusive = true;
         break;

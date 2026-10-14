@@ -7,13 +7,15 @@
 //   viewports  BOTH_VIEWPORTS (390x844 and 360x640) or DEFAULT_VIEWPORTS (390x844); default DEFAULT_VIEWPORTS.
 //   seed       optional localStorage entries written before the app boots ({ key: stringValue }).
 //   boot       'menu' (default: tap through the splashes, wait for the main menu), 'natural' (no taps) or 'none' (the check boots).
-//   weight     optional rough cost; with parallel jobs the heavier ones start first. Default 1.
+//   weight     optional rough cost (about seconds on a CI runner). Used to start heavy jobs first when jobs run in parallel and
+//              to balance --shard slices. Default 1.
 //   run        async (page, ctx). ctx.expect(ok, label, detail) records an assertion; a throw is a failure too.
 
 import { MODES } from './args.mjs';
 
 export const DEFAULT_VIEWPORTS = [{ width: 390, height: 844, label: '390x844' }];
 export const BOTH_VIEWPORTS = [...DEFAULT_VIEWPORTS, { width: 360, height: 640, label: '360x640' }];
+export const SMALL_VIEWPORTS = [BOTH_VIEWPORTS[1]];
 
 const NAME_RE = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
 
@@ -47,4 +49,25 @@ export function expandJobs(checks, { mode, only = [], exclusive = false }) {
   }
   if (jobs.length === 0) throw new Error(`No checks to run in ${mode} mode`);
   return jobs;
+}
+
+/**
+ * The i-th of n slices of a job list, balanced by weight (a job's check.weight, default 1): each job, heaviest first, goes to the
+ * least loaded slice. Deterministic (ties are broken by position in the list), and inside a slice the registry order is kept.
+ * An empty slice is fine: a small list can have fewer jobs than runners.
+ */
+export function shardJobs(jobs, { index, total }) {
+  if (!Number.isInteger(total) || total < 1 || !Number.isInteger(index) || index < 1 || index > total) {
+    throw new Error(`shard ${index}/${total} is not a valid slice (need 1 <= index <= total)`);
+  }
+  const weight = (job) => job.check.weight ?? 1;
+  const loads = new Array(total).fill(0);
+  const slices = Array.from({ length: total }, () => []);
+  const heaviestFirst = jobs.map((job, position) => ({ job, position })).sort((a, b) => weight(b.job) - weight(a.job) || a.position - b.position);
+  for (const { job, position } of heaviestFirst) {
+    const target = loads.indexOf(Math.min(...loads));
+    loads[target] += weight(job);
+    slices[target].push({ job, position });
+  }
+  return slices[index - 1].sort((a, b) => a.position - b.position).map(({ job }) => job);
 }

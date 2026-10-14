@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BOTH_VIEWPORTS, DEFAULT_VIEWPORTS, expandJobs, validateChecks } from './registry.mjs';
+import { BOTH_VIEWPORTS, DEFAULT_VIEWPORTS, SMALL_VIEWPORTS, expandJobs, shardJobs, validateChecks } from './registry.mjs';
 
 const run = async () => {};
 const a = { name: 'a', modes: ['preview', 'dev'], viewports: BOTH_VIEWPORTS, run };
@@ -11,6 +11,7 @@ describe('viewports', () => {
     expect(DEFAULT_VIEWPORTS.map((v) => v.label)).toEqual(['390x844']);
     expect(BOTH_VIEWPORTS.map((v) => v.label)).toEqual(['390x844', '360x640']);
     expect(BOTH_VIEWPORTS[1]).toMatchObject({ width: 360, height: 640 });
+    expect(SMALL_VIEWPORTS).toEqual([BOTH_VIEWPORTS[1]]);
   });
 });
 
@@ -68,5 +69,43 @@ describe('validateChecks', () => {
     expect(() => validateChecks([{ name: 'Bad Name', modes: ['dev'], run }])).toThrow(/kebab-case/);
     expect(() => validateChecks([{ name: 'x', modes: ['prod'], run }])).toThrow(/"x".*mode "prod"/);
     expect(() => validateChecks([{ name: 'x', modes: [], run }])).toThrow(/"x" must declare at least one mode/);
+  });
+});
+
+describe('shardJobs: split the job list across n runners, balanced by weight', () => {
+  const job = (name, weight, viewport = '390x844') => ({ check: { name, weight }, viewport: { label: viewport } });
+  const jobs = [job('a', 10), job('b', 9), job('c', 8), job('d', 1), job('e', 1)];
+  const names = (list) => list.map((j) => j.check.name);
+
+  it('gives the heaviest job to the least loaded shard first (greedy), then fills up', () => {
+    expect(names(shardJobs(jobs, { index: 1, total: 2 }))).toEqual(['a', 'd', 'e']); // 10 + 1 + 1
+    expect(names(shardJobs(jobs, { index: 2, total: 2 }))).toEqual(['b', 'c']); // 9 + 8
+  });
+
+  it('covers every job exactly once across the shards', () => {
+    const all = [1, 2, 3].flatMap((index) => names(shardJobs(jobs, { index, total: 3 })));
+    expect([...all].sort()).toEqual(['a', 'b', 'c', 'd', 'e']);
+  });
+
+  it('keeps registry order inside a shard', () => {
+    expect(names(shardJobs(jobs, { index: 1, total: 2 }))).toEqual(['a', 'd', 'e']);
+    const mixed = [job('x', 1), job('y', 50), job('z', 1)];
+    expect(names(shardJobs(mixed, { index: 2, total: 2 }))).toEqual(['x', 'z']);
+  });
+
+  it('treats a job with no weight as 1, and tells equal weights apart by position so the split is stable', () => {
+    const flat = [job('p'), job('q'), job('r'), job('s')];
+    expect(names(shardJobs(flat, { index: 1, total: 2 }))).toEqual(['p', 'r']);
+    expect(names(shardJobs(flat, { index: 2, total: 2 }))).toEqual(['q', 's']);
+  });
+
+  it('one shard is the whole list; an empty shard is an empty list, not an error', () => {
+    expect(names(shardJobs(jobs, { index: 1, total: 1 }))).toEqual(['a', 'b', 'c', 'd', 'e']);
+    expect(shardJobs([job('only', 5)], { index: 2, total: 3 })).toEqual([]);
+  });
+
+  it('refuses an index outside 1..total', () => {
+    expect(() => shardJobs(jobs, { index: 0, total: 2 })).toThrow(/shard/);
+    expect(() => shardJobs(jobs, { index: 3, total: 2 })).toThrow(/shard/);
   });
 });

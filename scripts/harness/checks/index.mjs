@@ -8,9 +8,9 @@ import { firstRun } from './first-run.mjs';
 import { listScrollRanges } from './list-scroll-ranges.mjs';
 import { listViewportTaps } from './list-viewport-taps.mjs';
 import { overlayTaps } from './overlay-taps.mjs';
-import { screens } from './screens.mjs';
+import { screensMenus, screensPlay } from './screens.mjs';
 import { settingsPrivacyWeb } from './settings-privacy-web.mjs';
 import { splashBoot } from './splash-boot.mjs';
 import { webStoreCopy } from './web-store-copy.mjs';
 
-export const CHECKS = [splashBoot, debugHandles, firstRun, screens, listViewportTaps, listScrollRanges, overlayTaps, settingsPrivacyWeb, webStoreCopy, adOffersByMode, adInflightGuard];
+export const CHECKS = [splashBoot, debugHandles, firstRun, screensMenus, screensPlay, listViewportTaps, listScrollRanges, overlayTaps, settingsPrivacyWeb, webStoreCopy, adOffersByMode, adInflightGuard];

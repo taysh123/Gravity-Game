@@ -9,7 +9,7 @@
 
 import { frames, startScene } from '../lib/game.mjs';
 import { inPage, installLists } from '../lib/lists.mjs';
-import { BOTH_VIEWPORTS } from '../lib/registry.mjs';
+import { SMALL_VIEWPORTS } from '../lib/registry.mjs';
 
 const LISTS = [
   { name: 'Achievements', key: 'AchievementsScene', itemH: 56, scrolls: true, restsAtTop: true, slackTop: 12, slackBottom: 12 },
@@ -25,8 +25,8 @@ const fully = (item, band) => item.top >= band.top - 0.5 && item.bottom <= band.
 export const listScrollRanges = {
   name: 'list-scroll-ranges',
   modes: ['preview', 'dev'],
-  viewports: BOTH_VIEWPORTS,
-  weight: 4,
+  viewports: SMALL_VIEWPORTS, // 360x640 only: the stricter scale for the css->game px conversion; the end positions do not depend on it
+  weight: 130, // about seconds on a CI runner: balances --shard slices
   async run(page, ctx) {
     await installLists(page);
     const geom = (L) => inPage(page, 'listGeometry', L.key, L.itemH);

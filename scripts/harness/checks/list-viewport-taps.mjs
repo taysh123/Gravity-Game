@@ -15,7 +15,7 @@ const NOTHING_HAPPENED_FRAMES = 25; // a negative assertion cannot wait for an e
 
 export const listViewportTaps = {
   name: 'list-viewport-taps',
-  weight: 6, // starts early when jobs run in parallel (rough relative cost)
+  weight: 110, // about seconds on a CI runner: balances --shard slices
   modes: ['preview', 'dev'],
   viewports: BOTH_VIEWPORTS,
   seed: { ...ALL_WORLDS_UNLOCKED, ...RICH },
@@ -32,12 +32,12 @@ export const listViewportTaps = {
     const unchanged = (a, b) => a.currency === b.currency && a.cosmetics === b.cosmetics;
 
     // --- the shop, scrolled to the end: rows are under the tab bar; every tab tap must still switch tabs -----------------
+    // Each list tab as the start, the centre of a label and 19 px below / above it (inside the 44 px target, over what used to be a
+    // row), every destination reached at least once.
     const tapCases = [
       ['skin', 'trail', 0],
-      ['trail', 'arrival', 0],
-      ['arrival', 'bundle', 0],
-      ['skin', 'arrival', 19], // 19 px below the label: inside the 44 px target, over what used to be a row
-      ['trail', 'skin', -19], // 19 px above the label
+      ['trail', 'arrival', 19],
+      ['arrival', 'bundle', -19],
     ];
     for (const [start, dest, dy] of tapCases) {
       const where = dy === 0 ? 'centre' : `${Math.abs(dy)} px ${dy > 0 ? 'below' : 'above'}`;

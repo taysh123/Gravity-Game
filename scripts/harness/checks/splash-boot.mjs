@@ -9,6 +9,7 @@ export const splashBoot = {
   name: 'splash-boot',
   modes: ['preview', 'dev'],
   boot: 'none',
+  weight: 10, // about seconds on a CI runner: balances --shard slices
   async run(page, ctx) {
     await ctx.step('boots to MainMenuScene on its own, without a tap', () => bootToMenu(page, { skipSplashes: false }));
     const log = await page.evaluate(() => window.__harnessSceneLog.slice());

@@ -29,6 +29,7 @@ const endlessState = (page) =>
 export const adInflightGuard = {
   name: 'ad-inflight-guard',
   modes: ['dev'],
+  weight: 97, // about seconds on a CI runner: balances --shard slices
   async run(page, ctx) {
     // ---- Endless run-over ----
     await startScene(page, 'EndlessScene', { mode: 'endless' });

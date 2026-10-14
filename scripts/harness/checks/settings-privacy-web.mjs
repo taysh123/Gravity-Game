@@ -16,6 +16,7 @@ export const settingsPrivacyWeb = {
   name: 'settings-privacy-web',
   modes: ['preview', 'dev'],
   viewports: BOTH_VIEWPORTS,
+  weight: 22, // about seconds on a CI runner: balances --shard slices
   async run(page, ctx) {
     await page.context().route(`${POLICY_URL}**`, (route) => route.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><title>policy (harness stub)</title>' }));
 

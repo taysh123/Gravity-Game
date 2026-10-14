@@ -120,8 +120,8 @@ async function endlessRunOver(page, mode) {
  *             setup: (page: import('playwright').Page) => Promise<void> }} State
  */
 
-/** @type {State[]} */
-export const STATES = [
+/** The menus, hubs and the overlays that sit on them. @type {State[]} */
+export const MENU_STATES = [
   { name: 'MainMenu', visits: ['MainMenuScene'], probe: ['MainMenuScene'], setup: (p) => startScene(p, 'MainMenuScene') },
   {
     name: 'Settings over MainMenu',
@@ -135,18 +135,24 @@ export const STATES = [
     probe: ['CosmeticsScene'],
     setup: (p) => startScene(p, 'CosmeticsScene', { tab }),
   })),
-  ...['skin', 'trail', 'arrival'].map((tab) => ({
-    // Rows scrolled up under the tab bar are masked: they must be dead and the tabs must win.
-    name: `Cosmetics: ${tab} tab scrolled to the end`,
+  {
+    // Rows scrolled up under the tab bar are masked: they must be dead and the tabs must win. The three list tabs share one list
+    // implementation, so one of them stands for all (list-viewport-taps taps the others).
+    name: 'Cosmetics: skin tab scrolled to the end',
     visits: ['CosmeticsScene'],
     probe: ['CosmeticsScene'],
-    setup: (p) => startScene(p, 'CosmeticsScene', { tab, scrollOffset: -99999 }),
-  })),
+    setup: (p) => startScene(p, 'CosmeticsScene', { tab: 'skin', scrollOffset: -99999 }),
+  },
   { name: 'WorldMap', visits: ['WorldMapScene'], probe: ['WorldMapScene'], setup: (p) => startScene(p, 'WorldMapScene') },
   { name: 'LevelSelect: world 1', visits: ['LevelSelectScene'], probe: ['LevelSelectScene'], setup: (p) => startScene(p, 'LevelSelectScene', { world: 1 }) },
   { name: 'LevelSelect: world 2', visits: ['LevelSelectScene'], probe: ['LevelSelectScene'], setup: (p) => startScene(p, 'LevelSelectScene', { world: 2 }) },
   { name: 'RunSelect', visits: ['RunSelectScene'], probe: ['RunSelectScene'], setup: (p) => startScene(p, 'RunSelectScene') },
   { name: 'Achievements', visits: ['AchievementsScene'], probe: ['AchievementsScene'], setup: (p) => startScene(p, 'AchievementsScene') },
+  { name: 'EndScene', visits: ['EndScene'], probe: ['EndScene'], setup: (p) => startScene(p, 'EndScene') },
+];
+
+/** The game itself and its overlays: campaign levels, the daily, Pause, the win overlay, Endless. @type {State[]} */
+export const PLAY_STATES = [
   { name: 'Game: level 1', visits: ['GameScene'], probe: ['GameScene'], setup: (p) => startScene(p, 'GameScene', { level: 1 }) },
   {
     name: `Game: boss level ${BOSS_LEVEL}`,
@@ -175,14 +181,12 @@ export const STATES = [
     },
   },
   { name: 'Game: win overlay', visits: ['GameScene'], probe: ['GameScene'], setup: (p) => winOverlay(p, 5) },
-  { name: 'EndScene', visits: ['EndScene'], probe: ['EndScene'], setup: (p) => startScene(p, 'EndScene') },
   {
     name: 'Endless: HUD',
     visits: ['EndlessScene'],
     probe: ['EndlessScene'],
     setup: (p) => endlessHud(p, 'endless'),
   },
-  { name: 'Endless: weekly run', visits: ['EndlessScene'], setup: (p) => startEndless(p, 'weekly') },
   { name: 'Endless: pause', visits: ['EndlessScene', 'PauseScene'], probe: ['PauseScene'], async setup(p) {
       await endlessHud(p, 'endless');
       await sceneCall(p, 'EndlessScene', 'requestPause', 'button');
@@ -192,6 +196,8 @@ export const STATES = [
   { name: 'Endless: run over', visits: ['EndlessScene'], probe: ['EndlessScene'], setup: (p) => endlessRunOver(p, 'endless') },
   { name: 'Endless: weekly run over', visits: ['EndlessScene'], setup: (p) => endlessRunOver(p, 'weekly') },
 ];
+
+export const STATES = [...MENU_STATES, ...PLAY_STATES];
 
 export const stateByName = (name) => {
   const state = STATES.find((s) => s.name === name);

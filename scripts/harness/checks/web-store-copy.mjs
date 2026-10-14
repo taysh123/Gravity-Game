@@ -15,6 +15,7 @@ const SETTINGS = ['SettingsScene'];
 export const webStoreCopy = {
   name: 'web-store-copy',
   modes: ['preview', 'dev'],
+  weight: 30, // about seconds on a CI runner: balances --shard slices
   async run(page, ctx) {
     // ---- the shop's Bundles tab ----
     await startScene(page, 'CosmeticsScene', { tab: 'bundle' });

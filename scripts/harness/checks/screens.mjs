@@ -1,23 +1,24 @@
 // V8: every scene boots with zero console errors, and on every screen the object a player sees is the object a tap reaches.
 //
-// Walks every state in lib/states.mjs (GameScene for level 1, a boss level and the daily in all three modifiers; EndlessScene in
-// both modes with its run-over overlay; the Settings and Pause overlays; every hub scene, the shop on every tab) as a returning
-// player, and fails if a scene registered in src/main.ts has no state, so a new scene cannot ship untested. Entering a state is
-// one named assertion: a console error raised while it ran fails that state by name (the runner also fails the whole job on any
-// page error, even one that arrives between states).
+// Two checks walk the states in lib/states.mjs as a returning player: `screens-menus` (the menus, hubs, shop tabs, map, lists and
+// the Settings overlay) and `screens-play` (campaign levels incl. a boss and the daily in all three modifiers, Pause, the win
+// overlay, Endless in both modes with its run-over overlay). They are two checks only so CI can run them on different runners.
+// `screens-menus` also fails if a scene registered in src/main.ts has no state, so a new scene cannot ship untested. Entering a
+// state is one named assertion: a console error raised while it ran fails that state by name (the runner also fails the whole job
+// on any page error, even one that arrives between states).
 //
 // Tap areas (the P00-T17b work, method in lib/hitProbe.mjs): in every state that has something to tap, corners and centre are the
 // object's own, nothing leaks outside the visible edge beyond the declared pad, no zone is under 44x44 game px, no two zones
 // overlap, and a scrolling list's hidden rows are dead. Each state is probed at 390x844 AND 360x640: the page is resized in place
 // (the app refits, as on a rotation or a browser toolbar change) and probed again, and the next state is entered at the size the
-// previous one ended on, so scenes are created at both sizes. One walk instead of two keeps the run short; the screens are
-// the expensive part, not the probe.
+// previous one ended on, so scenes are created at both sizes. One walk instead of two keeps the run short; entering the screens
+// is the expensive part, not the probe.
 
 import { runProbe, probeToAssertions } from '../lib/hitProbe.mjs';
 import { setViewport, startScene } from '../lib/game.mjs';
 import { BOTH_VIEWPORTS } from '../lib/registry.mjs';
 import { ALL_WORLDS_UNLOCKED, RETURNING_PLAYER } from '../lib/seeds.mjs';
-import { STATES, coveredSceneKeys, enterState } from '../lib/states.mjs';
+import { MENU_STATES, PLAY_STATES, coveredSceneKeys, enterState } from '../lib/states.mjs';
 
 /** Move a scrolling scene's content to one of its clamp ends (what a drag to the end does), or shift it by a number of px. */
 async function scrollList(page, key, where) {
@@ -48,11 +49,20 @@ function bothViewportsProber(page, ctx) {
   };
 }
 
-export const screens = {
-  name: 'screens',
+async function walk(page, ctx, states) {
+  const probe = bothViewportsProber(page, ctx);
+  for (const state of states) {
+    const entered = await ctx.step(`${state.name}: ${state.visits.join(' + ')} started`, () => enterState(page, state));
+    if (entered && state.probe) await probe(state.name, state.probe);
+  }
+  return probe;
+}
+
+export const screensMenus = {
+  name: 'screens-menus',
   modes: ['preview', 'dev'],
   seed: RETURNING_PLAYER,
-  weight: 10, // the longest check: starts first when jobs run in parallel
+  weight: 160, // about seconds on a CI runner: used to balance --shard slices
   async run(page, ctx) {
     const registered = await page.evaluate(() => window.__harnessGame.scene.scenes.map((s) => s.scene.key));
     const covered = coveredSceneKeys();
@@ -61,16 +71,11 @@ export const screens = {
     const unknown = [...covered].filter((k) => !registered.includes(k));
     ctx.expect(unknown.length === 0, 'every scene a state visits is registered in src/main.ts', `not registered: ${unknown.join(', ')}`);
 
-    // 1. Every screen, as a returning player.
-    const probe = bothViewportsProber(page, ctx);
-    for (const state of STATES) {
-      const entered = await ctx.step(`${state.name}: ${state.visits.join(' + ')} started`, () => enterState(page, state));
-      if (entered && state.probe) await probe(state.name, state.probe);
-    }
+    const probe = await walk(page, ctx, MENU_STATES);
 
-    // 2. Scrolling lists at their ends: the content container is moved straight to the end, as a drag does. Every world unlocked
-    //    for the map, so every planet on it is live; a 10-level world never scrolls today (222 px of content in a 604 px
-    //    viewport), so the overflow case shifts the content by hand, as a longer world would.
+    // Scrolling lists at their ends: the content container is moved straight to the end, as a drag does. Every world unlocked for
+    // the map, so every planet on it is live; a 10-level world never scrolls today (222 px of content in a 604 px viewport), so
+    // the overflow case shifts the content by hand, as a longer world would.
     const all = await ctx.openPage({ seed: ALL_WORLDS_UNLOCKED });
     const probeAll = bothViewportsProber(all, ctx);
     for (const where of ['initial', 'top', 'bottom']) {
@@ -91,5 +96,15 @@ export const screens = {
     await startScene(page, 'LevelSelectScene', { world: 1 });
     await scrollList(page, 'LevelSelectScene', -150);
     await probe('LevelSelect: simulated overflow (content shifted up 150 px)', ['LevelSelectScene']);
+  },
+};
+
+export const screensPlay = {
+  name: 'screens-play',
+  modes: ['preview', 'dev'],
+  seed: RETURNING_PLAYER,
+  weight: 130,
+  async run(page, ctx) {
+    await walk(page, ctx, PLAY_STATES);
   },
 };

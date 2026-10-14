@@ -9,6 +9,7 @@ import { enterState, stateByName, triggerWinHeld } from '../lib/states.mjs';
 export const firstRun = {
   name: 'first-run',
   modes: ['preview', 'dev'],
+  weight: 32, // about seconds on a CI runner: balances --shard slices
   async run(page, ctx) {
     for (const name of ['MainMenu', 'WorldMap', 'LevelSelect: world 1', 'Game: level 1']) {
       await ctx.step(`${name} (fresh install)`, () => enterState(page, stateByName(name)));

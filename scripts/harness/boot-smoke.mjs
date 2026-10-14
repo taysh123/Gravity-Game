@@ -16,7 +16,7 @@ import { CHECKS } from './checks/index.mjs';
 import { USAGE, parseArgs } from './lib/args.mjs';
 import { launchBrowser } from './lib/browser.mjs';
 import { runPool } from './lib/pool.mjs';
-import { expandJobs } from './lib/registry.mjs';
+import { expandJobs, shardJobs } from './lib/registry.mjs';
 import { formatAssertions, formatFailures, formatTable, summarise } from './lib/report.mjs';
 import { runJob } from './lib/runner.mjs';
 import { ROOT, buildApp, installCleanup, startServer } from './lib/server.mjs';
@@ -29,9 +29,15 @@ async function main() {
     say(USAGE);
     return 0;
   }
-  const jobs = expandJobs(CHECKS, { mode: args.mode, only: args.only, exclusive: args.exclusive });
+  const allJobs = expandJobs(CHECKS, { mode: args.mode, only: args.only, exclusive: args.exclusive });
+  const jobs = args.shard ? shardJobs(allJobs, args.shard) : allJobs;
   if (args.list) {
     for (const j of jobs) say(`${j.check.name.padEnd(28)} ${j.viewport.label.padEnd(8)} ${j.check.modes.join(',')}`);
+    return 0;
+  }
+
+  if (jobs.length === 0) {
+    say(`[harness] shard ${args.shard.index}/${args.shard.total} has no jobs among the ${allJobs.length} selected: nothing to run`);
     return 0;
   }
 
