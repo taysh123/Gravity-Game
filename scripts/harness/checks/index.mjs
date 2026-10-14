@@ -3,6 +3,7 @@
 
 import { adInflightGuard } from './ad-inflight-guard.mjs';
 import { adOffersByMode } from './ad-offers-by-mode.mjs';
+import { crashOverlay } from './crash-overlay.mjs';
 import { debugHandles } from './debug-handles.mjs';
 import { firstRun } from './first-run.mjs';
 import { listScrollRanges } from './list-scroll-ranges.mjs';
@@ -13,4 +14,4 @@ import { settingsPrivacyWeb } from './settings-privacy-web.mjs';
 import { splashBoot } from './splash-boot.mjs';
 import { webStoreCopy } from './web-store-copy.mjs';
 
-export const CHECKS = [splashBoot, debugHandles, firstRun, screensMenus, screensPlay, listViewportTaps, listScrollRanges, overlayTaps, settingsPrivacyWeb, webStoreCopy, adOffersByMode, adInflightGuard];
+export const CHECKS = [splashBoot, debugHandles, firstRun, screensMenus, screensPlay, listViewportTaps, listScrollRanges, overlayTaps, settingsPrivacyWeb, webStoreCopy, adOffersByMode, adInflightGuard, crashOverlay];

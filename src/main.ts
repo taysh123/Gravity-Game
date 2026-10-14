@@ -19,6 +19,8 @@ import { BUILD_LABEL, sceneCrashKeys, watchSceneCrashKeys, webViewVersion } from
 import { IAP } from './services/IAP';
 import { sharedAudio } from './utils/AudioSynth';
 import { installBackNavigation, installLifecycle } from './platform/lifecycle';
+import { installFrameGuard } from './platform/frameGuard';
+import { showErrorOverlay } from './platform/errorOverlay';
 import { Saves } from './platform/saves';
 
 // Durable saves (D-12): start the Preferences -> localStorage hydrate before anything can read a store. BootScene
@@ -116,7 +118,21 @@ function installCrashContext(g: Phaser.Game): void {
   );
 }
 
+// Frame-loop error boundary (P00-T21, B-10). READY comes just before Game.start() binds this.step for the loop (Game.js
+// texturesReady -> start), so the guard installed here wraps the step the loop really calls. Every exception inside a frame is
+// caught, logged and reported; FRAME_ERROR_BURST of them within FRAME_ERROR_WINDOW_MS stop the loop behind the DOM overlay.
 game.events.once(Phaser.Core.Events.READY, () => {
+  installFrameGuard(game, {
+    report: (error) => Crash.recordError(error, 'frame'),
+    showOverlay: () => {
+      try {
+        sharedAudio().suspend(); // a stopped game must not keep playing its music under the overlay
+      } catch {
+        // audio unavailable: nothing to silence
+      }
+      showErrorOverlay();
+    },
+  });
   installCrashContext(game);
   syncViewport();
 });
@@ -146,6 +162,23 @@ window.addEventListener('touchend', unlockAudio, { capture: true });
 
 // Dev-only handles for automated verification (Playwright). Stripped from prod builds.
 if (import.meta.env.DEV) {
-  (window as unknown as { __game: Phaser.Game; __Phaser: typeof Phaser }).__game = game;
-  (window as unknown as { __game: Phaser.Game; __Phaser: typeof Phaser }).__Phaser = Phaser;
+  const dev = window as unknown as { __game: Phaser.Game; __Phaser: typeof Phaser; __crashTest: (times?: number) => void };
+  dev.__game = game;
+  dev.__Phaser = Phaser;
+  // P00-T21: the next `times` updates of the first running scene throw (default: every update, until the frame guard puts the loop
+  // to sleep and shows its overlay). Drives scripts/harness/checks/crash-overlay.mjs in the dev-server run of the boot smoke.
+  dev.__crashTest = (times = Number.POSITIVE_INFINITY): void => {
+    const scene = game.scene.getScenes(true)[0];
+    if (!scene) throw new Error('__crashTest: no running scene to throw in');
+    let left = times;
+    const boom = (): void => {
+      if (left <= 0) {
+        scene.sys.events.off(Phaser.Scenes.Events.UPDATE, boom);
+        return;
+      }
+      left -= 1;
+      throw new Error('__crashTest: injected frame error');
+    };
+    scene.sys.events.on(Phaser.Scenes.Events.UPDATE, boom);
+  };
 }

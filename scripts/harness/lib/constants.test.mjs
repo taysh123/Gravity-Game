@@ -6,13 +6,14 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { PLATFORM } from '../../../src/config/platform.config.ts';
+import { FRAME_GUARD_LOG_PREFIX } from '../../../src/platform/frameGuard.ts';
 import { PRIVACY_UI } from '../../../src/config/consent.config.ts';
 import { PURCHASE_COPY } from '../../../src/config/monetization.config.ts';
 import { THEME } from '../../../src/config/theme.config.ts';
 import { LEVELS } from '../../../src/config/levels/index.ts';
 import { LEGACY_PREMIUM_KEY, ENTITLEMENTS_KEY } from '../../../src/services/entitlements.ts';
 import { SettingsStore } from '../../../src/utils/SettingsStore.ts';
-import { DEV_HANDLES, OFFERS, PRIVACY, POLICY_URL, SETTINGS_TOGGLES, WEB_NOTE } from './copy.mjs';
+import { CRASH_TEST, DEV_HANDLES, ERROR_OVERLAY, OFFERS, PRIVACY, POLICY_URL, SETTINGS_TOGGLES, WEB_NOTE } from './copy.mjs';
 import { MAX_PAD_GAME_PX, MIN_TAP_GAME_PX } from './hitProbe.mjs';
 import { KEYS } from './seeds.mjs';
 import { BOSS_LEVEL } from './states.mjs';
@@ -99,5 +100,31 @@ describe('the DEV-only handles debug-handles looks for', () => {
     expect(block.length).toBeGreaterThan(0);
     expect(block).toContain(`.${DEV_HANDLES.game} = game;`);
     expect(block).toContain(`.${DEV_HANDLES.phaser} = Phaser;`);
+    expect(block).toContain(`.${DEV_HANDLES.crashTest} = `);
+  });
+});
+
+describe('the frame-guard values crash-overlay looks for (P00-T21)', () => {
+  it('the overlay id and copy are PLATFORM.ERROR_OVERLAY', () => {
+    expect(ERROR_OVERLAY).toEqual({ id: PLATFORM.ERROR_OVERLAY.ID, title: PLATFORM.ERROR_OVERLAY.TITLE, action: PLATFORM.ERROR_OVERLAY.ACTION });
+  });
+
+  it('the burst is PLATFORM.FRAME_ERROR_BURST', () => {
+    expect(CRASH_TEST.burst).toBe(PLATFORM.FRAME_ERROR_BURST);
+  });
+
+  it('the injected message is the literal main.ts throws inside its DEV block', () => {
+    const main = source('src/main.ts');
+    expect(main.slice(main.indexOf('if (import.meta.env.DEV) {'))).toContain(`'${CRASH_TEST.message}'`);
+  });
+
+  it('the guard line is the frame guard prefix + "Error: " + the message', () => {
+    expect(CRASH_TEST.guardLog).toBe(`${FRAME_GUARD_LOG_PREFIX} Error: ${CRASH_TEST.message}`);
+  });
+
+  it('the Crash line is the dev console.error of a report made under the "frame" context', () => {
+    expect(CRASH_TEST.crashLog).toBe(`[crash] [frame] ${CRASH_TEST.message}`);
+    expect(source('src/services/Crash.ts')).toContain("console.error('[crash]', message, error)");
+    expect(source('src/main.ts')).toContain("Crash.recordError(error, 'frame')");
   });
 });

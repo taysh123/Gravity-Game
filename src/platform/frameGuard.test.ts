@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { PLATFORM } from '../config/platform.config';
 import { FRAME_GUARD_LOG_PREFIX, frameGuardDecision, installFrameGuard, type GuardedGame } from './frameGuard';
 
@@ -180,5 +182,25 @@ describe('installFrameGuard', () => {
     game.step(0, 16);
     expect(error).toHaveBeenCalledWith(`${FRAME_GUARD_LOG_PREFIX} Error: to the console`, expect.any(Error));
     error.mockRestore();
+  });
+});
+
+describe('main.ts wiring (P00-T21)', () => {
+  const main = readFileSync(fileURLToPath(new URL('../main.ts', import.meta.url)), 'utf8').replace(/\/\/.*$/gm, '');
+
+  it('installs the frame guard once, first thing in the READY listener (Game.start binds this.step right after READY)', () => {
+    expect(main.match(/installFrameGuard\(/g)).toHaveLength(1);
+    expect(main).toMatch(/game\.events\.once\(Phaser\.Core\.Events\.READY, \(\) => \{\s*installFrameGuard\(game, \{/);
+  });
+
+  it('reports caught frame errors to Crash under the "frame" context and shows the DOM overlay', () => {
+    expect(main).toMatch(/report: \(error\) => Crash\.recordError\(error, 'frame'\)/);
+    expect(main).toMatch(/showErrorOverlay\(\);/);
+  });
+
+  it('mentions __crashTest only inside the import.meta.env.DEV block', () => {
+    const dev = main.indexOf('if (import.meta.env.DEV) {');
+    expect(dev).toBeGreaterThan(-1);
+    expect(main.indexOf('__crashTest')).toBeGreaterThan(dev);
   });
 });

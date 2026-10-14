@@ -95,6 +95,23 @@ export const PLATFORM = {
   // freeze the loop and show the "Tap to restart" overlay.
   FRAME_ERROR_BURST: 3,
   FRAME_ERROR_WINDOW_MS: 2000,
+  // The frame guard's "Tap to restart" overlay (src/platform/errorOverlay.ts): plain DOM over the canvas, independent of Phaser,
+  // because the game loop is what failed. A tap reloads the page. ID and the copy are mirrored by the boot-smoke harness
+  // (scripts/harness/lib/copy.mjs ERROR_OVERLAY, pinned by constants.test.mjs).
+  ERROR_OVERLAY: {
+    ID: 'gf-error-overlay',
+    TITLE: 'Something went wrong',
+    ACTION: 'Tap to restart',
+    // Opaque game background (#0d0d1a, as in main.ts and index.html): the stopped frame is hidden and the text keeps its contrast
+    // (THEME.TEXT_PRIMARY about 16:1, THEME.TEXT_MUTED about 6:1).
+    BACKGROUND: '#0d0d1a',
+    Z_INDEX: 2147483647, // the CSS maximum: above the canvas and anything else on the page
+    TITLE_FONT_PX: 20,
+    TITLE_WEIGHT: '700',
+    ACTION_FONT_PX: 16,
+    GAP_PX: 12,
+    SIDE_PAD_PX: 24,
+  },
 
   // Crashlytics (src/services/Crash.ts): non-fatal reports sent per session; each distinct message is sent once (P00-T21 enforces both).
   CRASH_MAX_PER_SESSION: 5,

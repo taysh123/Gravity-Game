@@ -34,4 +34,19 @@ export const OFFERS = {
 };
 
 /** The window handles main.ts defines in the Vite dev server only (behind import.meta.env.DEV). */
-export const DEV_HANDLES = { game: '__game', phaser: '__Phaser' };
+export const DEV_HANDLES = { game: '__game', phaser: '__Phaser', crashTest: '__crashTest' };
+
+/**
+ * window.__crashTest (P00-T21). `message`: the Error main.ts throws inside update. `burst`: PLATFORM.FRAME_ERROR_BURST, the frame
+ * errors within FRAME_ERROR_WINDOW_MS after which the guard stops the loop. `guardLog`: the console.error line the frame guard writes
+ * for each one. `crashLog`: the dev console.error line Crash writes for the first report (later identical ones are deduplicated).
+ */
+export const CRASH_TEST = {
+  message: '__crashTest: injected frame error',
+  burst: 3,
+  guardLog: '[frameGuard] Error: __crashTest: injected frame error',
+  crashLog: '[crash] [frame] __crashTest: injected frame error',
+};
+
+/** The frame guard's DOM overlay (PLATFORM.ERROR_OVERLAY). */
+export const ERROR_OVERLAY = { id: 'gf-error-overlay', title: 'Something went wrong', action: 'Tap to restart' };
