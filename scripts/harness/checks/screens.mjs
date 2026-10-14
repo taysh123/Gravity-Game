@@ -62,7 +62,7 @@ export const screensMenus = {
   name: 'screens-menus',
   modes: ['preview', 'dev'],
   seed: RETURNING_PLAYER,
-  weight: 160, // about seconds on a CI runner: used to balance --shard slices
+  weight: 150, // about seconds on a CI runner: balances --shard slices
   async run(page, ctx) {
     const registered = await page.evaluate(() => window.__harnessGame.scene.scenes.map((s) => s.scene.key));
     const covered = coveredSceneKeys();
@@ -103,7 +103,7 @@ export const screensPlay = {
   name: 'screens-play',
   modes: ['preview', 'dev'],
   seed: RETURNING_PLAYER,
-  weight: 130,
+  weight: 60,
   async run(page, ctx) {
     await walk(page, ctx, PLAY_STATES);
   },

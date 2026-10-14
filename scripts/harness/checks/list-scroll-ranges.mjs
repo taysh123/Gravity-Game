@@ -26,7 +26,7 @@ export const listScrollRanges = {
   name: 'list-scroll-ranges',
   modes: ['preview', 'dev'],
   viewports: SMALL_VIEWPORTS, // 360x640 only: the stricter scale for the css->game px conversion; the end positions do not depend on it
-  weight: 130, // about seconds on a CI runner: balances --shard slices
+  weight: 134, // about seconds on a CI runner: balances --shard slices
   async run(page, ctx) {
     await installLists(page);
     const geom = (L) => inPage(page, 'listGeometry', L.key, L.itemH);

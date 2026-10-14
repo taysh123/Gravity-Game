@@ -48,7 +48,7 @@ async function settingsPoints(page) {
 
 export const overlayTaps = {
   name: 'overlay-taps',
-  weight: 72, // about seconds on a CI runner: balances --shard slices
+  weight: 55, // about seconds on a CI runner: balances --shard slices
   modes: ['preview', 'dev'],
   viewports: BOTH_VIEWPORTS,
   async run(page, ctx) {

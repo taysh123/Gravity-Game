@@ -106,17 +106,24 @@ jobs:
   # Boot smoke (P00-T24, V8): the harness in scripts/harness serves the production bundle (npm run build, then vite preview) and
   # drives every scene in a real Chromium with software rendering. Any console.error, page error, unhandled rejection or failed
   # same-origin request fails the job. Nothing here uses a secret and nothing is uploaded except failure screenshots.
-  # Software-rendered Chromium is slow (one pass of all checks took 21 minutes on a single runner), and parallel pages on one
+  # Software-rendered Chromium is slow (one pass of all checks took 21 minutes on a single runner) and parallel pages on one
   # machine fight for the CPU, so the checks are split into four balanced slices (--shard=i/4, by each check's weight) that run on
-  # four runners at once. Each runner pays about 40 s of setup (npm ci, Chromium, the build).
+  # four runners at once, plus a fifth runner for the Vite dev server: --exclusive keeps only the checks that declare `dev` as their
+  # one mode (they need a DEV-only hook; P00-T21 and P00-T22 add theirs), everything else is already covered against the bundle.
+  # Each runner pays about 40 s of setup (npm ci, Chromium, the build).
   smoke:
-    name: Boot smoke · Chromium (${{ matrix.shard }}/4)
+    name: Boot smoke · Chromium (${{ matrix.leg }})
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4]
+        include:
+          - { leg: 'bundle 1/4', args: '--shard=1/4' }
+          - { leg: 'bundle 2/4', args: '--shard=2/4' }
+          - { leg: 'bundle 3/4', args: '--shard=3/4' }
+          - { leg: 'bundle 4/4', args: '--shard=4/4' }
+          - { leg: 'dev server', args: '--mode=dev --exclusive' }
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -126,17 +133,12 @@ jobs:
       - run: npm ci
       - name: Install Chromium and its system libraries
         run: npx playwright install --with-deps chromium
-      - name: Boot smoke (production build served by vite preview)
-        run: npm run smoke -- --shard=${{ matrix.shard }}/4 --artifacts=smoke-artifacts
-      # The Vite dev server has hooks the production bundle does not. --exclusive runs only the checks that declare `dev` as their
-      # one mode (they need a DEV-only hook; P00-T21 and P00-T22 add theirs); everything else already ran above against the bundle.
-      # A slice with none of them has nothing to run and passes at once.
-      - name: Boot smoke (Vite dev server, DEV-only checks)
-        run: npm run smoke -- --mode=dev --exclusive --shard=${{ matrix.shard }}/4 --artifacts=smoke-artifacts
+      - name: Boot smoke
+        run: npm run smoke -- ${{ matrix.args }} --artifacts=smoke-artifacts
       - name: Failure screenshots
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: smoke-artifacts-${{ matrix.shard }}
+          name: smoke-artifacts-${{ strategy.job-index }}
           path: smoke-artifacts
           if-no-files-found: ignore

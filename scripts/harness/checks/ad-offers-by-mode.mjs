@@ -15,7 +15,7 @@ const DOUBLE = /2× ✦/;
 export const adOffersByMode = {
   name: 'ad-offers-by-mode',
   modes: ['preview', 'dev'],
-  weight: 26, // about seconds on a CI runner: balances --shard slices
+  weight: 15, // about seconds on a CI runner: balances --shard slices
   async run(page, ctx) {
     const expected = ctx.mode === 'dev'; // offers are shown only by the dev web stub
     const verb = expected ? 'is shown' : 'is NOT shown';

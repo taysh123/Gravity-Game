@@ -15,7 +15,7 @@ const NOTHING_HAPPENED_FRAMES = 25; // a negative assertion cannot wait for an e
 
 export const listViewportTaps = {
   name: 'list-viewport-taps',
-  weight: 110, // about seconds on a CI runner: balances --shard slices
+  weight: 72, // about seconds on a CI runner: balances --shard slices
   modes: ['preview', 'dev'],
   viewports: BOTH_VIEWPORTS,
   seed: { ...ALL_WORLDS_UNLOCKED, ...RICH },
