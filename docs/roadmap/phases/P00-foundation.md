@@ -503,6 +503,7 @@ Each task: own branch or commit series, TDD where pure, gates V1–V3 before com
 - Done when: test green; drafts marked "DRAFT — owner review, not legal advice"; 👤 owner sign-off recorded in STATUS before the Play form is filled.
 - Fold-ins: use the corrected research audit (P00-T27) as the copy checklist (audit §8, recommendation 4).
   - **Keep** "Hold to pull a lost star home".
+  - **No child-appeal listing art.** No youthful animation or young characters: for a 13+ app it can trigger rejection (audit r4). The same applies to the Step 14 creative.
   - **Remove "Same run for everyone"** from store copy, as the audit recommends: next to a local-only board it reads as online ranking. The same words on the in-game Weekly card (`src/scenes/RunSelectScene.ts:54`) are outside this task's files, so record them in STATUS for an owner/UX decision instead of editing them silently.
   - **Remove** the "leaderboard" claims (B-07; the boards are local only).
   - **Title:** no ALL CAPS, emoji or ranking claims (metadata policy).

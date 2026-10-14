@@ -518,6 +518,7 @@ flowchart LR
 - **Spec:** the P00 phase doc, plus the corrected audit as the copy checklist (audit §8 recommendation 4). The checklist:
   - Keep "Hold to pull a lost star home".
   - Remove the "leaderboard" claims (the boards are local only).
+  - No listing art with child appeal (youthful animation, young characters): for a 13+ app it can trigger rejection, and Play may treat 13–15 as children in some locales (audit r4). This also applies to the Step 14 creative.
   - Remove "Same run for everyone" from store copy, as the audit recommends: next to a local-only board it reads as online ranking. The same words on the in-game Weekly card (`src/scenes/RunSelectScene.ts:54`) are outside T25's file list, so T25 records them in STATUS for an owner/UX decision instead of editing them silently.
   - No ALL CAPS, emoji or ranking claims in the title; no CTA, emoji or "Best/#1/Top/New" in the short description.
   - "Play offline. No Wi-Fi needed to play."
@@ -572,6 +573,7 @@ All are **priority P0**: they fix the P0 defect B-03, and M0 requires them. The 
 - **Measured:** the owner's feel notes, plus par-time clears per value (from the A/B labels in P01-T14).
 - **Decision:** pick the value that is judged right on both devices with consistent par clears.
 - **If no value works on both:** keep 2.08 provisionally, and route the problem to the D-04 zone rebalance in P4.
+- **After launch, never retune force silently.** Players have accused physics games of an "invisible paywall" when forces or ball counts were tuned (audit r4, new-wave note). Any post-launch change to `FORCE_SCALE`, zone strength or level physics is announced in the release notes.
 
 ### 9.4 Stage E: M0 gates
 
@@ -597,7 +599,7 @@ Release guards are never weakened to pass a gate, and no placeholder or fabricat
 |---|---|---|---|---|---|---|
 | CT-01 | Decide closed-test timing: at M0 if the 12-tester rule applies to this account and OA-14b is approved (audit proposal 9), else at M1 | P0 | OA-01 | XS | Decision recorded in DECISIONS + STATUS | Yes |
 | CT-02 | Tester kit: install steps (Play closed track, opt-in link), what to try, privacy note, feedback channel, debrief questions (EXP-01, EXP-05, EXP-06, EXP-07) | P1 | CT-01 | S | `docs/qa/CLOSED-TEST-KIT.md` reviewed | No (drafted by Claude) |
-| CT-03 | Recruit ~20 real testers so ≥ 12 stay opted in for 14 continuous days; never paid "tester" gigs (Play policy) | P0 | CT-01, CT-02 | M | ≥ 12 opted in on day 14 | Yes |
+| CT-03 | Recruit ~20 real testers so ≥ 12 stay opted in for 14 continuous days; never paid "tester" gigs (Play policy) | P0 | CT-01, CT-02, OA-12 (Data safety is required for closed tracks) | M | ≥ 12 opted in on day 14 | Yes |
 | CT-04 | Telemetry readiness: the T23 events validated in DebugView; a saved funnel for L1 → L3 and W1 | P1 | T23, M0-G09 | S | Funnel shows test traffic | Partly |
 | CT-05 | Feedback log + day-14 checkpoint against the §12 "First 20" gate | P1 | CT-03 | S | Checkpoint note in STATUS | Partly |
 | CT-06 | Production-access application pack (= P12-T09) | P0 | CT-05 | S | Submitted with ≥ 12 opted-in testers | Yes |
@@ -641,9 +643,9 @@ These need the owner's accounts, devices, money or legal judgement (OA-11 is sha
 | OA-09 | **Crashlytics without consent**: a legal check (D-10.5) | M0-G10 | STATUS gate text; `src/config/consent.config.ts` | Decision recorded |
 | OA-10 | Confirm dropping `stash@{0}` ("abandoned sprint4 wip"); never dropped without this | — | `git stash drop stash@{0}` | Owner OK |
 | OA-11 | Age Signals plugin (D-25; CA AB 1043 from 2027-01-01) | Compliance in 2027 | Scheduled 2026-12-15 | Plan in place |
-| OA-12 | **Data Safety + privacy policy sign-off** (after the T25 drafts), including the GMA 25.x changes | Play forms, M2 | `docs/store/data-safety.md`, `docs/index.html` | Sign-off in STATUS |
+| OA-12 | **Data Safety + privacy policy sign-off** (after the T25 drafts), including the GMA 25.x changes. Play requires a completed Data safety form for closed and open tracks; only internal testing is exempt (audit r4) | The first closed test (CT-03), Play forms | `docs/store/data-safety.md`, `docs/index.html` | Sign-off in STATUS |
 | OA-13 | **M0 device session** (DEVICE-CHECKLIST-M0 rows C, A, P, B, G, H, S, R, U, T; see M0-G07) | M0-G07/G09 | DEVICE-CHECKLIST-M0 | Results recorded |
-| OA-14 | **Research proposals** (audit §8): (a) relabel A-18 (30/8/3) as stretch and add a median reading floor (~22/4/1%) with ≥ ~1,000 installs before any retention verdict; (b) start the closed test at M0 if OA-01 says the rule applies; (c) adopt the constellation-reveal payoff (B11) and an optional pull-preview assist (B13) as P4–P6 design inputs only | KPI definitions, CT-01, P4–P6 design | Audit §7–§8 | Each decided in DECISIONS |
+| OA-14 | **Research proposals** (audit §8): (a) relabel A-18 (30/8/3) as stretch and add a median reading floor (~22/4/1%) with ≥ ~1,000 installs before any retention verdict; (b) start the closed test at M0 if OA-01 says the rule applies (this also pulls OA-12 forward to before M0, since closed tracks require Data safety); (c) adopt the constellation-reveal payoff (B11) and an optional pull-preview assist (B13) as P4–P6 design inputs only | KPI definitions, CT-01, P4–P6 design | Audit §7–§8 | Each decided in DECISIONS |
 | OA-15 | Provide the **source screen recording** (or a transcript), only if video-specific analysis is wanted; until then, no finding claims to come from it | Video-specific research | Put the file under the repo or the scratchpad | File available |
 | OA-16 | **AdMob age treatment** (TFAT TEEN vs unspecified) for a 13+ general-audience app, with counsel | M2 | AdMob docs; audit §11 Q10 | Decision recorded |
 
@@ -672,7 +674,7 @@ Assumptions: no paid UA budget, Android only, the 13+ audience, the existing mon
 
 | Milestone | Product questions | Metrics collected | Minimum evidence to move on | Pause / fix / continue |
 |---|---|---|---|---|
-| **First 20** (Stage F: closed test, CT-01–CT-06) | Do strangers understand "hold to pull" in the first minute? Does the build stay up on phones the developer does not own? Do the ads and purchases behave? | Crash-free sessions; time to first L1 win (EXP-01); unprompted description of the verb; W1 quits (EXP-05); ≥ 12 continuously opted in; qualitative feedback | ≥ 12 testers opted in for 14 days; crash-free ≥ 99.5% on internal; EXP-01 passes; no ad or purchase row failing | **Pause** on any crash cluster or ad/purchase failure (fix first). **Fix** onboarding if EXP-01 fails. **Continue** to production access (CT-06) when all pass |
+| **First 20** (Stage F: closed test, CT-01–CT-06) | Do strangers understand "hold to pull" in the first minute? Does the build stay up on phones the developer does not own? Do the ads and purchases behave? | Crash-free sessions; time to first L1 win (EXP-01); unprompted description of the verb; W1 quits (EXP-05); ≥ 12 continuously opted in; qualitative feedback | ≥ 12 testers opted in for 14 days; crash-free ≥ 99.5% on internal; EXP-01 passes; no ad or purchase row failing; Data safety accepted (OA-12) | **Pause** on any crash cluster or ad/purchase failure (fix first). **Fix** onboarding if EXP-01 fails. **Continue** to production access (CT-06) when all pass |
 | **First 100** (Stage F at M1: widening, CT-07) | Is World 1 fair and engaging? Where do players stop? Does the Daily get used? | D1 direction (±9 pts); W1 funnel; fail streaks; Daily participation; rewarded opt-in | W1 funnel with no level ≥ 25% session-stop (*internal*); human-vs-bot ranks consistent (EXP-06) | **Fix** flagged W1 levels on the P4-α list; **continue** to M2 work when the funnel is clean |
 | **First 1,000** (Stage H: first public availability, CT-08) | Does retention reach the median band? Do Android vitals hold? Does the listing convert? | D1 (±2.8), D7 (±1.7); vitals vs 1.09% crash / 0.47% ANR; listing conversion vs the Play Console peer median; rewarded opt-in vs ≥ 20% | D1 and D7 read against GameAnalytics percentiles; vitals under Play's thresholds | **Pause** growth work on any vitals breach. **Fix** the funnel if D1 is below ~19% (≈ 0.85 × median, *internal*). **Continue** to experiments (EXP-08, EXP-10) when D1 ≥ ~22% (proposed floor, OA-14a; A-18's 30% stays the target) |
 | **First 10,000** (Stage H: organic, a store feature, or owner-approved paid tests) | Is there a sustainable loop, and does monetization cover its costs? | D30 (±1.1 per 1,000-install cohort); payer conversion (repo target ≥ 1.5%); ad ARPDAU by country; store-experiment results | Two consecutive cohorts of ≥ 1,000 installs with stable D1/D7 | **Continue** investing per §13 if D7 ≥ the median (~4%) and vitals hold. **Pivot** content or onboarding if D7 is below the median after two iterations. These rules are proposals; the owner decides them together with OA-14a. Paid UA stays "must not do yet" (P11) unless the owner lifts it with this evidence |
@@ -779,7 +781,7 @@ Evidence strength (coarse, from the audit's sources):
 | B15 | A story or decoration meta | analyst | Star Map, cosmetics, light "lost star" spine | Reject | — | Costly; a thin meta is enough | — |
 | B16 | Paid UA and playable ads | analyst | None | Defer | P11 "must not do yet" | Negative ROI on average without proven retention | — |
 | B17 | A small cheap-geo technical paid test (~US$300) | analyst (vendor bands) | None | Test (owner budget) | EXP-11 after production access | A real-device stability and D1 signal | Crash-free ≥ 99.5%; D1 vs the median |
-| B18 | Tilt, swipe or draw-line modes; hole or sort reskins | analyst (215 hole launches, 38 cannon clones) | Pointer-only attractor | Reject | D-26 (formula unchanged); CLAUDE.md core principles | Erases the one-verb identity; saturated fields | — |
+| B18 | Tilt, swipe or draw-line modes; hole or sort reskins | analyst (215 hole launches; 38 Smash Fest-like games, Royal Smash among them) | Pointer-only attractor | Reject | D-26 (formula unchanged); CLAUDE.md core principles | Erases the one-verb identity; saturated fields | — |
 | B19 | A new level pack every 1–2 weeks | store pages | Monthly live-ops sitting | Reject at that cadence | D-27; LIVE-OPS §10 | Quality before count; solo capacity | — |
 | B20 | Remove-ads subscription or "No-Ads+" (rewards without watching) | analyst (one studio) | Not built | Reject for 1.0 | Subscriptions rejected (§4 P7); No-Ads+ is D-37, USER-GATED and off by default (P07-T18) | Money must never buy currency | — |
 | C1 | Daily login reward | store pages | Built: 7-day ladder (`DailyStore.ts`) | Already implemented | P6 pause rule (D-18) | Habit without punishment | `login_bonus` claims per DAU |
@@ -797,8 +799,8 @@ Evidence strength (coarse, from the audit's sources):
   - **Finding:** money and growth sit in IAP-heavy sort, block and match games fed by paid UA (analyst estimates, audit §6).
   - **Home:** R-51 (revenue modest by design) and the positioning in [`../PRODUCT-VISION.md`](../PRODUCT-VISION.md).
   - **Measure:** none. It shapes expectations, not tasks.
-- **Mechanics are cloned within weeks:**
-  - **Finding:** the Royal Smash clones and the Colony Flow lawsuit show how fast mechanics are copied (analyst).
+- **Mechanics are cloned quickly:**
+  - **Finding:** the 38 Smash Fest-like games (Royal Smash itself copied Smash Fest) and the Colony Flow lawsuit show how fast mechanics are copied (analyst).
   - **Home:** the PRODUCT-VISION differentiation section. Feel, level design and identity are the defensible assets, so P1 and P4 quality come first.
 - **Retention benchmarks:**
   - **Finding:** GameAnalytics 2026 medians and quartiles (analyst, audit §1 and §9).
