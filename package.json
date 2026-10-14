@@ -16,7 +16,8 @@
     "cap:open:android": "cap open android",
     "facts": "node scripts/facts.mjs",
     "facts:check": "node scripts/facts.mjs --check",
-    "release:check": "node scripts/release-check.mjs"
+    "release:check": "node scripts/release-check.mjs",
+    "smoke": "node scripts/harness/boot-smoke.mjs"
   },
   "dependencies": {
     "@capacitor-community/admob": "8.2.1",
