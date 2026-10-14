@@ -8,6 +8,7 @@ import * as ts from 'typescript';
 // out every path `.vercelignore` lists. A file that `tsc` reads (anything under `src/`, tests included, plus whatever
 // they import) and that sits under an excluded path breaks every web deploy. Local runs and GitHub CI (full checkout)
 // stay green meanwhile. That is how `95953fc` (P00-T20) broke the web build for six days without a red check anywhere.
+// Scope: what `tsc` reads. Assets that only `vite build` reads (CSS url(), image imports) are not covered here.
 
 const repoRoot = fileURLToPath(new URL('../../', import.meta.url));
 
@@ -57,6 +58,8 @@ describe('.vercelignore vs what tsc reads (B-14)', () => {
     expect(isIgnored('assets/raw/logo.png', 'assets/raw')).toBe(true);
     expect(isIgnored('src/assets/raw/x.ts', 'assets/raw')).toBe(false);
     expect(isIgnored('scripts/lib/releaseCheck.d.mts', 'scripts')).toBe(true);
+    expect(isIgnored('node_modules/phaser/types/phaser.d.ts', 'node_modules/')).toBe(true);
+    expect(isIgnored('src/vendor/node_modules/x.ts', 'node_modules/')).toBe(true);
   });
 
   it(

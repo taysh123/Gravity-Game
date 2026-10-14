@@ -59,7 +59,7 @@ The current-state dashboard. The IDs, specs and acceptance criteria live in [MAS
 | P00-T26 | Device checklist + phase close + P0 final review | C | blocked | Waits for P00-T21, T22, T23, T25 |
 | P01-T01–T14 | Fixed-step physics, multi-rate harness, replay determinism | D | blocked | Waits for P00-T26 (sequencing, A-26). Owner: OA-08 |
 | M0-G01–G11 | M0 Truthful Build gates | E | blocked | P0 + P1, and owner actions OA-02, OA-03, OA-05, OA-06, OA-08, OA-09, OA-13 |
-| CT-01–CT-08 | Closed test and first players | F | owner action required | OA-01 (account type and creation date) decides the timing; then M0 |
+| CT-01–CT-08 | Closed test to production access (CT-01–CT-07), then first public availability (CT-08) | F (CT-08: H) | owner action required | OA-01 (account type and creation date) decides the timing; then M0 |
 | P02–P12 | Later phases (206 phase task IDs; 249 in all phases) | G–H | deferred | Start conditions: MASTER-ROADMAP §9.6 |
 
 ## Gates

@@ -297,7 +297,7 @@ None. P12 changes no gameplay. Post-launch tuning goes through the owning phase 
 | **P12-T09** | 👤 Production-access application pack | `docs/release/RUNBOOK.md` (answers draft from the closed-test feedback log) | — | Submitted on day ≥14 with ≥12 opted-in testers |
 | **P12-T10** | Launch rehearsal on internal: promote flow, Managed publishing, halt/resume drill | Runbook | Drill log | Owner has done promote and halt once on internal |
 | **P12-T11** | 👤 Alerting setup | Console notifications, Crashlytics alerts, AdMob/RevenueCat emails (documented in the runbook) | Test alert (Crashlytics test crash) | Alerts arrive at the owner's email |
-| **P12-T12** | 👤 First production release (launch day; A-28: full release to the chosen countries, no staged percentage) | Ledger, STATUS | Day-0 smoke on 2 Play-installed devices | 20% live; ledger appended |
+| **P12-T12** | 👤 First production release (launch day; A-28: full release to the chosen countries, no staged percentage) | Ledger, STATUS | Day-0 smoke on 2 Play-installed devices | Live in the chosen countries; ledger appended |
 | **P12-T13** | 👤 Country expansion, then 20% → 50% → 100% gates for each update (A-28) | Ledger, weekly log | Gate checks | V8 |
 | **P12-T14** | `v1.0.0` tag + GitHub Release + STATUS | `CHANGELOG.md`, ledger | V6 | Release published |
 | **P12-T15** | Hotfix procedure validated | Runbook | First real or rehearsed hotfix (BUILD+1) | Hotfix path takes under 24 h end to end |

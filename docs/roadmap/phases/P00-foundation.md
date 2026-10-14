@@ -542,8 +542,8 @@ Each task: own branch or commit series, TDD where pure, gates V1–V3 before com
 **P00-T28 — Vercel web build repair** (added 2026-10-14, A-26; STATUS B-14)
 - Goal: the public web build deploys again without changing local or CI behaviour.
 - Root cause (Vercel build log, first failure at `95953fc`): `.vercelignore` excludes `scripts/`, but `src/config/releaseConfig.test.ts` and `releaseBuild.test.ts` import `../../scripts/lib/*.mjs`, and `npm run build` runs `tsc` over `src/`, which fails with TS2307.
-- Files: `.vercelignore` (remove the `scripts` line).
-- Tests: `npx tsc --noEmit`, `npm test` and `npm run build` locally; the Vercel Preview build log for the commit.
+- Files: `.vercelignore` (remove the `scripts` line); `src/config/deployIgnore.test.ts` (regression guard: no file `tsc` reads may sit under a path the upload excludes, with gitignore matching).
+- Tests: `src/config/deployIgnore.test.ts` (red before the fix, green after); `npx tsc --noEmit`, `npm test` and `npm run build` locally; the Vercel Preview build log for the commit.
 - Done when, under gate G-WEB:
   - The Preview is READY and serves the game.
   - After the normal `master` fast-forward, Production is READY for the same commit.

@@ -61,7 +61,7 @@ The roadmap fixes them **in that order**, because each depends on the one before
 |---|---|---|---|
 | **M0 — Truthful Build** | P0 + P1 | Internal-track upload (versionCode ≥ 1000001); owner device validation of purchases (license testers), ads, consent, back/pause, haptics, 30/60/120 Hz parity | Owner: AdMob/RC/Play product setup; device smoke |
 | **M1 — Closed Beta** | M0 + P2 (bot v1 gates) + P3 + P4-α (first hour: Worlds 1–3) + P5-A (render/HUD/hint/logo) | Closed test (12 testers × 14 days if the app's dashboard requires it) with real telemetry, under the working title (A-14) | Owner: tester recruitment; name choice + TM knockout can run in parallel |
-| **M2 — Launch Candidate** | M1 + P4 (full campaign) + P5 + P6 core (incl. In-App Review) + P7 core + P11 store/brand + **rename applied (D-19/A-14)** | Production staged rollout | Owner: production access, final name, store assets sign-off |
+| **M2 — Launch Candidate** | M1 + P4 (full campaign) + P5 + P6 core (incl. In-App Review) + P7 core + P11 store/brand + **rename applied (D-19/A-14)** | First production release (A-28: full release to the chosen countries; staged rollouts from the first update) | Owner: production access, final name, store assets sign-off |
 | **M3 — Live 1.x** | P8, P9, P10, P12 optimisation; iOS track | Growth and live ops by data | Owner: data review cadence |
 
 ## 4. Phases
@@ -323,7 +323,7 @@ Difficulty scale: L / M / H / XH.
 ### P12 — Launch & post-launch optimisation
 - **Objective:** ship safely, then improve by data. Includes the iOS port track (D-29).
 - **Player outcome:** a stable launch; regular improvements.
-- **Business outcome:** production access, staged rollout, vitals health, an analytics review cadence, iOS revenue later.
+- **Business outcome:** production access, a first release to the chosen countries and staged rollouts for updates (A-28), vitals health, an analytics review cadence, iOS revenue later.
 - **Systems affected:** release engineering (versionCode, CI Android build, tags/Releases), Play Console forms, vitals monitoring, A/B programme, iOS platform.
 - **Dependencies:** M2.
 - **Difficulty:** engineering M · design L · QA H.
@@ -331,7 +331,7 @@ Difficulty scale: L / M / H / XH.
 - **Expected upside:** realises all prior value.
 - **Success metrics:**
   - Crash rate < 1.09%, ANR < 0.47%.
-  - Staged rollout 20→50→100% without regressions.
+  - Staged rollouts 20→50→100% without regressions, from the first update on (A-28).
   - Weekly metrics review held.
 - **Must NOT be done yet:** iOS before the Android launch is stable.
 - **Plans:** [`phases/P12-launch.md`](phases/P12-launch.md), [`../launch/STORE-LAUNCH-PLAN.md`](../launch/STORE-LAUNCH-PLAN.md)
@@ -377,7 +377,7 @@ The phases in §4 group work by domain. The stages below group it by **delivery 
 |---|---|---|---|---|
 | **A. Baseline, audit integrity, planning** | The recorded state matches the repo; the research evidence is tracked, corrected and traceable | P0 Step 5: P00-T29, P00-T27 | Recovery report of 2026-10-14 | Planning docs agree with each other and with the repo; the STATUS task board exists; the research audit and notes are tracked, with corrections in a separate, logged revision; the preliminary report is archived as superseded; CI green |
 | **B. Web build reliability** | The public web build deploys again | P00-T28 | Stage A committed (separate commit, no shared files) | The Vercel Preview for the fix commit is READY, with a build log showing `tsc` and `vite build` passing; the Preview serves the game; the Production deployment created by the normal `master` fast-forward is READY (gate G-WEB, §9.2); STATUS B-14 closed with this evidence |
-| **C. P0 completion** | No permanent freeze, no data loss, lawful and measurable telemetry, honest listing; P0 closed | P00-T21, T22, T23, T25, T26 | Stage B exit | Each task's definition of done (§9.2); P0 final review done; 0 open P0 bugs except the owner-blocked B-01 and B-05 and B-03 (fixed by Stage D); device rows scheduled for the M0 session |
+| **C. P0 completion** | No permanent freeze, no data loss, lawful and measurable telemetry, honest listing; P0 closed | P00-T21, T22, T23, T25, T26 | Stage B exit | Each task's definition of done (§9.2); P0 final review done; 0 open P0 bugs other than the owner-blocked B-01 and B-05, and B-03, which Stage D fixes; device rows scheduled for the M0 session |
 | **D. Physics determinism** | The pull feels identical at 30–144 Hz; replays are deterministic | P1: P01-T01–T14 (Steps 6–7) | Stage C exit. Step 6 technically needs only Step 2; it is sequenced after C to keep one change in flight on one branch | P1 success metrics (§4); multi-rate harness green in CI; replay fixtures match in Node and the browser; `compare-p1.md` reviewed; A/B builds ready for the owner |
 | **E. M0 release readiness** | A truthful build on the Play internal track | M0 gates M0-G01–G11 (§9.4) | Stage D exit; OA-03, OA-05, OA-06 done | Every M0 gate verified and labelled with its verification type from §9.4 (automated, local build, real device, owner sign-off); tag `v1.0.0-rc.2` |
 | **F. Closed test to production access** | Real people understand "hold to pull"; Play grants production access | CT-01–CT-07 (§9.5), P12-T09 | M0. The closed test starts at M0 if OA-01 shows the 12-tester rule applies and OA-14b is approved; otherwise at M1 (EXECUTION-ORDER) | "First 20" gate passed (§12) and production access granted (CT-06). If M1 comes first, "First 100" is evaluated too (CT-07) |
@@ -639,7 +639,7 @@ These need the owner's accounts, devices, money or legal judgement (OA-11 is sha
 | OA-10 | Confirm dropping `stash@{0}` ("abandoned sprint4 wip"); never dropped without this | — | `git stash drop stash@{0}` | Owner OK |
 | OA-11 | Age Signals plugin (D-25; CA AB 1043 from 2027-01-01) | Compliance in 2027 | Scheduled 2026-12-15 | Plan in place |
 | OA-12 | **Data Safety + privacy policy sign-off** (after the T25 drafts), including the GMA 25.x changes | Play forms, M2 | `docs/store/data-safety.md`, `docs/index.html` | Sign-off in STATUS |
-| OA-13 | **M0 device session** (rows C, A, P, V) | M0-G07/G09 | DEVICE-CHECKLIST-M0 | Results recorded |
+| OA-13 | **M0 device session** (DEVICE-CHECKLIST-M0 rows C, A, P, B, G, H, S, R, U, T; see M0-G07) | M0-G07/G09 | DEVICE-CHECKLIST-M0 | Results recorded |
 | OA-14 | **Research proposals** (audit §8): (a) relabel A-18 (30/8/3) as stretch and add a median reading floor (~22/4/1%) with ≥ ~1,000 installs before any retention verdict; (b) start the closed test at M0 if OA-01 says the rule applies; (c) adopt the constellation-reveal payoff (B11) and an optional pull-preview assist (B13) as P4–P6 design inputs only | KPI definitions, CT-01, P4–P6 design | Audit §7–§8 | Each decided in DECISIONS |
 | OA-15 | Provide the **source screen recording** (or a transcript), only if video-specific analysis is wanted; until then, no finding claims to come from it | Video-specific research | Put the file under the repo or the scratchpad | File available |
 | OA-16 | **AdMob age treatment** (TFAT TEEN vs unspecified) for a 13+ general-audience app, with counsel | M2 | AdMob docs; audit §11 Q10 | Decision recorded |
@@ -672,7 +672,7 @@ Assumptions: no paid UA budget, Android only, the 13+ audience, the existing mon
 | **First 20** (Stage F: closed test, CT-01–CT-06) | Do strangers understand "hold to pull" in the first minute? Does the build stay up on phones the developer does not own? Do the ads and purchases behave? | Crash-free sessions; time to first L1 win (EXP-01); unprompted description of the verb; W1 quits (EXP-05); ≥ 12 continuously opted in; qualitative feedback | ≥ 12 testers opted in for 14 days; crash-free ≥ 99.5% on internal; EXP-01 passes; no ad or purchase row failing | **Pause** on any crash cluster or ad/purchase failure (fix first). **Fix** onboarding if EXP-01 fails. **Continue** to production access (CT-06) when all pass |
 | **First 100** (Stage F at M1: widening, CT-07) | Is World 1 fair and engaging? Where do players stop? Does the Daily get used? | D1 direction (±9 pts); W1 funnel; fail streaks; Daily participation; rewarded opt-in | W1 funnel with no level ≥ 25% session-stop (*internal*); human-vs-bot ranks consistent (EXP-06) | **Fix** flagged W1 levels on the P4-α list; **continue** to M2 work when the funnel is clean |
 | **First 1,000** (Stage H: first public availability, CT-08) | Does retention reach the median band? Do Android vitals hold? Does the listing convert? | D1 (±2.8), D7 (±1.7); vitals vs 1.09% crash / 0.47% ANR; listing conversion vs the Play Console peer median; rewarded opt-in vs ≥ 20% | D1 and D7 read against GameAnalytics percentiles; vitals under Play's thresholds | **Pause** growth work on any vitals breach. **Fix** the funnel if D1 is below ~19% (≈ 0.85 × median, *internal*). **Continue** to experiments (EXP-08, EXP-10) when D1 ≥ ~22% (proposed floor, OA-14a; A-18's 30% stays the target) |
-| **First 10,000** (Stage H: organic, a store feature, or owner-approved paid tests) | Is there a sustainable loop, and does monetization cover its costs? | D30 (±1.1 per 1,000-install cohort); payer conversion (repo target ≥ 1.5%); ad ARPDAU by country; store-experiment results | Two consecutive cohorts of ≥ 1,000 installs with stable D1/D7 | **Continue** investing per §13 if D7 ≥ the median (~4%) and vitals hold. **Pivot** content or onboarding if D7 is below the median after two iterations. These rules are proposed, pending the owner with OA-14a. Paid UA stays "must not do yet" (P11) unless the owner lifts it with this evidence |
+| **First 10,000** (Stage H: organic, a store feature, or owner-approved paid tests) | Is there a sustainable loop, and does monetization cover its costs? | D30 (±1.1 per 1,000-install cohort); payer conversion (repo target ≥ 1.5%); ad ARPDAU by country; store-experiment results | Two consecutive cohorts of ≥ 1,000 installs with stable D1/D7 | **Continue** investing per §13 if D7 ≥ the median (~4%) and vitals hold. **Pivot** content or onboarding if D7 is below the median after two iterations. These rules are proposals; the owner decides them together with OA-14a. Paid UA stays "must not do yet" (P11) unless the owner lifts it with this evidence |
 
 ## 13. Post-test 30/60/90 plan
 

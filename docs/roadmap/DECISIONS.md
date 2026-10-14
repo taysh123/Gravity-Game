@@ -2,7 +2,7 @@
 
 > **What this is.** The architecture and product decisions of record for the next evolution of the game. Every plan in `docs/` must conform to these. Changing a decision means editing this file (new status + date + reason) before changing the code.
 > **Evidence.** The research briefs are in `docs/research/` (summary: `RESEARCH-SUMMARY.md`) and the baseline audit is `docs/audit/2026-10-07/STATE-AUDIT.md`.
-> **Amendments.** Where the §Amendments section at the end conflicts with an entry body, the amendment wins (it records the plan-review outcome of 2026-10-07).
+> **Amendments.** Where an amendment (the two Amendments tables at the end: the plan review of 2026-10-07, then 2026-10-14) conflicts with an entry body, the amendment wins.
 > **Statuses:**
 > - **ACCEPTED**: implement as written.
 > - **PROPOSED**: implement unless data contradicts it.

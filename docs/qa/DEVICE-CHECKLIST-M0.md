@@ -168,7 +168,7 @@ Run each row twice: Android 16 **gesture** navigation and **3-button** navigatio
 
 - [ ] C1-C5 pass (V13: C1-C3; C4-C5 are the privacy entry points of P00-T18)
 - [ ] P1-P15 pass (V14)
-- [ ] A1-A5 pass (V15)
+- [ ] A1-A6 pass (V15)
 - [ ] B, G and H rows pass on gesture and 3-button navigation (V16)
 - [ ] S1, S3 and S4 pass (V17); S2 recorded (V19)
 - [ ] R1 passes (V18)

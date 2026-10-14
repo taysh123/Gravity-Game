@@ -213,7 +213,7 @@ configures and emits an **unsigned** bundle, so fresh clones and CI never break.
 4. **Closed testing** adds the real AdMob and RevenueCat ids, the Play billing products and license testers. A new personal
    developer account may need 12 testers for 14 days before production access; the owner confirms whether that applies
    (STATUS gate).
-5. **Production**: final Data safety, pricing and countries, staged rollout, submit for review.
+5. **Production**: final Data safety, pricing and countries, submit for review. The first release is a full release to the chosen countries; staged rollouts apply from the first update on (A-28).
 6. Update `docs/STATUS.md` with the uploaded versionCode: the *Gates* table row **and** the machine-read marker
    `<!-- last-uploaded-version-code: N -->` under it. `npm run release:check` refuses any later release whose
    versionCode is not greater than N, and refuses too if the marker is missing.
@@ -230,7 +230,7 @@ Restore behave; events appear in Firebase DebugView; a forced error appears in C
 **Go/no-go for `v1.0.0`.** Cut it only when all are true:
 - the device checklists for the milestone are signed off (or the failing items are tuned and re-run);
 - a signed AAB is built, uploaded and smoke-tested on a device;
-- the Play Console App content and listing are complete and the production rollout is started.
+- the Play Console App content and listing are complete and the production release is live in the chosen countries (A-28: no staged rollout on a first release).
 
 **GitHub Release** (the `gh` CLI or the web UI):
 1. `git tag -a v1.0.0 -m "Gravity Flow v1.0.0"` then `git push origin v1.0.0`.

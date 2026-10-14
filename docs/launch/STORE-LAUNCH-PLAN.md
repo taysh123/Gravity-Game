@@ -323,7 +323,7 @@ New effective date. Publish at the website's `/privacy/` (§9). Brand and contro
 
 **Note for the owner (roadmap tension):** EXECUTION-ORDER makes M1 depend on step 14 (brand apply), which depends on the 👤 naming decision. If that decision slips, the 14-day clock slips with it. Play allows the closed track to run under the working title, so this plan recommends starting the closed test without waiting for the name, as long as the rename switch (P11-T14) still lands before production.
 
-Skip pre-registration: it stays locked until production access, and there is no audience yet [LC§5]. Calendar: about 14 days of closed test + up to 7 days of review + about 7 days of rollout ≈ **4 weeks minimum** from the first closed-track tester.
+Skip pre-registration: it stays locked until production access, and there is no audience yet [LC§5]. Calendar: about 14 days of closed test + up to 7 days of review + about 7 days of country-by-country expansion (a first release cannot be staged, A-28) ≈ **4 weeks minimum** from the first closed-track tester.
 
 ## 12. Pre-launch report
 - It runs automatically on closed and open builds (Testing → Pre-launch report). Robo cannot "play" a canvas, so coverage will be shallow.
@@ -380,7 +380,7 @@ Breaching a threshold can reduce visibility or add a listing warning. WebView re
 | +1 h, +4 h, +8 h | Crashlytics: crash-free sessions, new issues. AdMob: impressions and policy center. RevenueCat: transactions. |
 | EOD | Tag `v1.0.0` and create the GitHub Release (no AAB attached), update `STATUS.md`, reply to reviews |
 
-**Rollout gates:**
+**Rollout gates (updates only; A-28: the first release cannot be staged, so on launch these gates apply to country expansion):**
 | Step | Wait | Advance only if |
 |---|---|---|
 | 20% → 50% | ≥48–72 h | Crash < 1.09% and ANR < 0.47% (or Crashlytics crash-free ≥ 99.5% when vitals lack data); no P0 issue; purchases succeed; no policy email |
