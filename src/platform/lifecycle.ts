@@ -231,25 +231,35 @@ export function onBackground(): LifecycleActions | null {
 }
 
 // The app is visible again. Never resumes gameplay: the pause overlay stays until the player taps CONTINUE or Back.
-// Foreground subscribers (src/platform/foreground.ts, e.g. the IAP customer-info refresh) are notified afterwards.
+// Foreground subscribers (src/platform/foreground.ts, e.g. the IAP customer-info refresh) are notified afterwards, in a `finally`:
+// a throw in the lifecycle step must not cost them the return (P00-T21). The error still propagates to the caller.
 export function onForeground(): LifecycleActions | null {
-  const actions = runLifecycle('visible');
-  notifyForeground();
-  return actions;
+  try {
+    return runLifecycle('visible');
+  } finally {
+    notifyForeground();
+  }
 }
 
 async function registerNativeLifecycle(): Promise<void> {
   if (!(await ensureApp()) || !app) return;
   try {
     // The native pause / resume are the activity state on Android (foreground.ts): AdMob's translucent AdActivity pauses ours while
-    // the WebView can still report visible, and Ads' show timers must not run while an ad is on top.
+    // the WebView can still report visible, and Ads' show timers must not run while an ad is on top. Reported in a `finally`, so a
+    // throw in the lifecycle step cannot leave the ad timers on a stale activity state (P00-T21); the error still leaves the listener.
     await app.addListener('pause', () => {
-      onBackground();
-      reportActivity('native', false);
+      try {
+        onBackground();
+      } finally {
+        reportActivity('native', false);
+      }
     });
     await app.addListener('resume', () => {
-      onForeground();
-      reportActivity('native', true);
+      try {
+        onForeground();
+      } finally {
+        reportActivity('native', true);
+      }
     });
   } catch {
     // listeners unavailable: visibilitychange still drives the contract
@@ -265,9 +275,13 @@ export function installLifecycle(g: Phaser.Game): void {
   setPauseOverlayReader(() => pausePending || deriveLifecycleScenes(snapshotScenes(g)).pauseOverlayUp);
   document.addEventListener('visibilitychange', () => {
     const hidden = document.visibilityState === 'hidden';
-    if (hidden) onBackground();
-    else onForeground();
-    reportActivity('visibility', !hidden); // the activity state on the web; on Android it is ignored once a native event was seen
+    try {
+      if (hidden) onBackground();
+      else onForeground();
+    } finally {
+      // The activity state on the web (on Android it is ignored once a native event was seen); reported even when the step threw.
+      reportActivity('visibility', !hidden);
+    }
   });
   void registerNativeLifecycle();
 }

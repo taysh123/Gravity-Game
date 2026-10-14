@@ -300,16 +300,16 @@ describe('foreground subscribers', () => {
     offC();
   });
 
-  it('lifecycle.onForeground notifies them after running the foreground actions', () => {
+  it('lifecycle.onForeground notifies them after running the foreground actions, in a finally (P00-T21)', () => {
     const src = readFileSync(fileURLToPath(new URL('./lifecycle.ts', import.meta.url)), 'utf8');
-    expect(src).toMatch(/export function onForeground\(\)[^{]*\{\s*const actions = runLifecycle\('visible'\);\s*notifyForeground\(\);/);
+    expect(src).toMatch(/export function onForeground\(\)[^{]*\{\s*try \{\s*return runLifecycle\('visible'\);\s*\} finally \{\s*notifyForeground\(\);/);
   });
 
-  it('lifecycle reports the activity from the right source: visibilitychange as "visibility", the native pause / resume as "native"', () => {
+  it('lifecycle reports the activity from the right source, in a finally: visibilitychange as "visibility", the native pause / resume as "native" (P00-T21)', () => {
     const src = readFileSync(fileURLToPath(new URL('./lifecycle.ts', import.meta.url)), 'utf8');
-    expect(src).toMatch(/reportActivity\('visibility', /);
-    expect(src).toMatch(/addListener\('pause', \(\) => \{\s*onBackground\(\);\s*reportActivity\('native', false\);/);
-    expect(src).toMatch(/addListener\('resume', \(\) => \{\s*onForeground\(\);\s*reportActivity\('native', true\);/);
+    expect(src).toMatch(/\} finally \{\s*\/\/[^\n]*\n\s*reportActivity\('visibility', !hidden\);/);
+    expect(src).toMatch(/addListener\('pause', \(\) => \{\s*try \{\s*onBackground\(\);\s*\} finally \{\s*reportActivity\('native', false\);/);
+    expect(src).toMatch(/addListener\('resume', \(\) => \{\s*try \{\s*onForeground\(\);\s*\} finally \{\s*reportActivity\('native', true\);/);
   });
 });
 
