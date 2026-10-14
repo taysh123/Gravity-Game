@@ -648,6 +648,7 @@ These need the owner's accounts, devices, money or legal judgement (OA-11 is sha
 | OA-14 | **Research proposals** (audit §8): (a) relabel A-18 (30/8/3) as stretch and add a median reading floor (~22/4/1%) with ≥ ~1,000 installs before any retention verdict; (b) start the closed test at M0 if OA-01 says the rule applies (the first closed release would then happen at M0, so OA-12 must be signed off before that release, since closed tracks require Data safety); (c) adopt the constellation-reveal payoff (B11) and an optional pull-preview assist (B13) as P4–P6 design inputs only | KPI definitions, CT-01, P4–P6 design | Audit §7–§8 | Each decided in DECISIONS |
 | OA-15 | Provide the **source screen recording** (or a transcript), only if video-specific analysis is wanted; until then, no finding claims to come from it | Video-specific research | Put the file under the repo or the scratchpad | File available |
 | OA-16 | **AdMob age treatment** (TFAT TEEN vs unspecified) for a 13+ general-audience app, with counsel | M2 | AdMob docs; audit §11 Q10 | Decision recorded |
+| OA-17 | **M0-G09 proof route**: accept device row R4's debug APK (same web bundle and plugin), or ask for a release-safe trigger | M0-G09 | DEVICE-CHECKLIST-M0 R4 | Decision recorded |
 
 ## 11. Experiment backlog (research-informed)
 

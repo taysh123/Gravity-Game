@@ -149,6 +149,8 @@ Run each row twice: Android 16 **gesture** navigation and **3-button** navigatio
 | R1 | Debug build: kill the sandboxed renderer (`adb shell kill <pid>`) up to 3 times | The first 2 times the app recovers (V18); the 3rd falls through to a normal crash report | D-11 | | | |
 | R2 | Emulator with a WebView older than 87 | The static update page appears with the Play WebView link | D-11 | | | |
 | R3 | Settings, Privacy policy | The policy opens in the system browser | D-10 | | | |
+| R4 | M0-G09 (P00-T21). This row alone uses a **debug APK** built with `android/app/google-services.json` present (so the Crashlytics Gradle plugin is applied): a release build from the internal track has WebView debugging off, so there is no console to throw from. Same web bundle, same plugin. Answer the consent form first (collection follows D-10.5 / OA-09). Play into any level, open `chrome://inspect`, and in the app's console run `setTimeout(() => { throw new Error('crashlytics test ' + Date.now()); })`. Force-stop the app and start it again (Crashlytics sends non-fatals on the next launch), wait a few minutes, then open Firebase console, Crashlytics, the app, and filter **Non-fatals** | The test error is a non-fatal issue whose stack shows JavaScript frames (`<anonymous>` from the console), not only the plugin's `JavaScriptException` / Java frames. Its **Keys** tab shows `scene`, `level`, `mode`, `webview_ver`, `renderer` and `build` (e.g. `1.0.0+1`). Its **Logs** tab shows `scene <SceneKey>` breadcrumbs. Record a screenshot reference in Notes | D-11, P00-T21 | | | |
+| R5 | Error overlay on a phone (P00-T21, B-10). Same debug APK as R4. On the main menu, run in the app's `chrome://inspect` console: `[window.WebGLRenderingContext, window.WebGL2RenderingContext].forEach((C) => C && (C.prototype.drawArrays = C.prototype.drawElements = function () { throw new Error('frame guard device test'); }));` (every frame now throws). (a) Tap the overlay where a menu button was. (b) Repeat, and press Android Back instead. (c) Repeat, send the app to the background, bring it back, then tap | Within a second, "Something went wrong · Tap to restart" covers the screen and the music stops. The music stays silent after background and foreground. A tap restarts the app and nothing else happens (no setting changes, no ad or purchase flow). Android Back also restarts it. On the next launch Crashlytics shows the frame error with a JavaScript stack. A restart starts a new Crash session, so the same error is reported once per restart | D-11, P00-T21 | | | |
 
 ## U: System bars
 
@@ -172,5 +174,7 @@ Run each row twice: Android 16 **gesture** navigation and **3-button** navigatio
 - [ ] B, G and H rows pass on gesture and 3-button navigation (V16)
 - [ ] S1, S3 and S4 pass (V17); S2 recorded (V19)
 - [ ] R1 passes (V18)
+- [ ] R4 passes (M0-G09: a stack-traced Crashlytics non-fatal with its custom keys and breadcrumbs)
+- [ ] R5 passes (error overlay on a phone: tap and Back restart, silent across background, nothing pressed underneath)
 - [ ] T1 passes (P00-T17b: hit areas match what the player sees)
 - [ ] Results copied to the *Gates* table in [`docs/STATUS.md`](../STATUS.md)

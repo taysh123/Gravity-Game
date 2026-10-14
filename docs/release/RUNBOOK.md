@@ -225,7 +225,7 @@ CI (`.github/workflows/ci.yml`) runs on master and on phase branches. It has two
 Run the owner device matrix in [`docs/qa/DEVICE-CHECKLIST-M0.md`](../qa/DEVICE-CHECKLIST-M0.md) on a release-signed
 internal-track build with license testers. At minimum: the app launches to the menu; levels play; a rewarded ad grants its
 reward exactly once; an interstitial appears only over the win overlay and not after a Remove Ads purchase; purchases and
-Restore behave; events appear in Firebase DebugView; a forced error appears in Crashlytics.
+Restore behave; events appear in Firebase DebugView; a forced error appears in Crashlytics with a JavaScript stack and its custom keys (device checklist row R4).
 
 **Go/no-go for `v1.0.0`.** Cut it only when all are true:
 - the device checklists for the milestone are signed off (or the failing items are tuned and re-run);

@@ -189,6 +189,10 @@ export type BackAction = { type: 'closeOverlay' | 'pause' | 'resume'; key: strin
 export function routeBack(s: { overlay: string | null; active: string; gameplayEnded: boolean; parents: Record<string, string> }): BackAction;
 export function lifecycleDecision(e: LifecycleInput): { pauseGameplay: boolean; audio: 'suspend' | 'resume' | 'keep'; refreshScale: boolean };
 export function frameGuardDecision(errorTimesMs: number[], nowMs: number): 'continue' | 'overlay';
+export function installFrameGuard(game: { step(t: number, d: number): void; loop: { sleep(): void } }, deps: { report(e: unknown): void; showOverlay(): void; now?: () => number; log?: (m: string, e: unknown) => void }): void; // as built in P00-T21: called from READY in main.ts; report (Crash) and the overlay are injected, so platform gains no services import
+export function showErrorOverlay(reload?: () => void): HTMLElement; // plain DOM, idempotent; a tap or click, Enter / Space, or Android Back (through handleBack) reloads once
+export function isErrorOverlayUp(): boolean; // DOM check by PLATFORM.ERROR_OVERLAY.ID; the lifecycle reads it (haltedByError: no audio resume) and handleBack restarts while it is up
+export function restartFromErrorOverlay(): void; // the single, idempotent reload shared by tap, Enter / Space and Back
 export const Haptics: { pulse(pattern: number | number[]): void };       // navigator.vibrate behind SettingsStore + VIBRATE
 ```
 
@@ -219,6 +223,7 @@ export function classifyPurchaseError(code: string | number | undefined): 'cance
 export const IAP: { init(): Promise<void>; isPremium(): boolean; price(pkgId: string): string | null; buy(pkgId: string): Promise<'purchased' | 'pending' | 'cancelled' | 'network' | 'unavailable' | 'error'>; restore(): Promise<{ restored: Entitlement[] }>; inFlight(): boolean };
 export const Analytics: { track(e: AnalyticsEvent): void; screen(name: string): void; applyConsent(c: ConsentOutcome): Promise<void>; resetData(): Promise<void> };
 export const Crash: { init(): void; enable(): void; disable(): void; log(m: string): void; recordError(e: unknown, ctx?: string): void; setKeys(k: Record<string, string | number>): void };
+// P00-T21: recordError sends parseStack() frames, each distinct message once, at most CRASH_MAX_PER_SESSION per session; setKeys sends only changed values; log() calls the plugin's `log` (breadcrumbs).
 export const RemoteConfig: { activateCached(): Promise<void>; fetchWithTimeout(ms: number): Promise<void>; get<K extends keyof RcValues>(k: K): RcValues[K] }; // P6, clamped via src/config/rcConfig.ts
 ```
 Firebase consent (`setConsent`) and the Crashlytics collection switch (`Crash.enable()` / `disable()`) both persist across launches and take precedence over the manifest defaults, which only describe a fresh install; so the last explicit choice applies from process start until UMP answers on the next launch. `CRASH_REQUIRES_ANALYTICS_CONSENT` (`src/config/consent.config.ts`, default `false` = D-10.5) selects whether `bootServices` and Privacy choices enable Crashlytics in every outcome or follow `analytics_storage` (`enable()` when granted, `disable()` otherwise).
@@ -325,9 +330,9 @@ sequenceDiagram
 
 | Layer | Mechanism | Result |
 |---|---|---|
-| Frame loop | `installFrameGuard(game)` replaces `game.step` inside the `READY` listener (Phaser emits `READY` at `Game.js:416` and binds `this.step` at `:438`), wrapping it in `try/catch` | isolated errors are recorded and the loop continues; ≥3 errors inside 2 s → `game.loop.sleep()` + DOM overlay "Something went wrong · Tap to restart" → `location.reload()` |
-| Global | `window` `error` / `unhandledrejection` → `Crash.recordError` | deduped by message hash, ≤5 per session |
-| Crashlytics | `recordException({ message, stacktrace })` with `parseStack()` frames; custom keys `scene`, `level`, `mode`, `webview_ver`, `renderer`, `build`; scene transitions as `log()` breadcrumbs | stack traces instead of bare messages |
+| Frame loop | `installFrameGuard(game, { report, showOverlay })` replaces `game.step` inside the `READY` listener (Phaser emits `READY` in `Game.texturesReady` and then `start()` binds `this.step`), wrapping it in `try/catch` | every caught error is logged (`console.error`, `[frameGuard]` prefix) and reported (`Crash.recordError(e, 'frame')`), and the loop continues; ≥3 errors inside 2 s → `game.loop.sleep()` + audio suspended + DOM overlay "Something went wrong · Tap to restart" → `location.reload()`. While the overlay is up, Phaser input is disabled (a restart tap cannot press a hidden button), the native Back handler is enabled so Back (and Escape in browsers) restarts through handleBack, and a foreground return keeps audio suspended (haltedByError). Errors thrown during boot, before READY, are outside the guard. |
+| Global | `window` `error` / `unhandledrejection` → `Crash.recordError` | each distinct message once, ≤5 reports per session (`CRASH_MAX_PER_SESSION`, enforced since P00-T21). A reload starts a new session, so a deterministic error is reported again once per restart. |
+| Crashlytics | `recordException({ message, stacktrace })` with `parseStack()` frames (no column: the plugin's StackFrame has none); custom keys `scene`, `level`, `mode` (`services/crashContext.ts`), `webview_ver`, `renderer`, `build` (`version+androidBuild`, e.g. `1.0.0+1`); each scene start is a `log()` breadcrumb | stack traces and context instead of bare messages |
 | Services | every public method resolves to a typed result; native failures map to `'unavailable'` | scenes never `try/catch` SDK calls |
 | Stores | `decodeStore` never throws | no TypeError freeze on valid-but-wrong JSON (audit H.4) |
 | Native renderer | `MainActivity` `WebViewListener.onRenderProcessGone` → `recreate()` at most 2 times per process, increments `platform:rendererGone` in Capacitor Preferences | the next boot reports a non-fatal; progress survives because it is persisted |
