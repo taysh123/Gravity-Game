@@ -13,4 +13,7 @@ ext {
     androidxJunitVersion = '1.3.0'
     androidxEspressoCoreVersion = '3.7.0'
     cordovaAndroidVersion = '14.0.1'
+    // Exact pins (D-11, P00-T08): @capacitor-community/admob reads both from here and otherwise falls back to the floating '25.4.+' (UMP '4.0.0').
+    playServicesAdsVersion = '25.4.0'
+    userMessagingPlatformVersion = '4.0.0'
 }

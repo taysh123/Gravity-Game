@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { AdmobConsentDebugGeography, AdmobConsentStatus, InterstitialAdPluginEvents, MaxAdContentRating, RewardAdPluginEvents } from '@capacitor-community/admob';
 // Not re-exported by the package root (consent/index.d.ts omits it), so it is imported from its file; the package has no exports map.
 import { PrivacyOptionsRequirementStatus } from '@capacitor-community/admob/dist/esm/consent/privacy-options-requirement-status.enum';
@@ -92,6 +94,44 @@ describe('mirrored plugin event names match @capacitor-community/admob', () => {
   it('the known-unlistened list never overlaps the events the app listens to', () => {
     for (const name of KNOWN_UNLISTENED.REWARDED) expect(Object.values(ADMOB_EVENTS.REWARDED)).not.toContain(name);
     for (const name of KNOWN_UNLISTENED.INTERSTITIAL) expect(Object.values(ADMOB_EVENTS.INTERSTITIAL)).not.toContain(name);
+  });
+});
+
+// P00-T08 / D-11: the plugin's own Android build.gradle falls back to a FLOATING Google Mobile Ads range ('25.4.+'), so a build on a later day
+// could ship a different SDK. The project pins both exactly in android/variables.gradle, which the plugin reads through rootProject.ext.
+// A plugin bump that stopped reading those names (or a variables.gradle edit back to a range) would silently un-pin the SDK: fail here.
+const readFile = (rel: string): string => readFileSync(fileURLToPath(new URL(`../../${rel}`, import.meta.url)), 'utf8');
+const isExactVersion = (v: string | undefined): boolean => v !== undefined && /^\d+\.\d+\.\d+$/.test(v); // no +, no range, no pre-release tag
+function gradleExt(source: string, name: string): string | undefined {
+  return new RegExp(`^\\s*${name}\\s*=\\s*'([^']*)'`, 'm').exec(source.replace(/\/\/.*$/gm, ''))?.[1];
+}
+
+describe('Android: the Google Mobile Ads SDK and UMP are pinned exactly (D-11)', () => {
+  const variables = readFile('android/variables.gradle');
+  const pluginGradle = readFile('node_modules/@capacitor-community/admob/android/build.gradle');
+
+  it('android/variables.gradle pins playServicesAdsVersion and userMessagingPlatformVersion to exact x.y.z versions', () => {
+    expect(isExactVersion(gradleExt(variables, 'playServicesAdsVersion'))).toBe(true);
+    expect(isExactVersion(gradleExt(variables, 'userMessagingPlatformVersion'))).toBe(true);
+  });
+
+  it('the plugin reads both names from rootProject.ext, so the pins take effect', () => {
+    expect(pluginGradle).toContain('rootProject.ext.playServicesAdsVersion');
+    expect(pluginGradle).toContain('rootProject.ext.userMessagingPlatformVersion');
+    expect(pluginGradle).toContain('implementation "com.google.android.gms:play-services-ads:$playServicesAdsVersion"');
+    expect(pluginGradle).toContain('implementation "com.google.android.ump:user-messaging-platform:$userMessagingPlatformVersion"');
+  });
+
+  it('the check is not vacuous: ranges and missing values are not exact, a comment is not a pin', () => {
+    expect(isExactVersion('25.4.+')).toBe(false);
+    expect(isExactVersion('25.+')).toBe(false);
+    expect(isExactVersion('[25.4.0,26.0.0)')).toBe(false);
+    expect(isExactVersion('25.4.0-rc1')).toBe(false);
+    expect(isExactVersion(undefined)).toBe(false);
+    expect(isExactVersion('25.4.0')).toBe(true);
+    expect(gradleExt("playServicesAdsVersion = '25.4.+'", 'playServicesAdsVersion')).toBe('25.4.+');
+    expect(gradleExt("// playServicesAdsVersion = '25.4.0'", 'playServicesAdsVersion')).toBeUndefined();
+    expect(gradleExt("other = '1.0.0'", 'playServicesAdsVersion')).toBeUndefined();
   });
 });
 
