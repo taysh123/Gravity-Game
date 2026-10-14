@@ -9,6 +9,8 @@ the matrix; later phases append rows (P1: refresh rate and the `FORCE_SCALE` A/B
 How to record: set **Result** to `PASS`, `FAIL` or `N/A`, put the date in **Date**, and put the build, a logcat line or a
 bug id in **Notes**. Leave a row blank until it is run. A `FAIL` becomes a bug in `docs/STATUS.md` *Open bugs*.
 
+**AdMob plugin version.** Every consent row (C1-C5) and ad row (A1-A6) applies to `@capacitor-community/admob` **8.2.1** (P00-T08), which also brings Google Mobile Ads Android 25.4.x; none of them has been run on a real phone against it, so record the plugin version in the run header notes.
+
 ## Run header
 
 | Field | Value |

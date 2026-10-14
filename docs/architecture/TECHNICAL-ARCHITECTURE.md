@@ -376,8 +376,8 @@ sequenceDiagram
 
 ## 10. Dependency policy
 
-- **Exact pins** for every runtime and build-critical package (no `^`). The P0 set (verified on npm 2026-10-07): `@capacitor/core|android|cli` 8.5.2, `@capacitor/app` 8.1.2, `@capacitor/preferences` 8.0.1, `@capacitor-firebase/analytics|crashlytics` 8.5.2, `@revenuecat/purchases-capacitor` 13.7.0, `phaser` 3.90.0 (D-28), `playwright` 1.63.0 (dev), `vite-node` 1.6.1 (dev, matches vitest).
-- **Soak rule.** A release younger than 7 days ships only in its own commit, after the rest of its step is green and after its tracker has been checked for regressions. AdMob 8.2.x (8.2.0 published 2026-10-05, requires Capacitor ≥ 8.5) follows this rule.
+- **Exact pins** for every runtime and build-critical package (no `^`). The P0 set (verified on npm 2026-10-07): `@capacitor/core|android|cli` 8.5.2, `@capacitor/app` 8.1.2, `@capacitor/preferences` 8.0.1, `@capacitor-firebase/analytics|crashlytics` 8.5.2, `@capacitor-community/admob` 8.2.1 (P00-T08), `@revenuecat/purchases-capacitor` 13.7.0, `phaser` 3.90.0 (D-28), `playwright` 1.63.0 (dev), `vite-node` 1.6.1 (dev, matches vitest).
+- **Soak rule.** A release younger than 7 days ships only in its own commit, after the rest of its step is green and after its tracker has been checked for regressions. AdMob followed it: 8.2.1 (published 2026-10-06, requires Capacitor ≥ 8.5) landed on 2026-10-14 as its own commit, after a compat commit that makes the one affected test hold on 8.0.0 and 8.2.1, so reverting the bump returns to 8.0.0 with no code change. The plugin pulls Google Mobile Ads Android 25.4.+ (8.0.0 pulled 24.9.+); both are floating ranges inside the plugin, so a build on a later day may resolve a later 25.4.x.
 - **Gates.** `npm audit --omit=dev` must report 0 critical (blocking); highs are listed in `docs/STATUS.md`. Each SDK bump re-checks the Data Safety matrix (launch brief §2).
 - **Fallbacks.** If Capacitor 8.5.2 regresses on device, 8.4.3 also fixes the advisory.
 - **Not now.** Vite 8, Vitest 5, TypeScript 7 and Phaser 4 wait until after launch (D-28); each needs its own plan.
