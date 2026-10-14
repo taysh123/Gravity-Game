@@ -23,6 +23,8 @@ export async function runJob({ browser, job, mode, origin, artifactsDir = null }
     viewport,
     signals,
     expect: rec.expect,
+    /** Count something under a label; the totals are shown in the NOTES column of the result table. */
+    tally: rec.tally,
     /** Record a list of { ok, label, detail } assertions. */
     record(assertions) {
       for (const a of assertions) rec.expect(a.ok, a.label, a.detail);
@@ -84,6 +86,7 @@ export async function runJob({ browser, job, mode, origin, artifactsDir = null }
     signals: list,
     failures,
     assertions: rec.all(),
+    tallies: rec.tallies(),
     ms: Date.now() - started,
   };
 }

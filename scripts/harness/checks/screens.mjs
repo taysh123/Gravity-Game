@@ -14,7 +14,7 @@
 // previous one ended on, so scenes are created at both sizes. One walk instead of two keeps the run short; entering the screens
 // is the expensive part, not the probe.
 
-import { runProbe, probeToAssertions } from '../lib/hitProbe.mjs';
+import { probeSkipCounts, probeToAssertions, runProbe } from '../lib/hitProbe.mjs';
 import { setViewport, startScene } from '../lib/game.mjs';
 import { BOTH_VIEWPORTS } from '../lib/registry.mjs';
 import { ALL_WORLDS_UNLOCKED, RETURNING_PLAYER } from '../lib/seeds.mjs';
@@ -38,13 +38,15 @@ async function scrollList(page, key, where) {
 /** Probe the current screen at the page's viewport, resize to the other one, probe again. The page stays at the second size. */
 function bothViewportsProber(page, ctx) {
   let current = BOTH_VIEWPORTS[0];
-  return async (name, scenes) => {
+  return async (name, scenes, { lists = false } = {}) => {
     for (let i = 0; i < BOTH_VIEWPORTS.length; i++) {
       if (i > 0) {
         current = BOTH_VIEWPORTS.find((v) => v !== current);
         await setViewport(page, current);
       }
-      ctx.record(probeToAssertions(`${name} @ ${current.label}`, await runProbe(page, scenes)));
+      const res = await runProbe(page, scenes);
+      ctx.record(probeToAssertions(`${name} @ ${current.label}`, res, { lists }));
+      for (const [category, n] of Object.entries(probeSkipCounts(res))) ctx.tally(category, n);
     }
   };
 }
@@ -53,7 +55,7 @@ async function walk(page, ctx, states) {
   const probe = bothViewportsProber(page, ctx);
   for (const state of states) {
     const entered = await ctx.step(`${state.name}: ${state.visits.join(' + ')} started`, () => enterState(page, state));
-    if (entered && state.probe) await probe(state.name, state.probe);
+    if (entered && state.probe) await probe(state.name, state.probe, { lists: state.lists });
   }
   return probe;
 }
@@ -81,21 +83,21 @@ export const screensMenus = {
     for (const where of ['initial', 'top', 'bottom']) {
       await startScene(all, 'WorldMapScene');
       if (where !== 'initial') await scrollList(all, 'WorldMapScene', where);
-      await probeAll(`WorldMap (all worlds unlocked, ${where})`, ['WorldMapScene']);
+      await probeAll(`WorldMap (all worlds unlocked, ${where})`, ['WorldMapScene'], { lists: true });
     }
     for (const where of ['top', 'bottom']) {
       await startScene(page, 'WorldMapScene');
       await scrollList(page, 'WorldMapScene', where);
-      await probe(`WorldMap (returning player, ${where})`, ['WorldMapScene']);
+      await probe(`WorldMap (returning player, ${where})`, ['WorldMapScene'], { lists: true });
       await startScene(page, 'AchievementsScene');
       await scrollList(page, 'AchievementsScene', where);
-      await probe(`Achievements (${where})`, ['AchievementsScene']);
+      await probe(`Achievements (${where})`, ['AchievementsScene'], { lists: true });
     }
     await startScene(page, 'LevelSelectScene', { world: 15 });
-    await probe('LevelSelect: world 15', ['LevelSelectScene']);
+    await probe('LevelSelect: world 15', ['LevelSelectScene'], { lists: true });
     await startScene(page, 'LevelSelectScene', { world: 1 });
     await scrollList(page, 'LevelSelectScene', -150);
-    await probe('LevelSelect: simulated overflow (content shifted up 150 px)', ['LevelSelectScene']);
+    await probe('LevelSelect: simulated overflow (content shifted up 150 px)', ['LevelSelectScene'], { lists: true });
   },
 };
 

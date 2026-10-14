@@ -351,8 +351,11 @@ export function runProbe(page, only = null) {
 /**
  * One probe result -> assertions: one for the tappable objects, one for the hit-zone overlaps, one per scrolling list.
  * A zone under 44x44 game px fails; a zone under 44 CSS px only because the FIT scale k is below 1 does not.
+ * `lists: true` says the screen holds a scrolling list: the probe must then have found its viewport mask and scanned outside it.
+ * A scan that silently came back empty (the mask moved, a field was renamed) would turn the "hidden rows are dead" check into
+ * nothing, so that is a failure of its own.
  */
-export function probeToAssertions(state, res) {
+export function probeToAssertions(state, res, { lists = false } = {}) {
   const tested = res.items.filter((r) => r.verdict === 'PASS' || r.verdict === 'FAIL');
   const skipped = res.items.length - tested.length;
   const out = [];
@@ -380,6 +383,13 @@ export function probeToAssertions(state, res) {
     detail: res.overlaps.map((o) => `${o.a} x ${o.b} (${o.w}x${o.h} css px)`).join(' | '),
   });
 
+  if (lists && res.scans.length === 0) {
+    out.push({
+      label: `${state}: the list viewport was found and scanned (at least one mask scan)`,
+      ok: false,
+      detail: 'no list viewport mask was found on this screen: scene.listC / scene.content or its geometry mask changed, so the "hidden rows are dead" scan did not run',
+    });
+  }
   for (const s of res.scans) {
     out.push({
       label: `${state}: nothing outside the ${s.scene} list viewport reaches a list row (${s.points} probes, ${s.rows} interactive rows)`,
@@ -388,4 +398,25 @@ export function probeToAssertions(state, res) {
     });
   }
   return out;
+}
+
+const SKIP_LABELS = {
+  'full-screen scrim': 'skipped scrim',
+  'covered by an overlay scrim (by design)': 'skipped covered by scrim',
+  'not fully on canvas (scrolled out)': 'skipped scrolled out',
+  'hit area is neither rect nor circle': 'skipped other hit shape',
+  'no getBounds': 'skipped no bounds',
+};
+
+/** What one probe result tested and skipped, by category: { probed, 'skipped scrim', ... } (empty categories left out). */
+export function probeSkipCounts(res) {
+  const counts = {};
+  const add = (label) => {
+    counts[label] = (counts[label] ?? 0) + 1;
+  };
+  for (const r of res.items) {
+    if (r.verdict === 'PASS' || r.verdict === 'FAIL') add('probed');
+    else add(SKIP_LABELS[r.note] ?? 'skipped other');
+  }
+  return counts;
 }

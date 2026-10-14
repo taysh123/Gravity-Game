@@ -45,6 +45,17 @@ describe('createRecorder', () => {
     ]);
   });
 
+  it('tallies counts by category (what a probe skipped, what it tested) and hands back a copy', () => {
+    const r = createRecorder();
+    r.tally('probed', 3);
+    r.tally('probed', 4);
+    r.tally('skipped scrim');
+    r.tally('skipped scrim', 0);
+    expect(r.tallies()).toEqual({ probed: 7, 'skipped scrim': 1 });
+    r.tallies().probed = 99;
+    expect(r.tallies().probed).toBe(7);
+  });
+
   it('an empty recorder has no assertions (a check that asserts nothing must not pass silently)', () => {
     expect(createRecorder().total()).toBe(0);
   });
@@ -79,6 +90,13 @@ describe('formatTable', () => {
   it('shows assertions as passed/total, the number of page errors and the time in seconds', () => {
     expect(lines[2]).toMatch(/scene-boot\s+390x844\s+preview\s+14\/14\s+0\s+12\.3s\s+PASS/);
     expect(lines[3]).toMatch(/hit-areas\s+360x640\s+preview\s+40\/42\s+1\s+0\.8s\s+FAIL/);
+  });
+
+  it('ends with a NOTES column that lists the tallies, so a growing skip category is visible in the log', () => {
+    expect(lines[0]).toMatch(/RESULT\s+NOTES$/);
+    const noted = formatTable([{ ...pass, tallies: { probed: 312, 'skipped scrim': 14, 'skipped scrolled out': 33 } }, fail]).split('\n');
+    expect(noted[2]).toContain('probed 312, skipped scrim 14, skipped scrolled out 33');
+    expect(noted[3].trimEnd().endsWith('FAIL')).toBe(true);
   });
 
   it('pads the columns so the rows line up', () => {

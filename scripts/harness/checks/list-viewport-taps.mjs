@@ -118,6 +118,10 @@ export const listViewportTaps = {
           await clickPoint(page, pts.visible.css, 2);
           await ctx.step(`${L.name}, ${at}: a tap on a visible item ("${pts.visible.name}") still opens ${L.target}`, () => waitForScene(page, L.target, 8000));
           await reopen();
+        } else {
+          // The positive control of every negative assertion above: if no row is visibly tappable, "a hidden row does nothing" proves
+          // nothing (the whole list may be dead).
+          ctx.expect(false, `${L.name}, ${at}: a visible interactive item exists to tap (the positive control)`, `none of the ${pts.interactive} interactive items in the list is inside its viewport`);
         }
         const back = await inPage(page, 'backPointOf', L.scene);
         await clickPoint(page, back, 2);

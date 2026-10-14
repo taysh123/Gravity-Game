@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MIN_TAP_GAME_PX, probeToAssertions } from './hitProbe.mjs';
+import { MIN_TAP_GAME_PX, probeSkipCounts, probeToAssertions } from './hitProbe.mjs';
 
 const item = (over = {}) => ({
   scene: 'MainMenuScene',
@@ -82,5 +82,50 @@ describe('probeToAssertions: turns one in-page probe result into named pass/fail
     expect(s[1].ok).toBe(false);
     expect(s[1].detail).toContain('4 probes reach a list row');
     expect(s[1].detail).toContain('(3,2)->Container "x"');
+  });
+
+  it('a list state (lists: true) fails when the probe found no list viewport at all: the mask scan must not silently vanish', () => {
+    const a = probeToAssertions('Shop', base([item()]), { lists: true });
+    const missing = a.find((x) => x.label.includes('list viewport'));
+    expect(missing.ok).toBe(false);
+    expect(missing.detail).toMatch(/no list viewport mask/);
+  });
+
+  it('a list state with a scan has no such failure, and a non-list state is never asked for one', () => {
+    const scans = [{ scene: 'CosmeticsScene', band: { top: 150, bottom: 760 }, points: 3000, rows: 12, leaks: [], leakCount: 0 }];
+    expect(probeToAssertions('Shop', base([item()], { scans }), { lists: true }).every((x) => x.ok)).toBe(true);
+    expect(probeToAssertions('Menu', base([item()])).every((x) => x.ok)).toBe(true);
+    expect(probeToAssertions('Menu', base([item()]), { lists: false }).some((x) => x.label.includes('list viewport'))).toBe(false);
+  });
+});
+
+describe('probeSkipCounts: what the probe tested and what it skipped, by category', () => {
+  const skip = (note) => ({ scene: 'S', label: 'x', verdict: 'SKIP', note });
+
+  it('counts the tested objects and each kind of skip under its own label', () => {
+    const res = base([
+      item(),
+      item({ verdict: 'FAIL' }),
+      skip('full-screen scrim'),
+      skip('full-screen scrim'),
+      skip('covered by an overlay scrim (by design)'),
+      skip('not fully on canvas (scrolled out)'),
+      skip('hit area is neither rect nor circle'),
+      skip('no getBounds'),
+      skip('something new'),
+    ]);
+    expect(probeSkipCounts(res)).toEqual({
+      probed: 2,
+      'skipped scrim': 2,
+      'skipped covered by scrim': 1,
+      'skipped scrolled out': 1,
+      'skipped other hit shape': 1,
+      'skipped no bounds': 1,
+      'skipped other': 1,
+    });
+  });
+
+  it('leaves out a category that is empty', () => {
+    expect(probeSkipCounts(base([item()]))).toEqual({ probed: 1 });
   });
 });

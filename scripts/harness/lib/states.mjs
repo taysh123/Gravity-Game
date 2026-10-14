@@ -1,5 +1,6 @@
 // Named game states the checks drive the app into: one per screen a player can see. Each state says how to reach it, which
-// scenes must be active afterwards (`visits`) and which scenes the hit-area probe looks at (`probe`, absent = not probed).
+// scenes must be active afterwards (`visits`) and which scenes the hit-area probe looks at (`probe`, absent = not probed) and whether the screen holds a scrolling
+// list (`lists`: the probe must then find its viewport mask, see probeToAssertions).
 //
 // The `screens` check walks every state to prove each scene starts without an error and probes the ones with a `probe`;
 // `first-run` reuses a few of them as a fresh player. `coveredSceneKeys()` is what `screens` compares against the scene list in
@@ -116,7 +117,7 @@ async function endlessRunOver(page, mode) {
 // ---- the table -------------------------------------------------------------------------------------------------------
 
 /**
- * @typedef {{ name: string, visits: string[], probe?: string[], seed?: Record<string,string>, modes?: string[],
+ * @typedef {{ name: string, visits: string[], probe?: string[], lists?: boolean, seed?: Record<string,string>, modes?: string[],
  *             setup: (page: import('playwright').Page) => Promise<void> }} State
  */
 
@@ -133,6 +134,7 @@ export const MENU_STATES = [
     name: `Cosmetics: ${tab} tab`,
     visits: ['CosmeticsScene'],
     probe: ['CosmeticsScene'],
+    lists: true,
     setup: (p) => startScene(p, 'CosmeticsScene', { tab }),
   })),
   {
@@ -141,13 +143,14 @@ export const MENU_STATES = [
     name: 'Cosmetics: skin tab scrolled to the end',
     visits: ['CosmeticsScene'],
     probe: ['CosmeticsScene'],
+    lists: true,
     setup: (p) => startScene(p, 'CosmeticsScene', { tab: 'skin', scrollOffset: -99999 }),
   },
-  { name: 'WorldMap', visits: ['WorldMapScene'], probe: ['WorldMapScene'], setup: (p) => startScene(p, 'WorldMapScene') },
-  { name: 'LevelSelect: world 1', visits: ['LevelSelectScene'], probe: ['LevelSelectScene'], setup: (p) => startScene(p, 'LevelSelectScene', { world: 1 }) },
-  { name: 'LevelSelect: world 2', visits: ['LevelSelectScene'], probe: ['LevelSelectScene'], setup: (p) => startScene(p, 'LevelSelectScene', { world: 2 }) },
+  { name: 'WorldMap', visits: ['WorldMapScene'], probe: ['WorldMapScene'], lists: true, setup: (p) => startScene(p, 'WorldMapScene') },
+  { name: 'LevelSelect: world 1', visits: ['LevelSelectScene'], probe: ['LevelSelectScene'], lists: true, setup: (p) => startScene(p, 'LevelSelectScene', { world: 1 }) },
+  { name: 'LevelSelect: world 2', visits: ['LevelSelectScene'], probe: ['LevelSelectScene'], lists: true, setup: (p) => startScene(p, 'LevelSelectScene', { world: 2 }) },
   { name: 'RunSelect', visits: ['RunSelectScene'], probe: ['RunSelectScene'], setup: (p) => startScene(p, 'RunSelectScene') },
-  { name: 'Achievements', visits: ['AchievementsScene'], probe: ['AchievementsScene'], setup: (p) => startScene(p, 'AchievementsScene') },
+  { name: 'Achievements', visits: ['AchievementsScene'], probe: ['AchievementsScene'], lists: true, setup: (p) => startScene(p, 'AchievementsScene') },
   { name: 'EndScene', visits: ['EndScene'], probe: ['EndScene'], setup: (p) => startScene(p, 'EndScene') },
 ];
 

@@ -1,7 +1,7 @@
 // Assertion recorder and the result table. Pure: unit-tested in report.test.mjs.
 //
 // A job result (one check at one viewport) is
-//   { check, viewport, mode, status: 'PASS' | 'FAIL', passed, total, signals, failures, ms }
+//   { check, viewport, mode, status: 'PASS' | 'FAIL', passed, total, signals, failures, ms, tallies? }
 // where `signals` are the page failure signals (console.error, pageerror, failed request ...) seen during the job and
 // `failures` are the failed assertions. A job fails when either list is non-empty or it asserted nothing.
 
@@ -10,6 +10,7 @@ const clip = (s, n = MAX_TEXT) => (s.length > n ? `${s.slice(0, n)}... (+${s.len
 
 export function createRecorder() {
   const rows = [];
+  const counts = {};
   return {
     /** Record an assertion. `detail` is shown only when it fails. */
     expect(ok, label, detail = '') {
@@ -21,6 +22,11 @@ export function createRecorder() {
       const text = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
       rows.push({ ok: false, label, detail: text });
     },
+    /** Count something under a label (what a probe tested, what it skipped), shown in the NOTES column of the table. */
+    tally(category, n = 1) {
+      if (n > 0) counts[category] = (counts[category] ?? 0) + n;
+    },
+    tallies: () => ({ ...counts }),
     all: () => rows.map((r) => ({ ...r })),
     passed: () => rows.filter((r) => r.ok).length,
     total: () => rows.length,
@@ -42,6 +48,8 @@ const COLUMNS = [
   ['ERRORS', (r) => String(r.signals.length)],
   ['TIME', (r) => `${(r.ms / 1000).toFixed(1)}s`],
   ['RESULT', (r) => r.status],
+  // What the job counted (a probe's tested and skipped objects, by category), so a growing skip category shows in the log.
+  ['NOTES', (r) => Object.entries(r.tallies ?? {}).map(([label, n]) => `${label} ${n}`).join(', ')],
 ];
 
 export function formatTable(results) {
