@@ -4,6 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>Project Gravity</title>
+    <!-- No favicon file yet: an empty data URL stops the browser asking for /favicon.ico, which 404s and logs a console error
+         the boot smoke harness (scripts/harness) rightly fails on. A real icon waits for the naming decision (D-19). -->
+    <link rel="icon" href="data:," />
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       html, body {
