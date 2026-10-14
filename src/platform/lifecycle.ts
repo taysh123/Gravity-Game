@@ -107,7 +107,8 @@ function execute(g: Phaser.Game, action: BackAction, state: BackState): void {
   }
 }
 
-// Route one Back press. Returns the action taken (tests and the headless check read it).
+// Route one Back press. Returns the action taken (tests and the headless check read it). While the error overlay is up nothing is routed:
+// the page restarts instead, and the result is { type: 'none' }.
 export function handleBack(): BackAction {
   // The frame guard has stopped the game and its overlay is up: the scene manager sleeps with the loop, so whatever the router chose would
   // never run (a pause queued on a dead scene) or would background the app. Back means what a tap on the overlay means: restart. Asked

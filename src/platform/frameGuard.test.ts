@@ -211,6 +211,16 @@ describe('main.ts wiring (P00-T21)', () => {
     expect(body.indexOf('sharedAudio().suspend()')).toBeLessThan(body.indexOf('showErrorOverlay()'));
   });
 
+  // P00-T21 Task 5 re-review. Phaser's window-level mouse and touch handlers (MouseManager / TouchManager) also take events whose target is
+  // NOT the canvas, such as a tap on the overlay, and the InputManager updates every running scene's input at once: only the step is inert
+  // while the loop sleeps, not the input. A tap on the overlay would press a button beneath it (a Settings toggle flips a saved setting and
+  // wakes the audio) before the click that restarts. Both handlers, and InputPlugin.isActive, check input.enabled.
+  it('the overlay shields the halted game from the pointer: the showOverlay body sets game.input.enabled = false, before showErrorOverlay()', () => {
+    const body = showOverlayBody();
+    expect(body).toMatch(/game\.input\.enabled = false;/);
+    expect(body.indexOf('game.input.enabled = false')).toBeLessThan(body.indexOf('showErrorOverlay()'));
+  });
+
   it('Back reaches JS while the overlay is up: the showOverlay body turns the native back handler on (MainMenuScene hands Back to the system)', () => {
     expect(showOverlayBody()).toMatch(/setBackHandlerEnabled\(true\)/);
   });

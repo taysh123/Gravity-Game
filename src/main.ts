@@ -125,6 +125,12 @@ game.events.once(Phaser.Core.Events.READY, () => {
   installFrameGuard(game, {
     report: (error) => Crash.recordError(error, 'frame'),
     showOverlay: () => {
+      // The stopped game must not hear the tap that restarts it. Phaser's window-level mouse and touch handlers also take events whose target
+      // is not the canvas, and the InputManager updates every running scene's input at once: only the step is inert while the loop sleeps. A
+      // tap on the overlay would press the button beneath it (a Settings toggle flips a saved setting and wakes the audio) before the click
+      // that restarts. Both handlers check input.enabled. Off before the overlay exists. (The overlay cannot shield the game with
+      // preventDefault instead: on touch that would cancel the click that restarts.)
+      game.input.enabled = false;
       try {
         sharedAudio().suspend(); // a stopped game must not keep playing its music under the overlay
       } catch {

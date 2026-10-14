@@ -139,6 +139,19 @@ describe('restarting from the overlay reloads the page once', () => {
     }
   });
 
+  // The restart on touch is the click the browser synthesises after touchend. A preventDefault on touchstart or touchend cancels it, and
+  // Phaser's window-level handlers skip an event that is default-prevented, so the tempting way to shield the game from the tap would also
+  // make the overlay dead on a phone. The shield is game.input.enabled = false (main.ts) instead.
+  it('listens for click and keydown only, and never default-prevents a click: on touch that would cancel the click that restarts', async () => {
+    const o = await load();
+    const panel = o.show();
+    expect(Object.keys(panel.listeners).sort()).toEqual(['click', 'keydown']);
+    const click = { preventDefault: vi.fn() };
+    panel.listeners.click(click);
+    expect(click.preventDefault).not.toHaveBeenCalled();
+    expect(o.reload).toHaveBeenCalledTimes(1);
+  });
+
   it('any other key does nothing (Escape is Back, which the lifecycle routes to restartFromErrorOverlay)', async () => {
     const o = await load();
     const panel = o.show();

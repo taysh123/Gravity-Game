@@ -4,7 +4,9 @@
 //   2. stop on a persistent error: once FRAME_ERROR_BURST errors fall inside one FRAME_ERROR_WINDOW_MS window, put the loop to sleep
 //      and show the DOM overlay "Something went wrong · Tap to restart" over the whole screen (src/platform/errorOverlay.ts). The error
 //      of step 1 is usually still inside that window, so the overlay can come after FRAME_ERROR_BURST - 1 further throws as well as
-//      after FRAME_ERROR_BURST: the check counts the errors in all and does not depend on which;
+//      after FRAME_ERROR_BURST: the check counts the errors in all and does not depend on which. The overlay also shields the halted
+//      game from the pointer: a press on it must not reach Phaser's input (main.ts turns game.input off), or it would press a button
+//      beneath the overlay;
 //   3. on a tap anywhere, reload: the game boots back to the main menu, stepping, with no overlay;
 //   4. do the same on Back (Escape on the web; the Android Back button reaches the same handler, src/platform/lifecycle.ts handleBack).
 // The injected errors are console.error lines by design: the guard logs every error it catches, and Crash logs its first report of a
@@ -113,8 +115,19 @@ export const crashOverlay = {
     ctx.expect(burstLogged, `the overlay came after at least ${CRASH_TEST.burst} frame errors in all (the one of step 1 counts while it is inside the window)`, `${guard.count()} logged`);
     ctx.expect(reported.count() === 1, 'Crash was told about the injected error once on this page load: the repeats of the same message were deduplicated', `${reported.count()} reports`);
 
+    // The overlay also shields the halted game from the pointer. Phaser's window-level mouse and touch handlers take events whose target is
+    // not the canvas, and the InputManager updates every running scene's input at once (only the step is inert while the loop sleeps), so,
+    // left alone, a press on the overlay would press the button beneath it before the click that restarts. main.ts turns the game's input
+    // off when it shows the overlay. The press stays down into step 3, where its release is the click that reloads.
+    await page.mouse.move(ctx.viewport.width / 2, ctx.viewport.height / 2);
+    await page.mouse.down();
+    await frames(page, PROGRESS_FRAMES);
+    const pointer = await page.evaluate(() => ({ down: window.__harnessGame.input.mousePointer.isDown, enabled: window.__harnessGame.input.enabled }));
+    ctx.expect(!pointer.down, 'a press on the overlay does not reach the halted game: the Phaser mouse pointer stays up', JSON.stringify(pointer));
+
     // ---- 3. tap to restart ----
-    await reloadedBy(page, 'a tap on the overlay', () => page.mouse.click(ctx.viewport.width / 2, ctx.viewport.height / 2));
+    // The release of the press above: together they are the click on the overlay.
+    await reloadedBy(page, 'a tap on the overlay', () => page.mouse.up());
     const afterTap = await steppingAfterReload(page);
     ctx.expect(afterTap.ok, 'a tap reloads the page: the game boots back to the main menu, stepping, with no overlay', afterTap.detail);
 
