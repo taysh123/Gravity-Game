@@ -35,6 +35,7 @@ npm run facts           # Regenerate the facts blocks in docs/STATUS.md and READ
 npm run facts:check     # Fail if a facts block is stale (CI runs this)
 npm run build:release   # Release-mode build (production AdMob/RevenueCat ids); refuses until the owner supplies real ids
 npm run release:check   # List what blocks a release; `-- --assets` scans the synced bundle (RUNBOOK section 6)
+npm run smoke           # Boot smoke harness: builds, serves the production bundle, drives every scene in Chromium (CI runs it)
 npm run fonts:fetch     # Download self-hosted Orbitron + Exo 2 woff2 into assets/fonts
 npm run optimize:assets # Downscale/quantize raw logos → assets/images (sharp)
 ```
@@ -229,7 +230,7 @@ src/
 | Any bug | `systematic-debugging` four-phase process: root cause before any fix |
 | Before claiming done | `verification-before-completion`: run game, observe, report actual output |
 | HUD, touch targets, layout | `ui-ux-pro-max`: 44×44px minimum touch targets, 4.5:1 contrast, mobile-first |
-| Browser testing | Tracked **Node Playwright** scripts under `scripts/` (CI-runnable), headless with `--disable-gpu --use-gl=swiftshader`. Do not add new untracked or Python automation. |
+| Browser testing | The tracked **Node Playwright harness**, `npm run smoke` (`scripts/harness/`, CI job `smoke`): headless Chromium with `--disable-gpu --use-gl=swiftshader`, every console error / page error / failed same-origin request fails the run. Add a named check in `scripts/harness/checks/` (wait on game state, never a fixed sleep) instead of a scratch script; `-- --mode=dev` runs against the Vite dev server for DEV-only hooks, `-- --only=<check>` runs one. Do not add new untracked or Python automation. |
 | End of a task or phase | `finishing-a-development-branch` |
 
 ---

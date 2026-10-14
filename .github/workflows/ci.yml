@@ -102,3 +102,33 @@ jobs:
             echo "::error title=versionCode mismatch::scripts/version.mjs says '$expected', Gradle says '$actual'."
             exit 1
           fi
+
+  # Boot smoke (P00-T24, V8): the harness in scripts/harness serves the production bundle (npm run build, then vite preview) and
+  # drives every scene in a real Chromium with software rendering. Any console.error, page error, unhandled rejection or failed
+  # same-origin request fails the job. Nothing here uses a secret and nothing is uploaded except failure screenshots.
+  smoke:
+    name: Boot smoke · Chromium
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Install Chromium and its system libraries
+        run: npx playwright install --with-deps chromium
+      - name: Boot smoke (production build served by vite preview)
+        run: npm run smoke -- --artifacts=smoke-artifacts
+      # The Vite dev server has hooks the production bundle does not. --exclusive runs only the checks that declare `dev` as their
+      # one mode (they need a DEV-only hook; P00-T21 and P00-T22 add theirs); everything else already ran above against the bundle.
+      - name: Boot smoke (Vite dev server, DEV-only checks)
+        run: npm run smoke -- --mode=dev --exclusive --artifacts=smoke-artifacts
+      - name: Failure screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-artifacts
+          path: smoke-artifacts
+          if-no-files-found: ignore
