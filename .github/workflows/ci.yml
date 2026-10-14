@@ -108,8 +108,11 @@ jobs:
   # same-origin request fails the job. Nothing here uses a secret and nothing is uploaded except failure screenshots.
   # Software-rendered Chromium is slow (one pass of all checks took 21 minutes on a single runner) and parallel pages on one
   # machine fight for the CPU, so the checks are split into four balanced slices (--shard=i/4, by each check's weight) that run on
-  # four runners at once, plus a fifth runner for the Vite dev server: --exclusive keeps only the checks that declare `dev` as their
-  # one mode (they need a DEV-only hook; P00-T21 and P00-T22 add theirs), everything else is already covered against the bundle.
+  # four runners at once, plus a fifth runner for the Vite dev server. --exclusive keeps what is specific to the dev run: the checks
+  # whose only mode is `dev` (they need a DEV-only hook; P00-T21 and P00-T22 add theirs) and the checks that name `dev` in
+  # controlModes. Those are the positive controls of assertions the bundle run makes about something being ABSENT
+  # (ad-offers-by-mode, debug-handles): the dev run must find the same labels and handles, or the absence proves nothing.
+  # Everything else is already covered against the bundle.
   # Each runner pays about 40 s of setup (npm ci, Chromium, the build).
   smoke:
     name: Boot smoke · Chromium (${{ matrix.leg }})

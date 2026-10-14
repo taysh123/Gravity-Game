@@ -7,6 +7,9 @@
 //   viewports  BOTH_VIEWPORTS (390x844 and 360x640) or DEFAULT_VIEWPORTS (390x844); default DEFAULT_VIEWPORTS.
 //   seed       optional localStorage entries written before the app boots ({ key: stringValue }).
 //   boot       'menu' (default: tap through the splashes, wait for the main menu), 'natural' (no taps) or 'none' (the check boots).
+//   controlModes  optional subset of modes. In such a mode the check is a positive control for something it asserts in the other
+//              (ad-offers-by-mode asserts offers are ABSENT in preview and PRESENT in dev, which proves its labels still match). The
+//              CI dev leg runs --exclusive, which keeps the checks that need the mode and the ones that name it here.
 //   weight     optional rough cost (about seconds on a CI runner). Used to start heavy jobs first when jobs run in parallel and
 //              to balance --shard slices. Default 1.
 //   run        async (page, ctx). ctx.expect(ok, label, detail) records an assertion; a throw is a failure too.
@@ -28,6 +31,9 @@ export function validateChecks(checks) {
     if (typeof c.run !== 'function') throw new Error(`Check "${c.name}" needs a run(page, ctx) function`);
     if (!Array.isArray(c.modes) || c.modes.length === 0) throw new Error(`Check "${c.name}" must declare at least one mode`);
     for (const m of c.modes) if (!MODES.includes(m)) throw new Error(`Check "${c.name}" declares an unknown mode "${m}"`);
+    for (const m of c.controlModes ?? []) {
+      if (!c.modes.includes(m)) throw new Error(`Check "${c.name}" controlModes names "${m}", which is not in its modes (${c.modes.join(', ')})`);
+    }
   }
 }
 
@@ -43,7 +49,8 @@ export function expandJobs(checks, { mode, only = [], exclusive = false }) {
   const jobs = [];
   for (const check of checks) {
     if (!check.modes.includes(mode)) continue;
-    if (exclusive && check.modes.length > 1) continue; // runs in every mode: not specific to this one
+    // --exclusive: only what is specific to this mode: it needs the mode (its sole mode) or the mode is its declared control run.
+    if (exclusive && check.modes.length > 1 && !(check.controlModes ?? []).includes(mode)) continue;
     if (only.length > 0 && !only.includes(check.name)) continue;
     for (const viewport of check.viewports ?? DEFAULT_VIEWPORTS) jobs.push({ check, viewport });
   }

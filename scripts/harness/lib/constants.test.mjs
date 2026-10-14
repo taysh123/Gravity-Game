@@ -12,7 +12,7 @@ import { THEME } from '../../../src/config/theme.config.ts';
 import { LEVELS } from '../../../src/config/levels/index.ts';
 import { LEGACY_PREMIUM_KEY, ENTITLEMENTS_KEY } from '../../../src/services/entitlements.ts';
 import { SettingsStore } from '../../../src/utils/SettingsStore.ts';
-import { PRIVACY, POLICY_URL, SETTINGS_TOGGLES, WEB_NOTE } from './copy.mjs';
+import { DEV_HANDLES, OFFERS, PRIVACY, POLICY_URL, SETTINGS_TOGGLES, WEB_NOTE } from './copy.mjs';
 import { MAX_PAD_GAME_PX, MIN_TAP_GAME_PX } from './hitProbe.mjs';
 import { KEYS } from './seeds.mjs';
 import { BOSS_LEVEL } from './states.mjs';
@@ -76,5 +76,28 @@ describe('on-screen copy the checks look for', () => {
 describe('the boss level the game state uses', () => {
   it(`level ${BOSS_LEVEL} is a boss level in the campaign`, () => {
     expect(LEVELS[BOSS_LEVEL - 1].boss).toBe(true);
+  });
+});
+
+describe('the rewarded-offer labels ad-offers-by-mode looks for', () => {
+  // The preview run asserts these labels are ABSENT, which would stay green for ever if a label were reworded while the offer
+  // leaked. The dev run is the positive control in CI; this test is the control that needs no browser: each label must still be
+  // the on-screen text in the scene that draws it. The quoted literal is matched, so a comment that mentions the name cannot
+  // satisfy it.
+  for (const [key, offer] of Object.entries(OFFERS)) {
+    it(`${key}: "${offer.label}" is still drawn by ${offer.file}`, () => {
+      expect(offer.literal).toContain(offer.label);
+      expect(source(offer.file)).toContain(offer.literal);
+    });
+  }
+});
+
+describe('the DEV-only handles debug-handles looks for', () => {
+  it('main.ts assigns window.__game and window.__Phaser, inside an import.meta.env.DEV block', () => {
+    const main = source('src/main.ts');
+    const block = main.slice(main.indexOf('if (import.meta.env.DEV) {'));
+    expect(block.length).toBeGreaterThan(0);
+    expect(block).toContain(`.${DEV_HANDLES.game} = game;`);
+    expect(block).toContain(`.${DEV_HANDLES.phaser} = Phaser;`);
   });
 });

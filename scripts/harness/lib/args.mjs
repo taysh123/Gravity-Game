@@ -20,7 +20,8 @@ Usage: node scripts/harness/boot-smoke.mjs [options]   (npm run smoke -- [option
   --no-build            preview mode: reuse the existing dist/ instead of running npm run build first.
   --headed              show the browser window (debugging; CI is always headless).
   --shard=<i>/<n>       run only the i-th of n balanced slices of the jobs (CI runs the slices on separate runners).
-  --exclusive           run only the checks that need the chosen mode and no other (the ones that use a DEV-only hook).
+  --exclusive           run only what is specific to the chosen mode: the checks that need it (a DEV-only hook) and the checks
+                        that name it as a control mode (their dev run proves the labels their preview run asserts are absent).
   --jobs=<n>            run n jobs (a check at a viewport) at once, 1 to 8. Default 1: parallel pages compete for the CPU.
   --artifacts=<dir>     write a screenshot of every failed job into <dir> (CI uploads it).
   --verbose             after the table, list every assertion of every job (the counts show what was actually tested).

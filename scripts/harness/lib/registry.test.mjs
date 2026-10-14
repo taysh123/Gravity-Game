@@ -42,6 +42,12 @@ describe('expandJobs: one job per check and viewport, filtered by the run mode',
     expect(expandJobs([a, b, c], { mode: 'preview', exclusive: true }).map((j) => j.check.name)).toEqual(['c']);
   });
 
+  it('with exclusive, also keeps a check that names the mode in controlModes: its run there is the positive control for what it asserts elsewhere', () => {
+    const d = { name: 'd', modes: ['preview', 'dev'], controlModes: ['dev'], run };
+    expect(expandJobs([a, b, c, d], { mode: 'dev', exclusive: true }).map((j) => j.check.name)).toEqual(['b', 'd']);
+    expect(expandJobs([a, b, c, d], { mode: 'preview', exclusive: true }).map((j) => j.check.name)).toEqual(['c']);
+  });
+
   it('refuses an unknown name instead of running nothing and passing', () => {
     expect(() => expandJobs([a], { mode: 'dev', only: ['zzz'] })).toThrow(/Unknown check "zzz".*a/);
   });
@@ -69,6 +75,11 @@ describe('validateChecks', () => {
     expect(() => validateChecks([{ name: 'Bad Name', modes: ['dev'], run }])).toThrow(/kebab-case/);
     expect(() => validateChecks([{ name: 'x', modes: ['prod'], run }])).toThrow(/"x".*mode "prod"/);
     expect(() => validateChecks([{ name: 'x', modes: [], run }])).toThrow(/"x" must declare at least one mode/);
+  });
+
+  it('accepts controlModes that are a subset of modes and rejects any other', () => {
+    expect(() => validateChecks([{ name: 'x', modes: ['preview', 'dev'], controlModes: ['dev'], run }])).not.toThrow();
+    expect(() => validateChecks([{ name: 'x', modes: ['preview'], controlModes: ['dev'], run }])).toThrow(/"x" controlModes.*"dev".*not in its modes/);
   });
 });
 
