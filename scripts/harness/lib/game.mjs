@@ -6,6 +6,8 @@
 //   - Reading uses the objects Phaser already has (scene.children, scene.input); nothing here changes gameplay or data.
 //   - Taps are REAL pointer events (page.mouse) at positions computed from the live objects, never hard-coded pixels.
 
+import { captureProblem } from './capture.mjs';
+
 const SPLASH_SCENES = ['CompanySplashScene', 'IntroSplashScene'];
 const SETTLE_CALM_MS = 500; // how long nothing may be animating (page clock, which follows the frame rate of the game)
 const SETTLE_CALM_FRAMES = 6; // ... and for at least this many frames, so a slow software-rendered frame cannot fake calm
@@ -120,11 +122,38 @@ export async function clickGame(page, x, y) {
   await page.mouse.click(p.x, p.y);
 }
 
+/**
+ * Wait for the capture hook to hand over the game (window.__harnessGame). A hook that cannot work is reported within seconds with
+ * the reason (capture.mjs), not after the whole boot timeout: the page is sampled once a second while it waits.
+ */
+async function waitForCapture(page, timeout) {
+  const t0 = Date.now();
+  for (;;) {
+    await page.waitForFunction(() => !!window.__harnessGame || !!window.__harnessHookError, null, { timeout: 1000 }).catch(() => undefined);
+    const state = await page
+      .evaluate(() => ({
+        gameCaptured: !!window.__harnessGame,
+        hookError: window.__harnessHookError,
+        phaserType: typeof window.Phaser,
+        readyState: document.readyState,
+      }))
+      .catch((err) => {
+        if (/context was destroyed|navigat/i.test(String(err.message))) return null; // the page reloaded (the dev server re-optimising): look again
+        throw err;
+      });
+    if (state?.gameCaptured) return;
+    const elapsedMs = Date.now() - t0;
+    const problem = state && captureProblem({ ...state, elapsedMs });
+    if (problem) throw new Error(problem);
+    if (elapsedMs > timeout) throw new Error(`timed out after ${timeout} ms waiting for the Phaser game to start stepping (window.__harnessGame)`);
+  }
+}
+
 /** Wait for the game handle, optionally tap through the two splashes, then wait until MainMenuScene has settled. */
 export async function bootToMenu(page, { skipSplashes = true, timeout = 120000 } = {}) {
   const deadline = Date.now() + timeout;
   const left = () => Math.max(1000, deadline - Date.now());
-  await waitFor(page, 'the Phaser game to start stepping (window.__harnessGame)', () => !!window.__harnessGame, null, left());
+  await waitForCapture(page, left());
   for (;;) {
     const handle = await waitFor(
       page,
