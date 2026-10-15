@@ -124,6 +124,11 @@ function installCrashContext(g: Phaser.Game): void {
 game.events.once(Phaser.Core.Events.READY, () => {
   installFrameGuard(game, {
     report: (error) => Crash.recordError(error, 'frame'),
+    // One error is enough when a scene is stuck mid-start: its init() or create() threw, so Phaser leaves it in START or CREATING for good
+    // (its update never runs, the scene it replaced is already stopped or paused) and nothing throws again for the burst policy to count.
+    // Not INIT (every scene that never started sits in it between frames, Systems.init) and not LOADING (BootScene's preload is legitimate).
+    fatal: () =>
+      game.scene.getScenes(false).some((scene) => scene.sys.settings.status === Phaser.Scenes.START || scene.sys.settings.status === Phaser.Scenes.CREATING),
     showOverlay: () => {
       // The stopped game must not hear the tap that restarts it. Phaser's window-level mouse and touch handlers also take events whose target
       // is not the canvas, and the InputManager updates every running scene's input at once: only the step is inert while the loop sleeps. A
@@ -143,7 +148,12 @@ game.events.once(Phaser.Core.Events.READY, () => {
       setBackHandlerEnabled(true);
     },
   });
-  installCrashContext(game);
+  // Crash context is diagnostics. A throw out of this listener would stop texturesReady() before Game.start(): no loop at all, a black screen.
+  try {
+    installCrashContext(game);
+  } catch (error) {
+    Crash.recordError(error, 'crashContext');
+  }
   syncViewport();
 });
 window.addEventListener('resize', syncViewport);

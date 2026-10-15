@@ -13,7 +13,7 @@ import { THEME } from '../../../src/config/theme.config.ts';
 import { LEVELS } from '../../../src/config/levels/index.ts';
 import { LEGACY_PREMIUM_KEY, ENTITLEMENTS_KEY } from '../../../src/services/entitlements.ts';
 import { SettingsStore } from '../../../src/utils/SettingsStore.ts';
-import { CRASH_TEST, DEV_HANDLES, ERROR_OVERLAY, OFFERS, PRIVACY, POLICY_URL, SETTINGS_TOGGLES, WEB_NOTE } from './copy.mjs';
+import { CRASH_TEST, CREATE_FAILURE, DEV_HANDLES, ERROR_OVERLAY, OFFERS, PRIVACY, POLICY_URL, SETTINGS_TOGGLES, WEB_NOTE } from './copy.mjs';
 import { MAX_PAD_GAME_PX, MIN_TAP_GAME_PX } from './hitProbe.mjs';
 import { KEYS } from './seeds.mjs';
 import { BOSS_LEVEL } from './states.mjs';
@@ -102,6 +102,14 @@ describe('the DEV-only handles debug-handles looks for', () => {
     expect(block).toContain(`.${DEV_HANDLES.phaser} = Phaser;`);
     expect(block).toContain(`.${DEV_HANDLES.crashTest} = `);
   });
+
+  it('the other way round: every window handle main.ts assigns in its DEV block is a DEV_HANDLES value (debug-handles scans dist/ for exactly those names)', () => {
+    const main = source('src/main.ts').replace(/\/\/.*$/gm, '');
+    const block = main.slice(main.indexOf('if (import.meta.env.DEV) {'));
+    const assigned = [...block.matchAll(/\.(__[A-Za-z0-9_]+)\s*=(?!=)/g)].map((m) => m[1]);
+    expect(assigned.length).toBeGreaterThanOrEqual(Object.keys(DEV_HANDLES).length);
+    for (const name of assigned) expect(Object.values(DEV_HANDLES), `${name} is assigned in main.ts but is not in DEV_HANDLES`).toContain(name);
+  });
 });
 
 describe('the frame-guard values crash-overlay looks for (P00-T21)', () => {
@@ -126,5 +134,23 @@ describe('the frame-guard values crash-overlay looks for (P00-T21)', () => {
     expect(CRASH_TEST.crashLog).toBe(`[crash] [frame] ${CRASH_TEST.message}`);
     expect(source('src/services/Crash.ts')).toContain("console.error('[crash]', message, error)");
     expect(source('src/main.ts')).toContain("Crash.recordError(error, 'frame')");
+  });
+});
+
+describe('the scene-start failure crash-overlay injects (P00-T21 final review)', () => {
+  it('the guard line and the Crash line are the formats of the frame guard and of the dev console.error of a "frame" report', () => {
+    expect(CREATE_FAILURE.guardLog).toBe(`${FRAME_GUARD_LOG_PREFIX} Error: ${CREATE_FAILURE.message}`);
+    expect(CREATE_FAILURE.crashLog).toBe(`[crash] [frame] ${CREATE_FAILURE.message}`);
+  });
+
+  it('the snippet makes the NEXT scene to start throw that message from its own create(), and puts the original create back first', () => {
+    expect(CREATE_FAILURE.snippet).toContain(`new Error('${CREATE_FAILURE.message}')`);
+    expect(CREATE_FAILURE.snippet).toContain('Phaser.Scenes.SceneManager.prototype');
+    expect(CREATE_FAILURE.snippet).toContain('P.create = create;');
+    expect(CREATE_FAILURE.snippet).not.toContain('|'); // it sits in a Markdown table cell on the device checklist
+  });
+
+  it('the message differs from the persistent frame error, so the two stages cannot be mistaken for each other', () => {
+    expect(CREATE_FAILURE.message).not.toBe(CRASH_TEST.message);
   });
 });

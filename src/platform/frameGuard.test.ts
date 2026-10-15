@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { PLATFORM } from '../config/platform.config';
-import { FRAME_GUARD_LOG_PREFIX, frameGuardDecision, installFrameGuard, type GuardedGame } from './frameGuard';
+import { FRAME_GUARD_LOG_PREFIX, frameGuardDecision, installFrameGuard, type FrameGuardDeps, type GuardedGame } from './frameGuard';
 
 const BURST = PLATFORM.FRAME_ERROR_BURST;
 const WINDOW = PLATFORM.FRAME_ERROR_WINDOW_MS;
@@ -43,23 +43,25 @@ describe('frameGuardDecision (pure, TECHNICAL-ARCHITECTURE 4.2)', () => {
 });
 
 // A stand-in for Phaser.Game: a step that does what the test says, and a loop that can sleep.
-function fakeGame(impl: (time: number, delta: number) => void) {
+function fakeGame(impl: (time: number, delta: number, scene: { isProcessing: boolean }) => void) {
   const calls: Array<{ self: unknown; time: number; delta: number }> = [];
+  const scene = { isProcessing: false };
   const game = {
     step(this: unknown, time: number, delta: number): void {
       calls.push({ self: this, time, delta });
-      impl(time, delta);
+      impl(time, delta, scene);
     },
     loop: { sleep: vi.fn() },
+    scene,
   };
   return { game: game as GuardedGame & typeof game, calls };
 }
 
-function setup(impl: (time: number, delta: number) => void) {
+function setup(impl: (time: number, delta: number, scene: { isProcessing: boolean }) => void, extra: Partial<FrameGuardDeps> = {}) {
   const { game, calls } = fakeGame(impl);
   let clock = 0;
   const deps = { report: vi.fn(), showOverlay: vi.fn(), log: vi.fn(), now: () => clock };
-  installFrameGuard(game, deps);
+  installFrameGuard(game, { ...deps, ...extra });
   // One requestAnimationFrame frame, as Phaser's TimeStep calls it (Game.start binds step to the game).
   const frame = (dt = 16): void => {
     clock += dt;
@@ -130,26 +132,23 @@ describe('installFrameGuard', () => {
   it('a log, report, sleep or overlay that throws cannot escape the guard, and the overlay is still attempted once', () => {
     const { game, calls } = fakeGame(persistent);
     let clock = 0;
-    const showOverlay = vi.fn(() => {
-      throw new Error('overlay failed');
-    });
-    game.loop.sleep.mockImplementation(() => {
-      throw new Error('sleep failed');
-    });
-    installFrameGuard(game, {
-      now: () => clock,
-      log: () => {
-        throw new Error('no console');
-      },
-      report: () => {
-        throw new Error('report failed');
-      },
-      showOverlay,
-    });
+    const order: string[] = [];
+    const failing = (what: string) => (): never => {
+      order.push(what);
+      throw new Error(`${what} failed`);
+    };
+    const showOverlay = vi.fn(failing('overlay'));
+    game.loop.sleep.mockImplementation(failing('sleep'));
+    installFrameGuard(game, { now: () => clock, log: failing('log'), report: failing('report'), showOverlay });
     for (let i = 0; i < BURST + 2; i++) {
       clock += 16;
       expect(() => game.step(clock, 16)).not.toThrow();
     }
+    // Every caught error is logged, then reported. The BURST-th one then puts the loop to sleep and shows the overlay: each once, in that order,
+    // and the frames after it do nothing at all.
+    const caught = Array.from({ length: BURST }, () => ['log', 'report']).flat();
+    expect(order).toEqual([...caught, 'sleep', 'overlay']);
+    expect(game.loop.sleep).toHaveBeenCalledTimes(1);
     expect(showOverlay).toHaveBeenCalledTimes(1);
     expect(calls).toHaveLength(BURST);
   });
@@ -182,6 +181,129 @@ describe('installFrameGuard', () => {
     game.step(0, 16);
     expect(error).toHaveBeenCalledWith(`${FRAME_GUARD_LOG_PREFIX} Error: to the console`, expect.any(Error));
     error.mockRestore();
+  });
+});
+
+// P00-T21 final review. SceneManager.update sets isProcessing and only the end of render() clears it: a frame that throws in between leaves it true,
+// and the next frame's processQueue then re-queues bringToTop (which PauseScene.create and SettingsScene.create call) for ever, an endless loop on the
+// main thread. The guard restores the between-frames invariant.
+describe('installFrameGuard: the scene manager after a caught error', () => {
+  it('a step that throws mid-update leaves isProcessing false once the guard has caught it', () => {
+    const { game, frame } = setup((_time, _delta, scene) => {
+      scene.isProcessing = true;
+      throw new Error('mid-update');
+    });
+    frame();
+    expect(game.scene.isProcessing).toBe(false);
+  });
+
+  it('it is restored before anything else the catch does: the log, the report, the sleep and the overlay all find it false', () => {
+    const { game } = fakeGame((_time, _delta, scene) => {
+      scene.isProcessing = true;
+      throw new Error('mid-update');
+    });
+    const seen: Array<[string, boolean]> = [];
+    const at = (what: string) => (): void => {
+      seen.push([what, game.scene.isProcessing]);
+    };
+    game.loop.sleep.mockImplementation(at('sleep'));
+    installFrameGuard(game, { now: () => 0, log: at('log'), report: at('report'), showOverlay: at('overlay'), fatal: () => true });
+    game.step(0, 16);
+    expect(seen).toEqual([
+      ['log', false],
+      ['report', false],
+      ['sleep', false],
+      ['overlay', false],
+    ]);
+  });
+
+  it('a frame that does not throw is left alone: the flag is only restored after an error', () => {
+    const { game, frame } = setup((_time, _delta, scene) => {
+      scene.isProcessing = true;
+    });
+    frame();
+    expect(game.scene.isProcessing).toBe(true);
+  });
+
+  it('a flag that cannot be written does not stop the error being logged, reported and survived', () => {
+    const { game } = fakeGame(persistent);
+    Object.freeze(game.scene);
+    const log = vi.fn();
+    const report = vi.fn();
+    installFrameGuard(game, { now: () => 0, log, report, showOverlay: vi.fn() });
+    expect(() => game.step(0, 16)).not.toThrow();
+    expect(log).toHaveBeenCalledTimes(1);
+    expect(report).toHaveBeenCalledTimes(1);
+  });
+});
+
+// A scene whose init() or create() throws is left in Phaser's START or CREATING status for good: its update never runs, the scene it replaced is
+// already stopped or paused, and the loop goes on drawing nothing new. That error is the only one there will ever be (nothing runs to repeat it), so the
+// burst policy alone would never fire. main.ts passes a probe for it.
+describe('installFrameGuard: a game that cannot recover by itself (fatal)', () => {
+  it('fatal true: the first error already puts the loop to sleep and shows the overlay, once', () => {
+    const { game, deps, frame } = setup(persistent, { fatal: () => true });
+    frame();
+    expect(game.loop.sleep).toHaveBeenCalledTimes(1);
+    expect(deps.showOverlay).toHaveBeenCalledTimes(1);
+    expect(deps.report).toHaveBeenCalledTimes(1);
+    frame();
+    frame();
+    expect(game.loop.sleep).toHaveBeenCalledTimes(1);
+    expect(deps.showOverlay).toHaveBeenCalledTimes(1);
+    expect(deps.report).toHaveBeenCalledTimes(1);
+  });
+
+  it('fatal false: the error is survived like any other (no overlay, the next frames run)', () => {
+    let throwNext = true;
+    const { game, calls, deps, frame } = setup(
+      () => {
+        if (throwNext) {
+          throwNext = false;
+          throw new Error('transient');
+        }
+      },
+      { fatal: () => false },
+    );
+    frame();
+    frame();
+    expect(calls).toHaveLength(2);
+    expect(game.loop.sleep).not.toHaveBeenCalled();
+    expect(deps.showOverlay).not.toHaveBeenCalled();
+  });
+
+  it('fatal is asked once for each caught error, and never for a frame that did not throw', () => {
+    let throwNow = false;
+    const fatal = vi.fn(() => false);
+    const { frame } = setup(
+      () => {
+        if (throwNow) throw new Error('x');
+      },
+      { fatal },
+    );
+    frame();
+    expect(fatal).not.toHaveBeenCalled();
+    throwNow = true;
+    frame();
+    frame();
+    expect(fatal).toHaveBeenCalledTimes(2);
+  });
+
+  it('a fatal that throws counts as false: nothing escapes the guard, there is no overlay, and the burst policy still works', () => {
+    const fatal = vi.fn((): boolean => {
+      throw new Error('probe failed');
+    });
+    const { deps, frame } = setup(persistent, { fatal });
+    expect(() => frame()).not.toThrow();
+    expect(deps.showOverlay).not.toHaveBeenCalled();
+    for (let i = 1; i < BURST; i++) frame();
+    expect(deps.showOverlay).toHaveBeenCalledTimes(1);
+  });
+
+  it('without a probe the guard is what it was: one error is only an error', () => {
+    const { deps, frame } = setup(persistent);
+    frame();
+    expect(deps.showOverlay).not.toHaveBeenCalled();
   });
 });
 
@@ -223,6 +345,22 @@ describe('main.ts wiring (P00-T21)', () => {
 
   it('Back reaches JS while the overlay is up: the showOverlay body turns the native back handler on (MainMenuScene hands Back to the system)', () => {
     expect(showOverlayBody()).toMatch(/setBackHandlerEnabled\(true\)/);
+  });
+
+  // The statuses are Phaser's (node_modules/phaser/src/scene/const.js): Systems.init sets INIT on EVERY registered scene, so a scene that never
+  // started sits in INIT between frames (a probe that counted INIT would fire on any error); Systems.start sets START; create() sets CREATING and
+  // then RUNNING; LOADING is legitimate (BootScene's preload).
+  it('passes the fatal probe: a scene left in START or CREATING after an error cannot recover (never INIT or LOADING)', () => {
+    const m = /fatal: \(\) =>([\s\S]*?),\s*showOverlay:/.exec(main);
+    if (!m) throw new Error('main.ts: the fatal probe of installFrameGuard was not found');
+    expect(m[1]).toMatch(/Phaser\.Scenes\.START/);
+    expect(m[1]).toMatch(/Phaser\.Scenes\.CREATING/);
+    expect(m[1]).not.toMatch(/Phaser\.Scenes\.(INIT|LOADING)/);
+  });
+
+  // A throw in installCrashContext inside the READY listener would stop texturesReady() before Game.start(): no loop at all, a black screen.
+  it('a throw in installCrashContext cannot block Game.start(): it is caught and reported under "crashContext"', () => {
+    expect(main).toMatch(/try \{\s*installCrashContext\(game\);\s*\} catch \(error\) \{\s*Crash\.recordError\(error, 'crashContext'\);\s*\}/);
   });
 
   it('mentions __crashTest only inside the import.meta.env.DEV block', () => {

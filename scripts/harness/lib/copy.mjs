@@ -37,7 +37,8 @@ export const OFFERS = {
 export const DEV_HANDLES = { game: '__game', phaser: '__Phaser', crashTest: '__crashTest' };
 
 /**
- * window.__crashTest (P00-T21). `message`: the Error main.ts throws inside update. `burst`: PLATFORM.FRAME_ERROR_BURST, the frame
+ * window.__crashTest (P00-T21). `message`: the Error main.ts throws inside update (crash-overlay throws the same text itself in its stage
+ * for a frame error beside the gear, so the same guard line is expected). `burst`: PLATFORM.FRAME_ERROR_BURST, the frame
  * errors within FRAME_ERROR_WINDOW_MS after which the guard stops the loop. `guardLog`: the console.error line the frame guard writes
  * for each one. `crashLog`: the dev console.error line Crash writes for the first report of a page load (later identical ones are
  * deduplicated).
@@ -47,6 +48,21 @@ export const CRASH_TEST = {
   burst: 3,
   guardLog: '[frameGuard] Error: __crashTest: injected frame error',
   crashLog: '[crash] [frame] __crashTest: injected frame error',
+};
+
+/**
+ * A scene that fails to START (P00-T21 final review): the next scene to start throws inside its own create(), which Phaser leaves in the CREATING
+ * status for good, so no second error ever follows and only the frame guard's `fatal` probe (main.ts) turns it into the overlay. `snippet` is
+ * what crash-overlay runs in the page, and the same text is device row R5 (docs/qa/DEVICE-CHECKLIST-M0.md) for the owner to paste into the
+ * app's chrome://inspect console, where no DEV hook exists; it needs window.Phaser, which the production bundle also defines. It has no `|`
+ * (it sits in a Markdown table cell). `message`, `guardLog` and `crashLog` are as in CRASH_TEST.
+ */
+export const CREATE_FAILURE = {
+  message: 'frame guard device test (create)',
+  guardLog: '[frameGuard] Error: frame guard device test (create)',
+  crashLog: '[crash] [frame] frame guard device test (create)',
+  snippet:
+    "(() => { const P = Phaser.Scenes.SceneManager.prototype, create = P.create; P.create = function (scene) { P.create = create; scene.create = () => { throw new Error('frame guard device test (create)'); }; return create.call(this, scene); }; })();",
 };
 
 /** The frame guard's DOM overlay (PLATFORM.ERROR_OVERLAY). */
