@@ -153,4 +153,8 @@ describe('the scene-start failure crash-overlay injects (P00-T21 final review)',
   it('the message differs from the persistent frame error, so the two stages cannot be mistaken for each other', () => {
     expect(CREATE_FAILURE.message).not.toBe(CRASH_TEST.message);
   });
+
+  it('device row R5 carries exactly the snippet crash-overlay runs, so the owner pastes what the harness proved (against the production bundle too)', () => {
+    expect(source('docs/qa/DEVICE-CHECKLIST-M0.md')).toContain(`\`${CREATE_FAILURE.snippet}\``);
+  });
 });
